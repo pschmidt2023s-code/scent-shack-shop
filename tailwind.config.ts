@@ -52,6 +52,13 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				luxury: {
+					gold: 'hsl(var(--luxury-gold))',
+					'gold-light': 'hsl(var(--luxury-gold-light))',
+					black: 'hsl(var(--luxury-black))',
+					gray: 'hsl(var(--luxury-gray))',
+					light: 'hsl(var(--luxury-light))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -67,6 +74,18 @@ export default {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
+			},
+			backgroundImage: {
+				'gradient-luxury': 'var(--gradient-luxury)',
+				'gradient-dark': 'var(--gradient-dark)',
+				'gradient-hero': 'var(--gradient-hero)'
+			},
+			boxShadow: {
+				luxury: 'var(--shadow-luxury)',
+				gold: 'var(--shadow-gold)'
+			},
+			transitionTimingFunction: {
+				smooth: 'var(--transition-smooth)'
 			},
 			keyframes: {
 				'accordion-down': {
