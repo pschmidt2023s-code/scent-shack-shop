@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import heroImage from '@/assets/hero-perfumes.jpg';
@@ -9,7 +10,7 @@ export function HeroSection() {
       <div className="absolute inset-0 z-0">
         <img
           src={heroImage}
-          alt="Luxury perfume collection"
+          alt="ALDENAIR luxury perfume collection"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-hero opacity-80"></div>
@@ -18,26 +19,26 @@ export function HeroSection() {
       {/* Content */}
       <div className="relative z-10 text-center text-primary-foreground px-4 max-w-4xl mx-auto">
         <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-          Entdecke deine
-          <span className="block text-luxury-gold">Duft-Signatur</span>
+          Willkommen bei
+          <span className="block text-luxury-gold">ALDENAIR</span>
         </h1>
         
         <p className="text-xl md:text-2xl mb-8 text-gray-200 max-w-2xl mx-auto leading-relaxed">
-          Exklusive Parfüms von den besten Parfümeuren der Welt. 
-          Finde deinen perfekten Duft für jeden Anlass.
+          Prestige Flakon - Exklusive Parfüms in höchster Qualität. 
+          Entdecke unsere einzigartigen Duftkreationen für jeden Anlass.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Button variant="hero" size="lg" className="text-lg px-8 py-4" asChild>
-            <Link to="/perfumes">
+            <a href="#parfums">
               Parfüms entdecken
-            </Link>
+            </a>
           </Button>
           
           <Button variant="luxury" size="lg" className="text-lg px-8 py-4" asChild>
-            <Link to="/brands">
-              Unsere Marken
-            </Link>
+            <a href="#proben">
+              Proben bestellen
+            </a>
           </Button>
         </div>
 
@@ -63,8 +64,8 @@ export function HeroSection() {
             <div className="w-12 h-12 bg-luxury-gold rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-luxury-black font-bold text-xl">♥</span>
             </div>
-            <h3 className="font-semibold text-lg">100% Zufriedenheit</h3>
-            <p className="text-gray-300">30 Tage Rückgaberecht</p>
+            <h3 className="font-semibold text-lg">Proben verfügbar</h3>
+            <p className="text-gray-300">5ml für nur 4,99€</p>
           </div>
         </div>
       </div>

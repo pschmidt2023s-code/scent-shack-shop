@@ -132,3 +132,6 @@ export function useAuth() {
   }
   return context;
 }
+
+// Export supabase client for components that need direct access
+export { supabase };

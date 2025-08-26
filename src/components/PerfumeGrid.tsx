@@ -1,6 +1,7 @@
+
 import { useState } from 'react';
 import { PerfumeCard } from './PerfumeCard';
-import { perfumes } from '@/data/perfumes';
+import { allPerfumes } from '@/data/perfumes';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -8,9 +9,9 @@ export function PerfumeGrid() {
   const [filter, setFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
 
-  const categories = ['all', 'Damen', 'Herren', 'Unisex'];
+  const categories = ['all', 'Unisex', 'Proben'];
 
-  const filteredPerfumes = perfumes.filter(perfume => 
+  const filteredPerfumes = allPerfumes.filter(perfume => 
     filter === 'all' || perfume.category === filter
   );
 
@@ -32,9 +33,9 @@ export function PerfumeGrid() {
     <section className="py-16 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4">Unsere Parfüm-Kollektion</h2>
+          <h2 className="text-4xl font-bold mb-4">ALDENAIR Parfüm-Kollektion</h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Entdecke exquisite Düfte für jeden Geschmack und Anlass
+            Entdecke exquisite Düfte der Marke ALDENAIR - Prestige Flakon für jeden Geschmack
           </p>
         </div>
 
