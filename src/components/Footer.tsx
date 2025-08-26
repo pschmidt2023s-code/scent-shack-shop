@@ -1,3 +1,4 @@
+
 import { Link } from 'react-router-dom';
 
 export function Footer() {
@@ -7,9 +8,13 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-luxury rounded-full"></div>
-              <span className="text-xl font-bold text-luxury-gold">LuxeScent</span>
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/lovable-uploads/f39391b1-7ea2-4b3f-9f06-15ca980668cb.png" 
+                alt="ALDENAIR Logo" 
+                className="h-8 w-auto brightness-0 invert"
+              />
+              <span className="text-xl font-bold text-luxury-gold">ALDENAIR</span>
             </div>
             <p className="text-luxury-gray">
               Deine Premium-Destination für exquisite Parfüms und Düfte der Weltklasse.
@@ -73,7 +78,7 @@ export function Footer() {
 
         <div className="border-t border-luxury-gray mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-luxury-gray">
-            © 2024 LuxeScent. Alle Rechte vorbehalten.
+            © 2024 ALDENAIR. Alle Rechte vorbehalten.
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <a href="#" className="text-luxury-gray hover:text-luxury-gold transition-colors">

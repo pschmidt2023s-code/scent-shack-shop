@@ -23,9 +23,13 @@ export function Navigation() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-luxury rounded-full"></div>
-            <span className="text-xl font-bold text-foreground">LuxeScent</span>
+          <Link to="/" className="flex items-center space-x-3">
+            <img 
+              src="/lovable-uploads/f39391b1-7ea2-4b3f-9f06-15ca980668cb.png" 
+              alt="ALDENAIR Logo" 
+              className="h-10 w-auto"
+            />
+            <span className="text-xl font-bold text-foreground">ALDENAIR</span>
           </Link>
 
           {/* Desktop Navigation */}
