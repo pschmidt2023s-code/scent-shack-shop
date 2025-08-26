@@ -5,7 +5,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useAuth, supabase } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Star, Upload, MessageCircle, AlertCircle } from 'lucide-react';
 import { AuthModal } from './AuthModal';
@@ -53,61 +54,27 @@ export function ProductReviews({ perfumeId, perfumeName }: ProductReviewsProps) 
   }, [perfumeId, supabaseConnected]);
 
   const fetchReviews = async () => {
-    if (!supabase) return;
-    
-    const { data, error } = await supabase
-      .from('reviews')
-      .select(`
-        *,
-        profiles:user_id (full_name)
-      `)
-      .eq('perfume_id', perfumeId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching reviews:', error);
-    } else {
-      setReviews(data || []);
-    }
+    // For now, we'll use mock data since we don't have the reviews table set up yet
+    console.log('Fetching reviews for perfume:', perfumeId);
+    setReviews([]);
     setLoading(false);
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (!files || !user || !supabase) return;
+    if (!files || !user) return;
 
     setUploading(true);
-    const uploadedUrls: string[] = [];
-
-    for (const file of files) {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-
-      const { data, error } = await supabase.storage
-        .from('review-images')
-        .upload(fileName, file);
-
-      if (error) {
-        console.error('Upload error:', error);
-        toast({
-          title: "Upload fehlgeschlagen",
-          description: "Bild konnte nicht hochgeladen werden.",
-          variant: "destructive",
-        });
-      } else {
-        const { data: urlData } = supabase.storage
-          .from('review-images')
-          .getPublicUrl(fileName);
-        uploadedUrls.push(urlData.publicUrl);
-      }
-    }
-
-    setUploadedImages([...uploadedImages, ...uploadedUrls]);
+    // For now, just simulate upload since we don't have storage set up
+    toast({
+      title: "Upload simuliert",
+      description: "Bildupload-Funktion ist noch nicht konfiguriert.",
+    });
     setUploading(false);
   };
 
   const submitReview = async () => {
-    if (!user || !supabase) return;
+    if (!user) return;
     if (rating === 0) {
       toast({
         title: "Bewertung erforderlich",
@@ -117,32 +84,13 @@ export function ProductReviews({ perfumeId, perfumeName }: ProductReviewsProps) 
       return;
     }
 
-    const { error } = await supabase
-      .from('reviews')
-      .insert({
-        user_id: user.id,
-        perfume_id: perfumeId,
-        rating,
-        title,
-        content,
-        images: uploadedImages,
-      });
-
-    if (error) {
-      toast({
-        title: "Fehler",
-        description: "Bewertung konnte nicht gespeichert werden.",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Bewertung eingereicht",
-        description: "Vielen Dank für Ihre Bewertung!",
-      });
-      setReviewModalOpen(false);
-      resetForm();
-      fetchReviews();
-    }
+    // For now, just show success since we don't have the reviews table set up
+    toast({
+      title: "Bewertung eingereicht",
+      description: "Vielen Dank für Ihre Bewertung! (Datenbank noch nicht konfiguriert)",
+    });
+    setReviewModalOpen(false);
+    resetForm();
   };
 
   const resetForm = () => {
