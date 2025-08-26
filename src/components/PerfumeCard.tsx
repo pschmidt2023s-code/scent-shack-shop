@@ -1,10 +1,13 @@
-import { Star, ShoppingBag } from 'lucide-react';
+
+import { Star, ShoppingBag, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Perfume } from '@/types/perfume';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
+import { ProductReviews } from './ProductReviews';
 
 interface PerfumeCardProps {
   perfume: Perfume;
@@ -48,7 +51,7 @@ export function PerfumeCard({ perfume, onView }: PerfumeCardProps) {
   };
 
   return (
-    <Card className="group hover:shadow-luxury transition-all duration-300 cursor-pointer" onClick={onView}>
+    <Card className="group hover:shadow-luxury transition-all duration-300">
       <div className="relative overflow-hidden">
         <img
           src={perfume.image}
@@ -117,17 +120,36 @@ export function PerfumeCard({ perfume, onView }: PerfumeCardProps) {
             </Badge>
           </div>
 
-          <Button 
-            className="w-full mt-4"
-            variant={perfume.inStock ? "default" : "secondary"}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleAddToCart();
-            }}
-            disabled={!perfume.inStock}
-          >
-            {perfume.inStock ? "In den Warenkorb" : "Nicht verfügbar"}
-          </Button>
+          <div className="flex gap-2 mt-4">
+            <Button 
+              className="flex-1"
+              variant={perfume.inStock ? "default" : "secondary"}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddToCart();
+              }}
+              disabled={!perfume.inStock}
+            >
+              {perfume.inStock ? "In den Warenkorb" : "Nicht verfügbar"}
+            </Button>
+            
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <MessageCircle className="w-4 h-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Bewertungen - {perfume.name}</DialogTitle>
+                </DialogHeader>
+                <ProductReviews 
+                  perfumeId={perfume.id} 
+                  perfumeName={perfume.name}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </CardContent>
     </Card>
