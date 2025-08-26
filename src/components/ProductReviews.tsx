@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth, supabase } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Star, Upload, MessageCircle } from 'lucide-react';
+import { Star, Upload, MessageCircle, AlertCircle } from 'lucide-react';
 import { AuthModal } from './AuthModal';
 
 interface Review {
@@ -37,7 +37,7 @@ export function ProductReviews({ perfumeId, perfumeName }: ProductReviewsProps) 
   const [content, setContent] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  const { user } = useAuth();
+  const { user, supabaseConnected } = useAuth();
   const { toast } = useToast();
 
   const averageRating = reviews.length > 0 
@@ -45,10 +45,16 @@ export function ProductReviews({ perfumeId, perfumeName }: ProductReviewsProps) 
     : 0;
 
   useEffect(() => {
-    fetchReviews();
-  }, [perfumeId]);
+    if (supabaseConnected) {
+      fetchReviews();
+    } else {
+      setLoading(false);
+    }
+  }, [perfumeId, supabaseConnected]);
 
   const fetchReviews = async () => {
+    if (!supabase) return;
+    
     const { data, error } = await supabase
       .from('reviews')
       .select(`
@@ -68,7 +74,7 @@ export function ProductReviews({ perfumeId, perfumeName }: ProductReviewsProps) 
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (!files || !user) return;
+    if (!files || !user || !supabase) return;
 
     setUploading(true);
     const uploadedUrls: string[] = [];
@@ -101,7 +107,7 @@ export function ProductReviews({ perfumeId, perfumeName }: ProductReviewsProps) 
   };
 
   const submitReview = async () => {
-    if (!user) return;
+    if (!user || !supabase) return;
     if (rating === 0) {
       toast({
         title: "Bewertung erforderlich",
@@ -159,6 +165,22 @@ export function ProductReviews({ perfumeId, perfumeName }: ProductReviewsProps) 
       />
     ));
   };
+
+  if (!supabaseConnected) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center gap-2 p-8 border rounded-lg bg-muted/50">
+          <AlertCircle className="w-5 h-5 text-amber-500" />
+          <div className="text-center">
+            <h3 className="font-semibold text-muted-foreground">Supabase Verbindung erforderlich</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Um Bewertungen anzuzeigen und zu erstellen, verbinden Sie bitte Ihr Projekt mit Supabase.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return <div className="text-center py-8">Bewertungen werden geladen...</div>;

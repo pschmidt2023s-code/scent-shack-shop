@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { User, UserPlus } from 'lucide-react';
+import { User, UserPlus, AlertCircle } from 'lucide-react';
 
 interface AuthModalProps {
   children: React.ReactNode;
@@ -19,8 +19,34 @@ export function AuthModal({ children }: AuthModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, supabaseConnected } = useAuth();
   const { toast } = useToast();
+
+  if (!supabaseConnected) {
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          {children}
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-amber-500" />
+              Supabase Verbindung erforderlich
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Um die Anmelde- und Registrierungsfunktion zu nutzen, muss Ihr Projekt mit Supabase verbunden sein.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Klicken Sie auf den grünen Supabase-Button oben rechts, um die Verbindung herzustellen.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();

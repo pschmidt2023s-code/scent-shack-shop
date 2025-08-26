@@ -5,10 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCart } from '@/contexts/CartContext';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/contexts/AuthContext';
+import { useAuth, supabase } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CreditCard } from 'lucide-react';
+import { Loader2, CreditCard, AlertCircle } from 'lucide-react';
 
 interface CheckoutModalProps {
   open: boolean;
@@ -19,7 +18,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const [loading, setLoading] = useState(false);
   const [guestEmail, setGuestEmail] = useState('');
   const { items, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, supabaseConnected } = useAuth();
   const { toast } = useToast();
 
   const totalAmount = items.reduce((sum, item) => sum + (44.99 * item.quantity), 0);
@@ -30,6 +29,15 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       toast({
         title: "E-Mail erforderlich",
         description: "Bitte geben Sie Ihre E-Mail-Adresse ein oder melden Sie sich an.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!supabase || !supabaseConnected) {
+      toast({
+        title: "Supabase Verbindung erforderlich",
+        description: "Bitte verbinden Sie Ihr Projekt mit Supabase für Zahlungen.",
         variant: "destructive",
       });
       return;
@@ -67,6 +75,29 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
 
   if (items.length === 0) {
     return null;
+  }
+
+  if (!supabaseConnected) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-amber-500" />
+              Supabase Verbindung erforderlich
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Um Zahlungen zu verarbeiten, muss Ihr Projekt mit Supabase verbunden sein.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Klicken Sie auf den grünen Supabase-Button oben rechts, um die Verbindung herzustellen.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   }
 
   return (
