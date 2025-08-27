@@ -77,6 +77,8 @@ export default function Admin() {
       return;
     }
 
+    console.log('Checking admin status for user:', user.id);
+
     try {
       // Check if user has admin role
       const { data, error } = await supabase
@@ -86,9 +88,13 @@ export default function Admin() {
         .eq('role', 'admin')
         .single();
 
+      console.log('Admin query result:', { data, error });
+
       if (error || !data) {
+        console.log('User is not admin:', error?.message || 'No admin role found');
         setIsAdmin(false);
       } else {
+        console.log('User is admin!');
         setIsAdmin(true);
         await loadOrders();
       }
