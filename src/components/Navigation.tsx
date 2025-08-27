@@ -1,154 +1,123 @@
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Menu, X, User, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { CartSidebar } from './CartSidebar';
-import { AuthModal } from './AuthModal';
+import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { CartSidebar } from '@/components/CartSidebar';
+import { AuthModal } from '@/components/AuthModal';
+import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { ShoppingCart, Menu, User, LogOut } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export function Navigation() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const { itemCount } = useCart();
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleProfileClick = () => {
+    navigate('/profile');
+  };
 
   const handleSignOut = async () => {
     await signOut();
+    navigate('/');
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3">
-            <img 
-              src="/lovable-uploads/f39391b1-7ea2-4b3f-9f06-15ca980668cb.png" 
-              alt="ALDENAIR Logo" 
-              className="h-10 w-auto"
-            />
-            <span className="text-xl font-bold text-foreground">ALDENAIR</span>
+    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        {/* Logo */}
+        <Link to="/" className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-primary rounded-full"></div>
+          <span className="font-bold text-xl">Parfumerie</span>
+        </Link>
+
+        {/* Navigation Links - Desktop */}
+        <div className="hidden md:flex items-center space-x-6">
+          <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">
+            Startseite
           </Link>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-foreground hover:text-luxury-gold transition-colors">
-              Home
-            </Link>
-            <Link to="/perfumes" className="text-foreground hover:text-luxury-gold transition-colors">
-              Parfüms
-            </Link>
-            <Link to="/brands" className="text-foreground hover:text-luxury-gold transition-colors">
-              Marken
-            </Link>
-            <Link to="/about" className="text-foreground hover:text-luxury-gold transition-colors">
-              Über uns
-            </Link>
-          </div>
-
-          {/* Search Bar */}
-          <div className="hidden lg:flex items-center space-x-4 flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                type="text"
-                placeholder="Parfüm suchen..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-
-          {/* Right Actions */}
-          <div className="flex items-center space-x-4">
-            <CartSidebar />
-            
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <User className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem disabled>
-                    {user.email}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Abmelden
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <AuthModal>
-                <Button variant="ghost" size="icon">
-                  <User className="h-5 w-5" />
-                </Button>
-              </AuthModal>
-            )}
-            
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
-          </div>
+          <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">
+            Parfums
+          </Link>
         </div>
 
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden py-4 border-t">
-            <div className="flex flex-col space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  type="text"
-                  placeholder="Parfüm suchen..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+        {/* Right Side Actions */}
+        <div className="flex items-center space-x-2">
+          {/* User Menu */}
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <User className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Mein Konto</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleProfileClick}>
+                  <User className="w-4 h-4 mr-2" />
+                  Profil
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Abmelden
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <AuthModal>
+              <Button variant="ghost" size="sm">
+                <User className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Anmelden</span>
+              </Button>
+            </AuthModal>
+          )}
+
+          {/* Cart Button */}
+          <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="sm" className="relative">
+                <ShoppingCart className="w-4 h-4" />
+                {itemCount > 0 && (
+                  <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                    {itemCount}
+                  </Badge>
+                )}
+                <span className="hidden sm:inline ml-2">Warenkorb</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <CartSidebar onClose={() => setIsCartOpen(false)} />
+            </SheetContent>
+          </Sheet>
+
+          {/* Mobile Menu */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="sm" className="md:hidden">
+                <Menu className="w-4 h-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left">
+              <div className="flex flex-col space-y-4 mt-8">
+                <Link to="/" className="text-lg font-medium">
+                  Startseite
+                </Link>
+                <Link to="/" className="text-lg font-medium">
+                  Parfums
+                </Link>
               </div>
-              <Link 
-                to="/" 
-                className="text-foreground hover:text-luxury-gold transition-colors py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <Link 
-                to="/perfumes" 
-                className="text-foreground hover:text-luxury-gold transition-colors py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Parfüms
-              </Link>
-              <Link 
-                to="/brands" 
-                className="text-foreground hover:text-luxury-gold transition-colors py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Marken
-              </Link>
-              <Link 
-                to="/about" 
-                className="text-foreground hover:text-luxury-gold transition-colors py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Über uns
-              </Link>
-            </div>
-          </div>
-        )}
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </nav>
   );
