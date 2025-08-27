@@ -5,7 +5,7 @@ import type { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
-  signUp: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   loading: boolean;
@@ -51,14 +51,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, fullName?: string) => {
     console.log('Attempting sign up for:', email);
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}`
+          emailRedirectTo: `${window.location.origin}`,
+          data: fullName ? { full_name: fullName } : undefined
         }
       });
       console.log('Sign up result:', { data, error });
@@ -119,3 +120,6 @@ export const useAuth = () => {
   }
   return context;
 };
+
+// Export supabase client for components that need direct access
+export { supabase };
