@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { PerfumeCard } from './PerfumeCard';
 import { allPerfumes } from '@/data/perfumes';
@@ -9,7 +8,7 @@ export function PerfumeGrid() {
   const [filter, setFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
 
-  const categories = ['all', 'Unisex', 'Proben'];
+  const categories = ['all', '50ML Bottles', 'Proben'];
 
   const filteredPerfumes = allPerfumes.filter(perfume => 
     filter === 'all' || perfume.category === filter
