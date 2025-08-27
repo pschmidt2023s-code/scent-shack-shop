@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import { ShoppingCart, User, ChevronDown, LogOut } from "lucide-react";
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
-import AuthModal from './AuthModal';
-import CartSidebar from './CartSidebar';
+import { AuthModal } from './AuthModal';
+import { CartSidebar } from './CartSidebar';
 
 const Navigation = () => {
   const { itemCount } = useCart();
@@ -89,20 +89,18 @@ const Navigation = () => {
                   )}
                 </div>
               ) : (
-                <button
-                  onClick={() => setShowAuthModal(true)}
-                  className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800"
-                >
-                  Anmelden
-                </button>
+                <AuthModal>
+                  <button className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800">
+                    Anmelden
+                  </button>
+                </AuthModal>
               )}
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Modals */}
-      <AuthModal />
+      {/* Cart Sidebar */}
       <CartSidebar 
         isOpen={showCart} 
         onClose={() => setShowCart(false)} 
