@@ -1,5 +1,6 @@
+
 import { createContext, useContext, useReducer, ReactNode } from 'react';
-import { Perfume, CartItem } from '@/types/perfume';
+import { Perfume, PerfumeVariant, CartItem } from '@/types/perfume';
 
 interface CartState {
   items: CartItem[];
@@ -7,31 +8,34 @@ interface CartState {
 }
 
 interface CartContextType extends CartState {
-  addToCart: (perfume: Perfume) => void;
-  removeFromCart: (perfumeId: string) => void;
-  updateQuantity: (perfumeId: string, quantity: number) => void;
+  addToCart: (perfume: Perfume, variant: PerfumeVariant) => void;
+  removeFromCart: (perfumeId: string, variantId: string) => void;
+  updateQuantity: (perfumeId: string, variantId: string, quantity: number) => void;
   clearCart: () => void;
   itemCount: number;
 }
 
 type CartAction = 
-  | { type: 'ADD_TO_CART'; payload: Perfume }
-  | { type: 'REMOVE_FROM_CART'; payload: string }
-  | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
+  | { type: 'ADD_TO_CART'; payload: { perfume: Perfume; variant: PerfumeVariant } }
+  | { type: 'REMOVE_FROM_CART'; payload: { perfumeId: string; variantId: string } }
+  | { type: 'UPDATE_QUANTITY'; payload: { perfumeId: string; variantId: string; quantity: number } }
   | { type: 'CLEAR_CART' };
 
 const calculateTotal = (items: CartItem[]): number => {
-  return items.reduce((total, item) => total + item.perfume.price * item.quantity, 0);
+  return items.reduce((total, item) => total + item.variant.price * item.quantity, 0);
 };
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {
     case 'ADD_TO_CART': {
-      const existingItem = state.items.find(item => item.perfume.id === action.payload.id);
+      const existingItem = state.items.find(item => 
+        item.perfume.id === action.payload.perfume.id && 
+        item.variant.id === action.payload.variant.id
+      );
       
       if (existingItem) {
         const updatedItems = state.items.map(item =>
-          item.perfume.id === action.payload.id
+          item.perfume.id === action.payload.perfume.id && item.variant.id === action.payload.variant.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
@@ -40,7 +44,11 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
           total: calculateTotal(updatedItems),
         };
       } else {
-        const newItems = [...state.items, { perfume: action.payload, quantity: 1 }];
+        const newItems = [...state.items, { 
+          perfume: action.payload.perfume, 
+          variant: action.payload.variant, 
+          quantity: 1 
+        }];
         return {
           items: newItems,
           total: calculateTotal(newItems),
@@ -49,7 +57,9 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     }
     
     case 'REMOVE_FROM_CART': {
-      const filteredItems = state.items.filter(item => item.perfume.id !== action.payload);
+      const filteredItems = state.items.filter(item => 
+        !(item.perfume.id === action.payload.perfumeId && item.variant.id === action.payload.variantId)
+      );
       return {
         items: filteredItems,
         total: calculateTotal(filteredItems),
@@ -58,7 +68,9 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     
     case 'UPDATE_QUANTITY': {
       if (action.payload.quantity <= 0) {
-        const filteredItems = state.items.filter(item => item.perfume.id !== action.payload.id);
+        const filteredItems = state.items.filter(item => 
+          !(item.perfume.id === action.payload.perfumeId && item.variant.id === action.payload.variantId)
+        );
         return {
           items: filteredItems,
           total: calculateTotal(filteredItems),
@@ -66,7 +78,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       }
       
       const updatedItems = state.items.map(item =>
-        item.perfume.id === action.payload.id
+        item.perfume.id === action.payload.perfumeId && item.variant.id === action.payload.variantId
           ? { ...item, quantity: action.payload.quantity }
           : item
       );
@@ -89,16 +101,16 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, { items: [], total: 0 });
 
-  const addToCart = (perfume: Perfume) => {
-    dispatch({ type: 'ADD_TO_CART', payload: perfume });
+  const addToCart = (perfume: Perfume, variant: PerfumeVariant) => {
+    dispatch({ type: 'ADD_TO_CART', payload: { perfume, variant } });
   };
 
-  const removeFromCart = (perfumeId: string) => {
-    dispatch({ type: 'REMOVE_FROM_CART', payload: perfumeId });
+  const removeFromCart = (perfumeId: string, variantId: string) => {
+    dispatch({ type: 'REMOVE_FROM_CART', payload: { perfumeId, variantId } });
   };
 
-  const updateQuantity = (perfumeId: string, quantity: number) => {
-    dispatch({ type: 'UPDATE_QUANTITY', payload: { id: perfumeId, quantity } });
+  const updateQuantity = (perfumeId: string, variantId: string, quantity: number) => {
+    dispatch({ type: 'UPDATE_QUANTITY', payload: { perfumeId, variantId, quantity } });
   };
 
   const clearCart = () => {

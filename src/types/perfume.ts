@@ -1,19 +1,28 @@
-export interface Perfume {
+
+export interface PerfumeVariant {
   id: string;
+  number: string;
   name: string;
-  brand: string;
+  description: string;
   price: number;
   originalPrice?: number;
-  description: string;
-  image: string;
-  category: string;
-  size: string;
   inStock: boolean;
   rating?: number;
   reviewCount?: number;
 }
 
+export interface Perfume {
+  id: string;
+  name: string;
+  brand: string;
+  category: string;
+  size: string;
+  image: string;
+  variants: PerfumeVariant[];
+}
+
 export interface CartItem {
   perfume: Perfume;
+  variant: PerfumeVariant;
   quantity: number;
 }

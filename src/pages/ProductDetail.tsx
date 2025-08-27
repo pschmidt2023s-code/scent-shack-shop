@@ -1,16 +1,20 @@
 
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { Star, ShoppingBag, ArrowLeft, MessageCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { allPerfumes } from '@/data/perfumes';
+import { perfumes } from '@/data/perfumes';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { ProductReviews } from '@/components/ProductReviews';
+import { PerfumeVariant } from '@/types/perfume';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,7 +22,10 @@ const ProductDetail = () => {
   const { addToCart } = useCart();
   const { toast } = useToast();
 
-  const perfume = allPerfumes.find(p => p.id === id);
+  const perfume = perfumes.find(p => p.id === id);
+  const [selectedVariant, setSelectedVariant] = useState<PerfumeVariant | null>(
+    perfume?.variants[0] || null
+  );
 
   if (!perfume) {
     return (
@@ -36,12 +43,12 @@ const ProductDetail = () => {
   }
 
   const handleAddToCart = () => {
-    if (!perfume.inStock) return;
+    if (!selectedVariant?.inStock || !selectedVariant) return;
     
-    addToCart(perfume);
+    addToCart(perfume, selectedVariant);
     toast({
       title: "Zum Warenkorb hinzugefügt",
-      description: `${perfume.name} wurde erfolgreich hinzugefügt.`,
+      description: `${selectedVariant.name} wurde erfolgreich hinzugefügt.`,
     });
   };
 
@@ -61,7 +68,7 @@ const ProductDetail = () => {
           />
         ))}
         <span className="text-sm text-muted-foreground ml-2">
-          {rating} ({perfume.reviewCount} Bewertungen)
+          {rating} ({selectedVariant?.reviewCount} Bewertungen)
         </span>
       </div>
     );
@@ -95,12 +102,12 @@ const ProductDetail = () => {
             
             {/* Badges */}
             <div className="absolute top-4 left-4 flex flex-col gap-2">
-              {perfume.originalPrice && (
+              {selectedVariant?.originalPrice && (
                 <Badge variant="destructive" className="bg-luxury-gold text-luxury-black">
                   SALE
                 </Badge>
               )}
-              {!perfume.inStock && (
+              {!selectedVariant?.inStock && (
                 <Badge variant="secondary">
                   Ausverkauft
                 </Badge>
@@ -118,69 +125,116 @@ const ProductDetail = () => {
                 {perfume.name}
               </h1>
               
-              {renderStars(perfume.rating)}
+              {renderStars(selectedVariant?.rating)}
             </div>
 
-            {/* Price */}
-            <div className="flex items-center space-x-4">
-              <span className="text-3xl font-bold text-foreground">
-                €{perfume.price.toFixed(2)}
-              </span>
-              {perfume.originalPrice && (
-                <span className="text-xl text-muted-foreground line-through">
-                  €{perfume.originalPrice.toFixed(2)}
-                </span>
-              )}
-              <Badge variant="outline" className="ml-auto">
-                {perfume.size}
-              </Badge>
+            {/* Variant Selection */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold">Duft-Variante wählen</h2>
+              <RadioGroup 
+                value={selectedVariant?.id} 
+                onValueChange={(value) => {
+                  const variant = perfume.variants.find(v => v.id === value);
+                  setSelectedVariant(variant || null);
+                }}
+              >
+                <div className="grid gap-3">
+                  {perfume.variants.map((variant) => (
+                    <div key={variant.id} className="flex items-start space-x-3">
+                      <RadioGroupItem value={variant.id} id={variant.id} className="mt-1" />
+                      <Label htmlFor={variant.id} className="flex-1 cursor-pointer">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{variant.name}</span>
+                              <Badge variant="outline" className="text-xs">
+                                Nr. {variant.number}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="font-bold text-lg">€{variant.price.toFixed(2)}</span>
+                              {variant.originalPrice && (
+                                <span className="text-sm text-muted-foreground line-through">
+                                  €{variant.originalPrice.toFixed(2)}
+                                </span>
+                              )}
+                              {!variant.inStock && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Ausverkauft
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                          {variant.description}
+                        </p>
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </RadioGroup>
             </div>
 
-            {/* Category */}
-            <div>
-              <Badge variant="secondary" className="text-sm">
-                {perfume.category}
-              </Badge>
-            </div>
-
-            {/* Description */}
-            <div>
-              <h2 className="text-xl font-semibold mb-3">Beschreibung</h2>
-              <p className="text-muted-foreground leading-relaxed">
-                {perfume.description}
-              </p>
-            </div>
+            {/* Selected Variant Details */}
+            {selectedVariant && (
+              <Card className="bg-muted/50">
+                <CardContent className="p-4">
+                  <h3 className="font-semibold mb-2">Ausgewählte Variante: {selectedVariant.name}</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Nummer:</span>
+                      <span className="ml-2 font-medium">{selectedVariant.number}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Größe:</span>
+                      <span className="ml-2 font-medium">{perfume.size}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Bewertung:</span>
+                      <span className="ml-2 font-medium">{selectedVariant.rating}/5</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Verfügbarkeit:</span>
+                      <span className="ml-2 font-medium">{selectedVariant.inStock ? 'Auf Lager' : 'Ausverkauft'}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Actions */}
             <div className="flex gap-3 pt-4">
               <Button 
                 className="flex-1"
                 size="lg"
-                variant={perfume.inStock ? "default" : "secondary"}
+                variant={selectedVariant?.inStock ? "default" : "secondary"}
                 onClick={handleAddToCart}
-                disabled={!perfume.inStock}
+                disabled={!selectedVariant?.inStock}
               >
                 <ShoppingBag className="w-5 h-5 mr-2" />
-                {perfume.inStock ? "In den Warenkorb" : "Nicht verfügbar"}
+                {selectedVariant?.inStock ? "In den Warenkorb" : "Nicht verfügbar"}
               </Button>
               
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="lg">
-                    <MessageCircle className="w-5 h-5 mr-2" />
-                    Bewertungen
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Bewertungen - {perfume.name}</DialogTitle>
-                  </DialogHeader>
-                  <ProductReviews 
-                    perfumeId={perfume.id} 
-                    perfumeName={perfume.name}
-                  />
-                </DialogContent>
-              </Dialog>
+              {selectedVariant && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="lg">
+                      <MessageCircle className="w-5 h-5 mr-2" />
+                      Bewertungen
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Bewertungen - {selectedVariant.name}</DialogTitle>
+                    </DialogHeader>
+                    <ProductReviews 
+                      perfumeId={selectedVariant.id} 
+                      perfumeName={selectedVariant.name}
+                    />
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
           </div>
         </div>
@@ -196,16 +250,20 @@ const ProductDetail = () => {
                   <li><strong>Marke:</strong> {perfume.brand}</li>
                   <li><strong>Größe:</strong> {perfume.size}</li>
                   <li><strong>Kategorie:</strong> {perfume.category}</li>
-                  <li><strong>Verfügbarkeit:</strong> {perfume.inStock ? 'Auf Lager' : 'Ausverkauft'}</li>
+                  <li><strong>Varianten:</strong> {perfume.variants.length}</li>
                 </ul>
               </div>
-              <div>
-                <h3 className="font-semibold mb-2">Bewertung</h3>
-                <ul className="space-y-2 text-muted-foreground">
-                  <li><strong>Durchschnittsbewertung:</strong> {perfume.rating ? `${perfume.rating}/5 Sterne` : 'Noch keine Bewertungen'}</li>
-                  <li><strong>Anzahl Bewertungen:</strong> {perfume.reviewCount || 0}</li>
-                </ul>
-              </div>
+              {selectedVariant && (
+                <div>
+                  <h3 className="font-semibold mb-2">Ausgewählte Variante</h3>
+                  <ul className="space-y-2 text-muted-foreground">
+                    <li><strong>Name:</strong> {selectedVariant.name}</li>
+                    <li><strong>Nummer:</strong> {selectedVariant.number}</li>
+                    <li><strong>Bewertung:</strong> {selectedVariant.rating ? `${selectedVariant.rating}/5 Sterne` : 'Noch keine Bewertungen'}</li>
+                    <li><strong>Anzahl Bewertungen:</strong> {selectedVariant.reviewCount || 0}</li>
+                  </ul>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

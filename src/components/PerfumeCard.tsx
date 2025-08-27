@@ -1,42 +1,30 @@
 
-import { Star, ShoppingBag, MessageCircle, Eye } from 'lucide-react';
+import { Star, ShoppingBag, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Perfume } from '@/types/perfume';
-import { useCart } from '@/contexts/CartContext';
-import { useToast } from '@/hooks/use-toast';
-import { ProductReviews } from './ProductReviews';
 import { useNavigate } from 'react-router-dom';
 
 interface PerfumeCardProps {
   perfume: Perfume;
-  onView?: () => void;
 }
 
-export function PerfumeCard({ perfume, onView }: PerfumeCardProps) {
-  const { addToCart } = useCart();
-  const { toast } = useToast();
+export function PerfumeCard({ perfume }: PerfumeCardProps) {
   const navigate = useNavigate();
-
-  const handleAddToCart = () => {
-    if (!perfume.inStock) return;
-    
-    addToCart(perfume);
-    toast({
-      title: "Zum Warenkorb hinzugefügt",
-      description: `${perfume.name} wurde erfolgreich hinzugefügt.`,
-    });
-  };
 
   const handleViewProduct = () => {
     navigate(`/product/${perfume.id}`);
   };
 
-  const renderStars = (rating?: number) => {
-    if (!rating) return null;
-    
+  const averageRating = perfume.variants.reduce((sum, variant) => sum + (variant.rating || 0), 0) / perfume.variants.length;
+  const totalReviews = perfume.variants.reduce((sum, variant) => sum + (variant.reviewCount || 0), 0);
+  const priceRange = {
+    min: Math.min(...perfume.variants.map(v => v.price)),
+    max: Math.max(...perfume.variants.map(v => v.price))
+  };
+
+  const renderStars = (rating: number) => {
     return (
       <div className="flex items-center space-x-1">
         {[...Array(5)].map((_, i) => (
@@ -50,7 +38,7 @@ export function PerfumeCard({ perfume, onView }: PerfumeCardProps) {
           />
         ))}
         <span className="text-sm text-muted-foreground ml-2">
-          ({perfume.reviewCount})
+          ({totalReviews})
         </span>
       </div>
     );
@@ -65,20 +53,6 @@ export function PerfumeCard({ perfume, onView }: PerfumeCardProps) {
           className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
         />
         
-        {/* Badges */}
-        <div className="absolute top-4 left-4 flex flex-col gap-2">
-          {perfume.originalPrice && (
-            <Badge variant="destructive" className="bg-luxury-gold text-luxury-black">
-              SALE
-            </Badge>
-          )}
-          {!perfume.inStock && (
-            <Badge variant="secondary">
-              Ausverkauft
-            </Badge>
-          )}
-        </div>
-
         {/* Quick Actions */}
         <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col gap-2">
           <Button
@@ -92,18 +66,13 @@ export function PerfumeCard({ perfume, onView }: PerfumeCardProps) {
           >
             <Eye className="w-4 h-4" />
           </Button>
-          <Button
-            size="icon"
-            variant="luxury"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleAddToCart();
-            }}
-            disabled={!perfume.inStock}
-            className="shadow-lg"
-          >
-            <ShoppingBag className="w-4 h-4" />
-          </Button>
+        </div>
+
+        {/* Variant Count Badge */}
+        <div className="absolute top-4 left-4">
+          <Badge variant="secondary" className="bg-luxury-gold text-luxury-black">
+            {perfume.variants.length} Varianten
+          </Badge>
         </div>
       </div>
 
@@ -114,22 +83,20 @@ export function PerfumeCard({ perfume, onView }: PerfumeCardProps) {
             {perfume.name}
           </h3>
           
-          {renderStars(perfume.rating)}
+          {renderStars(averageRating)}
           
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {perfume.description}
+          <p className="text-sm text-muted-foreground">
+            {perfume.category} • {perfume.size}
           </p>
           
           <div className="flex items-center justify-between pt-4">
             <div className="flex items-center space-x-2">
               <span className="text-xl font-bold text-foreground">
-                €{perfume.price.toFixed(2)}
+                {priceRange.min === priceRange.max 
+                  ? `€${priceRange.min.toFixed(2)}`
+                  : `€${priceRange.min.toFixed(2)} - €${priceRange.max.toFixed(2)}`
+                }
               </span>
-              {perfume.originalPrice && (
-                <span className="text-sm text-muted-foreground line-through">
-                  €{perfume.originalPrice.toFixed(2)}
-                </span>
-              )}
             </div>
             
             <Badge variant="outline" className="text-xs">
@@ -140,36 +107,14 @@ export function PerfumeCard({ perfume, onView }: PerfumeCardProps) {
           <div className="flex gap-2 mt-4">
             <Button 
               className="flex-1"
-              variant={perfume.inStock ? "default" : "secondary"}
               onClick={(e) => {
                 e.stopPropagation();
-                handleAddToCart();
+                handleViewProduct();
               }}
-              disabled={!perfume.inStock}
             >
-              {perfume.inStock ? "In den Warenkorb" : "Nicht verfügbar"}
+              <ShoppingBag className="w-4 h-4 mr-2" />
+              Varianten ansehen
             </Button>
-            
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <MessageCircle className="w-4 h-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Bewertungen - {perfume.name}</DialogTitle>
-                </DialogHeader>
-                <ProductReviews 
-                  perfumeId={perfume.id} 
-                  perfumeName={perfume.name}
-                />
-              </DialogContent>
-            </Dialog>
           </div>
         </div>
       </CardContent>

@@ -1,6 +1,7 @@
+
 import { useState } from 'react';
 import { PerfumeCard } from './PerfumeCard';
-import { allPerfumes } from '@/data/perfumes';
+import { perfumes } from '@/data/perfumes';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -10,18 +11,20 @@ export function PerfumeGrid() {
 
   const categories = ['all', '50ML Bottles', 'Proben'];
 
-  const filteredPerfumes = allPerfumes.filter(perfume => 
+  const filteredPerfumes = perfumes.filter(perfume => 
     filter === 'all' || perfume.category === filter
   );
 
   const sortedPerfumes = [...filteredPerfumes].sort((a, b) => {
     switch (sortBy) {
       case 'price-low':
-        return a.price - b.price;
+        return Math.min(...a.variants.map(v => v.price)) - Math.min(...b.variants.map(v => v.price));
       case 'price-high':
-        return b.price - a.price;
+        return Math.max(...b.variants.map(v => v.price)) - Math.max(...a.variants.map(v => v.price));
       case 'rating':
-        return (b.rating || 0) - (a.rating || 0);
+        const avgRatingA = a.variants.reduce((sum, v) => sum + (v.rating || 0), 0) / a.variants.length;
+        const avgRatingB = b.variants.reduce((sum, v) => sum + (v.rating || 0), 0) / b.variants.length;
+        return avgRatingB - avgRatingA;
       case 'name':
       default:
         return a.name.localeCompare(b.name);
