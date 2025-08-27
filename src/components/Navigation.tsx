@@ -1,124 +1,114 @@
-
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { CartSidebar } from '@/components/CartSidebar';
-import { AuthModal } from '@/components/AuthModal';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import { ShoppingCart, User, ChevronDown, LogOut } from "lucide-react";
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { ShoppingCart, Menu, User, LogOut } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import AuthModal from './AuthModal';
+import CartSidebar from './CartSidebar';
 
-export function Navigation() {
-  const [isCartOpen, setIsCartOpen] = useState(false);
+const Navigation = () => {
   const { itemCount } = useCart();
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showCart, setShowCart] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
-  const handleProfileClick = () => {
-    navigate('/profile');
-  };
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
-    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Logo */}
-        <Link to="/" className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-primary rounded-full"></div>
-          <span className="font-bold text-xl">Parfumerie</span>
-        </Link>
+    <>
+      <nav className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <Link to="/" className="text-2xl font-bold text-gray-900">
+                Parfümerie
+              </Link>
+            </div>
 
-        {/* Navigation Links - Desktop */}
-        <div className="hidden md:flex items-center space-x-6">
-          <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">
-            Startseite
-          </Link>
-          <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">
-            Parfums
-          </Link>
-        </div>
-
-        {/* Right Side Actions */}
-        <div className="flex items-center space-x-2">
-          {/* User Menu */}
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <User className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Mein Konto</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleProfileClick}>
-                  <User className="w-4 h-4 mr-2" />
-                  Profil
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Abmelden
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <AuthModal>
-              <Button variant="ghost" size="sm">
-                <User className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Anmelden</span>
-              </Button>
-            </AuthModal>
-          )}
-
-          {/* Cart Button */}
-          <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" className="relative">
-                <ShoppingCart className="w-4 h-4" />
+            <div className="flex items-center space-x-4">
+              {/* Cart */}
+              <button
+                onClick={() => setShowCart(true)}
+                className="relative p-2 text-gray-600 hover:text-gray-900"
+              >
+                <ShoppingCart className="w-6 h-6" />
                 {itemCount > 0 && (
-                  <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                     {itemCount}
-                  </Badge>
+                  </span>
                 )}
-                <span className="hidden sm:inline ml-2">Warenkorb</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent>
-              <CartSidebar onClose={() => setIsCartOpen(false)} />
-            </SheetContent>
-          </Sheet>
+              </button>
 
-          {/* Mobile Menu */}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" className="md:hidden">
-                <Menu className="w-4 h-4" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left">
-              <div className="flex flex-col space-y-4 mt-8">
-                <Link to="/" className="text-lg font-medium">
-                  Startseite
-                </Link>
-                <Link to="/" className="text-lg font-medium">
-                  Parfums
-                </Link>
-              </div>
-            </SheetContent>
-          </Sheet>
+              {/* User Authentication */}
+              {user ? (
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="flex items-center space-x-2 p-2 text-gray-600 hover:text-gray-900"
+                  >
+                    <User className="w-6 h-6" />
+                    <span className="hidden sm:block">
+                      {user.user_metadata?.full_name || user.email}
+                    </span>
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+
+                  {showUserMenu && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border">
+                      <Link
+                        to="/profile"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <User className="w-4 h-4 inline-block mr-2" />
+                        Mein Profil
+                      </Link>
+                      <button
+                        onClick={() => {
+                          signOut();
+                          setShowUserMenu(false);
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <LogOut className="w-4 h-4 inline-block mr-2" />
+                        Abmelden
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowAuthModal(true)}
+                  className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800"
+                >
+                  Anmelden
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      {/* Modals */}
+      <AuthModal />
+      <CartSidebar 
+        isOpen={showCart} 
+        onClose={() => setShowCart(false)} 
+      />
+    </>
   );
 }
+
+export default Navigation;

@@ -1,66 +1,53 @@
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, X } from 'lucide-react';
-
-interface AddressFormData {
-  type: 'billing' | 'shipping';
-  first_name: string;
-  last_name: string;
-  street: string;
-  city: string;
-  postal_code: string;
-  country: string;
-  is_default: boolean;
-}
-
-interface Address {
-  id: string;
-  type: 'billing' | 'shipping';
-  first_name: string;
-  last_name: string;
-  street: string;
-  city: string;
-  postal_code: string;
-  country: string;
-  is_default: boolean;
-}
+import { toast } from "sonner";
+import { Address } from '@/types/profile';
 
 interface AddressFormProps {
   address?: Address | null;
-  onClose: () => void;
+  onSave: () => void;
+  onCancel: () => void;
 }
 
-export function AddressForm({ address, onClose }: AddressFormProps) {
-  const [loading, setLoading] = useState(false);
+const AddressForm = ({ address, onSave, onCancel }: AddressFormProps) => {
   const { user } = useAuth();
-  const { toast } = useToast();
-  
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<AddressFormData>({
-    defaultValues: {
-      type: address?.type || 'shipping',
-      first_name: address?.first_name || '',
-      last_name: address?.last_name || '',
-      street: address?.street || '',
-      city: address?.city || '',
-      postal_code: address?.postal_code || '',
-      country: address?.country || 'Germany',
-      is_default: address?.is_default || false,
-    }
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    type: 'shipping' as 'billing' | 'shipping',
+    first_name: '',
+    last_name: '',
+    street: '',
+    city: '',
+    postal_code: '',
+    country: 'Germany',
+    is_default: false,
   });
 
-  const watchType = watch('type');
+  useEffect(() => {
+    if (address) {
+      setFormData({
+        type: address.type,
+        first_name: address.first_name,
+        last_name: address.last_name,
+        street: address.street,
+        city: address.city,
+        postal_code: address.postal_code,
+        country: address.country,
+        is_default: address.is_default,
+      });
+    }
+  }, [address]);
 
-  const onSubmit = async (data: AddressFormData) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!user) return;
 
     setLoading(true);
@@ -69,38 +56,28 @@ export function AddressForm({ address, onClose }: AddressFormProps) {
         // Update existing address
         const { error } = await supabase
           .from('addresses')
-          .update({
-            ...data,
-            updated_at: new Date().toISOString(),
-          })
+          .update(formData)
           .eq('id', address.id);
 
         if (error) throw error;
+        toast.success('Adresse aktualisiert');
       } else {
         // Create new address
         const { error } = await supabase
           .from('addresses')
-          .insert({
-            ...data,
+          .insert([{
+            ...formData,
             user_id: user.id,
-          });
+          }]);
 
         if (error) throw error;
+        toast.success('Adresse hinzugefügt');
       }
 
-      toast({
-        title: "Adresse gespeichert",
-        description: "Ihre Adresse wurde erfolgreich gespeichert.",
-      });
-      
-      onClose();
+      onSave();
     } catch (error) {
       console.error('Error saving address:', error);
-      toast({
-        title: "Fehler",
-        description: "Adresse konnte nicht gespeichert werden.",
-        variant: "destructive",
-      });
+      toast.error('Fehler beim Speichern der Adresse');
     } finally {
       setLoading(false);
     }
@@ -108,24 +85,23 @@ export function AddressForm({ address, onClose }: AddressFormProps) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-lg">
+      <CardHeader>
+        <CardTitle>
           {address ? 'Adresse bearbeiten' : 'Neue Adresse hinzufügen'}
         </CardTitle>
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          <X className="w-4 h-4" />
-        </Button>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="type">Adresse-Typ</Label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="type">Adresstyp</Label>
             <Select
-              value={watchType}
-              onValueChange={(value) => setValue('type', value as 'billing' | 'shipping')}
+              value={formData.type}
+              onValueChange={(value: 'billing' | 'shipping') => 
+                setFormData({ ...formData, type: value })
+              }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Typ auswählen" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="shipping">Lieferadresse</SelectItem>
@@ -135,72 +111,65 @@ export function AddressForm({ address, onClose }: AddressFormProps) {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="first_name">Vorname</Label>
               <Input
                 id="first_name"
-                {...register('first_name', { required: 'Vorname ist erforderlich' })}
+                value={formData.first_name}
+                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                required
               />
-              {errors.first_name && (
-                <p className="text-sm text-destructive">{errors.first_name.message}</p>
-              )}
             </div>
-
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="last_name">Nachname</Label>
               <Input
                 id="last_name"
-                {...register('last_name', { required: 'Nachname ist erforderlich' })}
+                value={formData.last_name}
+                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                required
               />
-              {errors.last_name && (
-                <p className="text-sm text-destructive">{errors.last_name.message}</p>
-              )}
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="street">Straße und Hausnummer</Label>
             <Input
               id="street"
-              {...register('street', { required: 'Straße ist erforderlich' })}
+              value={formData.street}
+              onChange={(e) => setFormData({ ...formData, street: e.target.value })}
+              required
             />
-            {errors.street && (
-              <p className="text-sm text-destructive">{errors.street.message}</p>
-            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="postal_code">Postleitzahl</Label>
               <Input
                 id="postal_code"
-                {...register('postal_code', { required: 'PLZ ist erforderlich' })}
+                value={formData.postal_code}
+                onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
+                required
               />
-              {errors.postal_code && (
-                <p className="text-sm text-destructive">{errors.postal_code.message}</p>
-              )}
             </div>
-
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="city">Stadt</Label>
               <Input
                 id="city"
-                {...register('city', { required: 'Stadt ist erforderlich' })}
+                value={formData.city}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                required
               />
-              {errors.city && (
-                <p className="text-sm text-destructive">{errors.city.message}</p>
-              )}
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="country">Land</Label>
             <Select
-              value={watch('country')}
-              onValueChange={(value) => setValue('country', value)}
+              value={formData.country}
+              onValueChange={(value) => setFormData({ ...formData, country: value })}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Land auswählen" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Germany">Deutschland</SelectItem>
@@ -213,29 +182,26 @@ export function AddressForm({ address, onClose }: AddressFormProps) {
           <div className="flex items-center space-x-2">
             <Checkbox
               id="is_default"
-              checked={watch('is_default')}
-              onCheckedChange={(checked) => setValue('is_default', checked === true)}
+              checked={formData.is_default}
+              onCheckedChange={(checked) => 
+                setFormData({ ...formData, is_default: checked as boolean })
+              }
             />
-            <Label htmlFor="is_default">Als Standardadresse festlegen</Label>
+            <Label htmlFor="is_default">Als Standardadresse setzen</Label>
           </div>
 
-          <div className="flex gap-2 pt-4">
-            <Button type="submit" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Speichern...
-                </>
-              ) : (
-                'Adresse speichern'
-              )}
-            </Button>
-            <Button type="button" variant="outline" onClick={onClose}>
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={onCancel}>
               Abbrechen
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Wird gespeichert...' : 'Speichern'}
             </Button>
           </div>
         </form>
       </CardContent>
     </Card>
   );
-}
+};
+
+export default AddressForm;

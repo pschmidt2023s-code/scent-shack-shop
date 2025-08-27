@@ -1,57 +1,41 @@
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Edit, Trash2, MapPin } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, Edit, Trash2, MapPin } from 'lucide-react';
-import { AddressForm } from './AddressForm';
+import { toast } from "sonner";
+import AddressForm from './AddressForm';
+import { Address } from '@/types/profile';
 
-interface Address {
-  id: string;
-  type: 'billing' | 'shipping';
-  first_name: string;
-  last_name: string;
-  street: string;
-  city: string;
-  postal_code: string;
-  country: string;
-  is_default: boolean;
-}
-
-export function AddressManager() {
+const AddressManager = () => {
+  const { user } = useAuth();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
-  const { user } = useAuth();
-  const { toast } = useToast();
 
   useEffect(() => {
     if (user) {
-      loadAddresses();
+      fetchAddresses();
     }
   }, [user]);
 
-  const loadAddresses = async () => {
+  const fetchAddresses = async () => {
     try {
       const { data, error } = await supabase
         .from('addresses')
         .select('*')
         .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
+        .order('is_default', { ascending: false });
 
       if (error) throw error;
-      setAddresses(data || []);
+
+      setAddresses(data as Address[]);
     } catch (error) {
-      console.error('Error loading addresses:', error);
-      toast({
-        title: "Fehler",
-        description: "Adressen konnten nicht geladen werden.",
-        variant: "destructive",
-      });
+      console.error('Error fetching addresses:', error);
+      toast.error('Fehler beim Laden der Adressen');
     } finally {
       setLoading(false);
     }
@@ -66,43 +50,52 @@ export function AddressManager() {
 
       if (error) throw error;
 
-      toast({
-        title: "Adresse gelöscht",
-        description: "Die Adresse wurde erfolgreich entfernt.",
-      });
-      
-      loadAddresses();
+      setAddresses(addresses.filter(addr => addr.id !== addressId));
+      toast.success('Adresse gelöscht');
     } catch (error) {
       console.error('Error deleting address:', error);
-      toast({
-        title: "Fehler",
-        description: "Adresse konnte nicht gelöscht werden.",
-        variant: "destructive",
-      });
+      toast.error('Fehler beim Löschen der Adresse');
     }
   };
 
-  const handleEdit = (address: Address) => {
-    setEditingAddress(address);
-    setShowForm(true);
+  const handleSetDefault = async (addressId: string) => {
+    try {
+      // First, unset all default addresses
+      await supabase
+        .from('addresses')
+        .update({ is_default: false })
+        .eq('user_id', user?.id);
+
+      // Then set the selected address as default
+      const { error } = await supabase
+        .from('addresses')
+        .update({ is_default: true })
+        .eq('id', addressId);
+
+      if (error) throw error;
+
+      await fetchAddresses();
+      toast.success('Standardadresse aktualisiert');
+    } catch (error) {
+      console.error('Error setting default address:', error);
+      toast.error('Fehler beim Setzen der Standardadresse');
+    }
   };
 
-  const handleFormClose = () => {
-    setShowForm(false);
-    setEditingAddress(null);
-    loadAddresses();
-  };
-
-  if (loading) {
-    return <div className="text-center p-4">Lade Adressen...</div>;
-  }
+  if (loading) return <div>Lade Adressen...</div>;
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Ihre Adressen</h3>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus className="w-4 h-4 mr-2" />
+        <h3 className="text-xl font-semibold">Meine Adressen</h3>
+        <Button 
+          onClick={() => {
+            setEditingAddress(null);
+            setShowForm(true);
+          }}
+          className="flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
           Neue Adresse
         </Button>
       </div>
@@ -110,66 +103,97 @@ export function AddressManager() {
       {showForm && (
         <AddressForm
           address={editingAddress}
-          onClose={handleFormClose}
+          onSave={() => {
+            setShowForm(false);
+            setEditingAddress(null);
+            fetchAddresses();
+          }}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingAddress(null);
+          }}
         />
       )}
 
       <div className="grid gap-4 md:grid-cols-2">
         {addresses.map((address) => (
-          <Card key={address.id}>
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
+          <Card key={address.id} className={address.is_default ? 'border-blue-500' : ''}>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
-                  <CardTitle className="text-base">
-                    {address.first_name} {address.last_name}
-                  </CardTitle>
-                </div>
-                <div className="flex gap-1">
-                  <Badge variant={address.type === 'billing' ? 'default' : 'secondary'}>
-                    {address.type === 'billing' ? 'Rechnung' : 'Lieferung'}
-                  </Badge>
+                  {address.type === 'billing' ? 'Rechnungsadresse' : 'Lieferadresse'}
                   {address.is_default && (
-                    <Badge variant="outline">Standard</Badge>
+                    <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded">
+                      Standard
+                    </span>
                   )}
                 </div>
-              </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditingAddress(address);
+                      setShowForm(true);
+                    }}
+                  >
+                    <Edit className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(address.id)}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <p className="text-sm">{address.street}</p>
-              <p className="text-sm">{address.postal_code} {address.city}</p>
-              <p className="text-sm">{address.country}</p>
-              
-              <div className="flex gap-2 pt-2">
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => handleEdit(address)}
-                >
-                  <Edit className="w-3 h-3 mr-1" />
-                  Bearbeiten
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => handleDelete(address.id)}
-                >
-                  <Trash2 className="w-3 h-3 mr-1" />
-                  Löschen
-                </Button>
+            <CardContent>
+              <div className="text-sm space-y-1">
+                <p className="font-medium">
+                  {address.first_name} {address.last_name}
+                </p>
+                <p>{address.street}</p>
+                <p>
+                  {address.postal_code} {address.city}
+                </p>
+                <p>{address.country}</p>
               </div>
+              {!address.is_default && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => handleSetDefault(address.id)}
+                >
+                  Als Standard setzen
+                </Button>
+              )}
             </CardContent>
           </Card>
         ))}
       </div>
 
       {addresses.length === 0 && (
-        <div className="text-center p-8 text-muted-foreground">
-          <MapPin className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p>Noch keine Adressen gespeichert</p>
-          <p className="text-sm">Fügen Sie Ihre erste Adresse hinzu</p>
-        </div>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <MapPin className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Keine Adressen gefunden
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Fügen Sie Ihre erste Adresse hinzu, um mit dem Einkaufen zu beginnen.
+            </p>
+            <Button onClick={() => setShowForm(true)}>
+              Erste Adresse hinzufügen
+            </Button>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
-}
+};
+
+export default AddressManager;
