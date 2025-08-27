@@ -8,6 +8,12 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
+      
+      {/* DEBUG: Direct Admin Link */}
+      <div className="p-4 bg-red-100 border border-red-300">
+        <p>DEBUG: <a href="/admin" className="text-blue-500 underline">Direct Admin Link</a></p>
+      </div>
+      
       <main>
         <HeroSection />
         <PerfumeGrid />
