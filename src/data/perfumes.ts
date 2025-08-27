@@ -1,20 +1,9 @@
 
 import { Perfume } from '@/types/perfume';
 
-// Optimized product images
-import bottleImageWebP from '@/assets/bottle-optimized-lg.webp';
-import bottleImageMd from '@/assets/bottle-optimized-md.webp';
-import sampleImageWebP from '@/assets/sample-optimized-lg.webp';
-import sampleImageMd from '@/assets/sample-optimized-md.webp';
-
-// Product images with responsive support
-const bottleImage = bottleImageWebP;
-export const bottleImageSrcSet = `${bottleImageMd} 512w, ${bottleImageWebP} 512w`;
-const sampleImage = sampleImageWebP;  
-export const sampleImageSrcSet = `${sampleImageMd} 512w, ${sampleImageWebP} 512w`;
-
-// Ensure legacy image removal by adding cache-busting
-export const imageVersion = Date.now();
+// Product images - Using original uploaded images
+const bottleImage = '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png';
+const sampleImage = '/lovable-uploads/dc821e74-0a27-4a45-a347-45a4ae0d55ef.png';
 
 export const perfumes: Perfume[] = [
   {
