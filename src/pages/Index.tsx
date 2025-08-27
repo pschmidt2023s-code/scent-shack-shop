@@ -12,6 +12,7 @@ const Index = () => {
       {/* DEBUG: Direct Admin Link */}
       <div className="p-4 bg-red-100 border border-red-300">
         <p>DEBUG: <a href="/admin" className="text-blue-500 underline">Direct Admin Link</a></p>
+        <p>DEBUG: <a href="/test-admin" className="text-blue-500 underline">Test Admin Link</a></p>
       </div>
       
       <main>

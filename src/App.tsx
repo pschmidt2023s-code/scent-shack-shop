@@ -12,6 +12,7 @@ import Privacy from '@/pages/Privacy';
 import Terms from '@/pages/Terms';
 import Imprint from '@/pages/Imprint';
 import Admin from '@/pages/Admin';
+import TestAdmin from '@/pages/TestAdmin';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { Toaster } from "@/components/ui/toaster"
@@ -35,6 +36,7 @@ function App() {
                   <div>ADMIN ROUTE MATCHED</div>
                   <Admin />
                 </>} />
+                <Route path="/test-admin" element={<TestAdmin />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/returns" element={<Returns />} />
                 <Route path="/faq" element={<FAQ />} />
