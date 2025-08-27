@@ -5,7 +5,7 @@ export function Footer() {
   return (
     <footer className="bg-luxury-black text-luxury-light py-12 mt-16">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
@@ -19,25 +19,6 @@ export function Footer() {
             <p className="text-luxury-gray">
               Deine Premium-Destination für exquisite Parfüms und Düfte der Weltklasse.
             </p>
-          </div>
-
-          {/* Shop */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-luxury-gold">Shop</h3>
-            <div className="space-y-2">
-              <Link to="/perfumes" className="block hover:text-luxury-gold transition-colors">
-                Alle Parfüms
-              </Link>
-              <Link to="/brands" className="block hover:text-luxury-gold transition-colors">
-                Marken
-              </Link>
-              <Link to="/new-arrivals" className="block hover:text-luxury-gold transition-colors">
-                Neuheiten
-              </Link>
-              <Link to="/sale" className="block hover:text-luxury-gold transition-colors">
-                Sale
-              </Link>
-            </div>
           </div>
 
           {/* Service */}
@@ -78,16 +59,16 @@ export function Footer() {
 
         <div className="border-t border-luxury-gray mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-luxury-gray">
-            © 2024 ALDENAIR. Alle Rechte vorbehalten.
+            © 2025 ALDENAIR. Alle Rechte vorbehalten.
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
-            <a href="#" className="text-luxury-gray hover:text-luxury-gold transition-colors">
+            <a href="https://instagram.com/aldenair" target="_blank" rel="noopener noreferrer" className="text-luxury-gray hover:text-luxury-gold transition-colors">
               Instagram
             </a>
-            <a href="#" className="text-luxury-gray hover:text-luxury-gold transition-colors">
+            <a href="https://facebook.com/aldenair" target="_blank" rel="noopener noreferrer" className="text-luxury-gray hover:text-luxury-gold transition-colors">
               Facebook
             </a>
-            <a href="#" className="text-luxury-gray hover:text-luxury-gold transition-colors">
+            <a href="https://twitter.com/aldenair" target="_blank" rel="noopener noreferrer" className="text-luxury-gray hover:text-luxury-gold transition-colors">
               Twitter
             </a>
           </div>
