@@ -13,22 +13,30 @@ interface CartItem {
     id: string;
     name: string;
     brand: string;
-    price: number;
     image: string;
   };
+  variant: {
+    id: string;
+    number: string;
+    name: string;
+    price: number;
+  };
   quantity: number;
+}
+
+interface ShippingAddress {
+  name: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  postal_code: string;
+  country: string;
 }
 
 interface PaymentRequest {
   items: CartItem[];
   guestEmail?: string;
-  shippingAddress?: {
-    name: string;
-    street: string;
-    city: string;
-    postalCode: string;
-    country: string;
-  };
+  couponCode?: string;
 }
 
 serve(async (req) => {
@@ -42,7 +50,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
     );
 
-    const { items, guestEmail, shippingAddress }: PaymentRequest = await req.json();
+    const { items, guestEmail, couponCode }: PaymentRequest = await req.json();
 
     if (!items || items.length === 0) {
       throw new Error("Keine Artikel im Warenkorb");
@@ -74,21 +82,62 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
-    // Calculate total (all items at 44.99€)
-    const totalAmount = items.reduce((sum, item) => sum + (4499 * item.quantity), 0);
-
-    // Create line items for Stripe
-    const lineItems = items.map(item => ({
-      price_data: {
-        currency: "eur",
-        product_data: {
-          name: `${item.perfume.brand} - ${item.perfume.name}`,
-          images: [item.perfume.image],
+    // Calculate totals
+    let subtotal = 0;
+    const lineItems = items.map(item => {
+      const itemTotal = item.variant.price * 100 * item.quantity; // Convert to cents
+      subtotal += itemTotal;
+      
+      return {
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: `${item.perfume.brand} - ${item.variant.name}`,
+            images: [item.perfume.image],
+            metadata: {
+              perfume_id: item.perfume.id,
+              variant_id: item.variant.id,
+            },
+          },
+          unit_amount: item.variant.price * 100, // Convert to cents
         },
-        unit_amount: 4499, // 44.99€ in cents
-      },
-      quantity: item.quantity,
-    }));
+        quantity: item.quantity,
+      };
+    });
+
+    // Apply coupon if provided
+    let couponDiscount = 0;
+    let validCoupon = null;
+    if (couponCode) {
+      const supabaseService = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+        { auth: { persistSession: false } }
+      );
+
+      const { data: coupon } = await supabaseService
+        .from("coupons")
+        .select("*")
+        .eq("code", couponCode.toUpperCase())
+        .eq("active", true)
+        .single();
+
+      if (coupon && new Date() >= new Date(coupon.valid_from) && new Date() <= new Date(coupon.valid_until)) {
+        if (!coupon.max_uses || coupon.current_uses < coupon.max_uses) {
+          if (subtotal >= (coupon.min_order_amount * 100)) {
+            validCoupon = coupon;
+            if (coupon.discount_type === 'percentage') {
+              couponDiscount = Math.round(subtotal * (coupon.discount_value / 100));
+            } else {
+              couponDiscount = coupon.discount_value * 100; // Convert to cents
+            }
+          }
+        }
+      }
+    }
+
+    // Add shipping costs (free for Germany, 15.99€ for EU)
+    const shippingCost = 0; // Will be determined by Stripe based on shipping address
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -99,11 +148,66 @@ serve(async (req) => {
       success_url: `${req.headers.get("origin")}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/checkout/cancel`,
       shipping_address_collection: {
-        allowed_countries: ['DE', 'AT', 'CH', 'NL', 'BE', 'LU', 'FR'],
+        allowed_countries: ['DE', 'AT', 'CH', 'NL', 'BE', 'LU', 'FR', 'IT', 'ES', 'PT'],
       },
+      shipping_options: [
+        {
+          shipping_rate_data: {
+            type: 'fixed_amount',
+            fixed_amount: {
+              amount: 0,
+              currency: 'eur',
+            },
+            display_name: 'Kostenloser Versand (Deutschland)',
+            delivery_estimate: {
+              minimum: {
+                unit: 'business_day',
+                value: 2,
+              },
+              maximum: {
+                unit: 'business_day',
+                value: 5,
+              },
+            },
+          },
+        },
+        {
+          shipping_rate_data: {
+            type: 'fixed_amount',
+            fixed_amount: {
+              amount: 1599,
+              currency: 'eur',
+            },
+            display_name: 'EU Versand',
+            delivery_estimate: {
+              minimum: {
+                unit: 'business_day',
+                value: 3,
+              },
+              maximum: {
+                unit: 'business_day',
+                value: 7,
+              },
+            },
+          },
+        },
+      ],
+      discounts: validCoupon ? [{
+        coupon: await stripe.coupons.create({
+          amount_off: couponDiscount,
+          currency: 'eur',
+          duration: 'once',
+          name: validCoupon.code,
+        }).then(c => c.id),
+      }] : undefined,
       metadata: {
         user_id: user?.id || 'guest',
         guest_email: guestEmail || '',
+        coupon_code: validCoupon?.code || '',
+        coupon_id: validCoupon?.id || '',
+      },
+      automatic_tax: {
+        enabled: true,
       },
     });
 
@@ -114,16 +218,42 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    await supabaseService.from("orders").insert({
+    const orderData = {
       user_id: user?.id || null,
-      guest_email: user ? null : customerEmail,
       stripe_session_id: session.id,
-      amount: totalAmount,
+      total_amount: subtotal - couponDiscount,
       currency: "eur",
       status: "pending",
-      items: items,
-      shipping_address: shippingAddress,
-    });
+      created_at: new Date().toISOString(),
+    };
+
+    const { data: order, error: orderError } = await supabaseService
+      .from("orders")
+      .insert(orderData)
+      .select()
+      .single();
+
+    if (orderError) throw orderError;
+
+    // Save order items
+    const orderItems = items.map(item => ({
+      order_id: order.id,
+      perfume_id: item.perfume.id,
+      variant_id: item.variant.id,
+      quantity: item.quantity,
+      unit_price: item.variant.price * 100,
+      total_price: item.variant.price * 100 * item.quantity,
+    }));
+
+    await supabaseService.from("order_items").insert(orderItems);
+
+    // Update coupon usage if used
+    if (validCoupon) {
+      await supabaseService
+        .from("coupons")
+        .update({ current_uses: validCoupon.current_uses + 1 })
+        .eq("id", validCoupon.id);
+    }
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

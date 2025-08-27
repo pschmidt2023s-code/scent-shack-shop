@@ -11,6 +11,7 @@ import FAQ from '@/pages/FAQ';
 import Privacy from '@/pages/Privacy';
 import Terms from '@/pages/Terms';
 import Imprint from '@/pages/Imprint';
+import Admin from '@/pages/Admin';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { Toaster } from "@/components/ui/toaster"
@@ -28,6 +29,7 @@ function App() {
                 <Route path="/" element={<Index />} />
                 <Route path="/product/:id" element={<ProductDetail />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/admin" element={<Admin />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/returns" element={<Returns />} />
                 <Route path="/faq" element={<FAQ />} />
