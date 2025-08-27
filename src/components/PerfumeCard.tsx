@@ -1,5 +1,5 @@
 
-import { Star, ShoppingBag, MessageCircle } from 'lucide-react';
+import { Star, ShoppingBag, MessageCircle, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { Perfume } from '@/types/perfume';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { ProductReviews } from './ProductReviews';
+import { useNavigate } from 'react-router-dom';
 
 interface PerfumeCardProps {
   perfume: Perfume;
@@ -17,6 +18,7 @@ interface PerfumeCardProps {
 export function PerfumeCard({ perfume, onView }: PerfumeCardProps) {
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleAddToCart = () => {
     if (!perfume.inStock) return;
@@ -26,6 +28,10 @@ export function PerfumeCard({ perfume, onView }: PerfumeCardProps) {
       title: "Zum Warenkorb hinzugefügt",
       description: `${perfume.name} wurde erfolgreich hinzugefügt.`,
     });
+  };
+
+  const handleViewProduct = () => {
+    navigate(`/product/${perfume.id}`);
   };
 
   const renderStars = (rating?: number) => {
@@ -51,8 +57,8 @@ export function PerfumeCard({ perfume, onView }: PerfumeCardProps) {
   };
 
   return (
-    <Card className="group hover:shadow-luxury transition-all duration-300">
-      <div className="relative overflow-hidden">
+    <Card className="group hover:shadow-luxury transition-all duration-300 cursor-pointer">
+      <div className="relative overflow-hidden" onClick={handleViewProduct}>
         <img
           src={perfume.image}
           alt={perfume.name}
@@ -73,8 +79,19 @@ export function PerfumeCard({ perfume, onView }: PerfumeCardProps) {
           )}
         </div>
 
-        {/* Quick Add Button */}
-        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        {/* Quick Actions */}
+        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col gap-2">
+          <Button
+            size="icon"
+            variant="luxury"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewProduct();
+            }}
+            className="shadow-lg"
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
           <Button
             size="icon"
             variant="luxury"
@@ -135,7 +152,11 @@ export function PerfumeCard({ perfume, onView }: PerfumeCardProps) {
             
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="outline" size="icon">
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <MessageCircle className="w-4 h-4" />
                 </Button>
               </DialogTrigger>
