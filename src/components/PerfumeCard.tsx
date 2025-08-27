@@ -49,8 +49,12 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
       <div className="relative overflow-hidden" onClick={handleViewProduct}>
         <img
           src={perfume.image}
-          alt={perfume.name}
+          alt={`${perfume.name} - ${perfume.brand} ${perfume.category} ${perfume.size} Parfüm`}
           className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+          loading="lazy"
+          decoding="async"
+          width="306"
+          height="256"
         />
         
         {/* Quick Actions */}

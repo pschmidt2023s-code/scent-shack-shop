@@ -1,7 +1,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import heroImage from '@/assets/hero-perfumes.jpg';
+import heroImage from '@/assets/hero-perfumes-optimized.webp';
 
 export function HeroSection() {
   return (
@@ -10,8 +10,10 @@ export function HeroSection() {
       <div className="absolute inset-0 z-0">
         <img
           src={heroImage}
-          alt="ALDENAIR luxury perfume collection"
+          alt="ALDENAIR luxury perfume collection - Premium Parfüms und exklusive Duftkreationen"
           className="w-full h-full object-cover"
+          loading="eager"
+          decoding="async"
         />
         <div className="absolute inset-0 bg-gradient-hero opacity-80"></div>
       </div>

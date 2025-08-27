@@ -1,9 +1,13 @@
 
 import { Perfume } from '@/types/perfume';
 
+// Optimized product images
+import bottleImageWebP from '@/assets/bottle-optimized-lg.webp';
+import sampleImageWebP from '@/assets/sample-optimized-lg.webp';
+
 // Product images
-const bottleImage = '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png';
-const sampleImage = '/lovable-uploads/dc821e74-0a27-4a45-a347-45a4ae0d55ef.png';
+const bottleImage = bottleImageWebP;
+const sampleImage = sampleImageWebP;
 
 export const perfumes: Perfume[] = [
   {
