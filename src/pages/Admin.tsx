@@ -49,7 +49,11 @@ interface Coupon {
 }
 
 export default function Admin() {
+  console.log('ADMIN COMPONENT LOADING');
+  
   const { user } = useAuth();
+  console.log('Admin - user from context:', !!user);
+  
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
