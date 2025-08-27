@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { sanitizeInput, validatePhoneNumber } from '@/lib/validation';
 
 interface ProfileFormData {
   full_name: string;
@@ -55,14 +56,27 @@ export function ProfileForm() {
   const onSubmit = async (data: ProfileFormData) => {
     if (!user) return;
 
+    // Validate phone number if provided
+    if (data.phone && data.phone.trim()) {
+      const phoneValidation = validatePhoneNumber(data.phone);
+      if (!phoneValidation.isValid) {
+        toast({
+          title: "Fehler",
+          description: phoneValidation.message,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase
         .from('profiles')
         .upsert({
           id: user.id,
-          full_name: data.full_name,
-          phone: data.phone,
+          full_name: sanitizeInput(data.full_name),
+          phone: data.phone ? sanitizeInput(data.phone) : null,
           updated_at: new Date().toISOString(),
         });
 
@@ -107,13 +121,16 @@ export function ProfileForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="phone">Telefonnummer</Label>
+        <Label htmlFor="phone">Telefonnummer (optional)</Label>
         <Input
           id="phone"
           type="tel"
           {...register('phone')}
           placeholder="+49 123 456 7890"
         />
+        <p className="text-xs text-muted-foreground">
+          Internationale Formate werden unterstützt (7-15 Ziffern)
+        </p>
       </div>
 
       <Button type="submit" disabled={loading}>

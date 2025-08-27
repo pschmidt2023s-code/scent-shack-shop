@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CreditCard, AlertCircle } from 'lucide-react';
+import { sanitizeInput } from '@/lib/validation';
 
 interface CheckoutModalProps {
   open: boolean;
@@ -35,6 +36,19 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       return;
     }
 
+    // Validate guest email if provided
+    if (!user && guestEmail) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(guestEmail)) {
+        toast({
+          title: "Ungültige E-Mail",
+          description: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     if (!supabase || !supabaseConnected) {
       toast({
         title: "Supabase Verbindung erforderlich",
@@ -50,7 +64,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: {
           items,
-          guestEmail: user ? undefined : guestEmail,
+          guestEmail: user ? undefined : sanitizeInput(guestEmail),
         },
       });
 

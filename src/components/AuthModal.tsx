@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { User, UserPlus, AlertCircle } from 'lucide-react';
+import { User, UserPlus, AlertCircle, Shield } from 'lucide-react';
+import { sanitizeInput, validatePasswordStrength } from '@/lib/validation';
 
 interface AuthModalProps {
   children: React.ReactNode;
@@ -19,6 +20,8 @@ export function AuthModal({ children }: AuthModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong'>('weak');
+  const [passwordError, setPasswordError] = useState('');
   const { signIn, signUp, supabaseConnected } = useAuth();
   const { toast } = useToast();
 
@@ -73,9 +76,22 @@ export function AuthModal({ children }: AuthModalProps) {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) return;
+
+    // Validate password strength
+    const passwordValidation = validatePasswordStrength(password);
+    if (!passwordValidation.isValid) {
+      setPasswordError(passwordValidation.message || 'Password is too weak');
+      return;
+    }
+    
     setLoading(true);
     
-    const { error } = await signUp(email, password, fullName);
+    const { error } = await signUp(
+      sanitizeInput(email), 
+      password, 
+      sanitizeInput(fullName)
+    );
     
     if (error) {
       toast({
@@ -98,6 +114,26 @@ export function AuthModal({ children }: AuthModalProps) {
     setEmail('');
     setPassword('');
     setFullName('');
+    setPasswordError('');
+    setPasswordStrength('weak');
+  };
+
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    setPasswordError('');
+    const validation = validatePasswordStrength(value);
+    setPasswordStrength(validation.strength);
+    if (!validation.isValid && value.length > 0) {
+      setPasswordError(validation.message || '');
+    }
+  };
+
+  const getPasswordStrengthColor = () => {
+    switch (passwordStrength) {
+      case 'strong': return 'text-green-600';
+      case 'medium': return 'text-yellow-600';
+      default: return 'text-red-600';
+    }
   };
 
   return (
@@ -178,10 +214,23 @@ export function AuthModal({ children }: AuthModalProps) {
                   id="register-password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => handlePasswordChange(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={8}
                 />
+                {password && (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-3 h-3" />
+                      <span className={`text-xs ${getPasswordStrengthColor()}`}>
+                        Password strength: {passwordStrength}
+                      </span>
+                    </div>
+                    {passwordError && (
+                      <p className="text-xs text-red-600">{passwordError}</p>
+                    )}
+                  </div>
+                )}
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Registrieren...' : 'Registrieren'}

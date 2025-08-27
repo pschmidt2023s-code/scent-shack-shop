@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from "sonner";
 import { Address } from '@/types/profile';
+import { sanitizeInput, validatePostalCode } from '@/lib/validation';
 
 interface AddressFormProps {
   address?: Address | null;
@@ -50,13 +51,32 @@ const AddressForm = ({ address, onSave, onCancel }: AddressFormProps) => {
     e.preventDefault();
     if (!user) return;
 
+    // Validate postal code
+    const postalValidation = validatePostalCode(formData.postal_code, formData.country);
+    if (!postalValidation.isValid) {
+      toast.error(postalValidation.message);
+      return;
+    }
+
     setLoading(true);
     try {
+      const addressData = {
+        user_id: user.id,
+        type: formData.type,
+        first_name: sanitizeInput(formData.first_name),
+        last_name: sanitizeInput(formData.last_name),
+        street: sanitizeInput(formData.street),
+        city: sanitizeInput(formData.city),
+        postal_code: sanitizeInput(formData.postal_code),
+        country: sanitizeInput(formData.country),
+        is_default: formData.is_default,
+      };
+
       if (address) {
         // Update existing address
         const { error } = await supabase
           .from('addresses')
-          .update(formData)
+          .update(addressData)
           .eq('id', address.id);
 
         if (error) throw error;
@@ -65,10 +85,7 @@ const AddressForm = ({ address, onSave, onCancel }: AddressFormProps) => {
         // Create new address
         const { error } = await supabase
           .from('addresses')
-          .insert([{
-            ...formData,
-            user_id: user.id,
-          }]);
+          .insert([addressData]);
 
         if (error) throw error;
         toast.success('Adresse hinzugefügt');
@@ -175,6 +192,10 @@ const AddressForm = ({ address, onSave, onCancel }: AddressFormProps) => {
                 <SelectItem value="Germany">Deutschland</SelectItem>
                 <SelectItem value="Austria">Österreich</SelectItem>
                 <SelectItem value="Switzerland">Schweiz</SelectItem>
+                <SelectItem value="France">Frankreich</SelectItem>
+                <SelectItem value="Netherlands">Niederlande</SelectItem>
+                <SelectItem value="United Kingdom">Vereinigtes Königreich</SelectItem>
+                <SelectItem value="United States">USA</SelectItem>
               </SelectContent>
             </Select>
           </div>
