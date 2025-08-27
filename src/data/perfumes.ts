@@ -1,9 +1,9 @@
 
 import { Perfume } from '@/types/perfume';
-import perfume1 from '@/assets/perfume-1.jpg';
-import perfume2 from '@/assets/perfume-2.jpg';
-import perfume3 from '@/assets/perfume-3.jpg';
-import perfume4 from '@/assets/perfume-4.jpg';
+
+// New product images
+const bottleImage = '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png';
+const sampleImage = '/lovable-uploads/dc821e74-0a27-4a45-a347-45a4ae0d55ef.png';
 
 export const perfumes: Perfume[] = [
   {
@@ -12,7 +12,7 @@ export const perfumes: Perfume[] = [
     brand: 'ALDENAIR',
     price: 44.99,
     description: 'Luxuriöser orientalischer Duft mit holzigen Akzenten. Die edle Komposition aus Bergamotte und Zedernholz in der Herznote verschmilzt mit dem kostbaren Oud in der Basis zu einem unverwechselbaren, maskulinen Parfüm. Ideal für besondere Anlässe und den selbstbewussten Mann.',
-    image: perfume1,
+    image: bottleImage,
     category: 'Unisex',
     size: '50ml',
     inStock: true,
@@ -25,7 +25,7 @@ export const perfumes: Perfume[] = [
     brand: 'ALDENAIR',
     price: 44.99,
     description: 'Verführerischer süß-würziger Duft mit orientalischen Noten. Lavendel, Bergamotte und Zitrone treffen auf exotischen Jasmin-Sambac und warmen Honig. Die Basis aus Tabak, Tonkabohne und Vanille verleiht diesem Unisex-Parfüm eine sinnliche Tiefe und lang anhaltende Eleganz.',
-    image: perfume2,
+    image: bottleImage,
     category: 'Unisex',
     size: '50ml',
     inStock: true,
@@ -38,7 +38,7 @@ export const perfumes: Perfume[] = [
     brand: 'ALDENAIR',
     price: 44.99,
     description: 'Harmonische Verbindung von holzigen und blumigen Elementen. Weißer Moschus und edles Sandelholz in der Herznote ergänzen sich perfekt mit der frischen Apfel-Note und dem mystischen Oud in der Basis. Ein zeitloser Duft für jeden Tag.',
-    image: perfume3,
+    image: bottleImage,
     category: 'Unisex',
     size: '50ml',
     inStock: true,
@@ -51,7 +51,7 @@ export const perfumes: Perfume[] = [
     brand: 'ALDENAIR',
     price: 44.99,
     description: 'Süßer Gourmand-Duft mit verlockenden Kaffee-Noten. Blumige Akzente und edle Rose in der Herznote werden von einer reichen Basis aus Harzen, Holznoten und aromatischem Kaffee getragen. Zimt und Himbeere verleihen diesem Parfüm eine unwiderstehliche Süße.',
-    image: perfume4,
+    image: bottleImage,
     category: 'Unisex',
     size: '50ml',
     inStock: true,
@@ -64,7 +64,7 @@ export const perfumes: Perfume[] = [
     brand: 'ALDENAIR',
     price: 44.99,
     description: 'Cremig-holziger Duft mit süßen und rauchigen Facetten. Zimt und Vanille in der Herznote verschmelzen mit Safran und Rum zu einer warmen, einladenden Komposition. Die Basis aus Tabak und Sandelholz verleiht diesem Parfüm eine maskuline Tiefe.',
-    image: perfume1,
+    image: bottleImage,
     category: 'Unisex',
     size: '50ml',
     inStock: true,
@@ -77,7 +77,7 @@ export const perfumes: Perfume[] = [
     brand: 'ALDENAIR',
     price: 44.99,
     description: 'Süß-fruchtiger Duft mit exotischen Nuancen. Fruchtige Noten und Kardamom treffen auf cremige Tonkabohne und tropische Ananas. Die erdige Basis aus Eichenmoss, Talkum und Vanille macht diesen Duft zu einem perfekten Begleiter für warme Tage.',
-    image: perfume2,
+    image: bottleImage,
     category: 'Unisex',
     size: '50ml',
     inStock: true,
@@ -90,7 +90,7 @@ export const perfumes: Perfume[] = [
     brand: 'ALDENAIR',
     price: 44.99,
     description: 'Orientalischer süßer Luxusduft mit edlen Inhaltsstoffen. Rose und Oud treffen auf weiches Leder, kostbaren Safran und frische Bergamotte. Die süße Basis aus Tonkabohne, Rohrzucker und Amber wird von weißem Moschus und Eichenmoos abgerundet.',
-    image: perfume3,
+    image: bottleImage,
     category: 'Unisex',
     size: '50ml',
     inStock: true,
@@ -103,7 +103,7 @@ export const perfumes: Perfume[] = [
     brand: 'ALDENAIR',
     price: 44.99,
     description: 'Aromatisch-fruchtiger Duft mit komplexer Komposition. Zitrusfrüchte wie Orange und Zitrone verschmelzen mit Minze und schwarzer Johannisbeere. Exotische Noten von Basilikum und Karottensamen führen zu einer süßen Basis aus Feige, Dattel und Ambrette.',
-    image: perfume4,
+    image: bottleImage,
     category: 'Unisex',
     size: '50ml',
     inStock: true,
@@ -120,7 +120,7 @@ export const samplePerfumes: Perfume[] = [
     brand: 'ALDENAIR',
     price: 4.99,
     description: 'Luxuriöser orientalischer Duft mit holzigen Akzenten. Die edle Komposition aus Bergamotte und Zedernholz in der Herznote verschmilzt mit dem kostbaren Oud in der Basis zu einem unverwechselbaren, maskulinen Parfüm. Perfekt zum Testen vor dem Kauf der Vollgröße.',
-    image: perfume1, // You can upload a specific sample image later
+    image: sampleImage,
     category: 'Proben',
     size: '5ml',
     inStock: true,
@@ -133,7 +133,7 @@ export const samplePerfumes: Perfume[] = [
     brand: 'ALDENAIR',
     price: 4.99,
     description: 'Verführerischer süß-würziger Duft mit orientalischen Noten. Lavendel, Bergamotte und Zitrone treffen auf exotischen Jasmin-Sambac und warmen Honig. Probieren Sie diesen sinnlichen Duft in der praktischen 5ml Größe.',
-    image: perfume2,
+    image: sampleImage,
     category: 'Proben',
     size: '5ml',
     inStock: true,
@@ -146,7 +146,7 @@ export const samplePerfumes: Perfume[] = [
     brand: 'ALDENAIR',
     price: 4.99,
     description: 'Harmonische Verbindung von holzigen und blumigen Elementen. Weißer Moschus und edles Sandelholz in der Herznote ergänzen sich perfekt mit der frischen Apfel-Note und dem mystischen Oud in der Basis.',
-    image: perfume3,
+    image: sampleImage,
     category: 'Proben',
     size: '5ml',
     inStock: true,
@@ -159,7 +159,7 @@ export const samplePerfumes: Perfume[] = [
     brand: 'ALDENAIR',
     price: 4.99,
     description: 'Süßer Gourmand-Duft mit verlockenden Kaffee-Noten. Blumige Akzente und edle Rose in der Herznote werden von einer reichen Basis aus Harzen, Holznoten und aromatischem Kaffee getragen.',
-    image: perfume4,
+    image: sampleImage,
     category: 'Proben',
     size: '5ml',
     inStock: true,
@@ -172,7 +172,7 @@ export const samplePerfumes: Perfume[] = [
     brand: 'ALDENAIR',
     price: 4.99,
     description: 'Cremig-holziger Duft mit süßen und rauchigen Facetten. Zimt und Vanille in der Herznote verschmelzen mit Safran und Rum zu einer warmen, einladenden Komposition.',
-    image: perfume1,
+    image: sampleImage,
     category: 'Proben',
     size: '5ml',
     inStock: true,
@@ -185,7 +185,7 @@ export const samplePerfumes: Perfume[] = [
     brand: 'ALDENAIR',
     price: 4.99,
     description: 'Süß-fruchtiger Duft mit exotischen Nuancen. Fruchtige Noten und Kardamom treffen auf cremige Tonkabohne und tropische Ananas. Perfekt für warme Tage.',
-    image: perfume2,
+    image: sampleImage,
     category: 'Proben',
     size: '5ml',
     inStock: true,
@@ -198,7 +198,7 @@ export const samplePerfumes: Perfume[] = [
     brand: 'ALDENAIR',
     price: 4.99,
     description: 'Orientalischer süßer Luxusduft mit edlen Inhaltsstoffen. Rose und Oud treffen auf weiches Leder, kostbaren Safran und frische Bergamotte.',
-    image: perfume3,
+    image: sampleImage,
     category: 'Proben',
     size: '5ml',
     inStock: true,
@@ -211,7 +211,7 @@ export const samplePerfumes: Perfume[] = [
     brand: 'ALDENAIR',
     price: 4.99,
     description: 'Aromatisch-fruchtiger Duft mit komplexer Komposition. Zitrusfrüchte wie Orange und Zitrone verschmelzen mit Minze und schwarzer Johannisbeere.',
-    image: perfume4,
+    image: sampleImage,
     category: 'Proben',
     size: '5ml',
     inStock: true,
