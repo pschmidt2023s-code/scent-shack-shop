@@ -3,11 +3,15 @@ import { Perfume } from '@/types/perfume';
 
 // Optimized product images
 import bottleImageWebP from '@/assets/bottle-optimized-lg.webp';
+import bottleImageMd from '@/assets/bottle-optimized-md.webp';
 import sampleImageWebP from '@/assets/sample-optimized-lg.webp';
+import sampleImageMd from '@/assets/sample-optimized-md.webp';
 
-// Product images
+// Product images with responsive support
 const bottleImage = bottleImageWebP;
-const sampleImage = sampleImageWebP;
+export const bottleImageSrcSet = `${bottleImageMd} 512w, ${bottleImageWebP} 512w`;
+const sampleImage = sampleImageWebP;  
+export const sampleImageSrcSet = `${sampleImageMd} 512w, ${sampleImageWebP} 512w`;
 
 export const perfumes: Perfume[] = [
   {

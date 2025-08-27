@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Perfume } from '@/types/perfume';
 import { useNavigate } from 'react-router-dom';
+import { bottleImageSrcSet, sampleImageSrcSet } from '@/data/perfumes';
 
 interface PerfumeCardProps {
   perfume: Perfume;
@@ -49,6 +50,8 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
       <div className="relative overflow-hidden" onClick={handleViewProduct}>
         <img
           src={perfume.image}
+          srcSet={perfume.id === '50ml-bottles' ? bottleImageSrcSet : sampleImageSrcSet}
+          sizes="(max-width: 768px) 306px, 306px"
           alt={`${perfume.name} - ${perfume.brand} ${perfume.category} ${perfume.size} Parfüm`}
           className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
