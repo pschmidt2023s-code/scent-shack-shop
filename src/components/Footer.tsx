@@ -62,11 +62,11 @@ export function Footer() {
             © 2025 ALDENAIR. Alle Rechte vorbehalten.
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
-            <a href="https://instagram.com/aldenair" target="_blank" rel="noopener noreferrer" className="text-luxury-gray hover:text-luxury-gold transition-colors">
+            <a href="https://www.instagram.com/aldenairofficial?igsh=MXZsNjJwM2JrN3A2bQ%3D%3D&utm_source=qr" target="_blank" rel="noopener noreferrer" className="text-luxury-gray hover:text-luxury-gold transition-colors">
               Instagram
             </a>
-            <a href="https://facebook.com/aldenair" target="_blank" rel="noopener noreferrer" className="text-luxury-gray hover:text-luxury-gold transition-colors">
-              Facebook
+            <a href="https://www.tiktok.com/@aldenair2?_t=ZN-8zEhtGHdhDi&_r=1" target="_blank" rel="noopener noreferrer" className="text-luxury-gray hover:text-luxury-gold transition-colors">
+              TikTok
             </a>
             <a href="https://twitter.com/aldenair" target="_blank" rel="noopener noreferrer" className="text-luxury-gray hover:text-luxury-gold transition-colors">
               Twitter
