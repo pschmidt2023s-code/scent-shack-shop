@@ -6,10 +6,10 @@ import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Star, ShoppingBag, ArrowLeft, MessageCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { perfumes } from '@/data/perfumes';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
@@ -50,6 +50,11 @@ const ProductDetail = () => {
       title: "Zum Warenkorb hinzugefügt",
       description: `${selectedVariant.name} wurde erfolgreich hinzugefügt.`,
     });
+  };
+
+  const handleVariantChange = (variantId: string) => {
+    const variant = perfume.variants.find(v => v.id === variantId);
+    setSelectedVariant(variant || null);
   };
 
   const renderStars = (rating?: number) => {
@@ -130,50 +135,39 @@ const ProductDetail = () => {
 
             {/* Variant Selection */}
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Duft-Variante wählen</h2>
-              <RadioGroup 
-                value={selectedVariant?.id} 
-                onValueChange={(value) => {
-                  const variant = perfume.variants.find(v => v.id === value);
-                  setSelectedVariant(variant || null);
-                }}
-              >
-                <div className="grid gap-3">
+              <Label className="text-xl font-semibold">Duft-Variante wählen</Label>
+              <Select value={selectedVariant?.id} onValueChange={handleVariantChange}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Wählen Sie eine Variante" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border border-border shadow-lg">
                   {perfume.variants.map((variant) => (
-                    <div key={variant.id} className="flex items-start space-x-3">
-                      <RadioGroupItem value={variant.id} id={variant.id} className="mt-1" />
-                      <Label htmlFor={variant.id} className="flex-1 cursor-pointer">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{variant.name}</span>
-                              <Badge variant="outline" className="text-xs">
-                                Nr. {variant.number}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="font-bold text-lg">€{variant.price.toFixed(2)}</span>
-                              {variant.originalPrice && (
-                                <span className="text-sm text-muted-foreground line-through">
-                                  €{variant.originalPrice.toFixed(2)}
-                                </span>
-                              )}
-                              {!variant.inStock && (
-                                <Badge variant="secondary" className="text-xs">
-                                  Ausverkauft
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
+                    <SelectItem key={variant.id} value={variant.id} className="cursor-pointer">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{variant.name}</span>
+                          <Badge variant="outline" className="text-xs">
+                            Nr. {variant.number}
+                          </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-                          {variant.description}
-                        </p>
-                      </Label>
-                    </div>
+                        <div className="flex items-center gap-2 ml-4">
+                          <span className="font-bold">€{variant.price.toFixed(2)}</span>
+                          {variant.originalPrice && (
+                            <span className="text-sm text-muted-foreground line-through">
+                              €{variant.originalPrice.toFixed(2)}
+                            </span>
+                          )}
+                          {!variant.inStock && (
+                            <Badge variant="secondary" className="text-xs">
+                              Ausverkauft
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </SelectItem>
                   ))}
-                </div>
-              </RadioGroup>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Selected Variant Details */}
@@ -181,6 +175,9 @@ const ProductDetail = () => {
               <Card className="bg-muted/50">
                 <CardContent className="p-4">
                   <h3 className="font-semibold mb-2">Ausgewählte Variante: {selectedVariant.name}</h3>
+                  <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                    {selectedVariant.description}
+                  </p>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">Nummer:</span>
