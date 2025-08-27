@@ -8,7 +8,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CreditCard, AlertCircle, Tag } from 'lucide-react';
+import { Loader2, CreditCard, AlertCircle } from 'lucide-react';
 
 interface CheckoutModalProps {
   open: boolean;
@@ -18,105 +18,12 @@ interface CheckoutModalProps {
 export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const [loading, setLoading] = useState(false);
   const [guestEmail, setGuestEmail] = useState('');
-  const [couponCode, setCouponCode] = useState('');
-  const [couponDiscount, setCouponDiscount] = useState(0);
-  const [couponApplied, setCouponApplied] = useState(false);
-  const [couponLoading, setCouponLoading] = useState(false);
   const { items, clearCart } = useCart();
   const { user, supabaseConnected } = useAuth();
   const { toast } = useToast();
 
   const totalAmount = items.reduce((sum, item) => sum + (item.variant.price * item.quantity), 0);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
-  const finalAmount = totalAmount - couponDiscount;
-
-  const applyCoupon = async () => {
-    if (!couponCode.trim()) return;
-
-    setCouponLoading(true);
-    try {
-      const { data: coupon, error } = await supabase
-        .from('coupons')
-        .select('*')
-        .eq('code', couponCode.toUpperCase())
-        .eq('active', true)
-        .single();
-
-      if (error || !coupon) {
-        toast({
-          title: "Ungültiger Coupon",
-          description: "Der eingegebene Coupon-Code ist nicht gültig oder abgelaufen.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Check validity dates
-      const now = new Date();
-      const validFrom = new Date(coupon.valid_from);
-      const validUntil = coupon.valid_until ? new Date(coupon.valid_until) : null;
-
-      if (now < validFrom || (validUntil && now > validUntil)) {
-        toast({
-          title: "Coupon abgelaufen",
-          description: "Dieser Coupon ist nicht mehr gültig.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Check usage limits
-      if (coupon.max_uses && coupon.current_uses >= coupon.max_uses) {
-        toast({
-          title: "Coupon ausgeschöpft",
-          description: "Dieser Coupon wurde bereits zu oft verwendet.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Check minimum order amount
-      if (totalAmount < coupon.min_order_amount) {
-        toast({
-          title: "Mindestbestellwert nicht erreicht",
-          description: `Für diesen Coupon ist ein Mindestbestellwert von €${coupon.min_order_amount.toFixed(2)} erforderlich.`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Calculate discount
-      let discount = 0;
-      if (coupon.discount_type === 'percentage') {
-        discount = totalAmount * (coupon.discount_value / 100);
-      } else {
-        discount = coupon.discount_value;
-      }
-
-      setCouponDiscount(Math.min(discount, totalAmount)); // Don't exceed total amount
-      setCouponApplied(true);
-
-      toast({
-        title: "Coupon angewendet",
-        description: `Du sparst €${discount.toFixed(2)} mit dem Code ${coupon.code}!`,
-      });
-    } catch (error) {
-      console.error('Coupon error:', error);
-      toast({
-        title: "Fehler",
-        description: "Coupon konnte nicht angewendet werden.",
-        variant: "destructive",
-      });
-    } finally {
-      setCouponLoading(false);
-    }
-  };
-
-  const removeCoupon = () => {
-    setCouponCode('');
-    setCouponDiscount(0);
-    setCouponApplied(false);
-  };
 
   const handleCheckout = async () => {
     if (!user && !guestEmail) {
@@ -144,7 +51,6 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
         body: {
           items,
           guestEmail: user ? undefined : guestEmail,
-          couponCode: couponApplied ? couponCode : undefined,
         },
       });
 
@@ -220,50 +126,10 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 <span>Zwischensumme ({itemCount} Artikel)</span>
                 <span>€{totalAmount.toFixed(2)}</span>
               </div>
-              {couponApplied && (
-                <div className="flex justify-between text-sm text-green-600">
-                  <span>Rabatt ({couponCode})</span>
-                  <span>-€{couponDiscount.toFixed(2)}</span>
-                </div>
-              )}
               <div className="flex justify-between font-semibold text-base border-t pt-1">
                 <span>Gesamt</span>
-                <span>€{finalAmount.toFixed(2)}</span>
+                <span>€{totalAmount.toFixed(2)}</span>
               </div>
-            </div>
-          </div>
-
-          {/* Coupon Section */}
-          <div className="space-y-2">
-            <Label htmlFor="coupon">Coupon Code (optional)</Label>
-            <div className="flex gap-2">
-              <Input
-                id="coupon"
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                placeholder="RABATT10"
-                disabled={couponApplied}
-              />
-              {couponApplied ? (
-                <Button variant="outline" onClick={removeCoupon}>
-                  Entfernen
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  onClick={applyCoupon}
-                  disabled={!couponCode.trim() || couponLoading}
-                >
-                  {couponLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Tag className="w-4 h-4 mr-1" />
-                      Anwenden
-                    </>
-                  )}
-                </Button>
-              )}
             </div>
           </div>
 
@@ -305,7 +171,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 Wird weitergeleitet...
               </>
             ) : (
-              `Jetzt bezahlen - €${finalAmount.toFixed(2)}`
+              `Jetzt bezahlen - €${totalAmount.toFixed(2)}`
             )}
           </Button>
 

@@ -59,6 +59,51 @@ export type Database = {
         }
         Relationships: []
       }
+      coupons: {
+        Row: {
+          active: boolean | null
+          code: string
+          created_at: string
+          current_uses: number | null
+          discount_type: string
+          discount_value: number
+          id: string
+          max_uses: number | null
+          min_order_amount: number | null
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          code: string
+          created_at?: string
+          current_uses?: number | null
+          discount_type: string
+          discount_value: number
+          id?: string
+          max_uses?: number | null
+          min_order_amount?: number | null
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          code?: string
+          created_at?: string
+          current_uses?: number | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          max_uses?: number | null
+          min_order_amount?: number | null
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -102,10 +147,12 @@ export type Database = {
       }
       orders: {
         Row: {
+          admin_notes: string | null
           billing_address_id: string | null
           created_at: string
           currency: string | null
           id: string
+          notes: string | null
           shipping_address_id: string | null
           status: string
           stripe_session_id: string | null
@@ -114,10 +161,12 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          admin_notes?: string | null
           billing_address_id?: string | null
           created_at?: string
           currency?: string | null
           id?: string
+          notes?: string | null
           shipping_address_id?: string | null
           status?: string
           stripe_session_id?: string | null
@@ -126,10 +175,12 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          admin_notes?: string | null
           billing_address_id?: string | null
           created_at?: string
           currency?: string | null
           id?: string
+          notes?: string | null
           shipping_address_id?: string | null
           status?: string
           stripe_session_id?: string | null
@@ -178,15 +229,43 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      is_admin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -313,6 +392,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
