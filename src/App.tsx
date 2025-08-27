@@ -8,6 +8,9 @@ import Profile from '@/pages/Profile';
 import Contact from '@/pages/Contact';
 import Returns from '@/pages/Returns';
 import FAQ from '@/pages/FAQ';
+import Privacy from '@/pages/Privacy';
+import Terms from '@/pages/Terms';
+import Imprint from '@/pages/Imprint';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { Toaster } from "@/components/ui/toaster"
@@ -28,6 +31,9 @@ function App() {
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/returns" element={<Returns />} />
                 <Route path="/faq" element={<FAQ />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/imprint" element={<Imprint />} />
               </Routes>
               <Toaster />
             </div>
