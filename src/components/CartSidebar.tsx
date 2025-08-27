@@ -42,7 +42,7 @@ export function CartSidebar() {
               <>
                 <div className="space-y-4 max-h-96 overflow-y-auto">
                   {items.map((item) => (
-                    <div key={item.perfume.id} className="flex gap-3 p-3 border rounded-lg">
+                    <div key={`${item.perfume.id}-${item.variant.id}`} className="flex gap-3 p-3 border rounded-lg">
                       <img
                         src={item.perfume.image}
                         alt={item.perfume.name}
@@ -53,7 +53,8 @@ export function CartSidebar() {
                         <div>
                           <h3 className="font-semibold text-sm">{item.perfume.name}</h3>
                           <p className="text-xs text-muted-foreground">{item.perfume.brand}</p>
-                          <p className="font-bold">€44.99</p>
+                          <p className="text-xs text-muted-foreground">#{item.variant.number} - {item.variant.name}</p>
+                          <p className="font-bold">€{item.variant.price.toFixed(2)}</p>
                         </div>
                         
                         <div className="flex items-center justify-between">
@@ -62,7 +63,7 @@ export function CartSidebar() {
                               size="icon"
                               variant="outline"
                               className="h-7 w-7"
-                              onClick={() => updateQuantity(item.perfume.id, item.quantity - 1)}
+                              onClick={() => updateQuantity(item.perfume.id, item.variant.id, item.quantity - 1)}
                             >
                               <Minus className="w-3 h-3" />
                             </Button>
@@ -71,7 +72,7 @@ export function CartSidebar() {
                               size="icon"
                               variant="outline"
                               className="h-7 w-7"
-                              onClick={() => updateQuantity(item.perfume.id, item.quantity + 1)}
+                              onClick={() => updateQuantity(item.perfume.id, item.variant.id, item.quantity + 1)}
                             >
                               <Plus className="w-3 h-3" />
                             </Button>
@@ -81,7 +82,7 @@ export function CartSidebar() {
                             size="icon"
                             variant="ghost"
                             className="h-7 w-7 text-destructive"
-                            onClick={() => removeFromCart(item.perfume.id)}
+                            onClick={() => removeFromCart(item.perfume.id, item.variant.id)}
                           >
                             <Trash2 className="w-3 h-3" />
                           </Button>
@@ -94,7 +95,7 @@ export function CartSidebar() {
                 <div className="border-t pt-4 space-y-4">
                   <div className="flex justify-between items-center font-bold text-lg">
                     <span>Gesamt:</span>
-                    <span>€{(itemCount * 44.99).toFixed(2)}</span>
+                    <span>€{total.toFixed(2)}</span>
                   </div>
                   
                   <Button 
