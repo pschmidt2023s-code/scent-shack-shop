@@ -1,16 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, User, ChevronDown, LogOut } from "lucide-react";
-import { useCart } from '@/contexts/CartContext';
+import { User, ChevronDown, LogOut } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from './AuthModal';
 import { CartSidebar } from './CartSidebar';
 
 const Navigation = () => {
-  const { itemCount } = useCart();
   const { user, signOut } = useAuth();
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showCart, setShowCart] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -39,17 +35,7 @@ const Navigation = () => {
 
             <div className="flex items-center space-x-4">
               {/* Cart */}
-              <button
-                onClick={() => setShowCart(true)}
-                className="relative p-2 text-gray-600 hover:text-gray-900"
-              >
-                <ShoppingCart className="w-6 h-6" />
-                {itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {itemCount}
-                  </span>
-                )}
-              </button>
+              <CartSidebar />
 
               {/* User Authentication */}
               {user ? (
@@ -99,12 +85,6 @@ const Navigation = () => {
           </div>
         </div>
       </nav>
-
-      {/* Cart Sidebar */}
-      <CartSidebar 
-        isOpen={showCart} 
-        onClose={() => setShowCart(false)} 
-      />
     </>
   );
 }
