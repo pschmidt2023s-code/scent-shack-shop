@@ -65,9 +65,6 @@ export function Footer() {
             <a href="https://www.tiktok.com/@aldenair2?_t=ZN-8zEhtGHdhDi&_r=1" target="_blank" rel="noopener noreferrer" className="text-luxury-gray hover:text-luxury-gold transition-colors">
               TikTok
             </a>
-            <a href="https://twitter.com/aldenair" target="_blank" rel="noopener noreferrer" className="text-luxury-gray hover:text-luxury-gold transition-colors">
-              Twitter
-            </a>
           </div>
         </div>
       </div>

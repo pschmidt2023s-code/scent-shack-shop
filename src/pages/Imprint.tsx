@@ -21,7 +21,7 @@ export default function Imprint() {
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold text-luxury-black mb-4">Impressum</h1>
             <p className="text-luxury-gray text-lg">
-              Rechtliche Angaben zu ALDENAIR
+              Rechtliche Angaben zu ALDENAIR gemäß §5 TMG
             </p>
           </div>
 
@@ -29,27 +29,84 @@ export default function Imprint() {
             <CardHeader>
               <CardTitle className="text-luxury-black">ALDENAIR - Impressum</CardTitle>
             </CardHeader>
-            <CardContent className="prose prose-gray max-w-none">
-              <h3 className="text-xl font-semibold text-luxury-black mt-6 mb-3">Angaben gemäß § 5 TMG</h3>
-              <p className="text-luxury-gray mb-4">
+            <CardContent className="prose prose-gray max-w-none space-y-6">
+              <h3 className="text-xl font-semibold text-luxury-black">Angaben gemäß § 5 TMG</h3>
+              <p className="text-luxury-gray">
                 ALDENAIR<br />
-                [Firmenadresse wird hier eingefügt]<br />
+                [Vollständiger Firmenname]<br />
+                [Straße und Hausnummer]<br />
+                [PLZ und Ort]<br />
                 Deutschland
               </p>
               
-              <h3 className="text-xl font-semibold text-luxury-black mt-6 mb-3">Kontakt</h3>
-              <p className="text-luxury-gray mb-4">
-                E-Mail: support@aldenairperfumes.de
+              <h3 className="text-xl font-semibold text-luxury-black">Vertreten durch</h3>
+              <p className="text-luxury-gray">
+                [Name des Geschäftsführers/Inhabers]
               </p>
 
-              <h3 className="text-xl font-semibold text-luxury-black mt-6 mb-3">Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV</h3>
-              <p className="text-luxury-gray mb-4">
-                [Name und Adresse des Verantwortlichen]
+              <h3 className="text-xl font-semibold text-luxury-black">Kontakt</h3>
+              <p className="text-luxury-gray">
+                E-Mail: support@aldenairperfumes.de<br />
+                Telefon: [Telefonnummer]<br />
+                Website: www.aldenairperfumes.de
               </p>
 
-              <h3 className="text-xl font-semibold text-luxury-black mt-6 mb-3">Haftungsausschluss</h3>
-              <p className="text-luxury-gray mb-4">
-                Die Inhalte unserer Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen.
+              <h3 className="text-xl font-semibold text-luxury-black">Registereintrag</h3>
+              <p className="text-luxury-gray">
+                Eintragung im Handelsregister.<br />
+                Registergericht: [Amtsgericht]<br />
+                Registernummer: [HRB-Nummer]
+              </p>
+
+              <h3 className="text-xl font-semibold text-luxury-black">Umsatzsteuer-ID</h3>
+              <p className="text-luxury-gray">
+                Umsatzsteuer-Identifikationsnummer gemäß §27 a Umsatzsteuergesetz:<br />
+                [USt-IdNr.]
+              </p>
+
+              <h3 className="text-xl font-semibold text-luxury-black">Wirtschafts-ID</h3>
+              <p className="text-luxury-gray">
+                Wirtschafts-Identifikationsnummer: [Wirtschafts-ID]
+              </p>
+
+              <h3 className="text-xl font-semibold text-luxury-black">Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV</h3>
+              <p className="text-luxury-gray">
+                [Name und Anschrift des Verantwortlichen]
+              </p>
+
+              <h3 className="text-xl font-semibold text-luxury-black">EU-Streitschlichtung</h3>
+              <p className="text-luxury-gray">
+                Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit: 
+                <a href="https://ec.europa.eu/consumers/odr/" target="_blank" rel="noopener noreferrer" className="text-luxury-gold hover:underline">
+                  https://ec.europa.eu/consumers/odr/
+                </a><br />
+                Unsere E-Mail-Adresse finden Sie oben im Impressum.
+              </p>
+
+              <h3 className="text-xl font-semibold text-luxury-black">Verbraucherstreitbeilegung/Universalschlichtungsstelle</h3>
+              <p className="text-luxury-gray">
+                Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
+              </p>
+
+              <h3 className="text-xl font-semibold text-luxury-black">Haftungsausschluss (Disclaimer)</h3>
+              
+              <h4 className="text-lg font-semibold text-luxury-black">Haftung für Inhalte</h4>
+              <p className="text-luxury-gray">
+                Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 TMG sind wir als Diensteanbieter jedoch nicht unter der Verpflichtung, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen.
+              </p>
+
+              <h4 className="text-lg font-semibold text-luxury-black">Haftung für Links</h4>
+              <p className="text-luxury-gray">
+                Unser Angebot enthält Links zu externen Websites Dritter, auf deren Inhalte wir keinen Einfluss haben. Deshalb können wir für diese fremden Inhalte auch keine Gewähr übernehmen. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber der Seiten verantwortlich.
+              </p>
+
+              <h4 className="text-lg font-semibold text-luxury-black">Urheberrecht</h4>
+              <p className="text-luxury-gray">
+                Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Autors bzw. Erstellers.
+              </p>
+
+              <p className="text-sm text-luxury-gray mt-8">
+                Stand: Januar 2025
               </p>
             </CardContent>
           </Card>

@@ -57,7 +57,7 @@ export function HeroSection() {
               <span className="text-luxury-black font-bold text-xl">⚡</span>
             </div>
             <h3 className="font-semibold text-lg">Schnelle Lieferung</h3>
-            <p className="text-gray-300">1-2 Werktage</p>
+            <p className="text-gray-300">3-7 Werktage</p>
           </div>
           
           <div className="space-y-2">
