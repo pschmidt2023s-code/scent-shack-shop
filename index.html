@@ -10,10 +10,12 @@
     <!-- Preload critical hero image for better LCP -->
     <link rel="preload" as="image" href="/src/assets/hero-perfumes-optimized.webp" fetchpriority="high" />
     
-    <!-- Resource hints to reduce network dependency chains -->
-    <link rel="modulepreload" href="/src/main.tsx" />
-    <link rel="preload" href="/src/index.css" as="style" />
-    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+     <!-- Resource hints to reduce network dependency chains -->
+     <link rel="modulepreload" href="/src/main.tsx" />
+     <link rel="preload" href="/src/index.css" as="style" />
+     <link rel="preconnect" href="https://fonts.googleapis.com">
+     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+     <link rel="dns-prefetch" href="//fonts.googleapis.com" />
 
     <meta property="og:title" content="LuxeScent - Premium Parfüms Online Kaufen" />
     <meta property="og:description" content="Entdecken Sie exklusive Parfüms und Düfte von den besten Parfümeuren der Welt." />
