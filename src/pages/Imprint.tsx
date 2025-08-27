@@ -32,46 +32,28 @@ export default function Imprint() {
             <CardContent className="prose prose-gray max-w-none space-y-6">
               <h3 className="text-xl font-semibold text-luxury-black">Angaben gemäß § 5 TMG</h3>
               <p className="text-luxury-gray">
-                ALDENAIR<br />
-                [Vollständiger Firmenname]<br />
-                [Straße und Hausnummer]<br />
-                [PLZ und Ort]<br />
+                Aldenair<br />
+                BGM.-Scheller-Str. 14<br />
+                96215 Lichtenfels<br />
                 Deutschland
               </p>
               
               <h3 className="text-xl font-semibold text-luxury-black">Vertreten durch</h3>
               <p className="text-luxury-gray">
-                [Name des Geschäftsführers/Inhabers]
+                Patric-Maurice Schmidt
               </p>
 
               <h3 className="text-xl font-semibold text-luxury-black">Kontakt</h3>
               <p className="text-luxury-gray">
                 E-Mail: support@aldenairperfumes.de<br />
-                Telefon: [Telefonnummer]<br />
                 Website: www.aldenairperfumes.de
-              </p>
-
-              <h3 className="text-xl font-semibold text-luxury-black">Registereintrag</h3>
-              <p className="text-luxury-gray">
-                Eintragung im Handelsregister.<br />
-                Registergericht: [Amtsgericht]<br />
-                Registernummer: [HRB-Nummer]
-              </p>
-
-              <h3 className="text-xl font-semibold text-luxury-black">Umsatzsteuer-ID</h3>
-              <p className="text-luxury-gray">
-                Umsatzsteuer-Identifikationsnummer gemäß §27 a Umsatzsteuergesetz:<br />
-                [USt-IdNr.]
-              </p>
-
-              <h3 className="text-xl font-semibold text-luxury-black">Wirtschafts-ID</h3>
-              <p className="text-luxury-gray">
-                Wirtschafts-Identifikationsnummer: [Wirtschafts-ID]
               </p>
 
               <h3 className="text-xl font-semibold text-luxury-black">Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV</h3>
               <p className="text-luxury-gray">
-                [Name und Anschrift des Verantwortlichen]
+                Patric-Maurice Schmidt<br />
+                BGM.-Scheller-Str. 14<br />
+                96215 Lichtenfels
               </p>
 
               <h3 className="text-xl font-semibold text-luxury-black">EU-Streitschlichtung</h3>

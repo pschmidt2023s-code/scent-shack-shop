@@ -33,8 +33,9 @@ export default function Privacy() {
               <h3 className="text-xl font-semibold text-luxury-black">1. Verantwortlicher</h3>
               <p className="text-luxury-gray">
                 Verantwortlicher für die Datenverarbeitung auf dieser Website ist:<br />
-                ALDENAIR<br />
-                [Vollständige Firmenadresse]<br />
+                Aldenair<br />
+                BGM.-Scheller-Str. 14<br />
+                96215 Lichtenfels<br />
                 Deutschland<br />
                 E-Mail: support@aldenairperfumes.de
               </p>
