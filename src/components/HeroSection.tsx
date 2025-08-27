@@ -49,7 +49,7 @@ export function HeroSection() {
               <span className="text-luxury-black font-bold text-xl">✓</span>
             </div>
             <h3 className="font-semibold text-lg">Kostenloser Versand</h3>
-            <p className="text-gray-300">Ab 50€ Bestellwert</p>
+            <p className="text-gray-300">innerhalb Deutschland</p>
           </div>
           
           <div className="space-y-2">
