@@ -13,6 +13,9 @@ export const bottleImageSrcSet = `${bottleImageMd} 512w, ${bottleImageWebP} 512w
 const sampleImage = sampleImageWebP;  
 export const sampleImageSrcSet = `${sampleImageMd} 512w, ${sampleImageWebP} 512w`;
 
+// Ensure legacy image removal by adding cache-busting
+export const imageVersion = Date.now();
+
 export const perfumes: Perfume[] = [
   {
     id: '50ml-bottles',
