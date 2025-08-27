@@ -28,9 +28,6 @@ export function Footer() {
               <Link to="/contact" className="block hover:text-luxury-gold transition-colors">
                 Kontakt
               </Link>
-              <Link to="/shipping" className="block hover:text-luxury-gold transition-colors">
-                Versand
-              </Link>
               <Link to="/returns" className="block hover:text-luxury-gold transition-colors">
                 Rückgabe
               </Link>
