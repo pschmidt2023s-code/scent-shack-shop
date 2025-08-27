@@ -12,7 +12,6 @@ import Privacy from '@/pages/Privacy';
 import Terms from '@/pages/Terms';
 import Imprint from '@/pages/Imprint';
 import Admin from '@/pages/Admin';
-import TestAdmin from '@/pages/TestAdmin';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { Toaster } from "@/components/ui/toaster"
@@ -20,8 +19,6 @@ import { Toaster } from "@/components/ui/toaster"
 const queryClient = new QueryClient();
 
 function App() {
-  console.log('APP COMPONENT LOADING');
-  
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -32,11 +29,7 @@ function App() {
                 <Route path="/" element={<Index />} />
                 <Route path="/product/:id" element={<ProductDetail />} />
                 <Route path="/profile" element={<Profile />} />
-                <Route path="/admin" element={<>
-                  <div>ADMIN ROUTE MATCHED</div>
-                  <Admin />
-                </>} />
-                <Route path="/test-admin" element={<TestAdmin />} />
+                <Route path="/admin" element={<Admin />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/returns" element={<Returns />} />
                 <Route path="/faq" element={<FAQ />} />
