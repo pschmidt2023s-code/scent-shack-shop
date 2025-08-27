@@ -18,6 +18,7 @@ interface Order {
   status: string;
   created_at: string;
   updated_at: string;
+  order_number?: string;
   order_items?: OrderItem[];
 }
 
@@ -156,11 +157,11 @@ export default function Admin() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {orders.map((order) => (
+                          {orders.map((order) => (
                     <div key={order.id} className="border rounded-lg p-4 space-y-2">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-semibold">#{order.id.slice(-8).toUpperCase()}</p>
+                          <p className="font-semibold">#{order.order_number || order.id.slice(-8).toUpperCase()}</p>
                           <p className="text-sm text-muted-foreground">
                             {new Date(order.created_at).toLocaleDateString('de-DE')}
                           </p>

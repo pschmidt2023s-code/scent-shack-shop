@@ -153,6 +153,7 @@ export type Database = {
           currency: string | null
           id: string
           notes: string | null
+          order_number: string | null
           shipping_address_id: string | null
           status: string
           stripe_session_id: string | null
@@ -167,6 +168,7 @@ export type Database = {
           currency?: string | null
           id?: string
           notes?: string | null
+          order_number?: string | null
           shipping_address_id?: string | null
           status?: string
           stripe_session_id?: string | null
@@ -181,6 +183,7 @@ export type Database = {
           currency?: string | null
           id?: string
           notes?: string | null
+          order_number?: string | null
           shipping_address_id?: string | null
           status?: string
           stripe_session_id?: string | null
@@ -255,6 +258,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_order_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
