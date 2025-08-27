@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { User, MapPin, Package, Settings } from 'lucide-react';
 import { ProfileForm } from '@/components/profile/ProfileForm';
-import { AddressManager } from '@/components/profile/AddressManager';
+import AddressManager from '@/components/profile/AddressManager';
 import { OrderHistory } from '@/components/profile/OrderHistory';
 import { Link } from 'react-router-dom';
 
