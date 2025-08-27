@@ -61,6 +61,14 @@ const Navigation = () => {
                         <User className="w-4 h-4 inline-block mr-2" />
                         Mein Profil
                       </Link>
+                      <Link
+                        to="/admin"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <User className="w-4 h-4 inline-block mr-2" />
+                        Admin
+                      </Link>
                       <button
                         onClick={() => {
                           signOut();

@@ -245,6 +245,7 @@ export default function Admin() {
   }
 
   if (!user || isAdmin === false) {
+    console.log('Redirecting - user:', !!user, 'isAdmin:', isAdmin);
     return <Navigate to="/" replace />;
   }
 
