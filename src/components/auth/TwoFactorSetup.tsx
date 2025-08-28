@@ -133,14 +133,37 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
       setFactorId(data.id);
       setSecret(data.totp.secret);
       
-      // Handle QR code - Display SVG directly
+      // Handle QR code - Extract pure SVG content
       const qrCodeSvg = data.totp.qr_code;
       
-      if (qrCodeSvg && qrCodeSvg.includes('<svg')) {
-        // Use SVG directly instead of converting to blob
-        setQrCode(qrCodeSvg);
+      if (qrCodeSvg) {
+        // Extract SVG content if it's in data URL format
+        let svgContent = qrCodeSvg;
+        if (qrCodeSvg.startsWith('data:image/svg+xml')) {
+          // Remove data URL prefix and decode
+          const base64Part = qrCodeSvg.split(',')[1];
+          if (base64Part) {
+            try {
+              svgContent = decodeURIComponent(base64Part);
+            } catch (e) {
+              // Fallback to original content
+              svgContent = qrCodeSvg.replace(/^data:image\/svg\+xml[^,]*,/, '');
+            }
+          } else {
+            // Remove prefix without base64
+            svgContent = qrCodeSvg.replace(/^data:image\/svg\+xml[^,]*,/, '');
+          }
+        }
+        
+        // Ensure it's valid SVG
+        if (svgContent.includes('<svg')) {
+          setQrCode(svgContent);
+        } else {
+          console.warn('Invalid SVG content');
+          setQrCode('');
+        }
       } else {
-        console.warn('Invalid QR code format received');
+        console.warn('No QR code received');
         setQrCode('');
       }
       
