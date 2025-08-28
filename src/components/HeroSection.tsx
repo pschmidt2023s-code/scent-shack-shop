@@ -38,15 +38,15 @@ export function HeroSection() {
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Button variant="hero" size="lg" className="text-lg px-8 py-4" asChild>
-            <a href="#parfums">
+            <Link to="/products">
               Parfüms entdecken
-            </a>
+            </Link>
           </Button>
           
           <Button variant="luxury" size="lg" className="text-lg px-8 py-4" asChild>
-            <a href="#proben">
+            <Link to="/products#proben">
               Proben bestellen
-            </a>
+            </Link>
           </Button>
         </div>
 

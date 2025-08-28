@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/toaster"
 
 // Lazy load non-critical routes for better performance
 const ProductDetail = React.lazy(() => import('@/pages/ProductDetail'));
+const Products = React.lazy(() => import('@/pages/Products'));
 const Profile = React.lazy(() => import('@/pages/Profile'));
 const Contact = React.lazy(() => import('@/pages/Contact'));
 const Returns = React.lazy(() => import('@/pages/Returns'));
@@ -32,6 +33,11 @@ function App() {
             <div className="min-h-screen bg-background">
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/products" element={
+                  <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+                    <Products />
+                  </Suspense>
+                } />
                 <Route path="/product/:id" element={
                   <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
                     <ProductDetail />
