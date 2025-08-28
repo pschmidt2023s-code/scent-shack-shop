@@ -112,17 +112,10 @@ export function AuthModal({ children }: AuthModalProps) {
     } else {
       toast({
         title: "Registrierung erfolgreich",
-        description: setup2FAAfterSignup 
-          ? "Richten Sie jetzt 2FA für zusätzliche Sicherheit ein."
-          : "Bitte überprüfen Sie Ihre E-Mails zur Bestätigung.",
+        description: "Bitte überprüfen Sie Ihre E-Mails zur Bestätigung. Nach der Bestätigung können Sie sich anmelden und 2FA einrichten.",
       });
-      
-      if (setup2FAAfterSignup) {
-        setShowTwoFactorSetup(true);
-      } else {
-        setOpen(false);
-        resetForm();
-      }
+      setOpen(false);
+      resetForm();
     }
     setLoading(false);
   };

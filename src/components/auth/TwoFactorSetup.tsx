@@ -35,6 +35,14 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
   const setupTwoFactor = async () => {
     try {
       setLoading(true);
+      
+      // Check if user is authenticated
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('Sie müssen angemeldet sein, um 2FA einzurichten. Bitte melden Sie sich erst an.');
+      }
+      
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp'
       });
@@ -53,9 +61,10 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
       console.error('Error setting up 2FA:', error);
       toast({
         title: "2FA-Setup fehlgeschlagen",
-        description: error.message,
+        description: error.message || "Bitte melden Sie sich erst vollständig an.",
         variant: "destructive",
       });
+      onClose(); // Close modal on error
     } finally {
       setLoading(false);
     }
