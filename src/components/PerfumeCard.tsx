@@ -45,12 +45,14 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
   };
 
   return (
-    <Card className="group hover:shadow-luxury transition-all duration-300 cursor-pointer">
+    <Card className="group hover:shadow-elegant hover-lift transition-all duration-500 cursor-pointer overflow-hidden bg-gradient-to-br from-white to-gray-50/50 border-0 shadow-sm animate-scale-in">
       <div className="relative overflow-hidden" onClick={handleViewProduct}>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent z-10 opacity-0 group-hover:opacity-100 transition-all duration-300" />
+        
         <img
           src={perfume.image}
           alt={`${perfume.name} - ${perfume.brand} ${perfume.category} ${perfume.size} Parfüm`}
-          className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+          className="w-full h-64 object-cover group-hover:scale-110 transition-all duration-700"
           loading="lazy"
           decoding="async"
           width="306"
@@ -58,7 +60,7 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
         />
         
         {/* Quick Actions */}
-        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col gap-2">
+        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 flex flex-col gap-2 z-20">
           <Button
             size="icon"
             variant="luxury"
@@ -66,36 +68,38 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
               e.stopPropagation();
               handleViewProduct();
             }}
-            className="shadow-lg"
+            className="shadow-lg hover:shadow-glow bg-white/20 backdrop-blur-sm hover:bg-white/30"
           >
             <Eye className="w-4 h-4" />
           </Button>
         </div>
 
         {/* Variant Count Badge */}
-        <div className="absolute top-4 left-4">
-          <Badge variant="secondary" className="bg-luxury-gold text-luxury-black">
+        <div className="absolute top-4 left-4 z-20">
+          <Badge variant="secondary" className="bg-luxury-gold/90 text-luxury-black backdrop-blur-sm hover-glow">
             {perfume.variants.length} Varianten
           </Badge>
         </div>
       </div>
 
-      <CardContent className="p-6">
-        <div className="space-y-2">
-          <p className="text-sm text-luxury-gold font-medium">{perfume.brand}</p>
-          <h3 className="font-semibold text-lg group-hover:text-luxury-gold transition-colors">
+      <CardContent className="p-6 relative">
+        <div className="space-y-3">
+          <p className="text-sm text-luxury-gold font-display font-medium tracking-wide">{perfume.brand}</p>
+          <h3 className="font-display font-semibold text-lg group-hover:text-luxury-gold transition-all duration-300 leading-tight">
             {perfume.name}
           </h3>
           
-          {renderStars(averageRating)}
+          <div className="transform transition-all duration-300 group-hover:scale-105">
+            {renderStars(averageRating)}
+          </div>
           
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground font-medium">
             {perfume.category} • {perfume.size}
           </p>
           
-          <div className="flex items-center justify-between pt-4">
+          <div className="flex items-center justify-between pt-4 border-t border-gray-100">
             <div className="flex items-center space-x-2">
-              <span className="text-xl font-bold text-foreground">
+              <span className="text-xl font-display font-bold text-foreground group-hover:text-luxury-gold transition-colors duration-300">
                 {priceRange.min === priceRange.max 
                   ? `€${priceRange.min.toFixed(2)}`
                   : `€${priceRange.min.toFixed(2)} - €${priceRange.max.toFixed(2)}`
@@ -103,14 +107,14 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
               </span>
             </div>
             
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs border-luxury-gold/20 text-luxury-gray">
               {perfume.size}
             </Badge>
           </div>
 
-          <div className="flex gap-2 mt-4">
+          <div className="flex gap-2 mt-6">
             <Button 
-              className="flex-1"
+              className="flex-1 bg-gradient-primary hover:shadow-glow transition-all duration-300 hover:scale-[1.02] font-medium"
               onClick={(e) => {
                 e.stopPropagation();
                 handleViewProduct();
