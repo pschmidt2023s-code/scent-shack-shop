@@ -25,10 +25,16 @@ export function TwoFactorManagement() {
       setLoading(true);
       const { data, error } = await supabase.auth.mfa.listFactors();
       
-      if (error) throw error;
+      if (error) {
+        console.error('MFA listFactors error:', error);
+        throw error;
+      }
       
       console.log('MFA Factors loaded:', data);
-      setMfaFactors(data.totp || []);
+      console.log('TOTP factors:', data?.totp);
+      const factors = data?.totp || [];
+      console.log('Setting factors:', factors);
+      setMfaFactors(factors);
     } catch (error: any) {
       console.error('Error loading MFA factors:', error);
       toast({
@@ -124,7 +130,13 @@ export function TwoFactorManagement() {
 
   // Only consider 2FA active if factors are verified
   const has2FA = mfaFactors.some(factor => factor.status === 'verified');
-  const hasUnverifiedFactors = mfaFactors.length > 0 && !has2FA;
+
+  console.log('Current MFA state:', { 
+    mfaFactors, 
+    has2FA, 
+    factorCount: mfaFactors.length,
+    factorStatuses: mfaFactors.map(f => f.status)
+  });
 
   if (loading) {
     return (
