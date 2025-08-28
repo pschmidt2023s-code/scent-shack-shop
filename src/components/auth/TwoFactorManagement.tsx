@@ -5,59 +5,35 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Shield, ShieldCheck, ShieldOff, Settings, AlertTriangle } from 'lucide-react';
 import { TwoFactorSetup } from './TwoFactorSetup';
 
 export function TwoFactorManagement() {
-  const [mfaFactors, setMfaFactors] = useState<any[]>([]);
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [setupOpen, setSetupOpen] = useState(false);
   const [disabling, setDisabling] = useState(false);
   const [cleaning, setCleaning] = useState(false);
   const { toast } = useToast();
 
+  // Get factors directly from user object instead of mfa.listFactors()
+  const mfaFactors = user?.factors || [];
+  
   useEffect(() => {
-    loadMfaFactors();
+    // Simulate loading for a moment to show loading state
+    const timer = setTimeout(() => setLoading(false), 500);
+    return () => clearTimeout(timer);
   }, []);
-
-  const loadMfaFactors = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase.auth.mfa.listFactors();
-      
-      if (error) {
-        console.error('MFA listFactors error:', error);
-        throw error;
-      }
-      
-      console.log('MFA Factors loaded:', data);
-      console.log('TOTP factors:', data?.totp);
-      const factors = data?.totp || [];
-      console.log('Setting factors:', factors);
-      setMfaFactors(factors);
-    } catch (error: any) {
-      console.error('Error loading MFA factors:', error);
-      toast({
-        title: "Fehler beim Laden",
-        description: "2FA-Einstellungen konnten nicht geladen werden.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const cleanupAllFactors = async () => {
     try {
       setCleaning(true);
-      const { data, error } = await supabase.auth.mfa.listFactors();
       
-      if (error) throw error;
+      // Clean up factors from user.factors array
+      console.log('Cleaning up factors from user object:', mfaFactors);
       
-      const factors = data.totp || [];
-      console.log('Cleaning up factors:', factors);
-      
-      for (const factor of factors) {
+      for (const factor of mfaFactors) {
         try {
           console.log('Removing factor:', factor.id);
           const { error: unenrollError } = await supabase.auth.mfa.unenroll({
@@ -79,7 +55,8 @@ export function TwoFactorManagement() {
         description: "Alle 2FA-Faktoren wurden entfernt. Sie können jetzt neu einrichten.",
       });
       
-      await loadMfaFactors();
+      // Force refresh user data
+      await supabase.auth.refreshSession();
       
     } catch (error: any) {
       console.error('Error cleaning up factors:', error);
@@ -107,7 +84,8 @@ export function TwoFactorManagement() {
         description: "Zwei-Faktor-Authentifizierung wurde erfolgreich deaktiviert.",
       });
       
-      await loadMfaFactors();
+      // Force refresh user data
+      await supabase.auth.refreshSession();
     } catch (error: any) {
       console.error('Error disabling 2FA:', error);
       toast({
@@ -121,7 +99,8 @@ export function TwoFactorManagement() {
   };
 
   const handleSetupComplete = () => {
-    loadMfaFactors();
+    // Force refresh user data
+    supabase.auth.refreshSession();
     toast({
       title: "2FA aktiviert",
       description: "Zwei-Faktor-Authentifizierung wurde erfolgreich eingerichtet.",
