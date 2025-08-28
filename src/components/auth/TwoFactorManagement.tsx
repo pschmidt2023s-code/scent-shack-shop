@@ -20,6 +20,11 @@ export function TwoFactorManagement() {
   // Get factors directly from user object instead of mfa.listFactors()
   const mfaFactors = user?.factors || [];
   
+  // Debug logging
+  console.log('User object:', user);
+  console.log('User factors:', user?.factors);
+  console.log('MFA Factors array:', mfaFactors);
+  
   useEffect(() => {
     // Simulate loading for a moment to show loading state
     const timer = setTimeout(() => setLoading(false), 500);
