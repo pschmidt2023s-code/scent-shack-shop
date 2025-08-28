@@ -16,11 +16,11 @@ const faqData = [
       },
       {
         question: "In welche Länder liefern Sie?",
-        answer: "Wir liefern aktuell innerhalb Deutschlands. Eine Erweiterung auf weitere europäische Länder ist in Planung."
+        answer: "Wir liefern innerhalb Deutschlands und in alle EU-Länder. Für EU-Lieferungen berechnen wir 15,99€ Versandkosten."
       },
       {
         question: "Fallen Versandkosten an?",
-        answer: "Ab einem Bestellwert von 50€ liefern wir versandkostenfrei. Bei Bestellungen unter 50€ berechnen wir 4,90€ Versandkosten."
+        answer: "Innerhalb Deutschlands liefern wir immer versandkostenfrei. Für EU-Länder berechnen wir 15,99€ Versandkosten."
       },
       {
         question: "Kann ich meine Bestellung verfolgen?",
@@ -37,7 +37,7 @@ const faqData = [
     questions: [
       {
         question: "Sind Ihre Parfüms original?",
-        answer: "Ja, alle unsere Parfüms sind 100% original und werden direkt von autorisierten Händlern bezogen. Wir garantieren für die Echtheit aller Produkte."
+        answer: "Ja, alle unsere Parfüms sind Eigenproduktionen und werden nach höchsten Qualitätsstandards hergestellt. Wir garantieren für die Qualität und Echtheit aller Produkte."
       },
       {
         question: "Wie sollte ich Parfüm richtig lagern?",
@@ -49,7 +49,7 @@ const faqData = [
       },
       {
         question: "Bieten Sie Proben an?",
-        answer: "Ja, zu jeder Bestellung legen wir gerne kostenlose Proben bei. Sie können auch spezielle Probenpakete in unserem Shop erwerben."
+        answer: "Aktuell bieten wir noch keine kostenlosen Proben an, dies ist jedoch für die Zukunft geplant. Sie können aber gerne kleinere Größen unserer Parfüms bestellen."
       }
     ]
   },
