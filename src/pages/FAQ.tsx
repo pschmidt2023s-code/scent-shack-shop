@@ -12,7 +12,7 @@ const faqData = [
     questions: [
       {
         question: "Wie lange dauert die Lieferung?",
-        answer: "Aufgrund unserer On-Demand-Bestellung beträgt die Lieferzeit 3-7 Werktage. Ihre Parfüms werden frisch für Sie vorbereitet, um höchste Qualität zu gewährleisten."
+        answer: "Die Lieferzeit beträgt 3-7 Werktage innerhalb Deutschlands. Sie erhalten eine Versandbestätigung mit Tracking-Informationen per E-Mail."
       },
       {
         question: "In welche Länder liefern Sie?",
@@ -24,7 +24,11 @@ const faqData = [
       },
       {
         question: "Kann ich meine Bestellung verfolgen?",
-        answer: "Ja, Sie erhalten nach dem Versand eine Tracking-Nummer per E-Mail, mit der Sie Ihre Sendung verfolgen können."
+        answer: "Ja, nach dem Versand erhalten Sie eine Versandbestätigung mit Tracking-Nummer per E-Mail. Als registrierter Kunde können Sie Ihre Bestellungen auch in Ihrem Profil einsehen."
+      },
+      {
+        question: "Kann ich Rabattcodes verwenden?",
+        answer: "Ja, Sie können bei der Bestellung einen Rabattcode eingeben. Der Rabatt wird automatisch von Ihrem Bestellwert abgezogen, wenn der Code gültig ist."
       }
     ]
   },
@@ -58,15 +62,15 @@ const faqData = [
       },
       {
         question: "Wie melde ich eine Retoure an?",
-        answer: "Nutzen Sie unser Retouren-Formular auf der Website oder kontaktieren Sie uns per E-Mail. Wir senden Ihnen dann ein kostenloses Retourenlabel zu."
+        answer: "Nutzen Sie unser Retouren-Formular unter 'Rückgaben' im Menü. Als registrierter Kunde können Sie direkt eine Bestellung auswählen. Gäste können ihre Bestelldaten manuell eingeben."
       },
       {
         question: "Wann erhalte ich mein Geld zurück?",
-        answer: "Nach Eingang und Prüfung Ihrer Retoure erstatten wir den Kaufpreis innerhalb von 5-7 Werktagen auf Ihr ursprüngliches Zahlungsmittel."
+        answer: "Nach Eingang und Prüfung Ihrer Retoure durch unser Team erstatten wir den Kaufpreis innerhalb von 5-7 Werktagen auf Ihr ursprüngliches Zahlungsmittel."
       },
       {
-        question: "Kann ich umtauschen statt zurückzugeben?",
-        answer: "Ja, Umtausch ist möglich. Kontaktieren Sie uns vor dem Rücksendung, damit wir den Umtausch organisieren können."
+        question: "Wie verläuft der Rückgabeprozess?",
+        answer: "Nach Ihrer Rückgabeanmeldung prüfen wir Ihre Anfrage und senden Ihnen bei Genehmigung ein kostenloses Retourenlabel per E-Mail zu. Sie erhalten Updates über den Status Ihrer Rückgabe."
       }
     ]
   },
@@ -75,15 +79,19 @@ const faqData = [
     questions: [
       {
         question: "Welche Zahlungsmethoden akzeptieren Sie?",
-        answer: "Wir akzeptieren alle gängigen Kreditkarten, PayPal, SEPA-Lastschrift und Sofortüberweisung. Alle Zahlungen werden sicher über Stripe abgewickelt."
+        answer: "Wir akzeptieren alle gängigen Kredit- und Debitkarten über unseren sicheren Zahlungsanbieter Stripe. Die Zahlung erfolgt über eine sichere, verschlüsselte Verbindung."
       },
       {
         question: "Ist meine Zahlung sicher?",
-        answer: "Ja, alle Zahlungen werden über SSL-Verschlüsselung und sichere Zahlungsanbieter wie Stripe abgewickelt. Wir speichern keine Zahlungsdaten."
+        answer: "Ja, alle Zahlungen werden über SSL-Verschlüsselung und Stripe abgewickelt, einem der führenden Zahlungsanbieter weltweit. Wir speichern keine Zahlungsdaten auf unseren Servern."
       },
       {
-        question: "Kann ich auf Rechnung kaufen?",
-        answer: "Aktuell bieten wir keinen Rechnungskauf an. Sie können aber bequem per Lastschrift oder anderen sicheren Zahlungsmethoden bezahlen."
+        question: "Was passiert, wenn die Zahlung fehlschlägt?",
+        answer: "Bei Zahlungsproblemen werden Sie automatisch zu einer Fehlerseite weitergeleitet. Sie können den Bestellvorgang einfach wiederholen oder eine andere Zahlungsmethode wählen."
+      },
+      {
+        question: "Erhalte ich eine Rechnung?",
+        answer: "Ja, Sie erhalten automatisch eine Rechnung per E-Mail nach erfolgreicher Bestellung. Als registrierter Kunde finden Sie alle Rechnungen auch in Ihrem Profil."
       }
     ]
   },
@@ -92,19 +100,23 @@ const faqData = [
     questions: [
       {
         question: "Muss ich ein Konto erstellen?",
-        answer: "Ein Konto ist nicht zwingend erforderlich, aber empfohlen. Mit einem Konto können Sie Ihre Bestellungen verwalten, Adressen speichern und exklusive Angebote erhalten."
+        answer: "Nein, Sie können auch als Gast bestellen. Mit einem Konto haben Sie jedoch Vorteile: Bestellhistorie, Adressverwaltung, einfache Rückgaben und Zugang zu exklusiven Angeboten."
       },
       {
         question: "Wie kann ich mein Passwort zurücksetzen?",
-        answer: "Klicken Sie auf 'Passwort vergessen' auf der Anmeldeseite. Sie erhalten dann eine E-Mail mit Anweisungen zum Zurücksetzen Ihres Passworts."
+        answer: "Klicken Sie auf 'Passwort vergessen' auf der Anmeldeseite. Sie erhalten dann eine E-Mail mit einem Link zum Zurücksetzen Ihres Passworts."
       },
       {
         question: "Wie erreiche ich den Kundenservice?",
-        answer: "Sie können uns per E-Mail unter support@aldenairperfumes.de erreichen oder unser Kontaktformular nutzen. Wir antworten innerhalb von 24 Stunden."
+        answer: "Sie können uns über unser Kontaktformular oder per E-Mail erreichen. Wir antworten in der Regel innerhalb von 24 Stunden auf alle Anfragen."
       },
       {
-        question: "Gibt es einen Newsletter?",
-        answer: "Ja, abonnieren Sie unseren Newsletter für exklusive Angebote, neue Produkte und Parfüm-Tipps. Die Anmeldung finden Sie im Footer unserer Website."
+        question: "Kann ich meine Daten bearbeiten?",
+        answer: "Ja, als registrierter Kunde können Sie in Ihrem Profil alle persönlichen Daten, Adressen und Einstellungen jederzeit bearbeiten und aktualisieren."
+      },
+      {
+        question: "Wie kann ich mein Konto löschen?",
+        answer: "Sie können Ihr Konto jederzeit über die Profileinstellungen löschen oder uns kontaktieren. Alle Ihre Daten werden entsprechend der DSGVO-Bestimmungen gelöscht."
       }
     ]
   }
