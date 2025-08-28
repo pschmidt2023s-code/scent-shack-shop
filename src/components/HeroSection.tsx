@@ -26,7 +26,7 @@ export function HeroSection() {
 
       {/* Content */}
       <div className="relative z-10 text-center text-primary-foreground px-4 max-w-4xl mx-auto">
-        <h1 className="text-5xl md:text-7xl font-display font-bold mb-6 leading-tight animate-slide-up">
+        <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight animate-slide-up">
           Willkommen bei
           <span className="block text-luxury-gold animate-fade-in" style={{ animationDelay: '0.3s' }}>ALDENAIR</span>
         </h1>
@@ -56,7 +56,7 @@ export function HeroSection() {
             <div className="w-12 h-12 bg-luxury-gold rounded-full flex items-center justify-center mx-auto mb-4 hover-glow transition-all duration-300">
               <span className="text-luxury-black font-bold text-xl">✓</span>
             </div>
-            <h3 className="font-display font-semibold text-lg">Kostenloser Versand</h3>
+            <h3 className="font-semibold text-lg">Kostenloser Versand</h3>
             <p className="text-gray-300">innerhalb Deutschland</p>
           </div>
           
@@ -64,7 +64,7 @@ export function HeroSection() {
             <div className="w-12 h-12 bg-luxury-gold rounded-full flex items-center justify-center mx-auto mb-4 hover-glow transition-all duration-300">
               <span className="text-luxury-black font-bold text-xl">⚡</span>
             </div>
-            <h3 className="font-display font-semibold text-lg">Schnelle Lieferung</h3>
+            <h3 className="font-semibold text-lg">Schnelle Lieferung</h3>
             <p className="text-gray-300">3-7 Werktage</p>
           </div>
           
@@ -72,7 +72,7 @@ export function HeroSection() {
             <div className="w-12 h-12 bg-luxury-gold rounded-full flex items-center justify-center mx-auto mb-4 hover-glow transition-all duration-300">
               <span className="text-luxury-black font-bold text-xl">♥</span>
             </div>
-            <h3 className="font-display font-semibold text-lg">Proben verfügbar</h3>
+            <h3 className="font-semibold text-lg">Proben verfügbar</h3>
             <p className="text-gray-300">5ml für nur 4,99€</p>
           </div>
         </div>

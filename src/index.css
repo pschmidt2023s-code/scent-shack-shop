@@ -123,13 +123,9 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground;
     font-feature-settings: 'kern' 1, 'liga' 1;
     text-rendering: optimizeLegibility;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-display;
   }
 }
 

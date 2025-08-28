@@ -70,10 +70,6 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				}
 			},
-			fontFamily: {
-				'display': ['Playfair Display', 'serif'],
-				'sans': ['Inter', 'system-ui', 'sans-serif'],
-			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',

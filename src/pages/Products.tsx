@@ -81,7 +81,7 @@ export default function Products() {
               </div>
               
               <div className="text-center animate-slide-up">
-                <h1 className="text-5xl md:text-6xl font-display font-bold mb-4">
+                <h1 className="text-5xl md:text-6xl font-bold mb-4">
                   ALDENAIR Parfüm-Kollektion
                 </h1>
                 <p className="text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-8">
@@ -148,10 +148,10 @@ export default function Products() {
         {!isLoading && filteredPrestige.length > 0 && (
           <section id="parfums" className="py-16 bg-background">
             <div className="container mx-auto px-4">
-              <div className="text-center mb-12 animate-slide-up">
-                <h2 className="text-4xl font-display font-bold mb-4 text-luxury-black">
-                  ALDENAIR Prestige Edition
-                </h2>
+            <div className="text-center mb-12 animate-slide-up">
+              <h2 className="text-4xl font-bold mb-4 text-luxury-black">
+                ALDENAIR Prestige Edition
+              </h2>
                 <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                   Exklusive 50ml Parfüm-Flakons der Premium-Kollektion - Luxuriöse Düfte für besondere Momente
                 </p>
@@ -182,10 +182,10 @@ export default function Products() {
         {!isLoading && filteredProben.length > 0 && (
           <section id="proben" className="py-16 bg-gradient-subtle">
             <div className="container mx-auto px-4">
-              <div className="text-center mb-12 animate-slide-up">
-                <h2 className="text-4xl font-display font-bold mb-4 text-luxury-black">
-                  ALDENAIR Proben Kollektion
-                </h2>
+            <div className="text-center mb-12 animate-slide-up">
+              <h2 className="text-4xl font-bold mb-4 text-luxury-black">
+                ALDENAIR Proben Kollektion
+              </h2>
                 <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                   Entdecke alle Düfte in praktischen 5ml Proben - Perfekt zum Testen vor dem Kauf der Vollgröße
                 </p>

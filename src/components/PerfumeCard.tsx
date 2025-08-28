@@ -84,8 +84,8 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
 
       <CardContent className="p-6 relative">
         <div className="space-y-3">
-          <p className="text-sm text-luxury-gold font-display font-medium tracking-wide">{perfume.brand}</p>
-          <h3 className="font-display font-semibold text-lg group-hover:text-luxury-gold transition-all duration-300 leading-tight">
+          <p className="text-sm text-luxury-gold font-medium tracking-wide">{perfume.brand}</p>
+          <h3 className="font-semibold text-lg group-hover:text-luxury-gold transition-all duration-300 leading-tight">
             {perfume.name}
           </h3>
           
@@ -99,7 +99,7 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
           
           <div className="flex items-center justify-between pt-4 border-t border-gray-100">
             <div className="flex items-center space-x-2">
-              <span className="text-xl font-display font-bold text-foreground group-hover:text-luxury-gold transition-colors duration-300">
+              <span className="text-xl font-bold text-foreground group-hover:text-luxury-gold transition-colors duration-300">
                 {priceRange.min === priceRange.max 
                   ? `€${priceRange.min.toFixed(2)}`
                   : `€${priceRange.min.toFixed(2)} - €${priceRange.max.toFixed(2)}`

@@ -36,7 +36,7 @@ export function PerfumeGrid() {
     <section className="py-16 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12 animate-slide-up">
-          <h2 className="text-4xl font-display font-bold mb-4">ALDENAIR Parfüm-Kollektion</h2>
+          <h2 className="text-4xl font-bold mb-4">ALDENAIR Parfüm-Kollektion</h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Entdecke exquisite Düfte der Marke ALDENAIR - Prestige Flakon für jeden Geschmack
           </p>
