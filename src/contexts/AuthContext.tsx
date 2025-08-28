@@ -6,7 +6,7 @@ import type { User } from '@supabase/supabase-js';
 interface AuthContextType {
   user: User | null;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: any; needsMfa?: boolean; challengeId?: string }>;
   signOut: () => Promise<void>;
   loading: boolean;
   supabaseConnected: boolean;
@@ -77,7 +77,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password
       });
+      
       console.log('Sign in result:', { data, error });
+      
+      // Check if MFA is required
+      if (error && error.message.includes('MFA')) {
+        // User has MFA enabled, need to handle challenge
+        try {
+          const { data: mfaData, error: mfaError } = await supabase.auth.mfa.listFactors();
+          if (mfaError) throw mfaError;
+          
+          if (mfaData.totp && mfaData.totp.length > 0) {
+            const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+              factorId: mfaData.totp[0].id
+            });
+            
+            if (challengeError) throw challengeError;
+            
+            return { 
+              error: null, 
+              needsMfa: true, 
+              challengeId: challengeData.id 
+            };
+          }
+        } catch (mfaError) {
+          console.error('MFA challenge error:', mfaError);
+          return { error: mfaError };
+        }
+      }
+      
       return { error };
     } catch (error) {
       console.error('Sign in error:', error);

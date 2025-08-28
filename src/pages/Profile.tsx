@@ -9,6 +9,7 @@ import { User, MapPin, Package, Settings, Crown, ShoppingBag, Calendar, Award } 
 import { ProfileForm } from '@/components/profile/ProfileForm';
 import AddressManager from '@/components/profile/AddressManager';
 import { OrderHistory } from '@/components/profile/OrderHistory';
+import { TwoFactorManagement } from '@/components/auth/TwoFactorManagement';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -221,7 +222,7 @@ export default function Profile() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="settings">
+            <TabsContent value="settings" className="space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Kontoeinstellungen</CardTitle>
@@ -242,6 +243,8 @@ export default function Profile() {
                   </div>
                 </CardContent>
               </Card>
+              
+              <TwoFactorManagement />
             </TabsContent>
           </Tabs>
         </div>

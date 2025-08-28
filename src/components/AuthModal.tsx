@@ -8,7 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { User, UserPlus, AlertCircle, Shield } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { sanitizeInput, validatePasswordStrength } from '@/lib/validation';
+import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
+import { TwoFactorVerification } from '@/components/auth/TwoFactorVerification';
 
 interface AuthModalProps {
   children: React.ReactNode;
@@ -22,6 +25,10 @@ export function AuthModal({ children }: AuthModalProps) {
   const [fullName, setFullName] = useState('');
   const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong'>('weak');
   const [passwordError, setPasswordError] = useState('');
+  const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false);
+  const [showTwoFactorVerification, setShowTwoFactorVerification] = useState(false);
+  const [mfaChallengeId, setMfaChallengeId] = useState('');
+  const [setup2FAAfterSignup, setSetup2FAAfterSignup] = useState(false);
   const { signIn, signUp, supabaseConnected } = useAuth();
   const { toast } = useToast();
 
@@ -55,9 +62,12 @@ export function AuthModal({ children }: AuthModalProps) {
     e.preventDefault();
     setLoading(true);
     
-    const { error } = await signIn(email, password);
+    const { error, needsMfa, challengeId } = await signIn(email, password);
     
-    if (error) {
+    if (needsMfa && challengeId) {
+      setMfaChallengeId(challengeId);
+      setShowTwoFactorVerification(true);
+    } else if (error) {
       toast({
         title: "Anmeldung fehlgeschlagen",
         description: error.message,
@@ -102,10 +112,17 @@ export function AuthModal({ children }: AuthModalProps) {
     } else {
       toast({
         title: "Registrierung erfolgreich",
-        description: "Bitte überprüfen Sie Ihre E-Mails zur Bestätigung.",
+        description: setup2FAAfterSignup 
+          ? "Richten Sie jetzt 2FA für zusätzliche Sicherheit ein."
+          : "Bitte überprüfen Sie Ihre E-Mails zur Bestätigung.",
       });
-      setOpen(false);
-      resetForm();
+      
+      if (setup2FAAfterSignup) {
+        setShowTwoFactorSetup(true);
+      } else {
+        setOpen(false);
+        resetForm();
+      }
     }
     setLoading(false);
   };
@@ -116,6 +133,10 @@ export function AuthModal({ children }: AuthModalProps) {
     setFullName('');
     setPasswordError('');
     setPasswordStrength('weak');
+    setSetup2FAAfterSignup(false);
+    setShowTwoFactorSetup(false);
+    setShowTwoFactorVerification(false);
+    setMfaChallengeId('');
   };
 
   const handlePasswordChange = (value: string) => {
@@ -232,6 +253,18 @@ export function AuthModal({ children }: AuthModalProps) {
                   </div>
                 )}
               </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="setup-2fa"
+                  checked={setup2FAAfterSignup}
+                  onCheckedChange={(checked) => setSetup2FAAfterSignup(checked === true)}
+                />
+                <Label htmlFor="setup-2fa" className="text-sm cursor-pointer">
+                  2FA nach Registrierung einrichten (empfohlen)
+                </Label>
+              </div>
+              
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Registrieren...' : 'Registrieren'}
               </Button>
@@ -239,6 +272,38 @@ export function AuthModal({ children }: AuthModalProps) {
           </TabsContent>
         </Tabs>
       </DialogContent>
+      
+      <TwoFactorSetup
+        open={showTwoFactorSetup}
+        onClose={() => {
+          setShowTwoFactorSetup(false);
+          setOpen(false);
+          resetForm();
+        }}
+        onSetupComplete={() => {
+          setShowTwoFactorSetup(false);
+          setOpen(false);
+          resetForm();
+        }}
+      />
+      
+      <TwoFactorVerification
+        open={showTwoFactorVerification}
+        onClose={() => {
+          setShowTwoFactorVerification(false);
+          resetForm();
+        }}
+        onVerified={() => {
+          setShowTwoFactorVerification(false);
+          setOpen(false);
+          resetForm();
+          toast({
+            title: "Erfolgreich angemeldet",
+            description: "2FA-Verifizierung erfolgreich!",
+          });
+        }}
+        challengeId={mfaChallengeId}
+      />
     </Dialog>
   );
 }
