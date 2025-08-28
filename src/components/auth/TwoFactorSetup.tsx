@@ -133,14 +133,12 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
       setFactorId(data.id);
       setSecret(data.totp.secret);
       
-      // Handle QR code - Supabase provides it as SVG already
+      // Handle QR code - Display SVG directly
       const qrCodeSvg = data.totp.qr_code;
       
       if (qrCodeSvg && qrCodeSvg.includes('<svg')) {
-        // Convert SVG to data URL for display
-        const svgBlob = new Blob([qrCodeSvg], { type: 'image/svg+xml' });
-        const url = URL.createObjectURL(svgBlob);
-        setQrCode(url);
+        // Use SVG directly instead of converting to blob
+        setQrCode(qrCodeSvg);
       } else {
         console.warn('Invalid QR code format received');
         setQrCode('');
@@ -238,7 +236,10 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
               <Card>
                 <CardContent className="p-6 text-center space-y-4">
                   <h3 className="font-semibold">QR-Code scannen</h3>
-                  <img src={qrCode} alt="QR Code" className="mx-auto" />
+                  <div 
+                    className="mx-auto flex justify-center"
+                    dangerouslySetInnerHTML={{ __html: qrCode }}
+                  />
                   <p className="text-sm text-muted-foreground">
                     Scannen Sie diesen QR-Code mit Ihrer Authenticator-App
                   </p>
