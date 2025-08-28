@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { perfumes } from '@/data/perfumes';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
+import { usePerfumeRatings } from '@/hooks/usePerfumeRatings';
 import { ProductReviews } from '@/components/ProductReviews';
 import { PerfumeVariant } from '@/types/perfume';
 
@@ -21,6 +22,7 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const { getRatingForVariant } = usePerfumeRatings([id || '']);
 
   const perfume = perfumes.find(p => p.id === id);
   const [selectedVariant, setSelectedVariant] = useState<PerfumeVariant | null>(
@@ -72,12 +74,12 @@ const ProductDetail = () => {
             }`}
           />
         ))}
-        <span className="text-sm text-muted-foreground ml-2">
-          {rating} ({selectedVariant?.reviewCount} Bewertungen)
-        </span>
       </div>
     );
   };
+
+  // Get real rating data for selected variant
+  const variantRating = selectedVariant ? getRatingForVariant(perfume!.id, selectedVariant.id) : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -130,7 +132,16 @@ const ProductDetail = () => {
                 {perfume.name}
               </h1>
               
-              {renderStars(selectedVariant?.rating)}
+              {variantRating && variantRating.count > 0 ? (
+                <div className="flex items-center space-x-1">
+                  {renderStars(variantRating.rating)}
+                  <span className="text-sm text-muted-foreground ml-2">
+                    {variantRating.rating.toFixed(1)} ({variantRating.count} Bewertungen)
+                  </span>
+                </div>
+              ) : (
+                <span className="text-sm text-muted-foreground">Noch keine Bewertungen</span>
+              )}
             </div>
 
             {/* Variant Selection */}
@@ -189,7 +200,12 @@ const ProductDetail = () => {
                     </div>
                     <div>
                       <span className="text-muted-foreground">Bewertung:</span>
-                      <span className="ml-2 font-medium">{selectedVariant.rating}/5</span>
+                      <span className="ml-2 font-medium">
+                        {variantRating && variantRating.count > 0 
+                          ? `${variantRating.rating.toFixed(1)}/5` 
+                          : 'Keine Bewertungen'
+                        }
+                      </span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Verfügbarkeit:</span>
@@ -226,7 +242,8 @@ const ProductDetail = () => {
                       <DialogTitle>Bewertungen - {selectedVariant.name}</DialogTitle>
                     </DialogHeader>
                     <ProductReviews 
-                      perfumeId={selectedVariant.id} 
+                      perfumeId={perfume.id}
+                      variantId={selectedVariant.id} 
                       perfumeName={selectedVariant.name}
                     />
                   </DialogContent>
@@ -256,8 +273,8 @@ const ProductDetail = () => {
                   <ul className="space-y-2 text-muted-foreground">
                     <li><strong>Name:</strong> {selectedVariant.name}</li>
                     <li><strong>Nummer:</strong> {selectedVariant.number}</li>
-                    <li><strong>Bewertung:</strong> {selectedVariant.rating ? `${selectedVariant.rating}/5 Sterne` : 'Noch keine Bewertungen'}</li>
-                    <li><strong>Anzahl Bewertungen:</strong> {selectedVariant.reviewCount || 0}</li>
+                    <li><strong>Bewertung:</strong> {variantRating && variantRating.count > 0 ? `${variantRating.rating.toFixed(1)}/5 Sterne` : 'Noch keine Bewertungen'}</li>
+                    <li><strong>Anzahl Bewertungen:</strong> {variantRating?.count || 0}</li>
                   </ul>
                 </div>
               )}

@@ -4,11 +4,13 @@ import { PerfumeCard } from './PerfumeCard';
 import { perfumes } from '@/data/perfumes';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { usePerfumeRatings } from '@/hooks/usePerfumeRatings';
 import { Package } from 'lucide-react';
 
 export function PerfumeGrid() {
   const [filter, setFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
+  const { getRatingForPerfume } = usePerfumeRatings(perfumes.map(p => p.id));
 
   const categories = ['all', '50ML Bottles', 'Proben'];
 
@@ -23,8 +25,8 @@ export function PerfumeGrid() {
       case 'price-high':
         return Math.max(...b.variants.map(v => v.price)) - Math.max(...a.variants.map(v => v.price));
       case 'rating':
-        const avgRatingA = a.variants.reduce((sum, v) => sum + (v.rating || 0), 0) / a.variants.length;
-        const avgRatingB = b.variants.reduce((sum, v) => sum + (v.rating || 0), 0) / b.variants.length;
+        const avgRatingA = getRatingForPerfume(a.id).averageRating || 0;
+        const avgRatingB = getRatingForPerfume(b.id).averageRating || 0;
         return avgRatingB - avgRatingA;
       case 'name':
       default:

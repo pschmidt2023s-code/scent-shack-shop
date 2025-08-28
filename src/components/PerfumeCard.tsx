@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Perfume } from '@/types/perfume';
+import { usePerfumeRatings } from '@/hooks/usePerfumeRatings';
 import { useNavigate } from 'react-router-dom';
 
 interface PerfumeCardProps {
@@ -12,13 +13,15 @@ interface PerfumeCardProps {
 
 export function PerfumeCard({ perfume }: PerfumeCardProps) {
   const navigate = useNavigate();
+  const { getRatingForPerfume } = usePerfumeRatings([perfume.id]);
 
   const handleViewProduct = () => {
     navigate(`/product/${perfume.id}`);
   };
 
-  const averageRating = perfume.variants.reduce((sum, variant) => sum + (variant.rating || 0), 0) / perfume.variants.length;
-  const totalReviews = perfume.variants.reduce((sum, variant) => sum + (variant.reviewCount || 0), 0);
+  const perfumeRating = getRatingForPerfume(perfume.id);
+  const averageRating = perfumeRating.averageRating || 0;
+  const totalReviews = perfumeRating.totalReviews || 0;
   const priceRange = {
     min: Math.min(...perfume.variants.map(v => v.price)),
     max: Math.max(...perfume.variants.map(v => v.price))
@@ -45,8 +48,8 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
   };
 
   return (
-    <Card className="group hover:shadow-elegant hover-lift transition-all duration-500 cursor-pointer overflow-hidden bg-gradient-to-br from-white to-gray-50/50 border-0 shadow-sm animate-scale-in">
-      <div className="relative overflow-hidden" onClick={handleViewProduct}>
+    <Card className="group hover:shadow-glow hover-lift transition-all duration-500 cursor-pointer overflow-hidden bg-gradient-to-br from-white to-gray-50/50 border-0 shadow-sm animate-scale-in hover:scale-[1.02]" onClick={handleViewProduct}>
+      <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent z-10 opacity-0 group-hover:opacity-100 transition-all duration-300" />
         
         <img
@@ -66,7 +69,6 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
             variant="luxury"
             onClick={(e) => {
               e.stopPropagation();
-              handleViewProduct();
             }}
             className="shadow-lg hover:shadow-glow bg-white/20 backdrop-blur-sm hover:bg-white/30"
           >
@@ -90,7 +92,11 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
           </h3>
           
           <div className="transform transition-all duration-300 group-hover:scale-105">
-            {renderStars(averageRating)}
+            {totalReviews > 0 ? renderStars(averageRating) : (
+              <div className="flex items-center space-x-1">
+                <span className="text-sm text-muted-foreground">Noch keine Bewertungen</span>
+              </div>
+            )}
           </div>
           
           <p className="text-sm text-muted-foreground font-medium">
@@ -117,7 +123,6 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
               className="flex-1 bg-gradient-primary hover:shadow-glow transition-all duration-300 hover:scale-[1.02] font-medium"
               onClick={(e) => {
                 e.stopPropagation();
-                handleViewProduct();
               }}
             >
               <ShoppingBag className="w-4 h-4 mr-2" />

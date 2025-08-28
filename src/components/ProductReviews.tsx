@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Star, Upload, MessageCircle, AlertCircle } from 'lucide-react';
+import { Star, Upload, MessageCircle, AlertCircle, ShieldCheck } from 'lucide-react';
 import { AuthModal } from './AuthModal';
 
 interface Review {
@@ -18,6 +19,7 @@ interface Review {
   title: string;
   content: string;
   images: string[];
+  is_verified: boolean;
   created_at: string;
   profiles?: {
     full_name: string;
@@ -26,10 +28,11 @@ interface Review {
 
 interface ProductReviewsProps {
   perfumeId: string;
+  variantId: string;
   perfumeName: string;
 }
 
-export function ProductReviews({ perfumeId, perfumeName }: ProductReviewsProps) {
+export function ProductReviews({ perfumeId, variantId, perfumeName }: ProductReviewsProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
@@ -38,6 +41,7 @@ export function ProductReviews({ perfumeId, perfumeName }: ProductReviewsProps) 
   const [content, setContent] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [hasVerifiedPurchase, setHasVerifiedPurchase] = useState(false);
   const { user, supabaseConnected } = useAuth();
   const { toast } = useToast();
 
@@ -48,16 +52,81 @@ export function ProductReviews({ perfumeId, perfumeName }: ProductReviewsProps) 
   useEffect(() => {
     if (supabaseConnected) {
       fetchReviews();
+      if (user) {
+        checkVerifiedPurchase();
+      }
     } else {
       setLoading(false);
     }
-  }, [perfumeId, supabaseConnected]);
+  }, [perfumeId, variantId, supabaseConnected, user]);
 
   const fetchReviews = async () => {
-    // For now, we'll use mock data since we don't have the reviews table set up yet
-    console.log('Fetching reviews for perfume:', perfumeId);
-    setReviews([]);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select(`
+          id,
+          user_id,
+          rating,
+          title,
+          content,
+          images,
+          is_verified,
+          created_at
+        `)
+        .eq('perfume_id', perfumeId)
+        .eq('variant_id', variantId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching reviews:', error);
+        toast({
+          title: "Fehler beim Laden der Bewertungen",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        // Fetch user profiles separately for each review
+        const reviewsWithProfiles = await Promise.all(
+          (data || []).map(async (review) => {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', review.user_id)
+              .single();
+            
+            return {
+              ...review,
+              profiles: profileData || null
+            };
+          })
+        );
+        
+        setReviews(reviewsWithProfiles);
+      }
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkVerifiedPurchase = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .rpc('check_verified_purchase', {
+          user_id_param: user.id,
+          variant_id_param: variantId
+        });
+
+      if (!error) {
+        setHasVerifiedPurchase(data || false);
+      }
+    } catch (error) {
+      console.error('Error checking verified purchase:', error);
+    }
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,13 +153,47 @@ export function ProductReviews({ perfumeId, perfumeName }: ProductReviewsProps) 
       return;
     }
 
-    // For now, just show success since we don't have the reviews table set up
-    toast({
-      title: "Bewertung eingereicht",
-      description: "Vielen Dank für Ihre Bewertung! (Datenbank noch nicht konfiguriert)",
-    });
-    setReviewModalOpen(false);
-    resetForm();
+    try {
+      const { error } = await supabase
+        .from('reviews')
+        .insert({
+          user_id: user.id,
+          perfume_id: perfumeId,
+          variant_id: variantId,
+          rating,
+          title: title || null,
+          content: content || null,
+          images: uploadedImages,
+          is_verified: hasVerifiedPurchase
+        });
+
+      if (error) {
+        toast({
+          title: "Fehler beim Speichern",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Bewertung eingereicht",
+        description: hasVerifiedPurchase 
+          ? "Vielen Dank für Ihre verifizierte Bewertung!"
+          : "Vielen Dank für Ihre Bewertung!",
+      });
+      
+      setReviewModalOpen(false);
+      resetForm();
+      fetchReviews(); // Reload reviews
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      toast({
+        title: "Fehler beim Speichern",
+        description: "Ein unerwarteter Fehler ist aufgetreten.",
+        variant: "destructive",
+      });
+    }
   };
 
   const resetForm = () => {
@@ -243,6 +346,12 @@ export function ProductReviews({ perfumeId, perfumeName }: ProductReviewsProps) 
                   <div className="flex items-center gap-2">
                     <div className="flex">{renderStars(review.rating)}</div>
                     <span className="font-semibold">{review.title}</span>
+                    {review.is_verified && (
+                      <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 border-green-200">
+                        <ShieldCheck className="w-3 h-3 mr-1" />
+                        Verifizierter Kauf
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground">
                     von {review.profiles?.full_name || 'Anonymer Nutzer'} • {' '}
