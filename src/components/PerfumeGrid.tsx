@@ -37,45 +37,63 @@ export function PerfumeGrid() {
   return (
     <section className="py-16 bg-background">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12 animate-slide-up">
-          <h2 className="text-4xl font-bold mb-4">ALDENAIR Parfüm-Kollektion</h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+        <div className="text-center mb-12 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-foreground via-luxury-gold to-foreground bg-clip-text text-transparent">
+            ALDENAIR Parfüm-Kollektion
+          </h2>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Entdecke exquisite Düfte der Marke ALDENAIR - Prestige Flakon für jeden Geschmack
           </p>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8 justify-between items-center animate-fade-in">
+        <div className="flex flex-col sm:flex-row gap-4 mb-8 justify-between items-center opacity-0 animate-slide-up" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
           <div className="flex flex-wrap gap-2">
-            {categories.map((category) => (
+            {categories.map((category, index) => (
               <Button
                 key={category}
                 variant={filter === category ? "default" : "outline"}
                 onClick={() => setFilter(category)}
-                className="capitalize transition-all duration-300 hover:scale-105"
+                className="capitalize transition-all duration-300 hover:scale-105 hover:shadow-glow relative overflow-hidden group"
+                style={{ 
+                  animationDelay: `${0.6 + index * 0.1}s`,
+                  animationFillMode: 'forwards'
+                }}
               >
-                {category === 'all' ? 'Alle' : category}
+                <span className="relative z-10">{category === 'all' ? 'Alle' : category}</span>
+                {filter === category && (
+                  <div className="absolute inset-0 bg-gradient-primary opacity-20 animate-glow-pulse"></div>
+                )}
               </Button>
             ))}
           </div>
 
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Sortieren nach" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="price-low">Preis: Niedrig bis Hoch</SelectItem>
-              <SelectItem value="price-high">Preis: Hoch bis Niedrig</SelectItem>
-              <SelectItem value="rating">Bewertung</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="opacity-0 animate-fade-in" style={{ animationDelay: '0.8s', animationFillMode: 'forwards' }}>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-48 transition-all duration-300 hover:scale-105 hover:shadow-glow">
+                <SelectValue placeholder="Sortieren nach" />
+              </SelectTrigger>
+              <SelectContent className="backdrop-blur-md bg-background/80">
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="price-low">Preis: Niedrig bis Hoch</SelectItem>
+                <SelectItem value="price-high">Preis: Hoch bis Niedrig</SelectItem>
+                <SelectItem value="rating">Bewertung</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Product Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {sortedPerfumes.map((perfume, index) => (
-            <div key={perfume.id} className="stagger-item">
+            <div 
+              key={perfume.id} 
+              className="opacity-0 animate-scale-in-bounce hover:z-20 relative"
+              style={{ 
+                animationDelay: `${index * 0.1}s`,
+                animationFillMode: 'forwards'
+              }}
+            >
               <PerfumeCard perfume={perfume} />
             </div>
           ))}
