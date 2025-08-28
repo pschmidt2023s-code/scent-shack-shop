@@ -8,8 +8,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone, MapPin, ArrowLeft } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { Link } from 'react-router-dom';
 
 const contactFormSchema = z.object({
   name: z.string().min(2, 'Name muss mindestens 2 Zeichen haben'),
@@ -57,8 +58,24 @@ export default function Contact() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-16 px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-luxury-black mb-4">Kontakt</h1>
+          {/* Prominent Back Button */}
+          <div className="flex items-center mb-8">
+            <Link to="/">
+              <Button 
+                variant="luxury" 
+                size="lg" 
+                className="hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-glow"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Zurück zur Startseite
+              </Button>
+            </Link>
+          </div>
+
+          <div className="text-center mb-12 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+            <h1 className="text-4xl md:text-5xl font-bold text-luxury-black mb-4 bg-gradient-to-r from-luxury-black via-luxury-gold to-luxury-black bg-clip-text text-transparent">
+              Kontakt
+            </h1>
             <p className="text-luxury-gray text-lg">
               Haben Sie Fragen? Wir sind hier, um Ihnen zu helfen.
             </p>

@@ -11,15 +11,21 @@ export default function Terms() {
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center mb-8">
             <Link to="/">
-              <Button variant="outline" size="sm" className="mr-4">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Zurück
+              <Button 
+                variant="luxury" 
+                size="lg" 
+                className="hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-glow"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Zurück zur Startseite
               </Button>
             </Link>
           </div>
 
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-luxury-black mb-4">Allgemeine Geschäftsbedingungen</h1>
+          <div className="text-center mb-12 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+            <h1 className="text-4xl md:text-5xl font-bold text-luxury-black mb-4 bg-gradient-to-r from-luxury-black via-luxury-gold to-luxury-black bg-clip-text text-transparent">
+              Allgemeine Geschäftsbedingungen
+            </h1>
             <p className="text-luxury-gray text-lg">
               Unsere AGB für den Kauf bei ALDENAIR
             </p>
