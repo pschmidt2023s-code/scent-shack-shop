@@ -10,11 +10,13 @@ const corsHeaders = {
 };
 
 interface ReturnNotificationRequest {
-  returnId: string;
-  action: 'approve' | 'reject';
-  customerEmail: string;
-  orderNumber: string;
+  returnId?: string;
+  orderId?: string;
+  action?: 'approve' | 'reject';
+  customerEmail?: string;
+  orderNumber?: string;
   reason?: string;
+  type: 'admin_action' | 'customer_submission';
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -24,7 +26,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { returnId, action, customerEmail, orderNumber, reason }: ReturnNotificationRequest = await req.json();
+    const { returnId, orderId, action, customerEmail, orderNumber, reason, type }: ReturnNotificationRequest = await req.json();
 
     // Create Supabase client with service role key
     const supabaseAdmin = createClient(
@@ -32,7 +34,79 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get customer email from user profile
+    let customerEmailAddress: string;
+    let actualOrderNumber: string;
+
+    if (type === 'customer_submission') {
+      // Handle customer return submission
+      const { data: orderData, error: orderError } = await supabaseAdmin
+        .from('orders')
+        .select(`
+          order_number,
+          user_id
+        `)
+        .eq('id', orderId)
+        .single();
+
+      if (orderError || !orderData) {
+        throw new Error('Order not found');
+      }
+
+      // Get user email
+      const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(orderData.user_id);
+      
+      if (userError || !userData.user?.email) {
+        throw new Error('User email not found');
+      }
+
+      customerEmailAddress = userData.user.email;
+      actualOrderNumber = orderData.order_number || orderId!.slice(-8);
+
+      // Send customer submission confirmation
+      const subject = `Retoure angemeldet - Bestellung ${actualOrderNumber}`;
+      const htmlContent = `
+        <h1>Ihre Retoure wurde angemeldet</h1>
+        <p>Liebe/r Kunde/in,</p>
+        <p>Ihre Retouren-Anfrage für die Bestellung <strong>${actualOrderNumber}</strong> wurde erfolgreich angemeldet.</p>
+        
+        <h2>Angaben zu Ihrer Retoure:</h2>
+        <div style="background-color: #f5f5f5; padding: 15px; margin: 20px 0; border-radius: 5px;">
+          <strong>Grund:</strong> ${reason}
+        </div>
+        
+        <h2>Wie geht es weiter?</h2>
+        <p>Wir prüfen Ihre Anfrage und melden uns innerhalb von 1-2 Werktagen bei Ihnen zurück. Bei Genehmigung erhalten Sie ein kostenloses Retourenlabel per E-Mail.</p>
+        
+        <h2>Rückgabebedingungen:</h2>
+        <ul>
+          <li>Parfüms müssen ungeöffnet und in originalverpacktem Zustand sein</li>
+          <li>Rückgabe innerhalb von 14 Tagen nach Erhalt</li>
+          <li>Kostenlose Rückgabe mit unserem Retourenlabel</li>
+        </ul>
+        
+        <p>Bei Fragen stehen wir Ihnen gerne zur Verfügung.</p>
+        
+        <p>Mit freundlichen Grüßen,<br>
+        Ihr ALDENAIR Team</p>
+      `;
+
+      const emailResponse = await resend.emails.send({
+        from: "ALDENAIR <support@aldenairperfumes.de>",
+        to: [customerEmailAddress],
+        subject: subject,
+        html: htmlContent,
+      });
+
+      return new Response(JSON.stringify({ success: true, emailResponse }), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      });
+    }
+
+    // Handle admin action (approve/reject)
     const { data: returnData, error: returnError } = await supabaseAdmin
       .from('returns')
       .select(`
@@ -56,17 +130,18 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('User email not found');
     }
 
-    const customerEmailAddress = userData.user.email;
+    customerEmailAddress = userData.user.email;
+    actualOrderNumber = orderNumber || returnData.orders.order_number || returnId!.slice(-8);
 
     let subject: string;
     let htmlContent: string;
 
     if (action === 'approve') {
-      subject = `Retoure genehmigt - Bestellung ${orderNumber}`;
+      subject = `Retoure genehmigt - Bestellung ${actualOrderNumber}`;
       htmlContent = `
         <h1>Ihre Retoure wurde genehmigt</h1>
         <p>Liebe/r Kunde/in,</p>
-        <p>Ihre Retouren-Anfrage für die Bestellung <strong>${orderNumber}</strong> wurde genehmigt.</p>
+        <p>Ihre Retouren-Anfrage für die Bestellung <strong>${actualOrderNumber}</strong> wurde genehmigt.</p>
         
         <h2>Nächste Schritte:</h2>
         <ol>
@@ -93,11 +168,11 @@ const handler = async (req: Request): Promise<Response> => {
         Ihr ALDENAIR Team</p>
       `;
     } else {
-      subject = `Retoure abgelehnt - Bestellung ${orderNumber}`;
+      subject = `Retoure abgelehnt - Bestellung ${actualOrderNumber}`;
       htmlContent = `
         <h1>Ihre Retoure wurde abgelehnt</h1>
         <p>Liebe/r Kunde/in,</p>
-        <p>Leider müssen wir Ihre Retouren-Anfrage für die Bestellung <strong>${orderNumber}</strong> ablehnen.</p>
+        <p>Leider müssen wir Ihre Retouren-Anfrage für die Bestellung <strong>${actualOrderNumber}</strong> ablehnen.</p>
         
         <h2>Grund der Ablehnung:</h2>
         <div style="background-color: #ffebee; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #f44336;">
