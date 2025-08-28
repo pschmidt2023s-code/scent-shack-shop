@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Package, Users, CreditCard } from 'lucide-react';
+import CouponManagement from '@/components/admin/CouponManagement';
+import UserManagement from '@/components/admin/UserManagement';
 
 interface Order {
   id: string;
@@ -214,34 +216,11 @@ export default function Admin() {
           </TabsContent>
 
           <TabsContent value="coupons" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Coupon-Verwaltung</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground mb-4">
-                    Die Coupon-Verwaltung ist derzeit nicht verfügbar.
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Bitte warten Sie, bis die Datenbanktypen aktualisiert wurden.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <CouponManagement />
           </TabsContent>
 
           <TabsContent value="users">
-            <Card>
-              <CardHeader>
-                <CardTitle>Benutzerverwaltung</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Benutzerverwaltung wird in einer zukünftigen Version verfügbar sein.
-                </p>
-              </CardContent>
-            </Card>
+            <UserManagement />
           </TabsContent>
         </Tabs>
       </div>
