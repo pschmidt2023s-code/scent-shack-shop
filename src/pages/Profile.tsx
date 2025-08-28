@@ -1,17 +1,63 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, MapPin, Package, Settings } from 'lucide-react';
+import { User, MapPin, Package, Settings, Crown, ShoppingBag, Calendar, Award } from 'lucide-react';
 import { ProfileForm } from '@/components/profile/ProfileForm';
 import AddressManager from '@/components/profile/AddressManager';
 import { OrderHistory } from '@/components/profile/OrderHistory';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Profile() {
   const { user, signOut } = useAuth();
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    totalSpent: 0,
+    favoriteCategory: 'Prestige Edition',
+    memberSince: '',
+    addressCount: 0
+  });
+
+  useEffect(() => {
+    if (user) {
+      loadUserStats();
+    }
+  }, [user]);
+
+  const loadUserStats = async () => {
+    if (!user) return;
+
+    try {
+      // Load orders data
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('total_amount, created_at')
+        .eq('user_id', user.id);
+
+      // Load addresses count
+      const { count: addressCount } = await supabase
+        .from('addresses')
+        .select('*', { count: 'exact' })
+        .eq('user_id', user.id);
+
+      if (orders) {
+        const totalSpent = orders.reduce((sum, order) => sum + (order.total_amount / 100), 0);
+        setStats({
+          totalOrders: orders.length,
+          totalSpent,
+          favoriteCategory: 'Prestige Edition',
+          memberSince: new Date(user.created_at).toLocaleDateString('de-DE'),
+          addressCount: addressCount || 0
+        });
+      }
+    } catch (error) {
+      console.error('Error loading user stats:', error);
+    }
+  };
 
   if (!user) {
     return (
@@ -36,11 +82,17 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-8 px-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold">Mein Profil</h1>
-              <p className="text-muted-foreground">Verwalten Sie Ihre Kontoinformationen</p>
+              <h1 className="text-3xl font-bold text-luxury-black flex items-center gap-3">
+                <Crown className="w-8 h-8 text-luxury-gold" />
+                Willkommen zurück!
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Verwalten Sie Ihr ALDENAIR Konto und Ihre Bestellungen
+              </p>
             </div>
             <div className="flex gap-2">
               <Link to="/">
@@ -50,6 +102,61 @@ export default function Profile() {
                 Abmelden
               </Button>
             </div>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card className="bg-gradient-primary text-primary-foreground">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-primary-foreground/80 text-sm">Bestellungen</p>
+                    <p className="text-2xl font-bold">{stats.totalOrders}</p>
+                  </div>
+                  <ShoppingBag className="w-8 h-8 text-primary-foreground/80" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-subtle">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-muted-foreground text-sm">Ausgegeben</p>
+                    <p className="text-2xl font-bold text-luxury-black">€{stats.totalSpent.toFixed(2)}</p>
+                  </div>
+                  <Award className="w-8 h-8 text-luxury-gold" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-muted-foreground text-sm">Adressen</p>
+                    <p className="text-2xl font-bold text-luxury-black">{stats.addressCount}</p>
+                  </div>
+                  <MapPin className="w-8 h-8 text-luxury-gold" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-muted-foreground text-sm">Mitglied seit</p>
+                    <p className="text-sm font-medium text-luxury-black">{stats.memberSince}</p>
+                    <Badge variant="secondary" className="mt-1">
+                      <Calendar className="w-3 h-3 mr-1" />
+                      Premium Kunde
+                    </Badge>
+                  </div>
+                  <User className="w-8 h-8 text-luxury-gold" />
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           <Tabs defaultValue="profile" className="space-y-6">
