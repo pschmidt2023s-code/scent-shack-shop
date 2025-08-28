@@ -53,17 +53,24 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
         throw new Error('Keine gültige Sitzung gefunden. Bitte melden Sie sich erneut an.');
       }
       
-      // Check if user already has 2FA factors
+      // Check if user already has 2FA factors and clean them up if needed
       const { data: existingFactors, error: factorsError } = await supabase.auth.mfa.listFactors();
       console.log('Existing factors:', existingFactors);
       
-      if (factorsError) {
-        console.error('Error checking existing factors:', factorsError);
-      }
-      
-      // If user already has factors, don't create a new one
-      if (existingFactors && existingFactors.totp && existingFactors.totp.length > 0) {
-        throw new Error('Sie haben bereits 2FA aktiviert. Bitte deaktivieren Sie es zuerst, um es neu einzurichten.');
+      if (!factorsError && existingFactors && existingFactors.totp) {
+        // Remove any existing factors first
+        for (const factor of existingFactors.totp) {
+          console.log('Removing existing factor:', factor.id);
+          try {
+            await supabase.auth.mfa.unenroll({ factorId: factor.id });
+            console.log('Successfully removed factor:', factor.id);
+          } catch (unenrollError) {
+            console.warn('Could not remove factor:', factor.id, unenrollError);
+          }
+        }
+        
+        // Wait a bit after cleanup
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
       
       console.log('Attempting MFA enrollment for user:', session.user.id);
