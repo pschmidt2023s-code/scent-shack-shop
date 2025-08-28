@@ -93,19 +93,16 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
       setFactorId(data.id);
       setSecret(data.totp.secret);
       
-      // Generate QR code with error correction
-      const qrCodeUrl = data.totp.qr_code;
+      // Generate QR code - Supabase provides it as SVG already
+      const qrCodeSvg = data.totp.qr_code;
       
-      try {
-        const qrCodeDataUrl = await QRCode.toDataURL(qrCodeUrl, {
-          errorCorrectionLevel: 'L',
-          margin: 1,
-          width: 200
-        });
-        setQrCode(qrCodeDataUrl);
-      } catch (qrError) {
-        console.warn('QR Code generation failed, using text fallback:', qrError);
-        // QR code failed, user can use manual secret
+      if (qrCodeSvg && qrCodeSvg.includes('<svg')) {
+        // Convert SVG to data URL for display
+        const svgBlob = new Blob([qrCodeSvg], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(svgBlob);
+        setQrCode(url);
+      } else {
+        console.warn('Invalid QR code format received');
         setQrCode('');
       }
       
