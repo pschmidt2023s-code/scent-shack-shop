@@ -1,18 +1,28 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Package, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Package, ArrowLeft, CheckCircle, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
-const returnFormSchema = z.object({
+// For authenticated users
+const authenticatedReturnSchema = z.object({
+  orderId: z.string().min(1, 'Bitte wählen Sie eine Bestellung aus'),
+  reason: z.string().min(10, 'Grund für die Retoure muss mindestens 10 Zeichen haben'),
+});
+
+// For guest users
+const guestReturnSchema = z.object({
   orderNumber: z.string().min(5, 'Bestellnummer muss mindestens 5 Zeichen haben'),
   firstName: z.string().min(2, 'Vorname muss mindestens 2 Zeichen haben'),
   lastName: z.string().min(2, 'Nachname muss mindestens 2 Zeichen haben'),
@@ -24,14 +34,42 @@ const returnFormSchema = z.object({
   items: z.string().min(5, 'Bitte geben Sie die zu retournierenden Artikel an'),
 });
 
-type ReturnFormData = z.infer<typeof returnFormSchema>;
+type AuthenticatedReturnData = z.infer<typeof authenticatedReturnSchema>;
+type GuestReturnData = z.infer<typeof guestReturnSchema>;
+
+interface Order {
+  id: string;
+  order_number: string;
+  created_at: string;
+  total_amount: number;
+  status: string;
+  order_items: OrderItem[];
+}
+
+interface OrderItem {
+  id: string;
+  perfume_id: string;
+  variant_id: string;
+  quantity: number;
+}
 
 export default function Returns() {
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState<Order[]>([]);
 
-  const form = useForm<ReturnFormData>({
-    resolver: zodResolver(returnFormSchema),
+  const authenticatedForm = useForm<AuthenticatedReturnData>({
+    resolver: zodResolver(authenticatedReturnSchema),
+    defaultValues: {
+      orderId: '',
+      reason: '',
+    },
+  });
+
+  const guestForm = useForm<GuestReturnData>({
+    resolver: zodResolver(guestReturnSchema),
     defaultValues: {
       orderNumber: '',
       firstName: '',
@@ -45,7 +83,83 @@ export default function Returns() {
     },
   });
 
-  const onSubmit = async (data: ReturnFormData) => {
+  useEffect(() => {
+    if (user) {
+      loadUserOrders();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
+
+  const loadUserOrders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          order_number,
+          created_at,
+          total_amount,
+          status,
+          order_items (
+            id,
+            perfume_id,
+            variant_id,
+            quantity
+          )
+        `)
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (error) {
+      console.error('Error loading orders:', error);
+      toast({
+        title: 'Fehler',
+        description: 'Bestellungen konnten nicht geladen werden',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onAuthenticatedSubmit = async (data: AuthenticatedReturnData) => {
+    setIsSubmitting(true);
+    
+    try {
+      const { error } = await supabase
+        .from('returns')
+        .insert({
+          user_id: user?.id,
+          order_id: data.orderId,
+          reason: data.reason,
+          status: 'pending'
+        });
+
+      if (error) throw error;
+
+      setIsSubmitted(true);
+      toast({
+        title: 'Retoure eingereicht',
+        description: 'Ihre Retouren-Anfrage wurde erfolgreich eingereicht. Sie erhalten eine Bestätigung per E-Mail.',
+      });
+      
+      authenticatedForm.reset();
+    } catch (error) {
+      console.error('Error submitting return:', error);
+      toast({
+        title: 'Fehler',
+        description: 'Retoure konnte nicht eingereicht werden. Bitte versuchen Sie es erneut.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const onGuestSubmit = async (data: GuestReturnData) => {
     setIsSubmitting(true);
     
     // Create email body for return request
@@ -80,7 +194,7 @@ ${data.reason}
         description: 'Ihre E-Mail wird geöffnet. Wir bearbeiten Ihre Anfrage innerhalb von 24 Stunden.',
       });
       
-      form.reset();
+      guestForm.reset();
     }, 1000);
   };
 
@@ -95,7 +209,7 @@ ${data.reason}
               Ihre Retouren-Anfrage wurde erfolgreich eingereicht. Wir melden uns innerhalb von 24 Stunden bei Ihnen.
             </p>
             <div className="space-y-2">
-              <Button onClick={() => setIsSubmitted(false)} className="w-full bg-luxury-gold hover:bg-luxury-gold/90 text-luxury-black">
+              <Button onClick={() => setIsSubmitted(false)} className="w-full bg-primary hover:bg-primary/90">
                 Weitere Retoure anmelden
               </Button>
               <Link to="/">
@@ -124,46 +238,183 @@ ${data.reason}
           </div>
 
           <div className="text-center mb-8">
-            <Package className="w-16 h-16 text-luxury-gold mx-auto mb-4" />
-            <h1 className="text-4xl font-bold text-luxury-black mb-4">Retoure anmelden</h1>
-            <p className="text-luxury-gray text-lg">
-              Füllen Sie das Formular aus, um eine Retoure für Ihre Bestellung anzumelden.
+            <Package className="w-16 h-16 text-primary mx-auto mb-4" />
+            <h1 className="text-4xl font-bold mb-4">Retoure anmelden</h1>
+            <p className="text-muted-foreground text-lg">
+              {user ? 'Wählen Sie eine Ihrer Bestellungen aus und geben Sie den Grund für die Retoure an.' : 'Füllen Sie das Formular aus, um eine Retoure für Ihre Bestellung anzumelden.'}
             </p>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-luxury-black">Retouren-Formular</CardTitle>
-              <CardDescription>
-                Alle Felder sind erforderlich. Wir bearbeiten Ihre Anfrage innerhalb von 24 Stunden.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="orderNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Bestellnummer</FormLabel>
-                        <FormControl>
-                          <Input placeholder="z.B. ALN-2025-001234" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {loading ? (
+            <Card>
+              <CardContent className="py-8">
+                <div className="flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                  <span>Bestellungen werden geladen...</span>
+                </div>
+              </CardContent>
+            </Card>
+          ) : user ? (
+            // Authenticated user form
+            <Card>
+              <CardHeader>
+                <CardTitle>Retouren-Formular</CardTitle>
+                <CardDescription>
+                  Wählen Sie eine Ihrer Bestellungen aus. Wir bearbeiten Ihre Anfrage innerhalb von 24 Stunden.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...authenticatedForm}>
+                  <form onSubmit={authenticatedForm.handleSubmit(onAuthenticatedSubmit)} className="space-y-6">
                     <FormField
-                      control={form.control}
-                      name="firstName"
+                      control={authenticatedForm.control}
+                      name="orderId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Vorname</FormLabel>
+                          <FormLabel>Bestellung auswählen</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Wählen Sie eine Bestellung aus" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {orders.map((order) => (
+                                <SelectItem key={order.id} value={order.id}>
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">#{order.order_number}</span>
+                                    <span className="text-sm text-muted-foreground">
+                                      {new Date(order.created_at).toLocaleDateString('de-DE')} - €{(order.total_amount / 100).toFixed(2)}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {authenticatedForm.watch('orderId') && (
+                      <div className="bg-muted p-4 rounded-lg">
+                        <h4 className="font-medium mb-2">Bestelldetails:</h4>
+                        {(() => {
+                          const selectedOrder = orders.find(o => o.id === authenticatedForm.watch('orderId'));
+                          return selectedOrder ? (
+                            <div className="space-y-2">
+                              <p className="text-sm"><strong>Bestellnummer:</strong> #{selectedOrder.order_number}</p>
+                              <p className="text-sm"><strong>Datum:</strong> {new Date(selectedOrder.created_at).toLocaleDateString('de-DE')}</p>
+                              <p className="text-sm"><strong>Betrag:</strong> €{(selectedOrder.total_amount / 100).toFixed(2)}</p>
+                              <div className="text-sm">
+                                <strong>Artikel:</strong>
+                                <ul className="mt-1 ml-4">
+                                  {selectedOrder.order_items.map((item) => (
+                                    <li key={item.id} className="list-disc">
+                                      {item.quantity}x {item.perfume_id} ({item.variant_id})
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          ) : null;
+                        })()}
+                      </div>
+                    )}
+
+                    <FormField
+                      control={authenticatedForm.control}
+                      name="reason"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Grund für die Retoure</FormLabel>
                           <FormControl>
-                            <Input placeholder="Max" {...field} />
+                            <Textarea 
+                              placeholder="Bitte beschreiben Sie den Grund für die Retoure (z.B. Größe passt nicht, Qualitätsmangel, falscher Artikel, etc.)"
+                              className="min-h-[100px]"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button 
+                      type="submit" 
+                      className="w-full"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? 'Wird eingereicht...' : 'Retoure einreichen'}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          ) : (
+            // Guest user form
+            <Card>
+              <CardHeader>
+                <CardTitle>Retouren-Formular</CardTitle>
+                <CardDescription>
+                  Alle Felder sind erforderlich. Wir bearbeiten Ihre Anfrage innerhalb von 24 Stunden.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...guestForm}>
+                  <form onSubmit={guestForm.handleSubmit(onGuestSubmit)} className="space-y-6">
+                    <FormField
+                      control={guestForm.control}
+                      name="orderNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Bestellnummer</FormLabel>
+                          <FormControl>
+                            <Input placeholder="z.B. ALN-2025-001234" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={guestForm.control}
+                        name="firstName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Vorname</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Max" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={guestForm.control}
+                        name="lastName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nachname</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Mustermann" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={guestForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>E-Mail-Adresse</FormLabel>
+                          <FormControl>
+                            <Input placeholder="max.mustermann@beispiel.de" type="email" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -171,125 +422,97 @@ ${data.reason}
                     />
 
                     <FormField
-                      control={form.control}
-                      name="lastName"
+                      control={guestForm.control}
+                      name="street"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Nachname</FormLabel>
+                          <FormLabel>Straße und Hausnummer</FormLabel>
                           <FormControl>
-                            <Input placeholder="Mustermann" {...field} />
+                            <Input placeholder="Musterstraße 123" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  </div>
 
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>E-Mail-Adresse</FormLabel>
-                        <FormControl>
-                          <Input placeholder="max.mustermann@beispiel.de" type="email" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={guestForm.control}
+                        name="postalCode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Postleitzahl</FormLabel>
+                            <FormControl>
+                              <Input placeholder="12345" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <FormField
-                    control={form.control}
-                    name="street"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Straße und Hausnummer</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Musterstraße 123" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="postalCode"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Postleitzahl</FormLabel>
-                          <FormControl>
-                            <Input placeholder="12345" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        control={guestForm.control}
+                        name="city"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Stadt</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Berlin" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
                     <FormField
-                      control={form.control}
-                      name="city"
+                      control={guestForm.control}
+                      name="items"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Stadt</FormLabel>
+                          <FormLabel>Zu retournierende Artikel</FormLabel>
                           <FormControl>
-                            <Input placeholder="Berlin" {...field} />
+                            <Textarea 
+                              placeholder="Bitte listen Sie alle Artikel auf, die Sie retournieren möchten (Name, Größe, Anzahl)"
+                              className="min-h-[80px]"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  </div>
 
-                  <FormField
-                    control={form.control}
-                    name="items"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Zu retournierende Artikel</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Bitte listen Sie alle Artikel auf, die Sie retournieren möchten (Name, Größe, Anzahl)"
-                            className="min-h-[80px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={guestForm.control}
+                      name="reason"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Grund für die Retoure</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Bitte beschreiben Sie den Grund für die Retoure (z.B. Größe passt nicht, Qualitätsmangel, etc.)"
+                              className="min-h-[100px]"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="reason"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Grund für die Retoure</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Bitte beschreiben Sie den Grund für die Retoure (z.B. Größe passt nicht, Qualitätsmangel, etc.)"
-                            className="min-h-[100px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-luxury-gold hover:bg-luxury-gold/90 text-luxury-black"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? 'Wird gesendet...' : 'Retoure anmelden'}
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
+                    <Button 
+                      type="submit" 
+                      className="w-full"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? 'Wird gesendet...' : 'Retoure anmelden'}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
