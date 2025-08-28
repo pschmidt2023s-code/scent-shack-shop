@@ -53,6 +53,19 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
         throw new Error('Keine gültige Sitzung gefunden. Bitte melden Sie sich erneut an.');
       }
       
+      // Check if user already has 2FA factors
+      const { data: existingFactors, error: factorsError } = await supabase.auth.mfa.listFactors();
+      console.log('Existing factors:', existingFactors);
+      
+      if (factorsError) {
+        console.error('Error checking existing factors:', factorsError);
+      }
+      
+      // If user already has factors, don't create a new one
+      if (existingFactors && existingFactors.totp && existingFactors.totp.length > 0) {
+        throw new Error('Sie haben bereits 2FA aktiviert. Bitte deaktivieren Sie es zuerst, um es neu einzurichten.');
+      }
+      
       console.log('Attempting MFA enrollment for user:', session.user.id);
       
       const { data, error } = await supabase.auth.mfa.enroll({
