@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Shield, ShieldCheck, ShieldOff, Settings } from 'lucide-react';
+import { Shield, ShieldCheck, ShieldOff, Settings, AlertTriangle } from 'lucide-react';
 import { TwoFactorSetup } from './TwoFactorSetup';
 
 export function TwoFactorManagement() {
@@ -13,6 +13,7 @@ export function TwoFactorManagement() {
   const [loading, setLoading] = useState(true);
   const [setupOpen, setSetupOpen] = useState(false);
   const [disabling, setDisabling] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export function TwoFactorManagement() {
       
       if (error) throw error;
       
+      console.log('MFA Factors loaded:', data);
       setMfaFactors(data.totp || []);
     } catch (error: any) {
       console.error('Error loading MFA factors:', error);
@@ -36,6 +38,52 @@ export function TwoFactorManagement() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const cleanupAllFactors = async () => {
+    try {
+      setCleaning(true);
+      const { data, error } = await supabase.auth.mfa.listFactors();
+      
+      if (error) throw error;
+      
+      const factors = data.totp || [];
+      console.log('Cleaning up factors:', factors);
+      
+      for (const factor of factors) {
+        try {
+          console.log('Removing factor:', factor.id);
+          const { error: unenrollError } = await supabase.auth.mfa.unenroll({
+            factorId: factor.id
+          });
+          
+          if (unenrollError) {
+            console.error('Error removing factor:', factor.id, unenrollError);
+          } else {
+            console.log('Successfully removed factor:', factor.id);
+          }
+        } catch (err) {
+          console.error('Failed to remove factor:', factor.id, err);
+        }
+      }
+      
+      toast({
+        title: "Bereinigung abgeschlossen",
+        description: "Alle 2FA-Faktoren wurden entfernt. Sie können jetzt neu einrichten.",
+      });
+      
+      await loadMfaFactors();
+      
+    } catch (error: any) {
+      console.error('Error cleaning up factors:', error);
+      toast({
+        title: "Bereinigung fehlgeschlagen",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setCleaning(false);
     }
   };
 
@@ -143,9 +191,32 @@ export function TwoFactorManagement() {
                 <ShieldOff className="w-4 h-4" />
                 <AlertDescription>
                   Zwei-Faktor-Authentifizierung ist nicht aktiviert. 
-                  Aktivieren Sie 2FA für zusätzliche Kontosicherheit.
+                  {mfaFactors.length > 0 && " Es wurden kaputte 2FA-Faktoren erkannt - bitte bereinigen Sie diese zuerst."}
                 </AlertDescription>
               </Alert>
+
+              {/* Show cleanup option if there are factors but they're not working */}
+              {mfaFactors.length > 0 && (
+                <div className="flex items-center justify-between p-4 border rounded-lg border-destructive/50 bg-destructive/5">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 text-destructive" />
+                    <div>
+                      <p className="font-medium text-destructive">Kaputte 2FA-Faktoren erkannt</p>
+                      <p className="text-sm text-muted-foreground">
+                        {mfaFactors.length} defekte Faktor(en) blockieren die Einrichtung
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="destructive"
+                    size="sm"
+                    onClick={cleanupAllFactors}
+                    disabled={cleaning}
+                  >
+                    {cleaning ? 'Bereinige...' : 'Bereinigen'}
+                  </Button>
+                </div>
+              )}
 
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-3">
@@ -157,8 +228,11 @@ export function TwoFactorManagement() {
                     </p>
                   </div>
                 </div>
-                <Button onClick={() => setSetupOpen(true)}>
-                  Einrichten
+                <Button 
+                  onClick={() => setSetupOpen(true)}
+                  disabled={mfaFactors.length > 0}
+                >
+                  {mfaFactors.length > 0 ? 'Zuerst bereinigen' : 'Einrichten'}
                 </Button>
               </div>
             </div>
