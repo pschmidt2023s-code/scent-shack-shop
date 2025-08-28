@@ -236,10 +236,17 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
               <Card>
                 <CardContent className="p-6 text-center space-y-4">
                   <h3 className="font-semibold">QR-Code scannen</h3>
-                  <div 
-                    className="mx-auto flex justify-center"
-                    dangerouslySetInnerHTML={{ __html: qrCode }}
-                  />
+                  <div className="flex justify-center">
+                    <div 
+                      className="qr-code-container"
+                      dangerouslySetInnerHTML={{ __html: qrCode }}
+                      style={{ 
+                        display: 'inline-block',
+                        maxWidth: '200px',
+                        maxHeight: '200px'
+                      }}
+                    />
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     Scannen Sie diesen QR-Code mit Ihrer Authenticator-App
                   </p>
