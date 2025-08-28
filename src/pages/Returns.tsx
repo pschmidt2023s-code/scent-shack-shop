@@ -84,11 +84,15 @@ export default function Returns() {
   });
 
   useEffect(() => {
-    if (user) {
-      loadUserOrders();
-    } else {
-      setLoading(false);
-    }
+    const initializeComponent = async () => {
+      if (user) {
+        await loadUserOrders();
+      } else {
+        setLoading(false);
+      }
+    };
+    
+    initializeComponent();
   }, [user]);
 
   const loadUserOrders = async () => {
