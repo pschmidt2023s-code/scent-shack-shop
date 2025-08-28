@@ -36,18 +36,39 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
     try {
       setLoading(true);
       
-      // Check if user is authenticated
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      // Wait a bit to ensure session is fully established
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (userError || !user) {
-        throw new Error('Sie müssen angemeldet sein, um 2FA einzurichten. Bitte melden Sie sich erst an.');
+      // Get fresh session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      console.log('Current session for 2FA setup:', session);
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        throw new Error('Sitzungsfehler: ' + sessionError.message);
       }
+      
+      if (!session || !session.user) {
+        console.error('No valid session found');
+        throw new Error('Keine gültige Sitzung gefunden. Bitte melden Sie sich erneut an.');
+      }
+      
+      console.log('Attempting MFA enrollment for user:', session.user.id);
       
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp'
       });
 
-      if (error) throw error;
+      console.log('MFA enrollment result:', { data, error });
+
+      if (error) {
+        console.error('MFA enrollment error:', error);
+        throw error;
+      }
+
+      if (!data || !data.totp) {
+        throw new Error('Ungültige Antwort vom 2FA-Service');
+      }
 
       setFactorId(data.id);
       setSecret(data.totp.secret);
@@ -61,7 +82,7 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
       console.error('Error setting up 2FA:', error);
       toast({
         title: "2FA-Setup fehlgeschlagen",
-        description: error.message || "Bitte melden Sie sich erst vollständig an.",
+        description: error.message || "Unbekannter Fehler beim 2FA-Setup. Bitte versuchen Sie es später erneut.",
         variant: "destructive",
       });
       onClose(); // Close modal on error
