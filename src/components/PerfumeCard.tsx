@@ -49,7 +49,7 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
 
   return (
     <Card 
-      className="group hover:shadow-glow hover-lift transition-all duration-700 cursor-pointer overflow-hidden bg-gradient-to-br from-white via-white to-gray-50/30 border-0 shadow-lg animate-scale-in hover:scale-[1.03] hover:-rotate-1 hover:z-10 relative backdrop-blur-sm" 
+      className="group hover:shadow-glow hover-lift transition-all duration-700 cursor-pointer overflow-hidden bg-gradient-to-br from-white via-white to-gray-50/30 border-0 shadow-lg animate-scale-in hover:scale-[1.03] hover:-rotate-1 hover:z-10 relative backdrop-blur-sm h-full flex flex-col" 
       onClick={handleViewProduct}
       onMouseEnter={(e) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -63,19 +63,21 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
         e.currentTarget.style.setProperty('--magnetic-y', '0px');
       }}
     >
-      <div className="relative overflow-hidden rounded-t-lg">
+      <div className="relative overflow-hidden rounded-t-lg flex-shrink-0">
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/5 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-all duration-500" />
         <div className="absolute inset-0 bg-gradient-to-br from-luxury-gold/10 via-transparent to-luxury-gold/5 z-10 opacity-0 group-hover:opacity-100 transition-all duration-700" />
         
-        <img
-          src={perfume.image}
-          alt={`${perfume.name} - ${perfume.brand} ${perfume.category} ${perfume.size} Parfüm`}
-          className="w-full h-64 object-cover group-hover:scale-115 transition-all duration-1000 group-hover:brightness-110 group-hover:saturate-110"
-          loading="lazy"
-          decoding="async"
-          width="306"
-          height="256"
-        />
+        <div className="h-64 w-full bg-gray-100 flex items-center justify-center">
+          <img
+            src={perfume.image}
+            alt={`${perfume.name} - ${perfume.brand} ${perfume.category} ${perfume.size} Parfüm`}
+            className="max-h-full max-w-full object-contain group-hover:scale-115 transition-all duration-1000 group-hover:brightness-110 group-hover:saturate-110"
+            loading="lazy"
+            decoding="async"
+            width="306"
+            height="256"
+          />
+        </div>
         
         {/* Quick Actions */}
         <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-4 translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0 flex flex-col gap-2 z-20">
@@ -99,16 +101,16 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
         </div>
       </div>
 
-      <CardContent className="p-6 relative backdrop-blur-sm">
-        <div className="space-y-4">
+      <CardContent className="p-6 relative backdrop-blur-sm flex-1 flex flex-col">
+        <div className="space-y-4 flex-1 flex flex-col">
           <p className="text-sm text-luxury-gold font-semibold tracking-wider uppercase opacity-80 group-hover:opacity-100 transition-all duration-300 transform group-hover:translate-x-1">
             {perfume.brand}
           </p>
-          <h3 className="font-bold text-xl group-hover:text-luxury-gold transition-all duration-500 leading-tight transform group-hover:translate-x-2 group-hover:scale-105">
+          <h3 className="font-bold text-xl group-hover:text-luxury-gold transition-all duration-500 leading-tight transform group-hover:translate-x-2 group-hover:scale-105 flex-shrink-0">
             {perfume.name}
           </h3>
           
-          <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:translate-x-1">
+          <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:translate-x-1 flex-shrink-0">
             {totalReviews > 0 ? renderStars(averageRating) : (
               <div className="flex items-center space-x-1">
                 <span className="text-sm text-muted-foreground group-hover:text-luxury-gold/70 transition-colors duration-300">Noch keine Bewertungen</span>
@@ -116,38 +118,40 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
             )}
           </div>
           
-          <p className="text-sm text-muted-foreground font-medium group-hover:text-luxury-gold/60 transition-all duration-300 transform group-hover:translate-x-1">
+          <p className="text-sm text-muted-foreground font-medium group-hover:text-luxury-gold/60 transition-all duration-300 transform group-hover:translate-x-1 flex-shrink-0">
             {perfume.category} • {perfume.size}
           </p>
           
-          <div className="flex items-center justify-between pt-4 border-t border-gray-100 group-hover:border-luxury-gold/20 transition-all duration-500">
-            <div className="flex items-center space-x-2">
-              <span className="text-2xl font-bold text-foreground group-hover:text-luxury-gold transition-all duration-500 transform group-hover:scale-110 group-hover:translate-x-2">
-                {priceRange.min === priceRange.max 
-                  ? `€${priceRange.min.toFixed(2)}`
-                  : `€${priceRange.min.toFixed(2)} - €${priceRange.max.toFixed(2)}`
-                }
-              </span>
+          <div className="flex-1 flex flex-col justify-end">
+            <div className="flex items-center justify-between pt-4 border-t border-gray-100 group-hover:border-luxury-gold/20 transition-all duration-500 mb-4">
+              <div className="flex items-center space-x-2">
+                <span className="text-2xl font-bold text-foreground group-hover:text-luxury-gold transition-all duration-500 transform group-hover:scale-110 group-hover:translate-x-2">
+                  {priceRange.min === priceRange.max 
+                    ? `€${priceRange.min.toFixed(2)}`
+                    : `€${priceRange.min.toFixed(2)} - €${priceRange.max.toFixed(2)}`
+                  }
+                </span>
+              </div>
+              
+              <Badge variant="outline" className="text-xs border-luxury-gold/30 text-luxury-gray group-hover:border-luxury-gold group-hover:text-luxury-gold group-hover:bg-luxury-gold/10 transition-all duration-300 transform group-hover:scale-105">
+                {perfume.size}
+              </Badge>
             </div>
-            
-            <Badge variant="outline" className="text-xs border-luxury-gold/30 text-luxury-gray group-hover:border-luxury-gold group-hover:text-luxury-gold group-hover:bg-luxury-gold/10 transition-all duration-300 transform group-hover:scale-105">
-              {perfume.size}
-            </Badge>
-          </div>
 
-          <div className="flex gap-2 mt-6 transform transition-all duration-500 group-hover:translate-y-1">
-            <Button 
-              className="flex-1 bg-gradient-primary hover:shadow-glow transition-all duration-500 hover:scale-105 font-semibold relative overflow-hidden group/btn"
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-luxury-gold/20 via-luxury-gold-light/20 to-luxury-gold/20 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
-              <ShoppingBag className="w-4 h-4 mr-2 transition-transform duration-300 group-hover/btn:scale-110 group-hover/btn:rotate-12 relative z-10" />
-              <span className="relative z-10 transition-transform duration-300 group-hover/btn:scale-105">
-                Varianten ansehen
-              </span>
-            </Button>
+            <div className="flex gap-2 transform transition-all duration-500 group-hover:translate-y-1">
+              <Button 
+                className="flex-1 bg-gradient-primary hover:shadow-glow transition-all duration-500 hover:scale-105 font-semibold relative overflow-hidden group/btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-luxury-gold/20 via-luxury-gold-light/20 to-luxury-gold/20 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
+                <ShoppingBag className="w-4 h-4 mr-2 transition-transform duration-300 group-hover/btn:scale-110 group-hover/btn:rotate-12 relative z-10" />
+                <span className="relative z-10 transition-transform duration-300 group-hover/btn:scale-105">
+                  Varianten ansehen
+                </span>
+              </Button>
+            </div>
           </div>
         </div>
       </CardContent>
