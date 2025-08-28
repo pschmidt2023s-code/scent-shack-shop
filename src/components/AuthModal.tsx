@@ -247,17 +247,6 @@ export function AuthModal({ children }: AuthModalProps) {
                 )}
               </div>
               
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="setup-2fa"
-                  checked={setup2FAAfterSignup}
-                  onCheckedChange={(checked) => setSetup2FAAfterSignup(checked === true)}
-                />
-                <Label htmlFor="setup-2fa" className="text-sm cursor-pointer">
-                  2FA nach Registrierung einrichten (empfohlen)
-                </Label>
-              </div>
-              
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Registrieren...' : 'Registrieren'}
               </Button>
@@ -265,20 +254,6 @@ export function AuthModal({ children }: AuthModalProps) {
           </TabsContent>
         </Tabs>
       </DialogContent>
-      
-      <TwoFactorSetup
-        open={showTwoFactorSetup}
-        onClose={() => {
-          setShowTwoFactorSetup(false);
-          setOpen(false);
-          resetForm();
-        }}
-        onSetupComplete={() => {
-          setShowTwoFactorSetup(false);
-          setOpen(false);
-          resetForm();
-        }}
-      />
       
       <TwoFactorVerification
         open={showTwoFactorVerification}

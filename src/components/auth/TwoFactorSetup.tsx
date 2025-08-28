@@ -73,10 +73,21 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
       setFactorId(data.id);
       setSecret(data.totp.secret);
       
-      // Generate QR code
+      // Generate QR code with error correction
       const qrCodeUrl = data.totp.qr_code;
-      const qrCodeDataUrl = await QRCode.toDataURL(qrCodeUrl);
-      setQrCode(qrCodeDataUrl);
+      
+      try {
+        const qrCodeDataUrl = await QRCode.toDataURL(qrCodeUrl, {
+          errorCorrectionLevel: 'L',
+          margin: 1,
+          width: 200
+        });
+        setQrCode(qrCodeDataUrl);
+      } catch (qrError) {
+        console.warn('QR Code generation failed, using text fallback:', qrError);
+        // QR code failed, user can use manual secret
+        setQrCode('');
+      }
       
     } catch (error: any) {
       console.error('Error setting up 2FA:', error);
@@ -166,7 +177,7 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
               </AlertDescription>
             </Alert>
 
-            {qrCode && (
+            {qrCode ? (
               <Card>
                 <CardContent className="p-6 text-center space-y-4">
                   <h3 className="font-semibold">QR-Code scannen</h3>
@@ -176,6 +187,13 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
                   </p>
                 </CardContent>
               </Card>
+            ) : (
+              <Alert>
+                <Smartphone className="w-4 h-4" />
+                <AlertDescription>
+                  QR-Code konnte nicht generiert werden. Verwenden Sie den manuellen Secret unten.
+                </AlertDescription>
+              </Alert>
             )}
 
             {secret && (
