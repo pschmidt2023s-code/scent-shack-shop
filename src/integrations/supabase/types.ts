@@ -273,6 +273,59 @@ export type Database = {
           },
         ]
       }
+      reviews: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          images: string[] | null
+          is_verified: boolean | null
+          order_id: string | null
+          perfume_id: string
+          rating: number
+          title: string | null
+          updated_at: string
+          user_id: string
+          variant_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          images?: string[] | null
+          is_verified?: boolean | null
+          order_id?: string | null
+          perfume_id: string
+          rating: number
+          title?: string | null
+          updated_at?: string
+          user_id: string
+          variant_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          images?: string[] | null
+          is_verified?: boolean | null
+          order_id?: string | null
+          perfume_id?: string
+          rating?: number
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -299,6 +352,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_verified_purchase: {
+        Args: { user_id_param: string; variant_id_param: string }
+        Returns: boolean
+      }
       generate_order_number: {
         Args: Record<PropertyKey, never>
         Returns: string
