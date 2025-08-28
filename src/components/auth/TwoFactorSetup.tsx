@@ -8,7 +8,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Shield, Copy, Check, Smartphone } from 'lucide-react';
-import QRCode from 'qrcode';
 
 interface TwoFactorSetupProps {
   open: boolean;
@@ -53,39 +52,80 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
         throw new Error('Keine gültige Sitzung gefunden. Bitte melden Sie sich erneut an.');
       }
       
-      // Check if user already has 2FA factors and clean them up if needed
-      const { data: existingFactors, error: factorsError } = await supabase.auth.mfa.listFactors();
-      console.log('Existing factors:', existingFactors);
-      
-      if (!factorsError && existingFactors && existingFactors.totp) {
-        // Remove any existing factors first
-        for (const factor of existingFactors.totp) {
-          console.log('Removing existing factor:', factor.id);
-          try {
-            await supabase.auth.mfa.unenroll({ factorId: factor.id });
-            console.log('Successfully removed factor:', factor.id);
-          } catch (unenrollError) {
-            console.warn('Could not remove factor:', factor.id, unenrollError);
-          }
-        }
-        
-        // Wait a bit after cleanup
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-      
       console.log('Attempting MFA enrollment for user:', session.user.id);
       
-      const { data, error } = await supabase.auth.mfa.enroll({
-        factorType: 'totp'
-      });
-
-      console.log('MFA enrollment result:', { data, error });
-
-      if (error) {
-        console.error('MFA enrollment error:', error);
-        throw error;
+      // Try to enroll with a unique friendly name to avoid conflicts
+      const uniqueName = `totp_${Date.now()}`;
+      
+      let enrollResult;
+      try {
+        enrollResult = await supabase.auth.mfa.enroll({
+          factorType: 'totp',
+          friendlyName: uniqueName
+        });
+      } catch (initialError: any) {
+        console.log('Initial enrollment failed, trying cleanup:', initialError);
+        
+        if (initialError.message?.includes('friendly name') || initialError.code === 'mfa_factor_name_conflict') {
+          // Aggressive cleanup - try to remove any existing factors
+          console.log('Attempting aggressive factor cleanup...');
+          
+          // Try multiple cleanup approaches
+          const userFactors = session.user.factors || [];
+          console.log('User factors from session:', userFactors);
+          
+          // Try to remove factors from user object
+          for (const factor of userFactors) {
+            try {
+              console.log('Removing factor from user object:', factor.id);
+              await supabase.auth.mfa.unenroll({ factorId: factor.id });
+            } catch (err) {
+              console.warn('Could not remove factor via user object:', err);
+            }
+          }
+          
+          // Also try listFactors approach
+          try {
+            const { data: factorsList } = await supabase.auth.mfa.listFactors();
+            if (factorsList?.totp) {
+              for (const factor of factorsList.totp) {
+                try {
+                  console.log('Removing factor from listFactors:', factor.id);
+                  await supabase.auth.mfa.unenroll({ factorId: factor.id });
+                } catch (err) {
+                  console.warn('Could not remove factor via listFactors:', err);
+                }
+              }
+            }
+          } catch (err) {
+            console.warn('ListFactors cleanup failed:', err);
+          }
+          
+          // Force session refresh
+          await supabase.auth.refreshSession();
+          
+          // Wait and try again
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Try enrollment again with different name
+          const retryName = `totp_retry_${Date.now()}`;
+          enrollResult = await supabase.auth.mfa.enroll({
+            factorType: 'totp',
+            friendlyName: retryName
+          });
+        } else {
+          throw initialError;
+        }
       }
 
+      console.log('MFA enrollment result:', enrollResult);
+
+      if (enrollResult.error) {
+        console.error('MFA enrollment error:', enrollResult.error);
+        throw enrollResult.error;
+      }
+
+      const { data } = enrollResult;
       if (!data || !data.totp) {
         throw new Error('Ungültige Antwort vom 2FA-Service');
       }
@@ -93,7 +133,7 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
       setFactorId(data.id);
       setSecret(data.totp.secret);
       
-      // Generate QR code - Supabase provides it as SVG already
+      // Handle QR code - Supabase provides it as SVG already
       const qrCodeSvg = data.totp.qr_code;
       
       if (qrCodeSvg && qrCodeSvg.includes('<svg')) {
