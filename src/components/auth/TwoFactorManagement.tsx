@@ -122,7 +122,9 @@ export function TwoFactorManagement() {
     });
   };
 
-  const has2FA = mfaFactors.length > 0;
+  // Only consider 2FA active if factors are verified
+  const has2FA = mfaFactors.some(factor => factor.status === 'verified');
+  const hasUnverifiedFactors = mfaFactors.length > 0 && !has2FA;
 
   if (loading) {
     return (
