@@ -207,22 +207,8 @@ serve(async (req) => {
       console.log("=== FREE ORDER PROCESSING START ===");
       console.log("0€ order detected, processing without Stripe...");
       
-      // Check service role key
-      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-      console.log("Service role key check:", serviceRoleKey ? "✓ Set" : "✗ Missing");
-      
-      if (!serviceRoleKey) {
-        console.error("CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing");
-        throw new Error("Service key not configured for free orders");
-      }
-      
-      // Save order directly to database as paid
-      const supabaseService = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        serviceRoleKey,
-        { auth: { persistSession: false } }
-      );
-
+      // For free orders, we'll save them as 'paid' since no payment is needed
+      // We'll use the regular client with auth for user orders
       const orderData = {
         user_id: user?.id || null,
         stripe_session_id: null, // No Stripe session for free orders
@@ -232,47 +218,98 @@ serve(async (req) => {
         created_at: new Date().toISOString(),
       };
 
-      console.log("Creating free order with data:", orderData);
-      const { data: order, error: orderError } = await supabaseService
-        .from("orders")
-        .insert(orderData)
-        .select()
-        .single();
-
-      if (orderError) {
-        console.error("Free order creation error:", orderError);
-        throw new Error(`Fehler beim Erstellen der kostenlosen Bestellung: ${orderError.message}`);
-      }
-
-      console.log("Free order created successfully:", order.id);
+      console.log("Creating free order with regular client (user authenticated)...");
       
-      // Save order items
-      const orderItems = items.map(item => ({
-        order_id: order.id,
-        perfume_id: item.perfume.id,
-        variant_id: item.variant.id,
-        quantity: item.quantity,
-        unit_price: item.variant.price * 100,
-        total_price: item.variant.price * 100 * item.quantity,
-      }));
+      if (!user) {
+        // For guest users with free orders, we need service role
+        const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+        if (!serviceRoleKey) {
+          console.error("Service role key required for guest free orders");
+          throw new Error("Kostenlose Gastbestellungen sind derzeit nicht verfügbar. Bitte erstellen Sie ein Konto.");
+        }
+        
+        const supabaseService = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          serviceRoleKey,
+          { auth: { persistSession: false } }
+        );
+        
+        const { data: order, error: orderError } = await supabaseService
+          .from("orders")
+          .insert(orderData)
+          .select()
+          .single();
 
-      console.log("Creating order items:", orderItems);
-      const { error: itemsError } = await supabaseService.from("order_items").insert(orderItems);
-      if (itemsError) {
-        console.error("Free order items creation error:", itemsError);
+        if (orderError) {
+          console.error("Guest free order creation error:", orderError);
+          throw new Error(`Fehler beim Erstellen der kostenlosen Bestellung: ${orderError.message}`);
+        }
+
+        console.log("Guest free order created:", order.id);
+        
+        // Save order items
+        const orderItems = items.map(item => ({
+          order_id: order.id,
+          perfume_id: item.perfume.id,
+          variant_id: item.variant.id,
+          quantity: item.quantity,
+          unit_price: item.variant.price * 100,
+          total_price: item.variant.price * 100 * item.quantity,
+        }));
+
+        const { error: itemsError } = await supabaseService.from("order_items").insert(orderItems);
+        if (itemsError) {
+          console.error("Guest free order items creation error:", itemsError);
+        }
+        
+        console.log("=== FREE ORDER PROCESSING END (GUEST) ===");
+        return new Response(JSON.stringify({ 
+          url: `${req.headers.get("origin")}/checkout/success?free_order=true&order_id=${order.id}`,
+          free_order: true 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
       } else {
-        console.log("Order items created successfully");
-      }
+        // For authenticated users, use regular client (should work with RLS)
+        const { data: order, error: orderError } = await supabaseClient
+          .from("orders")
+          .insert(orderData)
+          .select()
+          .single();
 
-      console.log("=== FREE ORDER PROCESSING END ===");
-      // Return success URL for free order
-      return new Response(JSON.stringify({ 
-        url: `${req.headers.get("origin")}/checkout/success?free_order=true&order_id=${order.id}`,
-        free_order: true 
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
+        if (orderError) {
+          console.error("User free order creation error:", orderError);
+          throw new Error(`Fehler beim Erstellen der kostenlosen Bestellung: ${orderError.message}`);
+        }
+
+        console.log("User free order created:", order.id);
+        
+        // Save order items
+        const orderItems = items.map(item => ({
+          order_id: order.id,
+          perfume_id: item.perfume.id,
+          variant_id: item.variant.id,
+          quantity: item.quantity,
+          unit_price: item.variant.price * 100,
+          total_price: item.variant.price * 100 * item.quantity,
+        }));
+
+        const { error: itemsError } = await supabaseClient.from("order_items").insert(orderItems);
+        if (itemsError) {
+          console.error("User free order items creation error:", itemsError);
+          // Don't fail completely on items error for free orders
+        }
+        
+        console.log("=== FREE ORDER PROCESSING END (USER) ===");
+        return new Response(JSON.stringify({ 
+          url: `${req.headers.get("origin")}/checkout/success?free_order=true&order_id=${order.id}`,
+          free_order: true 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
     }
 
     console.log("Creating Stripe checkout session...");
