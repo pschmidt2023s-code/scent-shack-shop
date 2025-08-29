@@ -153,6 +153,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
           body: {
             items,
             guestEmail: user ? undefined : sanitizeInput(guestEmail),
+            couponCode: appliedCoupon?.code || undefined,
           },
         });
 
