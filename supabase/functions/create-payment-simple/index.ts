@@ -49,21 +49,26 @@ serve(async (req) => {
     });
 
     if (!stripeKey) {
+      console.error("CRITICAL: STRIPE_SECRET_KEY is missing");
       throw new Error("STRIPE_SECRET_KEY ist nicht konfiguriert");
     }
 
+    console.log("Creating Supabase client...");
     const supabaseClient = createClient(
       supabaseUrl ?? "",
       supabaseKey ?? ""
     );
 
+    console.log("Parsing request body...");
     const { items, guestEmail, couponCode }: PaymentRequest = await req.json();
     console.log("Request data:", { itemCount: items?.length, guestEmail, couponCode });
 
     if (!items || items.length === 0) {
+      console.error("No items in cart");
       throw new Error("Keine Artikel im Warenkorb");
     }
 
+    console.log("Getting user authentication...");
     // Get user if authenticated
     let user = null;
     const authHeader = req.headers.get("Authorization");
@@ -71,6 +76,7 @@ serve(async (req) => {
       const token = authHeader.replace("Bearer ", "");
       const { data } = await supabaseClient.auth.getUser(token);
       user = data.user;
+      console.log("User authenticated:", user ? "Yes" : "No");
     }
 
     // Use user email or guest email
@@ -78,6 +84,7 @@ serve(async (req) => {
     console.log("Customer info:", { userEmail: user?.email, guestEmail, finalEmail: customerEmail });
     
     if (!customerEmail) {
+      console.error("No customer email provided");
       throw new Error("E-Mail-Adresse erforderlich");
     }
 
@@ -86,11 +93,15 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
+    console.log("Checking for existing Stripe customer...");
     // Check for existing Stripe customer
     const customers = await stripe.customers.list({ email: customerEmail, limit: 1 });
     let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
+      console.log("Found existing customer:", customerId);
+    } else {
+      console.log("No existing customer found");
     }
 
     // Calculate totals and create line items
@@ -132,48 +143,83 @@ serve(async (req) => {
     let finalTotal = subtotal;
     
     if (couponCode) {
+      console.log("=== COUPON VALIDATION START ===");
       console.log("Validating coupon:", couponCode);
-      const { data: coupon, error: couponError } = await supabaseClient
-        .from("coupons")
-        .select("*")
-        .eq("code", couponCode)
-        .eq("active", true)
-        .single();
       
-      if (!couponError && coupon) {
-        const now = new Date();
-        const validFrom = coupon.valid_from ? new Date(coupon.valid_from) : null;
-        const validUntil = coupon.valid_until ? new Date(coupon.valid_until) : null;
+      try {
+        const { data: coupon, error: couponError } = await supabaseClient
+          .from("coupons")
+          .select("*")
+          .eq("code", couponCode)
+          .eq("active", true)
+          .single();
         
-        const isDateValid = (!validFrom || now >= validFrom) && (!validUntil || now <= validUntil);
-        const isUsageValid = !coupon.max_uses || coupon.current_uses < coupon.max_uses;
-        const isMinOrderValid = !coupon.min_order_amount || subtotal >= coupon.min_order_amount;
+        console.log("Coupon query result:", { coupon, couponError });
         
-        if (isDateValid && isUsageValid && isMinOrderValid) {
-          if (coupon.discount_type === "percentage") {
-            discountAmount = Math.round((subtotal * coupon.discount_value) / 100);
-          } else if (coupon.discount_type === "fixed") {
-            discountAmount = coupon.discount_value * 100; // Convert to cents
-          }
+        if (!couponError && coupon) {
+          console.log("Coupon found:", coupon);
+          const now = new Date();
+          const validFrom = coupon.valid_from ? new Date(coupon.valid_from) : null;
+          const validUntil = coupon.valid_until ? new Date(coupon.valid_until) : null;
           
-          finalTotal = Math.max(0, subtotal - discountAmount);
-          console.log("Coupon applied:", { discountAmount, finalTotal });
+          const isDateValid = (!validFrom || now >= validFrom) && (!validUntil || now <= validUntil);
+          const isUsageValid = !coupon.max_uses || coupon.current_uses < coupon.max_uses;
+          const isMinOrderValid = !coupon.min_order_amount || subtotal >= coupon.min_order_amount;
+          
+          console.log("Coupon validation checks:", { 
+            isDateValid, 
+            isUsageValid, 
+            isMinOrderValid,
+            subtotal,
+            minOrderAmount: coupon.min_order_amount
+          });
+          
+          if (isDateValid && isUsageValid && isMinOrderValid) {
+            if (coupon.discount_type === "percentage") {
+              discountAmount = Math.round((subtotal * coupon.discount_value) / 100);
+            } else if (coupon.discount_type === "fixed") {
+              discountAmount = coupon.discount_value * 100; // Convert to cents
+            }
+            
+            finalTotal = Math.max(0, subtotal - discountAmount);
+            console.log("Coupon applied successfully:", { 
+              discountType: coupon.discount_type,
+              discountValue: coupon.discount_value,
+              discountAmount, 
+              finalTotal 
+            });
+          } else {
+            console.log("Coupon validation failed:", { isDateValid, isUsageValid, isMinOrderValid });
+          }
         } else {
-          console.log("Coupon validation failed:", { isDateValid, isUsageValid, isMinOrderValid });
+          console.log("Coupon not found or inactive:", { couponError });
         }
-      } else {
-        console.log("Coupon not found or inactive");
+      } catch (couponValidationError) {
+        console.error("Error during coupon validation:", couponValidationError);
       }
+      console.log("=== COUPON VALIDATION END ===");
     }
+
+    console.log("Final totals:", { subtotal, discountAmount, finalTotal });
 
     // Handle 0€ orders (Stripe doesn't allow 0 amount payments)
     if (finalTotal === 0) {
+      console.log("=== FREE ORDER PROCESSING START ===");
       console.log("0€ order detected, processing without Stripe...");
+      
+      // Check service role key
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      console.log("Service role key check:", serviceRoleKey ? "✓ Set" : "✗ Missing");
+      
+      if (!serviceRoleKey) {
+        console.error("CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing");
+        throw new Error("Service key not configured for free orders");
+      }
       
       // Save order directly to database as paid
       const supabaseService = createClient(
         Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+        serviceRoleKey,
         { auth: { persistSession: false } }
       );
 
@@ -186,7 +232,7 @@ serve(async (req) => {
         created_at: new Date().toISOString(),
       };
 
-      console.log("Creating free order in database...");
+      console.log("Creating free order with data:", orderData);
       const { data: order, error: orderError } = await supabaseService
         .from("orders")
         .insert(orderData)
@@ -195,10 +241,10 @@ serve(async (req) => {
 
       if (orderError) {
         console.error("Free order creation error:", orderError);
-        throw new Error("Fehler beim Erstellen der kostenlosen Bestellung");
+        throw new Error(`Fehler beim Erstellen der kostenlosen Bestellung: ${orderError.message}`);
       }
 
-      console.log("Free order created:", order.id);
+      console.log("Free order created successfully:", order.id);
       
       // Save order items
       const orderItems = items.map(item => ({
@@ -210,11 +256,15 @@ serve(async (req) => {
         total_price: item.variant.price * 100 * item.quantity,
       }));
 
+      console.log("Creating order items:", orderItems);
       const { error: itemsError } = await supabaseService.from("order_items").insert(orderItems);
       if (itemsError) {
         console.error("Free order items creation error:", itemsError);
+      } else {
+        console.log("Order items created successfully");
       }
 
+      console.log("=== FREE ORDER PROCESSING END ===");
       // Return success URL for free order
       return new Response(JSON.stringify({ 
         url: `${req.headers.get("origin")}/checkout/success?free_order=true&order_id=${order.id}`,
