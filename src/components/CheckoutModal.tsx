@@ -167,10 +167,26 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       onOpenChange(false);
     } catch (error) {
       console.error('Checkout error:', error);
+      
+      // Extract more specific error information
+      let errorMessage = "Bitte versuchen Sie es erneut.";
+      
+      if (error && typeof error === 'object' && 'message' in error) {
+        const message = error.message;
+        if (message.includes('STRIPE_SECRET_KEY')) {
+          errorMessage = "Stripe ist nicht korrekt konfiguriert. Bitte kontaktieren Sie den Support.";
+        } else if (message.includes('E-Mail-Adresse erforderlich')) {
+          errorMessage = "Bitte geben Sie eine gültige E-Mail-Adresse ein.";
+        } else if (message.includes('Keine Artikel')) {
+          errorMessage = "Ihr Warenkorb ist leer.";
+        }
+      }
+      
       toast({
         title: "Checkout fehlgeschlagen",
-        description: "Bitte versuchen Sie es erneut.",
+        description: errorMessage,
         variant: "destructive",
+        duration: 8000,
       });
     } finally {
       setLoading(false);

@@ -45,12 +45,30 @@ serve(async (req) => {
   }
 
   try {
+    console.log("=== CREATE PAYMENT FUNCTION START ===");
+    
+    // Check environment variables
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    
+    console.log("Environment check:", {
+      supabaseUrl: supabaseUrl ? "✓ Set" : "✗ Missing",
+      supabaseKey: supabaseKey ? "✓ Set" : "✗ Missing", 
+      stripeKey: stripeKey ? "✓ Set" : "✗ Missing"
+    });
+
+    if (!stripeKey) {
+      throw new Error("STRIPE_SECRET_KEY ist nicht konfiguriert");
+    }
+
     const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      supabaseUrl ?? "",
+      supabaseKey ?? ""
     );
 
     const { items, guestEmail, couponCode }: PaymentRequest = await req.json();
+    console.log("Request data:", { itemCount: items?.length, guestEmail, couponCode });
 
     if (!items || items.length === 0) {
       throw new Error("Keine Artikel im Warenkorb");
@@ -67,11 +85,14 @@ serve(async (req) => {
 
     // Use user email or guest email
     const customerEmail = user?.email || guestEmail;
+    console.log("Customer info:", { userEmail: user?.email, guestEmail, finalEmail: customerEmail });
+    
     if (!customerEmail) {
       throw new Error("E-Mail-Adresse erforderlich");
     }
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    console.log("Initializing Stripe...");
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
 
@@ -260,8 +281,17 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    console.error("Payment error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error("=== PAYMENT ERROR ===");
+    console.error("Error details:", error);
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+    
+    const errorMessage = error instanceof Error ? error.message : "Unbekannter Fehler";
+    
+    return new Response(JSON.stringify({ 
+      error: errorMessage,
+      details: error instanceof Error ? error.stack : String(error)
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
