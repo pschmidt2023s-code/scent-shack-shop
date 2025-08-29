@@ -1,1 +1,4 @@
 project_id = "tqswuibgnkdvrfocwjou"
+
+[functions.create-free-order]
+verify_jwt = false

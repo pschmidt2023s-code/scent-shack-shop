@@ -149,11 +149,17 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     setLoading(true);
 
     try {
+      console.log("=== CHECKOUT DEBUG START ===");
+      console.log("Final amount:", finalAmount);
+      console.log("User:", user ? "Logged in" : "Not logged in");
+      console.log("Applied coupon:", appliedCoupon);
+      
       // Check if this is a free order (0€ total after discounts)
       if (finalAmount === 0) {
-        console.log("Processing free order...");
+        console.log("=== PROCESSING FREE ORDER ===");
         
         if (!user) {
+          console.log("User not logged in for free order");
           toast({
             title: "Anmeldung erforderlich",
             description: "Für kostenlose Bestellungen müssen Sie angemeldet sein.",
@@ -163,6 +169,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
           return;
         }
 
+        console.log("Calling create-free-order function...");
         const { data, error } = await supabase.functions.invoke('create-free-order', {
           body: {
             items,
@@ -170,12 +177,14 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
           },
         });
 
+        console.log("Free order response:", { data, error });
+
         if (error) {
           console.error('Free order error:', error);
           throw error;
         }
 
-        console.log("Free order success:", data);
+        console.log("Free order success, redirecting to:", data.url);
         
         // Redirect to success page
         window.location.href = data.url;
@@ -186,6 +195,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
         return;
       }
 
+      console.log("=== PROCESSING PAID ORDER ===");
       // Regular paid checkout
       const { data, error } = await supabase.functions.invoke('create-payment-simple', {
         body: {
