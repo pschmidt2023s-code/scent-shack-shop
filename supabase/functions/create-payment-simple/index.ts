@@ -125,6 +125,67 @@ serve(async (req) => {
       };
     });
 
+    console.log("Subtotal calculated:", subtotal);
+
+    // Handle 0€ orders (Stripe doesn't allow 0 amount payments)
+    if (subtotal === 0) {
+      console.log("0€ order detected, processing without Stripe...");
+      
+      // Save order directly to database as paid
+      const supabaseService = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+        { auth: { persistSession: false } }
+      );
+
+      const orderData = {
+        user_id: user?.id || null,
+        stripe_session_id: null, // No Stripe session for free orders
+        total_amount: 0,
+        currency: "eur",
+        status: "paid", // Mark as paid since it's free
+        created_at: new Date().toISOString(),
+      };
+
+      console.log("Creating free order in database...");
+      const { data: order, error: orderError } = await supabaseService
+        .from("orders")
+        .insert(orderData)
+        .select()
+        .single();
+
+      if (orderError) {
+        console.error("Free order creation error:", orderError);
+        throw new Error("Fehler beim Erstellen der kostenlosen Bestellung");
+      }
+
+      console.log("Free order created:", order.id);
+      
+      // Save order items
+      const orderItems = items.map(item => ({
+        order_id: order.id,
+        perfume_id: item.perfume.id,
+        variant_id: item.variant.id,
+        quantity: item.quantity,
+        unit_price: item.variant.price * 100,
+        total_price: item.variant.price * 100 * item.quantity,
+      }));
+
+      const { error: itemsError } = await supabaseService.from("order_items").insert(orderItems);
+      if (itemsError) {
+        console.error("Free order items creation error:", itemsError);
+      }
+
+      // Return success URL for free order
+      return new Response(JSON.stringify({ 
+        url: `${req.headers.get("origin")}/checkout/success?free_order=true&order_id=${order.id}`,
+        free_order: true 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
     console.log("Creating Stripe checkout session...");
     
     // Create Stripe checkout session with multiple payment methods
