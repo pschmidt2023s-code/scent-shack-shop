@@ -58,8 +58,8 @@ export default function Checkout() {
       return;
     }
 
-    // Generate order number
-    const orderNum = 'ADN' + Date.now().toString().slice(-8);
+    // Generate unique order number using timestamp + random
+    const orderNum = 'ADN' + Date.now().toString() + Math.random().toString(36).substr(2, 3).toUpperCase();
     setOrderNumber(orderNum);
   }, [checkoutData.items, navigate]);
 
@@ -106,11 +106,11 @@ export default function Checkout() {
         payment_method: paymentMethod,
         customer_data: customerData,
         items: checkoutData.items.map(item => ({
-          perfume_id: item.id,
-          variant_id: item.selectedVariant,
+          perfume_id: item.id || item.perfume?.id,
+          variant_id: item.selectedVariant || item.variant?.id,
           quantity: item.quantity,
-          unit_price: Math.round(item.price * 100),
-          total_price: Math.round(item.price * item.quantity * 100)
+          unit_price: Math.round((item.price || item.variant?.price || 0) * 100),
+          total_price: Math.round((item.price || item.variant?.price || 0) * item.quantity * 100)
         })),
         coupon_data: checkoutData.appliedCoupon ? {
           code: checkoutData.appliedCoupon.code,
@@ -118,6 +118,10 @@ export default function Checkout() {
         } : null
       };
 
+      console.log("=== ORDER DEBUG ===");
+      console.log("Cart items structure:", checkoutData.items);
+      console.log("Order data being sent:", orderData);
+      
       const { data, error } = await supabase.functions.invoke('create-custom-order', {
         body: orderData
       });
