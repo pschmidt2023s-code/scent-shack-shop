@@ -152,7 +152,7 @@ serve(async (req) => {
           .select("*")
           .eq("code", couponCode)
           .eq("active", true)
-          .single();
+          .maybeSingle();
         
         console.log("Coupon query result:", { coupon, couponError });
         
@@ -238,11 +238,16 @@ serve(async (req) => {
           .from("orders")
           .insert(orderData)
           .select()
-          .single();
+          .maybeSingle();
 
         if (orderError) {
           console.error("Guest free order creation error:", orderError);
           throw new Error(`Fehler beim Erstellen der kostenlosen Bestellung: ${orderError.message}`);
+        }
+
+        if (!order) {
+          console.error("Guest free order creation failed: No order returned");
+          throw new Error("Bestellung konnte nicht erstellt werden");
         }
 
         console.log("Guest free order created:", order.id);
@@ -276,11 +281,16 @@ serve(async (req) => {
           .from("orders")
           .insert(orderData)
           .select()
-          .single();
+          .maybeSingle();
 
         if (orderError) {
           console.error("User free order creation error:", orderError);
           throw new Error(`Fehler beim Erstellen der kostenlosen Bestellung: ${orderError.message}`);
+        }
+
+        if (!order) {
+          console.error("User free order creation failed: No order returned");
+          throw new Error("Bestellung konnte nicht erstellt werden");
         }
 
         console.log("User free order created:", order.id);
@@ -410,7 +420,7 @@ serve(async (req) => {
       .from("orders")
       .insert(orderData)
       .select()
-      .single();
+      .maybeSingle();
 
     if (orderError) {
       console.error("Order creation error:", orderError);
