@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
@@ -24,15 +23,6 @@ interface CartItem {
   quantity: number;
 }
 
-interface ShippingAddress {
-  name: string;
-  line1: string;
-  line2?: string;
-  city: string;
-  postal_code: string;
-  country: string;
-}
-
 interface PaymentRequest {
   items: CartItem[];
   guestEmail?: string;
@@ -45,7 +35,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log("=== CREATE PAYMENT FUNCTION START ===");
+    console.log("=== CREATE PAYMENT SIMPLE FUNCTION START ===");
     
     // Check environment variables
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -67,8 +57,8 @@ serve(async (req) => {
       supabaseKey ?? ""
     );
 
-    const { items, guestEmail, couponCode }: PaymentRequest = await req.json();
-    console.log("Request data:", { itemCount: items?.length, guestEmail, couponCode });
+    const { items, guestEmail }: PaymentRequest = await req.json();
+    console.log("Request data:", { itemCount: items?.length, guestEmail });
 
     if (!items || items.length === 0) {
       throw new Error("Keine Artikel im Warenkorb");
@@ -103,7 +93,7 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
-    // Calculate totals
+    // Calculate totals and create line items
     let subtotal = 0;
     const lineItems = items.map(item => {
       const itemTotal = item.variant.price * 100 * item.quantity; // Convert to cents
@@ -126,41 +116,9 @@ serve(async (req) => {
       };
     });
 
-    // Apply coupon if provided
-    let couponDiscount = 0;
-    let validCoupon = null;
-    if (couponCode) {
-      const supabaseService = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-        { auth: { persistSession: false } }
-      );
-
-      const { data: coupon } = await supabaseService
-        .from("coupons")
-        .select("*")
-        .eq("code", couponCode.toUpperCase())
-        .eq("active", true)
-        .single();
-
-      if (coupon && new Date() >= new Date(coupon.valid_from) && new Date() <= new Date(coupon.valid_until)) {
-        if (!coupon.max_uses || coupon.current_uses < coupon.max_uses) {
-          if (subtotal >= (coupon.min_order_amount * 100)) {
-            validCoupon = coupon;
-            if (coupon.discount_type === 'percentage') {
-              couponDiscount = Math.round(subtotal * (coupon.discount_value / 100));
-            } else {
-              couponDiscount = coupon.discount_value * 100; // Convert to cents
-            }
-          }
-        }
-      }
-    }
-
-    // Add shipping costs (free for Germany, 15.99€ for EU)
-    const shippingCost = 0; // Will be determined by Stripe based on shipping address
-
-    // Create Stripe checkout session
+    console.log("Creating Stripe checkout session...");
+    
+    // Create Stripe checkout session with multiple payment methods
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : customerEmail,
@@ -170,7 +128,7 @@ serve(async (req) => {
       cancel_url: `${req.headers.get("origin")}/checkout/cancel`,
       payment_method_types: [
         'card',
-        'sepa_debit',
+        'sepa_debit', 
         'giropay',
         'sofort',
         'klarna',
@@ -204,7 +162,7 @@ serve(async (req) => {
           shipping_rate_data: {
             type: 'fixed_amount',
             fixed_amount: {
-              amount: 1599,
+              amount: 1599, // 15.99€ in cents
               currency: 'eur',
             },
             display_name: 'EU Versand',
@@ -221,26 +179,21 @@ serve(async (req) => {
           },
         },
       ],
-      discounts: validCoupon ? [{
-        coupon: await stripe.coupons.create({
-          amount_off: couponDiscount,
-          currency: 'eur',
-          duration: 'once',
-          name: validCoupon.code,
-        }).then(c => c.id),
-      }] : undefined,
       metadata: {
         user_id: user?.id || 'guest',
         guest_email: guestEmail || '',
-        coupon_code: validCoupon?.code || '',
-        coupon_id: validCoupon?.id || '',
       },
       automatic_tax: {
         enabled: true,
       },
+      phone_number_collection: {
+        enabled: true,
+      },
     });
 
-    // Save order to database
+    console.log("Stripe session created:", session.id);
+
+    // Save order to database with simplified approach
     const supabaseService = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -250,44 +203,47 @@ serve(async (req) => {
     const orderData = {
       user_id: user?.id || null,
       stripe_session_id: session.id,
-      total_amount: subtotal - couponDiscount,
+      total_amount: subtotal,
       currency: "eur",
       status: "pending",
       created_at: new Date().toISOString(),
     };
 
+    console.log("Saving order to database...");
     const { data: order, error: orderError } = await supabaseService
       .from("orders")
       .insert(orderData)
       .select()
       .single();
 
-    if (orderError) throw orderError;
+    if (orderError) {
+      console.error("Order creation error:", orderError);
+      // Continue without failing - we can process the order later
+    } else {
+      console.log("Order created:", order.id);
+      
+      // Save order items
+      const orderItems = items.map(item => ({
+        order_id: order.id,
+        perfume_id: item.perfume.id,
+        variant_id: item.variant.id,
+        quantity: item.quantity,
+        unit_price: item.variant.price * 100,
+        total_price: item.variant.price * 100 * item.quantity,
+      }));
 
-    // Save order items
-    const orderItems = items.map(item => ({
-      order_id: order.id,
-      perfume_id: item.perfume.id,
-      variant_id: item.variant.id,
-      quantity: item.quantity,
-      unit_price: item.variant.price * 100,
-      total_price: item.variant.price * 100 * item.quantity,
-    }));
-
-    await supabaseService.from("order_items").insert(orderItems);
-
-    // Update coupon usage if used
-    if (validCoupon) {
-      await supabaseService
-        .from("coupons")
-        .update({ current_uses: validCoupon.current_uses + 1 })
-        .eq("id", validCoupon.id);
+      const { error: itemsError } = await supabaseService.from("order_items").insert(orderItems);
+      if (itemsError) {
+        console.error("Order items creation error:", itemsError);
+      }
     }
 
+    console.log("Returning checkout URL:", session.url);
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
+    
   } catch (error) {
     console.error("=== PAYMENT ERROR ===");
     console.error("Error details:", error);

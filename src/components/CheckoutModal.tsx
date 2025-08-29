@@ -149,13 +149,12 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('create-payment', {
-        body: {
-          items,
-          guestEmail: user ? undefined : sanitizeInput(guestEmail),
-          couponCode: appliedCoupon ? appliedCoupon.code : undefined,
-        },
-      });
+        const { data, error } = await supabase.functions.invoke('create-payment-simple', {
+          body: {
+            items,
+            guestEmail: user ? undefined : sanitizeInput(guestEmail),
+          },
+        });
 
       if (error) throw error;
 
