@@ -34,7 +34,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const discountAmount = appliedCoupon ? 
     appliedCoupon.discount_type === 'percentage' 
       ? Math.min(totalAmount * (appliedCoupon.discount_value / 100), totalAmount)
-      : Math.min(appliedCoupon.discount_value / 100, totalAmount)
+      : Math.min(appliedCoupon.discount_value / 100, totalAmount) // discount_value is stored in cents, convert to euros
     : 0;
   
   const finalAmount = totalAmount - discountAmount;
@@ -150,12 +150,17 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
 
     try {
       console.log("=== CHECKOUT DEBUG START ===");
-      console.log("Final amount:", finalAmount);
-      console.log("User:", user ? "Logged in" : "Not logged in");
+      console.log("Total amount:", totalAmount);
       console.log("Applied coupon:", appliedCoupon);
+      console.log("Discount amount:", discountAmount);
+      console.log("Final amount:", finalAmount);
+      console.log("Final amount type:", typeof finalAmount);
+      console.log("Is final amount zero?", finalAmount === 0);
+      console.log("Is final amount near zero?", Math.abs(finalAmount) < 0.01);
+      console.log("User:", user ? "Logged in" : "Not logged in");
       
-      // Check if this is a free order (0€ total after discounts)
-      if (finalAmount === 0) {
+      // Check if this is a free order (0€ total after discounts or very close to 0)
+      if (finalAmount === 0 || Math.abs(finalAmount) < 0.01) {
         console.log("=== PROCESSING FREE ORDER ===");
         
         if (!user) {
