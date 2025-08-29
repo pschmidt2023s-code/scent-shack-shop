@@ -116,9 +116,10 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
   const handleCheckout = async () => {
     if (!user && !guestEmail) {
       toast({
-        title: "E-Mail erforderlich",
-        description: "Bitte geben Sie Ihre E-Mail-Adresse ein oder melden Sie sich an.",
+        title: "E-Mail Adresse erforderlich",
+        description: "Bitte geben Sie Ihre E-Mail-Adresse ein oder melden Sie sich über 'Anmelden' oben rechts an.",
         variant: "destructive",
+        duration: 5000,
       });
       return;
     }
@@ -243,8 +244,10 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
 
           {/* Guest Email Input */}
           {!user && (
-            <div className="space-y-2">
-              <Label htmlFor="guest-email">E-Mail-Adresse</Label>
+            <div className="space-y-2 border-2 border-dashed border-primary/20 p-4 rounded-lg bg-primary/5">
+              <Label htmlFor="guest-email" className="text-base font-semibold text-primary">
+                E-Mail-Adresse *
+              </Label>
               <Input
                 id="guest-email"
                 type="email"
@@ -252,9 +255,10 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 onChange={(e) => setGuestEmail(e.target.value)}
                 placeholder="ihre@email.de"
                 required
+                className="border-primary/30 focus:border-primary"
               />
               <p className="text-xs text-muted-foreground">
-                Ihre Bestellbestätigung wird an diese E-Mail-Adresse gesendet.
+                <strong>Erforderlich:</strong> Ihre Bestellbestätigung wird an diese E-Mail-Adresse gesendet.
               </p>
             </div>
           )}
@@ -340,10 +344,18 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Wird weitergeleitet...
               </>
+            ) : (!user && !guestEmail) ? (
+              "E-Mail-Adresse eingeben zum Bezahlen"
             ) : (
               `Jetzt bezahlen - €${finalAmount.toFixed(2)}`
             )}
           </Button>
+          
+          {!user && !guestEmail && (
+            <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
+              <strong>Hinweis:</strong> Bitte geben Sie Ihre E-Mail-Adresse ein oder melden Sie sich an, um fortzufahren.
+            </p>
+          )}
 
           <p className="text-xs text-muted-foreground text-center">
             Sichere Zahlung über Stripe. Sie werden zu einem sicheren Checkout weitergeleitet.
