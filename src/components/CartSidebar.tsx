@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
-import { CheckoutModal } from './CheckoutModal';
+import CheckoutModal from './CheckoutModal';
 import { ShoppingBag, Minus, Plus, Trash2 } from 'lucide-react';
 
 export function CartSidebar() {

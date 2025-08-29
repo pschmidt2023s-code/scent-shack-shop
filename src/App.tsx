@@ -18,6 +18,8 @@ const Privacy = React.lazy(() => import('@/pages/Privacy'));
 const Terms = React.lazy(() => import('@/pages/Terms'));
 const Imprint = React.lazy(() => import('@/pages/Imprint'));
 const Admin = React.lazy(() => import('@/pages/Admin'));
+const Checkout = React.lazy(() => import('@/pages/Checkout'));
+const CheckoutBank = React.lazy(() => import('@/pages/CheckoutBank'));
 const CheckoutSuccess = React.lazy(() => import('@/pages/CheckoutSuccess'));
 const CheckoutCancel = React.lazy(() => import('@/pages/CheckoutCancel'));
 const NotFound = React.lazy(() => import('@/pages/NotFound'));
@@ -83,12 +85,22 @@ function App() {
                     <Imprint />
                   </Suspense>
                 } />
-                <Route path="/checkout/success" element={
+                <Route path="/checkout" element={
+                  <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+                    <Checkout />
+                  </Suspense>
+                } />
+                <Route path="/checkout-bank" element={
+                  <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+                    <CheckoutBank />
+                  </Suspense>
+                } />
+                <Route path="/checkout-success" element={
                   <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
                     <CheckoutSuccess />
                   </Suspense>
                 } />
-                <Route path="/checkout/cancel" element={
+                <Route path="/checkout-cancel" element={
                   <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
                     <CheckoutCancel />
                   </Suspense>
