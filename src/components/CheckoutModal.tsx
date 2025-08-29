@@ -149,13 +149,51 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     setLoading(true);
 
     try {
-        const { data, error } = await supabase.functions.invoke('create-payment-simple', {
+      // Check if this is a free order (0€ total after discounts)
+      if (finalAmount === 0) {
+        console.log("Processing free order...");
+        
+        if (!user) {
+          toast({
+            title: "Anmeldung erforderlich",
+            description: "Für kostenlose Bestellungen müssen Sie angemeldet sein.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+
+        const { data, error } = await supabase.functions.invoke('create-free-order', {
           body: {
             items,
-            guestEmail: user ? undefined : sanitizeInput(guestEmail),
-            couponCode: appliedCoupon?.code || undefined,
+            couponCode: appliedCoupon?.code || '',
           },
         });
+
+        if (error) {
+          console.error('Free order error:', error);
+          throw error;
+        }
+
+        console.log("Free order success:", data);
+        
+        // Redirect to success page
+        window.location.href = data.url;
+        
+        // Clear cart after successful checkout
+        clearCart();
+        onOpenChange(false);
+        return;
+      }
+
+      // Regular paid checkout
+      const { data, error } = await supabase.functions.invoke('create-payment-simple', {
+        body: {
+          items,
+          guestEmail: user ? undefined : sanitizeInput(guestEmail),
+          couponCode: appliedCoupon?.code || undefined,
+        },
+      });
 
       if (error) throw error;
 
