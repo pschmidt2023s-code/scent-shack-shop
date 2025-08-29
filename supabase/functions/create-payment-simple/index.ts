@@ -99,12 +99,21 @@ serve(async (req) => {
       const itemTotal = item.variant.price * 100 * item.quantity; // Convert to cents
       subtotal += itemTotal;
       
+      // Create absolute URL for image if it exists and is relative
+      let productImages = [];
+      if (item.perfume.image) {
+        const imageUrl = item.perfume.image.startsWith('http') 
+          ? item.perfume.image 
+          : `${req.headers.get("origin")}${item.perfume.image}`;
+        productImages = [imageUrl];
+      }
+      
       return {
         price_data: {
           currency: "eur",
           product_data: {
             name: `${item.perfume.brand} - ${item.variant.name}`,
-            images: [item.perfume.image],
+            images: productImages, // Only include if we have a valid absolute URL
             metadata: {
               perfume_id: item.perfume.id,
               variant_id: item.variant.id,
