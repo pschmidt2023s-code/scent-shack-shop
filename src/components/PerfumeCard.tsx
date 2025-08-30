@@ -17,14 +17,17 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
   const [selectedVariant, setSelectedVariant] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const { addToCart } = useCart();
-  // Use optimized ratings hook - single perfume ID to avoid multiple API calls
-  const { getRatingForPerfume } = usePerfumeRatings([perfume.id]);
+  // Disable ratings to debug the issue
+  // const { getRatingForPerfume } = usePerfumeRatings([perfume.id]);
 
   const currentVariant = perfume.variants[selectedVariant];
-  // Use real ratings from Supabase, fallback to static data
-  const realRating = getRatingForPerfume(perfume.id);
-  const averageRating = realRating.averageRating || currentVariant.rating || 0;
-  const totalReviews = realRating.totalReviews || currentVariant.reviewCount || 0;
+  // Use static ratings for debugging
+  const averageRating = currentVariant.rating || 0;
+  const totalReviews = currentVariant.reviewCount || 0;
+
+  console.log('PerfumeCard: Rendering card for', perfume.name);
+  console.log('PerfumeCard: Current variant:', currentVariant);
+  console.log('PerfumeCard: Average rating:', averageRating);
 
   const handleAddToCart = () => {
     addToCart(perfume, currentVariant);
