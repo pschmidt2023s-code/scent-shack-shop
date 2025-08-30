@@ -145,50 +145,40 @@ export default function Checkout() {
 
       if (paymentMethod === 'stripe') {
         console.log("Processing Stripe payment...");
-        // Call new V8 Stripe payment function with better debugging
+        
+        // Direct Stripe Checkout redirect without Edge Function
         try {
-          console.log("Attempting to use payment function...");
-          console.log("Items being sent to Stripe:", JSON.stringify(checkoutData.items, null, 2));
+          console.log("Creating direct Stripe redirect...");
           
-          const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-payment-simple', {
-            body: {
-              amount: checkoutData.finalAmount,
-              stripeKey: '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'
-            }
+          // Simple Stripe Checkout with your publishable key
+          const stripe = (window as any).Stripe('pk_live_DEIN_PUBLISHABLE_KEY_HIER');
+          
+          if (!stripe) {
+            toast.error('Stripe konnte nicht geladen werden');
+            return;
+          }
+          
+          // Redirect to Stripe Checkout
+          const { error } = await stripe.redirectToCheckout({
+            lineItems: [{
+              price: 'price_DEINE_PRICE_ID_HIER',  // Ersetze mit deiner Price ID aus Stripe Dashboard
+              quantity: 1,
+            }],
+            mode: 'payment',
+            successUrl: window.location.origin + '/checkout-success',
+            cancelUrl: window.location.origin + '/checkout',
+            customerEmail: user?.email || guestEmail,
+            clientReferenceId: newOrderNumber,
           });
-
-          console.log("Stripe function response received:", { data: !!stripeData, error: !!stripeError });
-          console.log("Stripe data:", stripeData);
-          console.log("Stripe error:", stripeError);
-
-          if (stripeError) {
-            console.error("Direct Payment function error:", stripeError);
-            throw stripeError;
+          
+          if (error) {
+            console.error('Stripe redirect error:', error);
+            toast.error('Stripe-Fehler: ' + error.message);
           }
-
-          if (stripeData?.url) {
-            console.log("Direct Payment URL received:", stripeData.url);
-            console.log("URL validation:", {
-              isString: typeof stripeData.url === 'string',
-              length: stripeData.url.length,
-              startsWithHttps: stripeData.url.startsWith('https://'),
-              containsStripe: stripeData.url.includes('stripe.com')
-            });
-            
-            // Clear cart only after successful Stripe session creation
-            clearCart();
-            
-            console.log("Attempting redirect to:", stripeData.url);
-            // Redirect to Stripe Checkout in the same tab
-            window.location.href = stripeData.url;
-          } else {
-            console.error("No URL received from Stripe function");
-            console.log("Full stripe response:", stripeData);
-            toast.error('Stripe-Checkout-URL konnte nicht erstellt werden');
-          }
+          
         } catch (stripeError) {
-          console.error("Direct Stripe payment failed:", stripeError);
-          toast.error('Stripe-Zahlung fehlgeschlagen: ' + (stripeError.message || 'Unbekannter Fehler') + '. Versuchen Sie PayPal oder Überweisung.');
+          console.error("Direct Stripe redirect failed:", stripeError);
+          toast.error('Stripe-Zahlung fehlgeschlagen. Versuchen Sie PayPal oder Überweisung.');
         }
       } else if (paymentMethod === 'paypal') {
         // Redirect to PayPal
