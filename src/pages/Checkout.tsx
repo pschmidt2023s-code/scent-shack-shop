@@ -66,10 +66,6 @@ export default function Checkout() {
       setReferralCode(refCode);
       console.log('Referral code detected:', refCode);
     }
-
-    // Generate unique order number using timestamp + random
-    const orderNum = 'ADN' + Date.now().toString() + Math.random().toString(36).substr(2, 3).toUpperCase();
-    setOrderNumber(orderNum);
   }, [checkoutData.items, navigate, searchParams]);
 
   const handleInputChange = (field: string, value: string) => {
@@ -246,9 +242,9 @@ export default function Checkout() {
               </div>
 
               <div className="bg-muted/50 p-4 rounded-lg">
-                <p className="text-sm font-medium mb-2">Bestellnummer: {orderNumber}</p>
+                <p className="text-sm font-medium mb-2">Ihre Bestellnummer wird nach dem Absenden generiert</p>
                 <p className="text-xs text-muted-foreground">
-                  Diese Nummer wird für Ihre Überweisung und Nachverfolgung verwendet.
+                  Diese wird für Ihre Überweisung und Nachverfolgung verwendet.
                 </p>
               </div>
             </CardContent>
@@ -400,7 +396,7 @@ export default function Checkout() {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Verwendungszweck:</span>
-                        <span className="font-mono font-bold text-primary">{orderNumber}</span>
+                        <span className="text-sm text-muted-foreground">Wird nach Bestellung angezeigt</span>
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
