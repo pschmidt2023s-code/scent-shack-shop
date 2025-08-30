@@ -218,14 +218,7 @@ serve(async (req) => {
       mode: "payment",
       success_url: `${req.headers.get("origin")}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/checkout/cancel`,
-      payment_method_types: [
-        'card',
-        'sepa_debit',
-        'giropay',
-        'sofort',
-        'klarna',
-        'paypal'
-      ],
+      payment_method_types: ['card'],
       shipping_address_collection: {
         allowed_countries: ['DE', 'AT', 'CH', 'NL', 'BE', 'LU', 'FR', 'IT', 'ES', 'PT'],
       },
