@@ -32,7 +32,6 @@ const Index = () => {
       
       <Footer />
       <MobileBottomNav />
-      <LiveChat />
     </div>
   );
 };

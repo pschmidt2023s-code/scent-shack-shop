@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { Toaster } from "@/components/ui/toaster";
+import { LiveChat } from '@/components/LiveChat';
 
 // Lazy load non-critical routes for better performance
 const ProductDetail = React.lazy(() => import('@/pages/ProductDetail'));
@@ -130,8 +131,9 @@ function App() {
                     <NotFound />
                   </Suspense>
                 } />
-              </Routes>
+               </Routes>
                 <Toaster />
+                <LiveChat />
               </div>
             </Router>
           </CartProvider>
