@@ -17,12 +17,13 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
   const [selectedVariant, setSelectedVariant] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const { addToCart } = useCart();
-  const { getRatingForPerfume } = usePerfumeRatings([perfume.id]);
+  // Temporarily disable ratings to avoid excessive API calls
+  // const { getRatingForPerfume } = usePerfumeRatings([perfume.id]);
 
   const currentVariant = perfume.variants[selectedVariant];
-  const rating = getRatingForPerfume(perfume.id);
-  const averageRating = rating.averageRating || 0;
-  const totalReviews = rating.totalReviews || 0;
+  // Use static ratings from perfumes data instead of API calls
+  const averageRating = currentVariant.rating || 0;
+  const totalReviews = currentVariant.reviewCount || 0;
 
   const handleAddToCart = () => {
     addToCart(perfume, currentVariant);

@@ -23,6 +23,12 @@ export default function Products() {
   const prestigeCollection = perfumes.find(p => p.category === '50ML Bottles');
   const probenCollection = perfumes.find(p => p.category === 'Proben');
 
+  // Debug logging
+  console.log('Products component rendered');
+  console.log('Total perfumes:', perfumes.length);
+  console.log('Prestige collection:', prestigeCollection);
+  console.log('Proben collection:', probenCollection);
+
   // Filter variants based on search query
   const filterVariants = (variants: any[]) => {
     if (!searchQuery) return variants;
@@ -65,6 +71,13 @@ export default function Products() {
   const filteredPrestige = filterVariants(prestigeCollection?.variants || []);
   const filteredProben = filterVariants(probenCollection?.variants || []);
   const hasResults = filteredPrestige.length > 0 || filteredProben.length > 0;
+
+  // Debug logging for filtered results
+  console.log('Filtered prestige variants:', filteredPrestige.length);
+  console.log('Filtered proben variants:', filteredProben.length);
+  console.log('Has results:', hasResults);
+  console.log('Search query:', searchQuery);
+  console.log('Is loading:', isLoading);
 
   return (
     <div className="min-h-screen bg-background">
