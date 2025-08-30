@@ -29,7 +29,7 @@ export default function Checkout() {
   const { user } = useAuth();
   
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'paypal' | 'paypal_me' | 'bank'>('paypal');
+  const [paymentMethod, setPaymentMethod] = useState<'paypal' | 'paypal_me' | 'bank' | 'stripe'>('stripe');
   const [guestEmail, setGuestEmail] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [customerData, setCustomerData] = useState({
@@ -144,7 +144,36 @@ export default function Checkout() {
       // Clear cart and redirect based on payment method
       clearCart();
 
-      if (paymentMethod === 'paypal') {
+      if (paymentMethod === 'stripe') {
+        // Call Stripe payment function
+        const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-payment-simple', {
+          body: {
+            items: checkoutData.items,
+            guestEmail: !user ? guestEmail : undefined,
+            couponCode: checkoutData.appliedCoupon?.code
+          }
+        });
+
+        if (stripeError) {
+          console.error('Stripe payment error:', stripeError);
+          toast.error('Stripe-Zahlung fehlgeschlagen: ' + stripeError.message);
+          return;
+        }
+
+        if (stripeData?.url) {
+          // Open Stripe checkout in a new tab
+          window.open(stripeData.url, '_blank');
+          navigate('/checkout-success', { 
+            state: { 
+              orderNumber: newOrderNumber, 
+              paymentMethod: 'Stripe',
+              totalAmount: checkoutData.finalAmount 
+            } 
+          });
+        } else {
+          toast.error('Stripe-Checkout-URL konnte nicht erstellt werden');
+        }
+      } else if (paymentMethod === 'paypal') {
         // Redirect to PayPal
         console.log('PayPal payment data received:', data);
         if (data?.paypal_url) {
@@ -371,9 +400,20 @@ export default function Checkout() {
               <CardContent>
                   <RadioGroup 
                   value={paymentMethod} 
-                  onValueChange={(value: 'paypal' | 'paypal_me' | 'bank') => setPaymentMethod(value)}
+                  onValueChange={(value: 'paypal' | 'paypal_me' | 'bank' | 'stripe') => setPaymentMethod(value)}
                   className="space-y-4"
                 >
+                  <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-muted/50">
+                    <RadioGroupItem value="stripe" id="stripe" />
+                    <Label htmlFor="stripe" className="flex items-center gap-2 cursor-pointer flex-1">
+                      <CreditCard className="w-5 h-5 text-purple-600" />
+                      <div>
+                        <div className="font-medium">Stripe (Empfohlen)</div>
+                        <div className="text-sm text-muted-foreground">Kreditkarte, SEPA, Apple Pay, Google Pay</div>
+                      </div>
+                    </Label>
+                  </div>
+
                   <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-muted/50">
                     <RadioGroupItem value="paypal" id="paypal" />
                     <Label htmlFor="paypal" className="flex items-center gap-2 cursor-pointer flex-1">
@@ -454,6 +494,8 @@ export default function Checkout() {
             >
               {loading ? (
                 'Bestellung wird verarbeitet...'
+              ) : paymentMethod === 'stripe' ? (
+                `Mit Stripe bezahlen (${checkoutData.finalAmount.toFixed(2)}€)`
               ) : paymentMethod === 'paypal' ? (
                 `Jetzt mit PayPal bezahlen (${checkoutData.finalAmount.toFixed(2)}€)`
               ) : paymentMethod === 'paypal_me' ? (
