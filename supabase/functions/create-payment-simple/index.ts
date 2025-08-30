@@ -54,10 +54,21 @@ serve(async (req) => {
       cancel_url: `${req.headers.get("origin")}/checkout`,
     });
 
-    console.log("Session created:", session.id);
-    console.log("Checkout URL:", session.url);
+    console.log("Session created successfully:");
+    console.log("- Session ID:", session.id);
+    console.log("- Session URL:", session.url);
+    console.log("- URL length:", session.url?.length);
+    console.log("- URL starts with https:", session.url?.startsWith('https://'));
+    console.log("- URL contains stripe.com:", session.url?.includes('stripe.com'));
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    return new Response(JSON.stringify({ 
+      url: session.url,
+      sessionId: session.id,
+      debug: {
+        urlLength: session.url?.length,
+        urlValid: session.url?.startsWith('https://checkout.stripe.com')
+      }
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

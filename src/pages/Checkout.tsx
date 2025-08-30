@@ -164,9 +164,28 @@ export default function Checkout() {
 
           if (stripeData?.url) {
             console.log("Direct Payment URL received:", stripeData.url);
+            console.log("URL validation:", {
+              isString: typeof stripeData.url === 'string',
+              length: stripeData.url.length,
+              startsWithHttps: stripeData.url.startsWith('https://'),
+              containsStripe: stripeData.url.includes('stripe.com')
+            });
+            
+            // Test if URL is reachable before redirect
+            try {
+              console.log("Testing URL accessibility...");
+              const testResponse = await fetch(stripeData.url, { method: 'HEAD' });
+              console.log("URL test response:", testResponse.status);
+            } catch (urlError) {
+              console.error("URL accessibility test failed:", urlError);
+            }
+            
+            console.log("Attempting redirect to:", stripeData.url);
             // Redirect to Stripe Checkout in the same tab
             window.location.href = stripeData.url;
           } else {
+            console.error("No URL received from Stripe function");
+            console.log("Full stripe response:", stripeData);
             toast.error('Stripe-Checkout-URL konnte nicht erstellt werden');
           }
         } catch (stripeError) {
