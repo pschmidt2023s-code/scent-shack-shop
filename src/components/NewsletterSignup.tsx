@@ -186,7 +186,7 @@ export function NewsletterSignup({
 
   // Default variant
   return (
-    <Card className={cn("bg-luxury-black dark:bg-luxury-black border-2 border-luxury-gold text-luxury-light dark:text-luxury-light", className)}>
+    <Card className={cn("bg-black dark:bg-black border-2 border-luxury-gold text-luxury-light dark:text-luxury-light", className)}>
       <CardHeader className="text-center">
         <CardTitle className="flex items-center justify-center gap-2">
           <Mail className="w-6 h-6" />
