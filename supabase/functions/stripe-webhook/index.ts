@@ -14,7 +14,8 @@ serve(async (req) => {
   }
 
   try {
-    console.log("=== STRIPE WEBHOOK START ===");
+    console.log("=== STRIPE WEBHOOK v2 START ===");
+    console.log("Timestamp:", new Date().toISOString());
     console.log(`Request method: ${req.method}`);
     console.log(`Request URL: ${req.url}`);
     
@@ -24,11 +25,12 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    console.log("Environment check:", {
+    console.log("Environment check v2:", {
       stripeSecretKey: stripeSecretKey ? "✓ Set" : "✗ Missing",
       webhookSecret: webhookSecret ? "✓ Set" : "✗ Missing",
       supabaseUrl: supabaseUrl ? "✓ Set" : "✗ Missing",
-      supabaseServiceKey: supabaseServiceKey ? "✓ Set" : "✗ Missing"
+      supabaseServiceKey: supabaseServiceKey ? "✓ Set" : "✗ Missing",
+      stripeKeyPrefix: stripeSecretKey ? stripeSecretKey.substring(0, 8) + "..." : "NONE"
     });
 
     if (!stripeSecretKey || !supabaseUrl || !supabaseServiceKey) {

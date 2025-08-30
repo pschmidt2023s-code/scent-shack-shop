@@ -35,7 +35,8 @@ serve(async (req) => {
   }
 
   try {
-    console.log("=== STRIPE PAYMENT FUNCTION v5 START ===");
+    console.log("=== STRIPE PAYMENT v7 START ===");
+    console.log("Timestamp:", new Date().toISOString());
     
     // Check critical environment variables
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -43,11 +44,12 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     
-    console.log("Environment check:", {
+    console.log("Environment check v7:", {
       supabaseUrl: supabaseUrl ? "✓ Set" : "✗ Missing",
       supabaseKey: supabaseKey ? "✓ Set" : "✗ Missing", 
       supabaseServiceKey: supabaseServiceKey ? "✓ Set" : "✗ Missing",
-      stripeKey: stripeKey ? "✓ Set" : "✗ Missing"
+      stripeKey: stripeKey ? "✓ Set" : "✗ Missing",
+      stripeKeyPrefix: stripeKey ? stripeKey.substring(0, 8) + "..." : "NONE"
     });
 
     if (!stripeKey) {

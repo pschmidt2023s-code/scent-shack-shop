@@ -35,17 +35,19 @@ serve(async (req) => {
   }
 
   try {
-    console.log("=== NEW STRIPE CHECKOUT FUNCTION START ===");
+    console.log("=== STRIPE CHECKOUT v6 START ===");
+    console.log("Timestamp:", new Date().toISOString());
     
     // Check critical environment variables
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY");
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     
-    console.log("Environment check:", {
+    console.log("Environment check v6:", {
       supabaseUrl: supabaseUrl ? "✓ Set" : "✗ Missing",
       supabaseKey: supabaseKey ? "✓ Set" : "✗ Missing", 
-      stripeKey: stripeKey ? "✓ Set" : "✗ Missing"
+      stripeKey: stripeKey ? "✓ Set" : "✗ Missing",
+      stripeKeyPrefix: stripeKey ? stripeKey.substring(0, 8) + "..." : "NONE"
     });
 
     if (!stripeKey) {
