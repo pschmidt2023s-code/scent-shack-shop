@@ -11,7 +11,8 @@ import {
   Send, 
   Users, 
   Eye, 
-  Clock
+  Clock,
+  Trash2
 } from 'lucide-react';
 
 interface NewsletterSubscriber {
@@ -52,6 +53,27 @@ export default function NewsletterManagement() {
       toast.error('Fehler beim Laden der Newsletter-Daten');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const deleteSubscriber = async (subscriberId: string, email: string) => {
+    if (!confirm(`Sind Sie sicher, dass Sie ${email} aus dem Newsletter entfernen möchten?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('newsletter_subscriptions')
+        .delete()
+        .eq('id', subscriberId);
+
+      if (error) throw error;
+
+      toast.success(`${email} wurde erfolgreich aus dem Newsletter entfernt`);
+      await loadSubscribers();
+    } catch (error: any) {
+      console.error('Error deleting subscriber:', error);
+      toast.error('Fehler beim Entfernen des Abonnenten: ' + (error.message || 'Unbekannter Fehler'));
     }
   };
 
@@ -223,20 +245,43 @@ export default function NewsletterManagement() {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {subscribers.slice(0, 10).map((subscriber) => (
-              <div key={subscriber.id} className="flex items-center justify-between p-2 border rounded">
-                <span className="text-sm">{subscriber.email}</span>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(subscriber.subscribed_at).toLocaleDateString('de-DE')}
-                </span>
+            {subscribers.map((subscriber) => (
+              <div key={subscriber.id} className="flex items-center justify-between p-3 border rounded bg-muted/30">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{subscriber.email}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        Angemeldet: {new Date(subscriber.subscribed_at).toLocaleDateString('de-DE')}
+                      </span>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => deleteSubscriber(subscriber.id, subscriber.email)}
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  {subscriber.preferences && (
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Präferenzen: {Object.entries(subscriber.preferences)
+                        .filter(([_, value]) => value)
+                        .map(([key, _]) => {
+                          const translations = {
+                            product_updates: 'Produktupdates',
+                            promotions: 'Angebote',
+                            tips: 'Tipps'
+                          };
+                          return translations[key as keyof typeof translations] || key;
+                        })
+                        .join(', ') || 'Keine'}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
-            
-            {subscribers.length > 10 && (
-              <p className="text-sm text-muted-foreground text-center pt-2">
-                ... und {subscribers.length - 10} weitere
-              </p>
-            )}
             
             {subscribers.length === 0 && (
               <div className="text-center py-8">
