@@ -49,8 +49,9 @@ serve(async (req) => {
     });
 
     if (!stripeKey) {
-      console.error("CRITICAL: STRIPE_SECRET_KEY is missing");
-      throw new Error("STRIPE_SECRET_KEY ist nicht konfiguriert");
+      console.error("CRITICAL: STRIPE_SECRET_KEY is missing - Please check Edge Functions secrets");
+      console.error("Available env vars:", Object.keys(Deno.env.toObject()));
+      throw new Error("STRIPE_SECRET_KEY ist nicht konfiguriert - Bitte prüfen Sie die Edge Function Secrets");
     }
 
     console.log("Creating Supabase client...");
