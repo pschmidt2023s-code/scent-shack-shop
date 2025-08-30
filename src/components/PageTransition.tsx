@@ -6,7 +6,7 @@ interface PageTransitionProps {
 
 export function PageTransition({ children }: PageTransitionProps) {
   return (
-    <div className="animate-fade-in w-full">
+    <div className="animate-fade-in transition-all duration-300 ease-in-out">
       {children}
     </div>
   );

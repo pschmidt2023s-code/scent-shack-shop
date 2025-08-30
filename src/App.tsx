@@ -4,8 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Index from '@/pages/Index';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext';
-import { Toaster } from "@/components/ui/toaster"
-import { PageTransition } from '@/components/PageTransition';
+import { Toaster } from "@/components/ui/toaster";
 
 // Lazy load non-critical routes for better performance
 const ProductDetail = React.lazy(() => import('@/pages/ProductDetail'));
@@ -25,7 +24,20 @@ const CheckoutSuccess = React.lazy(() => import('@/pages/CheckoutSuccess'));
 const CheckoutCancel = React.lazy(() => import('@/pages/CheckoutCancel'));
 const NotFound = React.lazy(() => import('@/pages/NotFound'));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+const LoadingSpinner = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+);
 
 function App() {
   return (
@@ -33,125 +45,89 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <Router>
-            <div className="min-h-screen bg-background">
+            <div className="min-h-screen bg-background transition-all duration-300">
               <Routes>
-                  <Route path="/" element={
-                    <PageTransition>
-                      <Index />
-                    </PageTransition>
-                  } />
-                  <Route path="/products" element={
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center animate-fade-in">Loading...</div>}>
-                      <PageTransition>
-                        <Products />
-                      </PageTransition>
-                    </Suspense>
-                  } />
-                  <Route path="/product/:id" element={
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center animate-fade-in">Loading...</div>}>
-                      <PageTransition>
-                        <ProductDetail />
-                      </PageTransition>
-                    </Suspense>
-                  } />
-                  <Route path="/profile" element={
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center animate-fade-in">Loading...</div>}>
-                      <PageTransition>
-                        <Profile />
-                      </PageTransition>
-                    </Suspense>
-                  } />
-                  <Route path="/partner" element={
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center animate-fade-in">Loading...</div>}>
-                      <PageTransition>
-                        <Partner />
-                      </PageTransition>
-                    </Suspense>
-                  } />
-                  <Route path="/admin" element={
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center animate-fade-in">Loading...</div>}>
-                      <PageTransition>
-                        <Admin />
-                      </PageTransition>
-                    </Suspense>
-                  } />
-                  <Route path="/contact" element={
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center animate-fade-in">Loading...</div>}>
-                      <PageTransition>
-                        <Contact />
-                      </PageTransition>
-                    </Suspense>
-                  } />
-                  <Route path="/returns" element={
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center animate-fade-in">Loading...</div>}>
-                      <PageTransition>
-                        <Returns />
-                      </PageTransition>
-                    </Suspense>
-                  } />
-                  <Route path="/faq" element={
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center animate-fade-in">Loading...</div>}>
-                      <PageTransition>
-                        <FAQ />
-                      </PageTransition>
-                    </Suspense>
-                  } />
-                  <Route path="/privacy" element={
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center animate-fade-in">Loading...</div>}>
-                      <PageTransition>
-                        <Privacy />
-                      </PageTransition>
-                    </Suspense>
-                  } />
-                  <Route path="/terms" element={
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center animate-fade-in">Loading...</div>}>
-                      <PageTransition>
-                        <Terms />
-                      </PageTransition>
-                    </Suspense>
-                  } />
-                  <Route path="/imprint" element={
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center animate-fade-in">Loading...</div>}>
-                      <PageTransition>
-                        <Imprint />
-                      </PageTransition>
-                    </Suspense>
-                  } />
-                  <Route path="/checkout" element={
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center animate-fade-in">Loading...</div>}>
-                      <PageTransition>
-                        <Checkout />
-                      </PageTransition>
-                    </Suspense>
-                  } />
-                  <Route path="/checkout-bank" element={
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center animate-fade-in">Loading...</div>}>
-                      <PageTransition>
-                        <CheckoutBank />
-                      </PageTransition>
-                    </Suspense>
-                  } />
-                  <Route path="/checkout-success" element={
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center animate-fade-in">Loading...</div>}>
-                      <PageTransition>
-                        <CheckoutSuccess />
-                      </PageTransition>
-                    </Suspense>
-                  } />
-                  <Route path="/checkout-cancel" element={
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center animate-fade-in">Loading...</div>}>
-                      <PageTransition>
-                        <CheckoutCancel />
-                      </PageTransition>
-                    </Suspense>
-                  } />
-                  <Route path="*" element={
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center animate-fade-in">Loading...</div>}>
-                      <PageTransition>
-                        <NotFound />
-                      </PageTransition>
-                    </Suspense>
-                  } />
+                <Route path="/" element={<Index />} />
+                <Route path="/products" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Products />
+                  </Suspense>
+                } />
+                <Route path="/product/:id" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <ProductDetail />
+                  </Suspense>
+                } />
+                <Route path="/profile" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Profile />
+                  </Suspense>
+                } />
+                <Route path="/partner" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Partner />
+                  </Suspense>
+                } />
+                <Route path="/admin" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Admin />
+                  </Suspense>
+                } />
+                <Route path="/contact" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Contact />
+                  </Suspense>
+                } />
+                <Route path="/returns" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Returns />
+                  </Suspense>
+                } />
+                <Route path="/faq" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <FAQ />
+                  </Suspense>
+                } />
+                <Route path="/privacy" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Privacy />
+                  </Suspense>
+                } />
+                <Route path="/terms" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Terms />
+                  </Suspense>
+                } />
+                <Route path="/imprint" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Imprint />
+                  </Suspense>
+                } />
+                <Route path="/checkout" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Checkout />
+                  </Suspense>
+                } />
+                <Route path="/checkout-bank" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <CheckoutBank />
+                  </Suspense>
+                } />
+                <Route path="/checkout-success" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <CheckoutSuccess />
+                  </Suspense>
+                } />
+                <Route path="/checkout-cancel" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <CheckoutCancel />
+                  </Suspense>
+                } />
+                <Route path="*" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <NotFound />
+                  </Suspense>
+                } />
               </Routes>
               <Toaster />
             </div>
