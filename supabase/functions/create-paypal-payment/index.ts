@@ -25,62 +25,27 @@ serve(async (req) => {
     const requestBody: PayPalOrderRequest = await req.json();
     console.log("PayPal payment request:", requestBody);
     
-    console.log("Environment check:");
-    console.log("SUPABASE_URL exists:", !!Deno.env.get("SUPABASE_URL"));
-    console.log("PAYPAL_CLIENT_ID exists:", !!Deno.env.get("PAYPAL_CLIENT_ID"));
-    console.log("PAYPAL_SECRET_KEY exists:", !!Deno.env.get("PAYPAL_SECRET_KEY"));
-
-    console.log("=== DETAILED PAYPAL DEBUG ===");
-    console.log("Request body received:", JSON.stringify(requestBody, null, 2));
-    console.log("Amount being processed:", requestBody.amount);
-    console.log("Currency:", requestBody.currency);
-
     const { order_id, amount, currency, order_number, customer_email } = requestBody;
 
-    // Debug: Liste alle verfügbaren Environment Variables
-    console.log("=== ENVIRONMENT VARIABLES DEBUG ===");
-    console.log("All Deno.env keys:", Object.keys(Deno.env.toObject()));
-    console.log("SUPABASE_URL exists:", !!Deno.env.get("SUPABASE_URL"));
-    console.log("SUPABASE_SERVICE_ROLE_KEY exists:", !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"));
-
-    // PayPal Credentials - Hardcoded Test Values für jetzt
-    const PAYPAL_CLIENT_ID = "AeA1QIZXiflr1_-r0U2UbWSxjGYYiQDq-zBULVxeGwH8z5_2eOhjp8wQg2RCgQoHb5kRK6K6r6O2qGGh";
-    const PAYPAL_SECRET = "EGFtTBosAui9kJdPxfanqoY9SlEShDiJxXNIOXfMIV9MZpyZo2VzWM4KJjKfyXzPrGC3wHhFROZYLHoH";
+    // Get PayPal credentials from environment
+    const PAYPAL_CLIENT_ID = Deno.env.get("PAYPAL_CLIENT_ID");
+    const PAYPAL_SECRET = Deno.env.get("PAYPAL_SECRET_KEY");
     
-    // Try to get from env first, fallback to hardcoded
-    const ENV_CLIENT_ID = Deno.env.get("PAYPAL_CLIENT_ID");
-    const ENV_SECRET = Deno.env.get("PAYPAL_SECRET_KEY");
-    
-    if (ENV_CLIENT_ID && ENV_SECRET) {
-      console.log("Using environment secrets");
-      // Use env secrets if available
-    } else {
-      console.log("Using hardcoded test secrets");
-    }
-    
-    console.log("=== PAYPAL CREDENTIALS DEBUG ===");
+    console.log("PayPal credentials check:");
     console.log("PAYPAL_CLIENT_ID exists:", !!PAYPAL_CLIENT_ID);
-    console.log("PAYPAL_CLIENT_ID value:", PAYPAL_CLIENT_ID);
     console.log("PAYPAL_SECRET_KEY exists:", !!PAYPAL_SECRET);
-    console.log("PAYPAL_SECRET_KEY value:", PAYPAL_SECRET ? PAYPAL_SECRET.substring(0, 10) + "..." : "null");
 
     if (!PAYPAL_CLIENT_ID || !PAYPAL_SECRET) {
-      console.error("PayPal credentials validation failed");
-      console.error("PAYPAL_CLIENT_ID available:", !!PAYPAL_CLIENT_ID);
-      console.error("PAYPAL_SECRET available:", !!PAYPAL_SECRET);
-      
-      // Use hardcoded credentials as fallback for now
-      console.log("Using fallback hardcoded PayPal credentials");
-    } else {
-      console.log("PayPal credentials loaded successfully from environment");
+      console.error("PayPal credentials missing");
+      throw new Error("PayPal credentials not configured");
     }
+
+    console.log("PayPal credentials loaded successfully");
 
     // Get PayPal access token
     console.log("Getting PayPal access token...");
     const authString = `${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET}`;
     const encodedAuth = base64Encode(new TextEncoder().encode(authString));
-    
-    console.log("Auth string prepared, making request...");
 
     // Make request to PayPal sandbox
     const authResponse = await fetch("https://api-m.sandbox.paypal.com/v1/oauth2/token", {
