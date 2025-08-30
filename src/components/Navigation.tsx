@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from './AuthModal';
 import { CartSidebar } from './CartSidebar';
 import { AdvancedSearch } from './AdvancedSearch';
+import { DarkModeToggle } from './DarkModeToggle';
 
 const Navigation = () => {
   const { user, signOut } = useAuth();
@@ -44,6 +45,9 @@ const Navigation = () => {
               <div className="hidden md:flex flex-1 max-w-md">
                 <AdvancedSearch className="w-full" />
               </div>
+
+              {/* Dark Mode Toggle */}
+              <DarkModeToggle />
 
               {/* Cart */}
               <CartSidebar />

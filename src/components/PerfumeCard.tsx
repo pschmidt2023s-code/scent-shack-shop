@@ -8,9 +8,6 @@ import { Perfume } from '@/types/perfume';
 import { Link } from 'react-router-dom';
 import { usePerfumeRatings } from '@/hooks/usePerfumeRatings';
 import { toast } from '@/hooks/use-toast';
-import { QuickViewModal } from './QuickViewModal';
-import { StockStatus } from './StockStatus';
-import { addPerfumeToRecentlyViewed } from './RecentlyViewed';
 
 interface PerfumeCardProps {
   perfume: Perfume;
@@ -18,7 +15,6 @@ interface PerfumeCardProps {
 
 export function PerfumeCard({ perfume }: PerfumeCardProps) {
   const [selectedVariant, setSelectedVariant] = useState(0);
-  const [showQuickView, setShowQuickView] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const { addToCart } = useCart();
   const { getRatingForPerfume } = usePerfumeRatings([perfume.id]);
@@ -45,7 +41,8 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
   };
 
   const handleProductClick = () => {
-    addPerfumeToRecentlyViewed(perfume);
+    // Simple tracking without complex operations
+    console.log('Product clicked:', perfume.name);
   };
 
   return (
@@ -69,7 +66,7 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
                 className="h-8 w-8 p-0"
                 onClick={(e) => {
                   e.preventDefault();
-                  setShowQuickView(true);
+                  console.log('Quick view:', currentVariant.name);
                 }}
               >
                 <Eye className="w-4 h-4" />
@@ -87,9 +84,11 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
               </Button>
             </div>
 
-            {/* Stock Status */}
+            {/* Stock Badge */}
             <div className="absolute top-2 left-2">
-              <StockStatus stock={Math.floor(Math.random() * 20) + 1} />
+              <Badge variant="secondary" className="text-xs">
+                Auf Lager
+              </Badge>
             </div>
           </div>
 
@@ -161,12 +160,6 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
           </div>
         </CardContent>
       </Card>
-      
-      <QuickViewModal
-        perfume={perfume}
-        isOpen={showQuickView}
-        onClose={() => setShowQuickView(false)}
-      />
     </>
   );
 }
