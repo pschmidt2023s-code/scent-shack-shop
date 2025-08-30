@@ -112,6 +112,7 @@ export default function Checkout() {
         guest_email: !user ? guestEmail : null,
         total_amount: Math.round(checkoutData.finalAmount * 100) / 100, // Ensure proper decimal precision
         currency: 'eur',
+        payment_method: paymentMethod,
         referral_code: referralCode || null,
         customer_data: {
           ...customerData,
