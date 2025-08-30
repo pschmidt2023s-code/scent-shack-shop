@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Package, ArrowLeft, CheckCircle, Loader2 } from 'lucide-react';
+import { Package, ArrowLeft, CheckCircle, Loader2, Upload, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 const authenticatedReturnSchema = z.object({
   orderId: z.string().min(1, 'Bitte wählen Sie eine Bestellung aus'),
   reason: z.string().min(10, 'Grund für die Retoure muss mindestens 10 Zeichen haben'),
+  images: z.array(z.string()).optional(),
 });
 
 // For guest users
@@ -59,12 +60,15 @@ export default function Returns() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const authenticatedForm = useForm<AuthenticatedReturnData>({
     resolver: zodResolver(authenticatedReturnSchema),
     defaultValues: {
       orderId: '',
       reason: '',
+      images: [],
     },
   });
 
@@ -129,6 +133,61 @@ export default function Returns() {
     }
   };
 
+  const uploadImage = async (file: File): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `returns/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('return-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('return-images')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    setUploading(true);
+    const newImages: string[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: 'Datei zu groß',
+          description: `${file.name} ist größer als 5MB`,
+          variant: 'destructive',
+        });
+        continue;
+      }
+
+      const imageUrl = await uploadImage(file);
+      if (imageUrl) {
+        newImages.push(imageUrl);
+      }
+    }
+
+    setUploadedImages(prev => [...prev, ...newImages]);
+    setUploading(false);
+  };
+
+  const removeImage = (index: number) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const onAuthenticatedSubmit = async (data: AuthenticatedReturnData) => {
     setIsSubmitting(true);
     
@@ -139,6 +198,7 @@ export default function Returns() {
           user_id: user?.id,
           order_id: data.orderId,
           reason: data.reason,
+          images: uploadedImages,
           status: 'pending'
         });
 
@@ -151,6 +211,7 @@ export default function Returns() {
       });
       
       authenticatedForm.reset();
+      setUploadedImages([]);
     } catch (error) {
       console.error('Error submitting return:', error);
       toast({
@@ -350,10 +411,65 @@ ${data.reason}
                       )}
                     />
 
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">
+                          Bilder hochladen (optional)
+                        </label>
+                        <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                            id="image-upload"
+                          />
+                          <label
+                            htmlFor="image-upload"
+                            className="cursor-pointer flex flex-col items-center"
+                          >
+                            <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                            <span className="text-sm text-muted-foreground">
+                              Klicken Sie hier oder ziehen Sie Bilder zum Hochladen (max. 5MB pro Bild)
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {uploadedImages.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                          {uploadedImages.map((imageUrl, index) => (
+                            <div key={index} className="relative">
+                              <img
+                                src={imageUrl}
+                                alt={`Uploaded ${index + 1}`}
+                                className="w-full h-32 object-cover rounded-lg border"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeImage(index)}
+                                className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {uploading && (
+                        <div className="flex items-center justify-center p-4">
+                          <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                          <span>Bilder werden hochgeladen...</span>
+                        </div>
+                      )}
+                    </div>
+
                     <Button 
                       type="submit" 
                       className="w-full"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || uploading}
                     >
                       {isSubmitting ? 'Wird eingereicht...' : 'Retoure einreichen'}
                     </Button>

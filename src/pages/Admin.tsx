@@ -6,11 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Package, Users, CreditCard } from 'lucide-react';
+import { Loader2, Package, Users, CreditCard, Eye, MapPin, User } from 'lucide-react';
 import CouponManagement from '@/components/admin/CouponManagement';
 import UserManagement from '@/components/admin/UserManagement';
 import ReturnManagement from '@/components/admin/ReturnManagement';
+import { formatOrderItems } from '@/lib/perfume-utils';
 
 interface Order {
   id: string;
@@ -22,6 +24,11 @@ interface Order {
   created_at: string;
   updated_at: string;
   order_number?: string;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  shipping_address_data?: any;
+  billing_address_data?: any;
   order_items?: OrderItem[];
 }
 
@@ -41,6 +48,7 @@ export default function Admin() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -197,16 +205,101 @@ export default function Admin() {
                         </Select>
                       </div>
 
-                      {order.order_items && order.order_items.length > 0 && (
-                        <div className="mt-2 pt-2 border-t">
-                          <p className="text-sm font-medium mb-1">Artikel:</p>
-                          {order.order_items.map((item) => (
-                            <p key={item.id} className="text-sm text-muted-foreground">
-                              {item.quantity}x {item.perfume_id} - {item.variant_id}
-                            </p>
-                          ))}
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 mt-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setSelectedOrder(order)}
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              Details anzeigen
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle>Bestelldetails - #{order.order_number || order.id.slice(-8).toUpperCase()}</DialogTitle>
+                            </DialogHeader>
+                            
+                            <div className="space-y-6">
+                              {/* Customer Information */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <User className="w-4 h-4" />
+                                    <h3 className="font-medium">Kundeninformationen</h3>
+                                  </div>
+                                  <div className="bg-muted p-3 rounded-lg space-y-2">
+                                    {order.customer_name && (
+                                      <p className="text-sm"><strong>Name:</strong> {order.customer_name}</p>
+                                    )}
+                                    {order.customer_email && (
+                                      <p className="text-sm"><strong>E-Mail:</strong> {order.customer_email}</p>
+                                    )}
+                                    {order.customer_phone && (
+                                      <p className="text-sm"><strong>Telefon:</strong> {order.customer_phone}</p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <Package className="w-4 h-4" />
+                                    <h3 className="font-medium">Bestellinformationen</h3>
+                                  </div>
+                                  <div className="bg-muted p-3 rounded-lg space-y-2">
+                                    <p className="text-sm"><strong>Status:</strong> {getStatusBadge(order.status)}</p>
+                                    <p className="text-sm"><strong>Betrag:</strong> €{(order.total_amount / 100).toFixed(2)}</p>
+                                    <p className="text-sm"><strong>Datum:</strong> {new Date(order.created_at).toLocaleDateString('de-DE')}</p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Shipping Address */}
+                              {order.shipping_address_data && (
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <MapPin className="w-4 h-4" />
+                                    <h3 className="font-medium">Lieferadresse</h3>
+                                  </div>
+                                  <div className="bg-muted p-3 rounded-lg">
+                                    <div className="text-sm space-y-1">
+                                      <p>{order.shipping_address_data.firstName} {order.shipping_address_data.lastName}</p>
+                                      <p>{order.shipping_address_data.street}</p>
+                                      <p>{order.shipping_address_data.postalCode} {order.shipping_address_data.city}</p>
+                                      <p>{order.shipping_address_data.country}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Order Items */}
+                              {order.order_items && order.order_items.length > 0 && (
+                                <div className="space-y-3">
+                                  <h3 className="font-medium">Bestellte Artikel</h3>
+                                  <div className="border rounded-lg divide-y">
+                                    {order.order_items.map((item) => (
+                                      <div key={item.id} className="p-3 flex justify-between items-center">
+                                        <div>
+                                          <p className="font-medium text-sm">{formatOrderItems([item])}</p>
+                                          <p className="text-xs text-muted-foreground">
+                                            Einzelpreis: €{(item.unit_price / 100).toFixed(2)}
+                                          </p>
+                                        </div>
+                                        <div className="text-right">
+                                          <p className="font-medium">€{(item.total_price / 100).toFixed(2)}</p>
+                                          <p className="text-xs text-muted-foreground">{item.quantity}x</p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
                     </div>
                   ))}
                   

@@ -148,12 +148,17 @@ export type Database = {
       orders: {
         Row: {
           admin_notes: string | null
+          billing_address_data: Json | null
           billing_address_id: string | null
           created_at: string
           currency: string | null
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
           id: string
           notes: string | null
           order_number: string | null
+          shipping_address_data: Json | null
           shipping_address_id: string | null
           status: string
           stripe_session_id: string | null
@@ -163,12 +168,17 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          billing_address_data?: Json | null
           billing_address_id?: string | null
           created_at?: string
           currency?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           id?: string
           notes?: string | null
           order_number?: string | null
+          shipping_address_data?: Json | null
           shipping_address_id?: string | null
           status?: string
           stripe_session_id?: string | null
@@ -178,12 +188,17 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          billing_address_data?: Json | null
           billing_address_id?: string | null
           created_at?: string
           currency?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           id?: string
           notes?: string | null
           order_number?: string | null
+          shipping_address_data?: Json | null
           shipping_address_id?: string | null
           status?: string
           stripe_session_id?: string | null
@@ -237,6 +252,7 @@ export type Database = {
           admin_notes: string | null
           created_at: string
           id: string
+          images: string[] | null
           order_id: string | null
           reason: string
           status: string
@@ -247,6 +263,7 @@ export type Database = {
           admin_notes?: string | null
           created_at?: string
           id?: string
+          images?: string[] | null
           order_id?: string | null
           reason: string
           status?: string
@@ -257,6 +274,7 @@ export type Database = {
           admin_notes?: string | null
           created_at?: string
           id?: string
+          images?: string[] | null
           order_id?: string | null
           reason?: string
           status?: string

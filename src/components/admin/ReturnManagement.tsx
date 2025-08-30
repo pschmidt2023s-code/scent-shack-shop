@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Package2, CheckCircle, XCircle, Eye } from 'lucide-react';
+import { Loader2, Package2, CheckCircle, XCircle, Eye, Image } from 'lucide-react';
+import { getPerfumeNameById } from '@/lib/perfume-utils';
 
 interface Return {
   id: string;
@@ -16,6 +17,7 @@ interface Return {
   reason: string;
   status: string;
   admin_notes: string | null;
+  images?: string[];
   created_at: string;
   updated_at: string;
   orders: {
@@ -242,11 +244,32 @@ export default function ReturnManagement() {
                     <div className="text-sm text-muted-foreground">
                       {returnItem.orders.order_items.map((item, index) => (
                         <div key={index}>
-                          {item.quantity}x {item.perfume_id} ({item.variant_id})
+                          {item.quantity}x {getPerfumeNameById(item.perfume_id, item.variant_id)}
                         </div>
                       ))}
                     </div>
                   </div>
+
+                  {returnItem.images && returnItem.images.length > 0 && (
+                    <div>
+                      <h5 className="text-sm font-medium flex items-center gap-2">
+                        <Image className="w-4 h-4" />
+                        Bilder ({returnItem.images.length}):
+                      </h5>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                        {returnItem.images.map((imageUrl, index) => (
+                          <div key={index} className="relative">
+                            <img
+                              src={imageUrl}
+                              alt={`Return evidence ${index + 1}`}
+                              className="w-full h-20 object-cover rounded border cursor-pointer hover:opacity-75"
+                              onClick={() => window.open(imageUrl, '_blank')}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {returnItem.admin_notes && (
                     <div>
