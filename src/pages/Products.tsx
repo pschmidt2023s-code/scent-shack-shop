@@ -199,7 +199,7 @@ export default function Products() {
             )}
 
             {/* Prestige Collection Section */}
-            {!isLoading && filteredPrestige.length > 0 && (
+            {!isLoading && (prestigeCollection && (searchQuery ? filteredPrestige.length > 0 : true)) && (
               <section className="mb-12">
                 <div className="text-center mb-8 animate-slide-up">
                   <h2 className="text-3xl font-bold mb-4 text-luxury-black">
@@ -208,15 +208,20 @@ export default function Products() {
                   <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                     Exklusive 50ml Parfüm-Flakons der Premium-Kollektion
                   </p>
-                  {searchQuery && (
-                    <p className="text-sm text-luxury-gold mt-2 font-medium">
-                      {filteredPrestige.length} Ergebnis{filteredPrestige.length !== 1 ? 'se' : ''}
-                    </p>
-                  )}
+                   {searchQuery && (
+                     <p className="text-sm text-luxury-gold mt-2 font-medium">
+                       {filteredPrestige.length} Ergebnis{filteredPrestige.length !== 1 ? 'se' : ''}
+                     </p>
+                   )}
+                   {!searchQuery && (
+                     <p className="text-sm text-muted-foreground mt-2">
+                       {prestigeCollection?.variants.length || 0} Parfüms verfügbar
+                     </p>
+                   )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {sortVariants(filteredPrestige).map((variant, index) => (
+                  {sortVariants(searchQuery ? filteredPrestige : (prestigeCollection?.variants || [])).map((variant, index) => (
                     <div key={variant.id} className="stagger-item hover-lift">
                       <PerfumeCard 
                         perfume={{
@@ -231,7 +236,7 @@ export default function Products() {
             )}
 
             {/* Proben Collection Section */}
-            {!isLoading && filteredProben.length > 0 && (
+            {!isLoading && (probenCollection && (searchQuery ? filteredProben.length > 0 : true)) && (
               <section>
                 <div className="text-center mb-8 animate-slide-up">
                   <h2 className="text-3xl font-bold mb-4 text-luxury-black">
@@ -240,15 +245,20 @@ export default function Products() {
                   <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                     Entdecke alle Düfte in praktischen 5ml Proben
                   </p>
-                  {searchQuery && (
-                    <p className="text-sm text-luxury-gold mt-2 font-medium">
-                      {filteredProben.length} Ergebnis{filteredProben.length !== 1 ? 'se' : ''}
-                    </p>
-                  )}
+                   {searchQuery && (
+                     <p className="text-sm text-luxury-gold mt-2 font-medium">
+                       {filteredProben.length} Ergebnis{filteredProben.length !== 1 ? 'se' : ''}
+                     </p>
+                   )}
+                   {!searchQuery && (
+                     <p className="text-sm text-muted-foreground mt-2">
+                       {probenCollection?.variants.length || 0} Proben verfügbar
+                     </p>
+                   )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {sortVariants(filteredProben).map((variant, index) => (
+                  {sortVariants(searchQuery ? filteredProben : (probenCollection?.variants || [])).map((variant, index) => (
                     <div key={variant.id} className="stagger-item hover-lift">
                       <PerfumeCard 
                         perfume={{
