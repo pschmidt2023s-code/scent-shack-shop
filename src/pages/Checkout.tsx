@@ -147,22 +147,23 @@ export default function Checkout() {
       if (paymentMethod === 'stripe') {
         // Call new V8 Stripe payment function with better debugging
         try {
-          console.log("Attempting to use new V8 function...");
-          const { data: stripeData, error: stripeError } = await supabase.functions.invoke('stripe-payment-v8', {
+          console.log("Attempting to use DIRECT stripe function...");
+          const { data: stripeData, error: stripeError } = await supabase.functions.invoke('stripe-direct', {
             body: {
               items: checkoutData.items,
               guestEmail: !user ? guestEmail : undefined,
-              couponCode: checkoutData.appliedCoupon?.code
+              couponCode: checkoutData.appliedCoupon?.code,
+              stripeKey: 'sk_test_51QfE66B5Yf5xo6kBdkWb6FZlRyVpTdNTwUf3qL5t8U1x4Mb3wLqtKSXh98CfTSP9e5q7s3ZEpjVd8L9XWPqJ8YdJ00vBYQTmnJ' // TEMPORARY - Your actual key
             }
           });
 
           if (stripeError) {
-            console.error("V8 Payment function error:", stripeError);
+            console.error("Direct Payment function error:", stripeError);
             throw stripeError;
           }
 
           if (stripeData?.url) {
-            console.log("V8 Payment URL received:", stripeData.url);
+            console.log("Direct Payment URL received:", stripeData.url);
             // Open in new tab
             window.open(stripeData.url, '_blank');
             navigate('/checkout-success', { 
@@ -176,7 +177,7 @@ export default function Checkout() {
             toast.error('Stripe-Checkout-URL konnte nicht erstellt werden');
           }
         } catch (stripeError) {
-          console.error("V8 Stripe payment failed:", stripeError);
+          console.error("Direct Stripe payment failed:", stripeError);
           toast.error('Stripe-Zahlung fehlgeschlagen: ' + (stripeError.message || 'Unbekannter Fehler') + '. Versuchen Sie PayPal oder Überweisung.');
         }
       } else if (paymentMethod === 'paypal') {
