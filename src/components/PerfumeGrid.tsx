@@ -88,11 +88,7 @@ export function PerfumeGrid() {
           {sortedPerfumes.map((perfume, index) => (
             <div 
               key={perfume.id} 
-              className="opacity-0 animate-scale-in-bounce hover:z-20 relative"
-              style={{ 
-                animationDelay: `${index * 0.1}s`,
-                animationFillMode: 'forwards'
-              }}
+              className="stagger-item hover:z-20 relative"
             >
               <PerfumeCard perfume={perfume} />
             </div>

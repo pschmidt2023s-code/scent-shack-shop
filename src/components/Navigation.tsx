@@ -41,6 +41,17 @@ const Navigation = () => {
             </div>
 
             <div className="flex items-center space-x-4">
+              {/* Customer Reviews */}
+              <div className="hidden lg:flex items-center gap-2 text-sm">
+                <div className="flex -space-x-1">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} className="text-yellow-400">★</span>
+                  ))}
+                </div>
+                <span className="font-medium">4.8/5</span>
+                <span className="text-muted-foreground">(3.241 Bewertungen)</span>
+              </div>
+
               {/* Advanced Search */}
               <div className="hidden md:flex flex-1 max-w-md">
                 <AdvancedSearch className="w-full" />
