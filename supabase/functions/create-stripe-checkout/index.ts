@@ -14,11 +14,14 @@ serve(async (req) => {
   try {
     console.log("=== ULTRA SIMPLE STRIPE START ===");
     
-    const { amount = 4.99, stripeKey } = await req.json();
-    console.log("Amount:", amount, "Key provided:", !!stripeKey);
+    const { amount = 4.99 } = await req.json();
+    console.log("Amount:", amount);
+    
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    console.log("Stripe key from env:", !!stripeKey);
     
     if (!stripeKey) {
-      throw new Error("Stripe key required");
+      throw new Error("STRIPE_SECRET_KEY not configured in environment");
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
