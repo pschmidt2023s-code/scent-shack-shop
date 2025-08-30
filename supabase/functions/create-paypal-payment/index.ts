@@ -34,21 +34,29 @@ serve(async (req) => {
     console.log("PayPal credentials check:");
     console.log("PAYPAL_CLIENT_ID exists:", !!PAYPAL_CLIENT_ID);
     console.log("PAYPAL_SECRET_KEY exists:", !!PAYPAL_SECRET);
+    console.log("CLIENT_ID starts with:", PAYPAL_CLIENT_ID?.substring(0, 10));
 
     if (!PAYPAL_CLIENT_ID || !PAYPAL_SECRET) {
       console.error("PayPal credentials missing");
       throw new Error("PayPal credentials not configured");
     }
 
-    console.log("PayPal credentials loaded successfully");
+    // Determine if we're using sandbox or live based on client ID
+    const isLive = PAYPAL_CLIENT_ID.startsWith('A') && !PAYPAL_CLIENT_ID.includes('sandbox');
+    const paypalBaseUrl = isLive 
+      ? "https://api-m.paypal.com" 
+      : "https://api-m.sandbox.paypal.com";
+
+    console.log("PayPal environment:", isLive ? "LIVE" : "SANDBOX");
+    console.log("PayPal base URL:", paypalBaseUrl);
 
     // Get PayPal access token
     console.log("Getting PayPal access token...");
     const authString = `${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET}`;
     const encodedAuth = base64Encode(new TextEncoder().encode(authString));
 
-    // Make request to PayPal sandbox
-    const authResponse = await fetch("https://api-m.sandbox.paypal.com/v1/oauth2/token", {
+    // Make request to PayPal
+    const authResponse = await fetch(`${paypalBaseUrl}/v1/oauth2/token`, {
       method: "POST",
       headers: {
         "Accept": "application/json",
@@ -102,7 +110,7 @@ serve(async (req) => {
 
     console.log("Order payload prepared, making request...");
 
-    const orderResponse = await fetch("https://api-m.sandbox.paypal.com/v2/checkout/orders", {
+    const orderResponse = await fetch(`${paypalBaseUrl}/v2/checkout/orders`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
