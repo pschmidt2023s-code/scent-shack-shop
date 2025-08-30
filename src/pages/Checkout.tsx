@@ -148,19 +148,17 @@ export default function Checkout() {
         
         // Direct Stripe Checkout redirect without Edge Function
         try {
-          console.log("Creating Stripe session via Edge Function...");
+          console.log("Using existing create-stripe-checkout function...");
           
-          const { data: stripeData } = await supabase.functions.invoke('create-stripe-session', {
+          const { data: stripeData } = await supabase.functions.invoke('create-stripe-checkout', {
             body: {
-              items: checkoutData.items,
-              customerEmail: user?.email || guestEmail,
-              orderNumber: newOrderNumber,
+              amount: checkoutData.finalAmount,
+              stripeKey: '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' // Ihr Live Secret Key
             }
           });
           
-          if (stripeData?.success && stripeData?.url) {
+          if (stripeData?.url) {
             console.log("Stripe session created, redirecting...");
-            // Öffne Stripe Checkout in demselben Tab
             window.location.href = stripeData.url;
           } else {
             throw new Error(stripeData?.error || 'Stripe session creation failed');
