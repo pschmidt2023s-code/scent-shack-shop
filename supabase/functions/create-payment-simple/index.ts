@@ -27,6 +27,7 @@ interface PaymentRequest {
   items: CartItem[];
   guestEmail?: string;
   couponCode?: string;
+  stripeKey?: string; // Fallback für Stripe Key wenn Secrets nicht funktionieren
 }
 
 serve(async (req) => {
@@ -42,9 +43,22 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    let stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     
-    console.log("Environment check v7:", {
+    // Fallback: Read stripe key from request body if not in environment
+    if (!stripeKey) {
+      console.log("STRIPE_SECRET_KEY not in environment, checking request body...");
+      try {
+        const requestBodyClone = req.clone();
+        const bodyData = await requestBodyClone.json();
+        stripeKey = bodyData.stripeKey;
+        console.log("Stripe key from request body:", stripeKey ? "✓ Found" : "✗ Missing");
+      } catch (error) {
+        console.error("Failed to parse request body for stripe key:", error.message);
+      }
+    }
+    
+    console.log("Environment check v8:", {
       supabaseUrl: supabaseUrl ? "✓ Set" : "✗ Missing",
       supabaseKey: supabaseKey ? "✓ Set" : "✗ Missing", 
       supabaseServiceKey: supabaseServiceKey ? "✓ Set" : "✗ Missing",
@@ -53,11 +67,11 @@ serve(async (req) => {
     });
 
     if (!stripeKey) {
-      console.error("STRIPE_SECRET_KEY not found in environment variables");
-      console.error("Please set STRIPE_SECRET_KEY in Supabase Edge Function Secrets");
+      console.error("STRIPE_SECRET_KEY not found in environment or request body");
+      console.error("Please set STRIPE_SECRET_KEY in Supabase Edge Function Secrets or provide in request body");
       return new Response(JSON.stringify({ 
         error: "STRIPE_SECRET_KEY not configured",
-        message: "Please add your Stripe Secret Key to Supabase Edge Function Secrets"
+        message: "Please add your Stripe Secret Key to Supabase Edge Function Secrets or provide as 'stripeKey' in request body"
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
