@@ -25,13 +25,13 @@ export function DarkModeToggle() {
       variant="ghost"
       size="icon"
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      className="w-10 h-10 transition-colors hover:bg-muted"
+      className="w-10 h-10 transition-all duration-300 hover:bg-accent/50 border border-transparent hover:border-accent/20 text-foreground hover:text-accent-foreground"
       aria-label="Toggle theme"
     >
       {theme === 'dark' ? (
-        <Sun className="w-4 h-4 transition-transform duration-200 rotate-0 scale-100" />
+        <Sun className="w-4 h-4 transition-all duration-300 text-luxury-gold hover:text-accent-foreground" />
       ) : (
-        <Moon className="w-4 h-4 transition-transform duration-200 rotate-0 scale-100" />
+        <Moon className="w-4 h-4 transition-all duration-300 text-muted-foreground hover:text-accent-foreground" />
       )}
     </Button>
   )
