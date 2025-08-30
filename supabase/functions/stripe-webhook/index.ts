@@ -15,6 +15,8 @@ serve(async (req) => {
 
   try {
     console.log("=== STRIPE WEBHOOK START ===");
+    console.log(`Request method: ${req.method}`);
+    console.log(`Request URL: ${req.url}`);
     
     // Get environment variables
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
@@ -22,9 +24,26 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
+    console.log("Environment check:", {
+      stripeSecretKey: stripeSecretKey ? "✓ Set" : "✗ Missing",
+      webhookSecret: webhookSecret ? "✓ Set" : "✗ Missing",
+      supabaseUrl: supabaseUrl ? "✓ Set" : "✗ Missing",
+      supabaseServiceKey: supabaseServiceKey ? "✓ Set" : "✗ Missing"
+    });
+
     if (!stripeSecretKey || !supabaseUrl || !supabaseServiceKey) {
       console.error("Missing required environment variables");
-      throw new Error("Missing required environment variables");
+      return new Response(JSON.stringify({ 
+        error: "Missing required environment variables",
+        missing: {
+          stripeSecretKey: !stripeSecretKey,
+          supabaseUrl: !supabaseUrl,
+          supabaseServiceKey: !supabaseServiceKey
+        }
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
     }
 
     console.log("Environment variables verified");

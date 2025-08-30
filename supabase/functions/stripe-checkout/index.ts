@@ -50,7 +50,14 @@ serve(async (req) => {
 
     if (!stripeKey) {
       console.error("STRIPE_SECRET_KEY not found");
-      throw new Error("Stripe-Konfiguration fehlt");
+      console.error("Please set STRIPE_SECRET_KEY in Supabase Edge Function Secrets");
+      return new Response(JSON.stringify({ 
+        error: "STRIPE_SECRET_KEY not configured",
+        message: "Please add your Stripe Secret Key to Supabase Edge Function Secrets"
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
     }
 
     console.log("Parsing request...");
