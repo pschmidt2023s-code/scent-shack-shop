@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -24,12 +24,14 @@ interface CheckoutData {
 export default function Checkout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { items, total, clearCart } = useCart();
   const { user } = useAuth();
   
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'paypal' | 'bank' | 'card'>('paypal');
   const [guestEmail, setGuestEmail] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [customerData, setCustomerData] = useState({
     firstName: '',
     lastName: '',
@@ -58,10 +60,17 @@ export default function Checkout() {
       return;
     }
 
+    // Check for referral code in URL
+    const refCode = searchParams.get('ref');
+    if (refCode) {
+      setReferralCode(refCode);
+      console.log('Referral code detected:', refCode);
+    }
+
     // Generate unique order number using timestamp + random
     const orderNum = 'ADN' + Date.now().toString() + Math.random().toString(36).substr(2, 3).toUpperCase();
     setOrderNumber(orderNum);
-  }, [checkoutData.items, navigate]);
+  }, [checkoutData.items, navigate, searchParams]);
 
   const handleInputChange = (field: string, value: string) => {
     setCustomerData(prev => ({ ...prev, [field]: value }));
@@ -103,8 +112,11 @@ export default function Checkout() {
         guest_email: !user ? guestEmail : null,
         total_amount: Math.round(checkoutData.finalAmount * 100) / 100, // Ensure proper decimal precision
         currency: 'eur',
-        payment_method: paymentMethod,
-        customer_data: customerData,
+        referral_code: referralCode || null,
+        customer_data: {
+          ...customerData,
+          email: user?.email || guestEmail || customerData.email
+        },
         items: checkoutData.items.map(item => ({
            perfume_id: item.perfume?.id || item.id,
            variant_id: item.variant?.id || item.selectedVariant,

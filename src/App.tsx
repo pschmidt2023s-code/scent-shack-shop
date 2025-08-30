@@ -17,6 +17,7 @@ const FAQ = React.lazy(() => import('@/pages/FAQ'));
 const Privacy = React.lazy(() => import('@/pages/Privacy'));
 const Terms = React.lazy(() => import('@/pages/Terms'));
 const Imprint = React.lazy(() => import('@/pages/Imprint'));
+const Partner = React.lazy(() => import('@/pages/Partner'));
 const Admin = React.lazy(() => import('@/pages/Admin'));
 const Checkout = React.lazy(() => import('@/pages/Checkout'));
 const CheckoutBank = React.lazy(() => import('@/pages/CheckoutBank'));
@@ -48,6 +49,11 @@ function App() {
                 <Route path="/profile" element={
                   <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
                     <Profile />
+                  </Suspense>
+                } />
+                <Route path="/partner" element={
+                  <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+                    <Partner />
                   </Suspense>
                 } />
                 <Route path="/admin" element={

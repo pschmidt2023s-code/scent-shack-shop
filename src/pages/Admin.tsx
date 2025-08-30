@@ -12,6 +12,7 @@ import { Loader2, Package, Users, CreditCard, Eye, MapPin, User } from 'lucide-r
 import CouponManagement from '@/components/admin/CouponManagement';
 import UserManagement from '@/components/admin/UserManagement';
 import ReturnManagement from '@/components/admin/ReturnManagement';
+import PartnerManagement from '@/components/admin/PartnerManagement';
 import { getPerfumeNameById } from '@/lib/perfume-utils';
 
 interface Order {
@@ -148,7 +149,7 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid grid-cols-4 w-full max-w-2xl">
+          <TabsList className="grid grid-cols-5 w-full max-w-3xl">
             <TabsTrigger value="orders" className="flex items-center gap-2">
               <Package className="w-4 h-4" />
               Bestellungen
@@ -160,6 +161,10 @@ export default function Admin() {
             <TabsTrigger value="coupons" className="flex items-center gap-2">
               <CreditCard className="w-4 h-4" />
               Coupons
+            </TabsTrigger>
+            <TabsTrigger value="partners" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Partner
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
@@ -325,6 +330,10 @@ export default function Admin() {
 
           <TabsContent value="coupons" className="space-y-6">
             <CouponManagement />
+          </TabsContent>
+
+          <TabsContent value="partners" className="space-y-6">
+            <PartnerManagement />
           </TabsContent>
 
           <TabsContent value="users">

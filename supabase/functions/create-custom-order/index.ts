@@ -21,6 +21,7 @@ interface OrderData {
   total_amount: number;
   currency: string;
   payment_method: 'paypal' | 'bank' | 'card';
+  referral_code?: string;
   customer_data: {
     firstName: string;
     lastName: string;
@@ -55,29 +56,46 @@ serve(async (req) => {
     const orderData: OrderData = await req.json();
     console.log("Order data:", orderData);
 
-    // Create the order record
-    const { data: order, error: orderError } = await supabaseService
-      .from("orders")
-      .insert({
-        order_number: orderData.order_number,
-        user_id: orderData.user_id || null,
-        total_amount: orderData.total_amount,
-        currency: orderData.currency,
-        customer_name: `${orderData.customer_data.firstName} ${orderData.customer_data.lastName}`,
-        customer_email: orderData.customer_data.email,
-        customer_phone: orderData.customer_data.phone || null,
-        shipping_address_data: orderData.customer_data,
-        billing_address_data: orderData.customer_data,
-        status: orderData.payment_method === 'bank' ? 'pending_payment' : 'pending',
-        notes: orderData.guest_email ? `Guest order: ${orderData.guest_email}` : null,
-        admin_notes: JSON.stringify({
-          payment_method: orderData.payment_method,
-          customer_data: orderData.customer_data,
-          coupon_data: orderData.coupon_data
+      // Track referral if partner code exists
+      let partnerId = null;
+      if (orderData.referral_code) {
+        const { data: partnerData, error: partnerError } = await supabaseService
+          .from('partners')
+          .select('id, commission_rate')
+          .eq('partner_code', orderData.referral_code)
+          .eq('status', 'approved')
+          .single();
+
+        if (!partnerError && partnerData) {
+          partnerId = partnerData.id;
+          console.log("Referral partner found:", partnerData);
+        }
+      }
+
+      // Create the order record
+      const { data: order, error: orderError } = await supabaseService
+        .from("orders")
+        .insert({
+          order_number: orderData.order_number,
+          user_id: orderData.user_id || null,
+          total_amount: orderData.total_amount,
+          currency: orderData.currency,
+          customer_name: `${orderData.customer_data.firstName} ${orderData.customer_data.lastName}`,
+          customer_email: orderData.customer_data.email,
+          customer_phone: orderData.customer_data.phone || null,
+          shipping_address_data: orderData.customer_data,
+          billing_address_data: orderData.customer_data,
+          status: orderData.payment_method === 'bank' ? 'pending_payment' : 'pending',
+          notes: orderData.guest_email ? `Guest order: ${orderData.guest_email}` : null,
+          admin_notes: JSON.stringify({
+            payment_method: orderData.payment_method,
+            customer_data: orderData.customer_data,
+            coupon_data: orderData.coupon_data
+          }),
+          partner_id: partnerId
         })
-      })
-      .select()
-      .single();
+        .select()
+        .single();
 
     if (orderError) {
       console.error("Order creation error:", orderError);
@@ -106,6 +124,34 @@ serve(async (req) => {
     }
 
     console.log("Order items created");
+
+    // Create partner commission if referral exists
+    if (partnerId && orderData.total_amount > 0) {
+      const { data: partnerData } = await supabaseService
+        .from('partners')
+        .select('commission_rate')
+        .eq('id', partnerId)
+        .single();
+
+      if (partnerData) {
+        const commissionAmount = partnerData.commission_rate;
+        
+        const { error: saleError } = await supabaseService
+          .from('partner_sales')
+          .insert({
+            partner_id: partnerId,
+            order_id: order.id,
+            commission_amount: commissionAmount,
+            status: 'pending'
+          });
+
+        if (saleError) {
+          console.error("Partner sale tracking error:", saleError);
+        } else {
+          console.log("Partner commission tracked:", { partnerId, commissionAmount });
+        }
+      }
+    }
 
     // Handle PayPal payment
     if (orderData.payment_method === 'paypal') {
