@@ -157,25 +157,46 @@ export default function Checkout() {
         try {
           console.log("Direct Stripe frontend integration...");
           
-          // Wait for Stripe to be loaded
+          // Ensure Stripe is loaded
           let stripe;
-          const maxRetries = 10;
-          for (let i = 0; i < maxRetries; i++) {
-            if (window.Stripe && typeof window.Stripe === 'function') {
-              stripe = window.Stripe('pk_live_51S1wvMA12Fv3z8UXmcKZSaYucq7c6SJgDWb4YakcQeRsa7EX1sfmXQuz6hsqj69XyniYtghzo5i2vXZLgvodW4sj00ZWwSzx9v');
-              break;
-            }
-            await new Promise(resolve => setTimeout(resolve, 100));
-          }
+          
+          // Function to load Stripe script dynamically
+          const loadStripe = (): Promise<any> => {
+            return new Promise((resolve, reject) => {
+              if (window.Stripe) {
+                resolve(window.Stripe);
+                return;
+              }
+              
+              const script = document.createElement('script');
+              script.src = 'https://js.stripe.com/v3/';
+              script.async = true;
+              script.onload = () => {
+                if (window.Stripe) {
+                  resolve(window.Stripe);
+                } else {
+                  reject(new Error('Stripe failed to load'));
+                }
+              };
+              script.onerror = () => reject(new Error('Failed to load Stripe script'));
+              document.head.appendChild(script);
+            });
+          };
+          
+          // Load Stripe and initialize
+          const StripeConstructor: any = await loadStripe();
+          stripe = StripeConstructor('pk_live_51S1wvMA12Fv3z8UXmcKZSaYucq7c6SJgDWb4YakcQeRsa7EX1sfmXQuz6hsqj69XyniYtghzo5i2vXZLgvodW4sj00ZWwSzx9v');
           
           if (!stripe) {
-            throw new Error('Stripe could not be loaded');
+            throw new Error('Failed to initialize Stripe');
           }
+
+          console.log("Stripe loaded successfully, redirecting to checkout...");
 
           // Redirect direkt zu einer Stripe Price ID (erstellen Sie diese in Ihrem Stripe Dashboard)
           const { error } = await stripe.redirectToCheckout({
             lineItems: [{
-              price: 'prod_Sxtx0HerbpQVIq', // Ersetzen Sie mit Ihrer Price ID
+              price: 'price_1QWTmwA12Fv3z8UXh5vF7kG1', // Ersetzen Sie mit Ihrer Price ID
               quantity: 1,
             }],
             mode: 'payment',
