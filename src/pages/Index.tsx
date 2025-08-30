@@ -13,7 +13,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Social Proof Banner */}
-      <SocialProof variant="banner" />
+      {/* <SocialProof variant="banner" /> */}
       
       <Navigation />
       

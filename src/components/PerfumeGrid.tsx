@@ -10,11 +10,8 @@ import { Package } from 'lucide-react';
 export function PerfumeGrid() {
   const [filter, setFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
-  // Disable ratings to fix performance issues
-  // const { getRatingForPerfume } = usePerfumeRatings(perfumes.map(p => p.id));
-
-  console.log('PerfumeGrid rendering');
-  console.log('Perfumes available:', perfumes.length);
+  // Optimized ratings - only fetch once for all perfumes
+  const { getRatingForPerfume, loading: ratingsLoading } = usePerfumeRatings(perfumes.map(p => p.id));
 
   const categories = ['all', '50ML Bottles', 'Proben'];
 
@@ -29,19 +26,15 @@ export function PerfumeGrid() {
       case 'price-high':
         return Math.max(...b.variants.map(v => v.price)) - Math.max(...a.variants.map(v => v.price));
       case 'rating':
-        // Use static ratings from variants
-        const avgRatingA = a.variants.reduce((sum, v) => sum + (v.rating || 0), 0) / a.variants.length;
-        const avgRatingB = b.variants.reduce((sum, v) => sum + (v.rating || 0), 0) / b.variants.length;
+        // Use real ratings from Supabase if available, fallback to static
+        const avgRatingA = getRatingForPerfume(a.id).averageRating || a.variants.reduce((sum, v) => sum + (v.rating || 0), 0) / a.variants.length;
+        const avgRatingB = getRatingForPerfume(b.id).averageRating || b.variants.reduce((sum, v) => sum + (v.rating || 0), 0) / b.variants.length;
         return avgRatingB - avgRatingA;
       case 'name':
       default:
         return a.name.localeCompare(b.name);
     }
   });
-
-  console.log('Filtered perfumes:', filteredPerfumes.length);
-  console.log('Sorted perfumes:', sortedPerfumes.length);
-  console.log('Current filter:', filter);
 
   return (
     <section className="py-16 bg-background">
@@ -97,7 +90,7 @@ export function PerfumeGrid() {
           {sortedPerfumes.map((perfume, index) => (
             <div 
               key={perfume.id} 
-              className="opacity-100 hover:z-20 relative"
+              className="stagger-item hover:z-20 relative"
             >
               <PerfumeCard perfume={perfume} />
             </div>
