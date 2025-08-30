@@ -12,7 +12,7 @@ import { Loader2, Package, Users, CreditCard, Eye, MapPin, User } from 'lucide-r
 import CouponManagement from '@/components/admin/CouponManagement';
 import UserManagement from '@/components/admin/UserManagement';
 import ReturnManagement from '@/components/admin/ReturnManagement';
-import { formatOrderItems } from '@/lib/perfume-utils';
+import { getPerfumeNameById } from '@/lib/perfume-utils';
 
 interface Order {
   id: string;
@@ -127,12 +127,14 @@ export default function Admin() {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      pending: 'secondary',
-      paid: 'default',
-      shipped: 'outline',
-      delivered: 'secondary',
-      cancelled: 'destructive',
-    } as const;
+       pending: 'secondary',
+       pending_payment: 'outline',
+       processing: 'default',
+       paid: 'default',
+       shipped: 'outline',
+       delivered: 'secondary',
+       cancelled: 'destructive',
+     } as const;
 
     return <Badge variant={variants[status as keyof typeof variants] || 'secondary'}>{status}</Badge>;
   };
@@ -196,11 +198,13 @@ export default function Admin() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="pending">Ausstehend</SelectItem>
-                            <SelectItem value="paid">Bezahlt</SelectItem>
-                            <SelectItem value="shipped">Versendet</SelectItem>
-                            <SelectItem value="delivered">Zugestellt</SelectItem>
-                            <SelectItem value="cancelled">Storniert</SelectItem>
+            <SelectItem value="pending">Ausstehend</SelectItem>
+                             <SelectItem value="pending_payment">Zahlung ausstehend</SelectItem>
+                             <SelectItem value="processing">In Bearbeitung</SelectItem>
+                             <SelectItem value="paid">Bezahlt</SelectItem>
+                             <SelectItem value="shipped">Versendet</SelectItem>
+                             <SelectItem value="delivered">Zugestellt</SelectItem>
+                             <SelectItem value="cancelled">Storniert</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -281,12 +285,14 @@ export default function Admin() {
                                   <div className="border rounded-lg divide-y">
                                     {order.order_items.map((item) => (
                                       <div key={item.id} className="p-3 flex justify-between items-center">
-                                        <div>
-                                          <p className="font-medium text-sm">{formatOrderItems([item])}</p>
-                                          <p className="text-xs text-muted-foreground">
-                                            Einzelpreis: €{(item.unit_price / 100).toFixed(2)}
-                                          </p>
-                                        </div>
+                                       <div>
+                                           <p className="font-medium text-sm">
+                                             {item.quantity}x {getPerfumeNameById(item.perfume_id, item.variant_id)}
+                                           </p>
+                                           <p className="text-xs text-muted-foreground">
+                                             Einzelpreis: €{(item.unit_price / 100).toFixed(2)}
+                                           </p>
+                                         </div>
                                         <div className="text-right">
                                           <p className="font-medium">€{(item.total_price / 100).toFixed(2)}</p>
                                           <p className="text-xs text-muted-foreground">{item.quantity}x</p>
