@@ -31,9 +31,9 @@ const handler = async (req: Request): Promise<Response> => {
       subject: "Willkommen bei ALDENAIR - Registrierung erfolgreich!",
       html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-          <div style="background: linear-gradient(135deg, #1a1a1a 0%, #333 100%); color: white; padding: 30px; text-align: center;">
-            <h1 style="margin: 0; font-size: 28px; font-weight: bold;">ALDENAIR</h1>
-            <p style="margin: 10px 0 0 0; color: #d4af37;">Premium Parfümerie</p>
+          <div style="background: #d4af37; color: #1a1a1a; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="margin: 0; font-size: 32px; font-weight: bold; color: #1a1a1a;">ALDENAIR</h1>
+            <p style="margin: 10px 0 0 0; font-size: 16px; font-weight: 500;">Premium Parfümerie</p>
           </div>
           
           <div style="padding: 30px; background: #fff;">

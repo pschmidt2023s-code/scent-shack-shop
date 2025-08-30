@@ -97,8 +97,8 @@ const handler = async (req: Request): Promise<Response> => {
           <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.perfume_id}</td>
           <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.variant_id}</td>
           <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">€${(item.unit_price / 100).toFixed(2)}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">€${(item.total_price / 100).toFixed(2)}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">€${(item.unit_price).toFixed(2)}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">€${(item.total_price).toFixed(2)}</td>
         </tr>
       `).join('');
     }
@@ -110,9 +110,9 @@ const handler = async (req: Request): Promise<Response> => {
       subject: `Bestellbestätigung - ${orderDetails.order_number}`,
       html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-          <div style="background: linear-gradient(135deg, #1a1a1a 0%, #333 100%); color: white; padding: 30px; text-align: center;">
-            <h1 style="margin: 0; font-size: 28px; font-weight: bold;">ALDENAIR</h1>
-            <p style="margin: 10px 0 0 0; color: #d4af37;">Premium Parfümerie</p>
+          <div style="background: #d4af37; color: #1a1a1a; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="margin: 0; font-size: 32px; font-weight: bold; color: #1a1a1a;">ALDENAIR</h1>
+            <p style="margin: 10px 0 0 0; font-size: 16px; font-weight: 500;">Premium Parfümerie</p>
           </div>
           
           <div style="padding: 30px; background: #fff;">
@@ -127,7 +127,7 @@ const handler = async (req: Request): Promise<Response> => {
               <p><strong>Bestellnummer:</strong> ${orderDetails.order_number}</p>
               <p><strong>Bestelldatum:</strong> ${orderDate}</p>
               <p><strong>Status:</strong> ${orderDetails.status === 'pending' ? 'In Bearbeitung' : orderDetails.status}</p>
-              <p><strong>Gesamtbetrag:</strong> €${totalAmount}</p>
+              <p><strong>Gesamtbetrag:</strong> €${(orderDetails.total_amount).toFixed(2)}</p>
             </div>
             
             ${orderDetails.order_items && orderDetails.order_items.length > 0 ? `
@@ -148,7 +148,7 @@ const handler = async (req: Request): Promise<Response> => {
                 <tfoot>
                   <tr>
                     <td colspan="4" style="padding: 15px; text-align: right; font-weight: bold; border-top: 2px solid #1a1a1a;">Gesamtbetrag:</td>
-                    <td style="padding: 15px; text-align: right; font-weight: bold; border-top: 2px solid #1a1a1a;">€${totalAmount}</td>
+                    <td style="padding: 15px; text-align: right; font-weight: bold; border-top: 2px solid #1a1a1a;">€${(orderDetails.total_amount).toFixed(2)}</td>
                   </tr>
                 </tfoot>
               </table>
