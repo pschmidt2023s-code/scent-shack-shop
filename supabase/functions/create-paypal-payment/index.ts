@@ -27,7 +27,8 @@ serve(async (req) => {
 
     const { order_id, amount, currency, order_number, customer_email } = requestBody;
 
-    const PAYPAL_CLIENT_ID = "ASXKkF8na7K9EDHUSfNrKqtgY005FbvJQcPGJ_FCdSLxcNW1enPCEqsem9WDoqN1S5FBisBlKvy5deH7";
+    // Use sandbox credentials for testing
+    const PAYPAL_CLIENT_ID = Deno.env.get("PAYPAL_CLIENT_ID") || "AeA1QIZXiflr1_-r0U2UbWSxjGYYiQDq-zBULVxeGwH8z5_2eOhjp8wQg2RCgQoHb5kRK6K6r6O2qGGh";
     const PAYPAL_SECRET = Deno.env.get("PAYPAL_SECRET_KEY");
 
     console.log("PayPal Client ID exists:", !!PAYPAL_CLIENT_ID);
