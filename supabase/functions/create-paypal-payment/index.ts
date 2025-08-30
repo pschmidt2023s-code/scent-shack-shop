@@ -30,6 +30,13 @@ serve(async (req) => {
     console.log("PAYPAL_CLIENT_ID exists:", !!Deno.env.get("PAYPAL_CLIENT_ID"));
     console.log("PAYPAL_SECRET_KEY exists:", !!Deno.env.get("PAYPAL_SECRET_KEY"));
 
+    console.log("=== DETAILED PAYPAL DEBUG ===");
+    console.log("Request body received:", JSON.stringify(requestBody, null, 2));
+    console.log("PayPal Client ID (first 10 chars):", Deno.env.get("PAYPAL_CLIENT_ID")?.substring(0, 10));
+    console.log("PayPal Secret exists:", !!Deno.env.get("PAYPAL_SECRET_KEY"));
+    console.log("Amount being processed:", requestBody.amount);
+    console.log("Currency:", requestBody.currency);
+
     const { order_id, amount, currency, order_number, customer_email } = requestBody;
 
     // PayPal Sandbox Credentials - verwende immer funktionierende Test-Credentials

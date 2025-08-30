@@ -29,7 +29,7 @@ export default function Checkout() {
   const { user } = useAuth();
   
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'paypal' | 'bank'>('paypal');
+  const [paymentMethod, setPaymentMethod] = useState<'paypal' | 'paypal_me' | 'bank'>('paypal');
   const [guestEmail, setGuestEmail] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [customerData, setCustomerData] = useState({
@@ -151,9 +151,23 @@ export default function Checkout() {
           window.location.href = data.paypal_url;
         } else {
           console.error('PayPal response:', data);
-          toast.error('PayPal-Fehler: ' + (data?.error || 'Unbekannter Fehler') + '. Probieren Sie bitte Überweisung.');
-          setPaymentMethod('bank'); // Fallback to bank transfer
+          toast.error('PayPal-Fehler: ' + (data?.error || 'Unbekannter Fehler') + '. Probieren Sie bitte PayPal.me oder Überweisung.');
+          setPaymentMethod('paypal_me'); // Fallback to PayPal.me
         }
+      } else if (paymentMethod === 'paypal_me') {
+        // Direct PayPal.me link
+        const paypalMeUrl = `https://paypal.me/PatricMauriceSchmidt/${checkoutData.finalAmount.toFixed(2)}EUR`;
+        console.log('Opening PayPal.me link:', paypalMeUrl);
+        window.open(paypalMeUrl, '_blank');
+        
+        // Show success page for PayPal.me
+        navigate('/checkout-success', { 
+          state: { 
+            orderNumber: newOrderNumber,
+            paymentMethod: 'paypal_me',
+            totalAmount: checkoutData.finalAmount 
+          }
+        });
       } else if (paymentMethod === 'bank') {
         // Show bank transfer details
         navigate('/checkout-bank', { 
@@ -342,9 +356,9 @@ export default function Checkout() {
                 <CardTitle>Zahlungsart</CardTitle>
               </CardHeader>
               <CardContent>
-                 <RadioGroup 
+                  <RadioGroup 
                   value={paymentMethod} 
-                  onValueChange={(value: 'paypal' | 'bank') => setPaymentMethod(value)}
+                  onValueChange={(value: 'paypal' | 'paypal_me' | 'bank') => setPaymentMethod(value)}
                   className="space-y-4"
                 >
                   <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-muted/50">
@@ -352,8 +366,19 @@ export default function Checkout() {
                     <Label htmlFor="paypal" className="flex items-center gap-2 cursor-pointer flex-1">
                       <CreditCard className="w-5 h-5" />
                       <div>
-                        <div className="font-medium">PayPal</div>
+                        <div className="font-medium">PayPal (Standard)</div>
                         <div className="text-sm text-muted-foreground">Kreditkarte, Bankkonto oder PayPal-Guthaben</div>
+                      </div>
+                    </Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-muted/50">
+                    <RadioGroupItem value="paypal_me" id="paypal_me" />
+                    <Label htmlFor="paypal_me" className="flex items-center gap-2 cursor-pointer flex-1">
+                      <CreditCard className="w-5 h-5 text-blue-600" />
+                      <div>
+                        <div className="font-medium">PayPal.me</div>
+                        <div className="text-sm text-muted-foreground">Direkte PayPal-Zahlung mit automatischem Betrag</div>
                       </div>
                     </Label>
                   </div>
@@ -418,6 +443,8 @@ export default function Checkout() {
                 'Bestellung wird verarbeitet...'
               ) : paymentMethod === 'paypal' ? (
                 `Jetzt mit PayPal bezahlen (${checkoutData.finalAmount.toFixed(2)}€)`
+              ) : paymentMethod === 'paypal_me' ? (
+                `Mit PayPal.me bezahlen (${checkoutData.finalAmount.toFixed(2)}€)`
               ) : (
                 `Bestellung abschicken (${checkoutData.finalAmount.toFixed(2)}€)`
               )}

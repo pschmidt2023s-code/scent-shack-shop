@@ -63,6 +63,7 @@ export default function CheckoutSuccess() {
   const getPaymentMethodIcon = (method: string) => {
     switch (method) {
       case 'paypal':
+      case 'paypal_me':
         return <CreditCard className="w-5 h-5" />;
       case 'bank':
         return <Building2 className="w-5 h-5" />;
@@ -79,6 +80,8 @@ export default function CheckoutSuccess() {
     switch (method) {
       case 'paypal':
         return 'PayPal';
+      case 'paypal_me':
+        return 'PayPal.me';
       case 'bank':
         return 'Banküberweisung';
       case 'card':
@@ -93,6 +96,7 @@ export default function CheckoutSuccess() {
   const getStatusBadge = (method: string) => {
     switch (method) {
       case 'paypal':
+      case 'paypal_me':
       case 'card':
         return <Badge variant="default">Bezahlt</Badge>;
       case 'test':
@@ -160,6 +164,16 @@ export default function CheckoutSuccess() {
                   <div className="bg-green-50 p-3 rounded-lg">
                     <p className="text-sm text-green-800">
                       ✓ Ihre Rechnung wurde automatisch an Ihre E-Mail-Adresse gesendet.
+                    </p>
+                  </div>
+                )}
+
+                {orderDetails.paymentMethod === 'paypal_me' && (
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <h4 className="font-medium mb-2 text-blue-800">PayPal.me Zahlung</h4>
+                    <p className="text-sm text-blue-700">
+                      Bitte schließen Sie die Zahlung in dem geöffneten PayPal.me Tab ab. 
+                      Nach erfolgreicher Zahlung wird Ihre Bestellung automatisch bearbeitet.
                     </p>
                   </div>
                 )}

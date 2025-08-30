@@ -20,7 +20,7 @@ interface OrderData {
   guest_email?: string;
   total_amount: number;
   currency: string;
-  payment_method: 'paypal' | 'bank' | 'card';
+  payment_method: 'paypal' | 'paypal_me' | 'bank' | 'card';
   referral_code?: string;
   customer_data: {
     firstName: string;
@@ -220,7 +220,7 @@ serve(async (req) => {
       }
     }
 
-    // For bank transfer, just return success
+    // For PayPal.me and bank transfer, just return success
     return new Response(JSON.stringify({ 
       success: true,
       order_id: order.id,
