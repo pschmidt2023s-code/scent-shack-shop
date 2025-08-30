@@ -13,6 +13,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ArrowLeft, CreditCard, Building2, Banknote, Copy, Check } from 'lucide-react';
 
+// Declare Stripe types for window
+declare global {
+  interface Window {
+    Stripe: any;
+  }
+}
+
 interface CheckoutData {
   items: any[];
   totalAmount: number;
@@ -150,8 +157,16 @@ export default function Checkout() {
         try {
           console.log("Direct Stripe frontend integration...");
           
-          // Direkte Stripe Integration ohne Edge Functions
-          const stripe = (window as any).Stripe('pk_live_51S1wvMA12Fv3z8UXmcKZSaYucq7c6SJgDWb4YakcQeRsa7EX1sfmXQuz6hsqj69XyniYtghzo5i2vXZLgvodW4sj00ZWwSzx9v');
+          // Wait for Stripe to be loaded
+          let stripe;
+          const maxRetries = 10;
+          for (let i = 0; i < maxRetries; i++) {
+            if (window.Stripe && typeof window.Stripe === 'function') {
+              stripe = window.Stripe('pk_live_51S1wvMA12Fv3z8UXmcKZSaYucq7c6SJgDWb4YakcQeRsa7EX1sfmXQuz6hsqj69XyniYtghzo5i2vXZLgvodW4sj00ZWwSzx9v');
+              break;
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
           
           if (!stripe) {
             throw new Error('Stripe could not be loaded');
