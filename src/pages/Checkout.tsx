@@ -145,33 +145,39 @@ export default function Checkout() {
       clearCart();
 
       if (paymentMethod === 'stripe') {
-        // Call Stripe payment function
-        const { data: stripeData, error: stripeError } = await supabase.functions.invoke('stripe-checkout', {
-          body: {
-            items: checkoutData.items,
-            guestEmail: !user ? guestEmail : undefined,
-            couponCode: checkoutData.appliedCoupon?.code
-          }
-        });
-
-        if (stripeError) {
-          console.error('Stripe payment error:', stripeError);
-          toast.error('Stripe-Zahlung fehlgeschlagen: ' + stripeError.message);
-          return;
-        }
-
-        if (stripeData?.url) {
-          // Open Stripe checkout in a new tab
-          window.open(stripeData.url, '_blank');
-          navigate('/checkout-success', { 
-            state: { 
-              orderNumber: newOrderNumber, 
-              paymentMethod: 'Stripe',
-              totalAmount: checkoutData.finalAmount 
-            } 
+        // Call new V8 Stripe payment function with better debugging
+        try {
+          console.log("Attempting to use new V8 function...");
+          const { data: stripeData, error: stripeError } = await supabase.functions.invoke('stripe-payment-v8', {
+            body: {
+              items: checkoutData.items,
+              guestEmail: !user ? guestEmail : undefined,
+              couponCode: checkoutData.appliedCoupon?.code
+            }
           });
-        } else {
-          toast.error('Stripe-Checkout-URL konnte nicht erstellt werden');
+
+          if (stripeError) {
+            console.error("V8 Payment function error:", stripeError);
+            throw stripeError;
+          }
+
+          if (stripeData?.url) {
+            console.log("V8 Payment URL received:", stripeData.url);
+            // Open in new tab
+            window.open(stripeData.url, '_blank');
+            navigate('/checkout-success', { 
+              state: { 
+                orderNumber: newOrderNumber, 
+                paymentMethod: 'Stripe',
+                totalAmount: checkoutData.finalAmount 
+              } 
+            });
+          } else {
+            toast.error('Stripe-Checkout-URL konnte nicht erstellt werden');
+          }
+        } catch (stripeError) {
+          console.error("V8 Stripe payment failed:", stripeError);
+          toast.error('Stripe-Zahlung fehlgeschlagen: ' + (stripeError.message || 'Unbekannter Fehler') + '. Versuchen Sie PayPal oder Überweisung.');
         }
       } else if (paymentMethod === 'paypal') {
         // Redirect to PayPal
