@@ -63,6 +63,11 @@ serve(async (req) => {
         user_id: orderData.user_id || null,
         total_amount: orderData.total_amount,
         currency: orderData.currency,
+        customer_name: `${orderData.customer_data.firstName} ${orderData.customer_data.lastName}`,
+        customer_email: orderData.customer_data.email,
+        customer_phone: orderData.customer_data.phone || null,
+        shipping_address_data: orderData.customer_data,
+        billing_address_data: orderData.customer_data,
         status: orderData.payment_method === 'bank' ? 'pending_payment' : 'pending',
         notes: orderData.guest_email ? `Guest order: ${orderData.guest_email}` : null,
         admin_notes: JSON.stringify({
