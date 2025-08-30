@@ -140,7 +140,13 @@ export default function Partner() {
   };
 
   const applyAsPartner = async () => {
-    if (!user) return;
+    console.log('applyAsPartner called', { user, applicationData, bankDetails });
+    
+    if (!user) {
+      console.log('No user found, cannot apply as partner');
+      toast.error('Sie müssen angemeldet sein, um sich als Partner zu bewerben');
+      return;
+    }
 
     // Validate required fields
     if (!applicationData.first_name || !applicationData.last_name || !bankDetails.account_holder || !bankDetails.iban || !bankDetails.bic || !bankDetails.bank_name) {
