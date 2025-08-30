@@ -148,43 +148,26 @@ export default function Checkout() {
         
         // Direct Stripe Checkout redirect without Edge Function
         try {
-          console.log("Creating direct Stripe redirect...");
+          console.log("Creating Stripe session via Edge Function...");
           
-          // Simple Stripe Checkout with your publishable key
-          const stripe = (window as any).Stripe('pk_live_51S1wvMA12Fv3z8UXmcKZSaYucq7c6SJgDWb4YakcQeRsa7EX1sfmXQuz6hsqj69XyniYtghzo5i2vXZLgvodW4sj00ZWwSzx9v');
-          
-          if (!stripe) {
-            toast.error('Stripe konnte nicht geladen werden');
-            return;
-          }
-          
-          // Redirect to Stripe Checkout mit dynamischen Produktdaten
-          const { error } = await stripe.redirectToCheckout({
-            lineItems: checkoutData.items.map(item => ({
-              price_data: {
-                currency: 'eur',
-                product_data: {
-                  name: `${item.perfume?.name || item.name} - ${item.variant?.name || item.selectedVariant}`,
-                  description: item.variant?.description || item.description || '',
-                },
-                unit_amount: Math.round((item.variant?.price || item.price) * 100), // Preis in Cent
-              },
-              quantity: item.quantity,
-            })),
-            mode: 'payment',
-            successUrl: window.location.origin + '/checkout-success',
-            cancelUrl: window.location.origin + '/checkout',
-            customerEmail: user?.email || guestEmail,
-            clientReferenceId: newOrderNumber,
+          const { data: stripeData } = await supabase.functions.invoke('create-stripe-session', {
+            body: {
+              items: checkoutData.items,
+              customerEmail: user?.email || guestEmail,
+              orderNumber: newOrderNumber,
+            }
           });
           
-          if (error) {
-            console.error('Stripe redirect error:', error);
-            toast.error('Stripe-Fehler: ' + error.message);
+          if (stripeData?.success && stripeData?.url) {
+            console.log("Stripe session created, redirecting...");
+            // Öffne Stripe Checkout in demselben Tab
+            window.location.href = stripeData.url;
+          } else {
+            throw new Error(stripeData?.error || 'Stripe session creation failed');
           }
           
         } catch (stripeError) {
-          console.error("Direct Stripe redirect failed:", stripeError);
+          console.error("Stripe session creation failed:", stripeError);
           toast.error('Stripe-Zahlung fehlgeschlagen. Versuchen Sie PayPal oder Überweisung.');
         }
       } else if (paymentMethod === 'paypal') {

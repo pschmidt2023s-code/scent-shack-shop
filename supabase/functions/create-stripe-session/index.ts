@@ -1,0 +1,75 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@14.21.0";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    console.log("=== CREATE STRIPE SESSION START ===");
+    
+    const { items, customerEmail, orderNumber } = await req.json();
+    console.log("Request data:", { items: items?.length, customerEmail, orderNumber });
+    
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      throw new Error("STRIPE_SECRET_KEY not configured");
+    }
+
+    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+    console.log("Stripe initialized");
+
+    // Convert items to Stripe line items
+    const lineItems = items.map((item: any) => ({
+      price_data: {
+        currency: "eur",
+        product_data: {
+          name: `${item.perfume?.name || item.name} - ${item.variant?.name || item.selectedVariant}`,
+          description: item.variant?.description || item.description || '',
+        },
+        unit_amount: Math.round((item.variant?.price || item.price) * 100), // Preis in Cent
+      },
+      quantity: item.quantity,
+    }));
+
+    console.log("Line items created:", lineItems.length);
+
+    // Create Stripe Checkout Session
+    const session = await stripe.checkout.sessions.create({
+      line_items: lineItems,
+      mode: "payment",
+      success_url: `${req.headers.get("origin")}/checkout-success`,
+      cancel_url: `${req.headers.get("origin")}/checkout`,
+      customer_email: customerEmail,
+      client_reference_id: orderNumber,
+      automatic_tax: { enabled: false },
+    });
+
+    console.log("Stripe session created:", session.id);
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      url: session.url,
+      sessionId: session.id 
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    });
+    
+  } catch (error) {
+    console.error("ERROR:", error.message);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: error.message 
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+    });
+  }
+});
