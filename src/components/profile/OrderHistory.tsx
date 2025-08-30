@@ -233,7 +233,7 @@ export function OrderHistory() {
                     </div>
                     <div className="flex items-center gap-1">
                       <Euro className="w-3 h-3" />
-                      €{(order.total_amount / 100).toFixed(2)}
+                      €{order.total_amount.toFixed(2)}
                     </div>
                   </div>
                 </div>
@@ -250,7 +250,7 @@ export function OrderHistory() {
                     {order.order_items.map((item, index) => (
                       <div key={index} className="flex justify-between text-sm">
                         <span>{item.quantity}x Parfum ({item.variant_id})</span>
-                        <span>€{(item.total_price / 100).toFixed(2)}</span>
+                        <span>€{item.total_price.toFixed(2)}</span>
                       </div>
                     ))}
                   </div>
@@ -258,7 +258,7 @@ export function OrderHistory() {
                 
                 <div className="flex justify-between items-center pt-2 border-t">
                   <span className="font-medium">Gesamt</span>
-                  <span className="font-bold">€{(order.total_amount / 100).toFixed(2)}</span>
+                  <span className="font-bold">€{order.total_amount.toFixed(2)}</span>
                 </div>
 
                 <div className="flex gap-2 pt-2 border-t">
@@ -305,7 +305,7 @@ export function OrderHistory() {
           <DialogHeader>
             <DialogTitle>Rückgabe anmelden</DialogTitle>
             <DialogDescription>
-              Bestellung #{selectedOrder?.id.slice(-8)} - €{selectedOrder ? (selectedOrder.total_amount / 100).toFixed(2) : '0.00'}
+              Bestellung #{selectedOrder?.id.slice(-8)} - €{selectedOrder ? selectedOrder.total_amount.toFixed(2) : '0.00'}
             </DialogDescription>
           </DialogHeader>
           
