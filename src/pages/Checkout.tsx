@@ -164,15 +164,8 @@ export default function Checkout() {
 
           if (stripeData?.url) {
             console.log("Direct Payment URL received:", stripeData.url);
-            // Open in new tab
-            window.open(stripeData.url, '_blank');
-            navigate('/checkout-success', { 
-              state: { 
-                orderNumber: newOrderNumber, 
-                paymentMethod: 'Stripe',
-                totalAmount: checkoutData.finalAmount 
-              } 
-            });
+            // Redirect to Stripe Checkout in the same tab
+            window.location.href = stripeData.url;
           } else {
             toast.error('Stripe-Checkout-URL konnte nicht erstellt werden');
           }
