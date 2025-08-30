@@ -62,5 +62,5 @@ verify_jwt = false
 [functions.create-payment-simple]
 verify_jwt = false
 
-[functions.create-stripe-session]
+[functions.stripe-payment]
 verify_jwt = false

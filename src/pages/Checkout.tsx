@@ -148,24 +148,24 @@ export default function Checkout() {
         
         // Direct Stripe Checkout redirect without Edge Function
         try {
-          console.log("Using create-stripe-checkout function with updated secret...");
+          console.log("Using new stripe-payment function...");
           
-          const { data: stripeData } = await supabase.functions.invoke('create-stripe-checkout', {
+          const { data: stripeData } = await supabase.functions.invoke('stripe-payment', {
             body: {
-              amount: checkoutData.finalAmount
-              // stripeKey wird jetzt aus den Supabase Secrets geladen
+              amount: checkoutData.finalAmount,
+              customerEmail: user?.email || guestEmail
             }
           });
           
-          if (stripeData?.url) {
-            console.log("Stripe session created, redirecting...");
+          if (stripeData?.success && stripeData?.url) {
+            console.log("Stripe session created, redirecting to:", stripeData.url);
             window.location.href = stripeData.url;
           } else {
-            throw new Error(stripeData?.error || 'Stripe session creation failed');
+            throw new Error(stripeData?.error || 'Stripe payment failed');
           }
           
         } catch (stripeError) {
-          console.error("Stripe session creation failed:", stripeError);
+          console.error("Stripe payment failed:", stripeError);
           toast.error('Stripe-Zahlung fehlgeschlagen. Versuchen Sie PayPal oder Überweisung.');
         }
       } else if (paymentMethod === 'paypal') {
