@@ -70,10 +70,9 @@ export default function Partner() {
   });
   const [payoutAmount, setPayoutAmount] = useState('');
   const [applicationData, setApplicationData] = useState({
-    company_name: '',
-    website: '',
-    social_media: '',
-    experience: '',
+    first_name: '',
+    last_name: '',
+    address: '',
     motivation: ''
   });
 
@@ -251,53 +250,41 @@ export default function Partner() {
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="company_name">Firmenname (optional)</Label>
+                    <Label htmlFor="first_name">Vorname *</Label>
                     <Input
-                      id="company_name"
-                      value={applicationData.company_name}
+                      id="first_name"
+                      value={applicationData.first_name}
                       onChange={(e) => setApplicationData(prev => ({
                         ...prev,
-                        company_name: e.target.value
+                        first_name: e.target.value
                       }))}
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="website">Website (optional)</Label>
+                    <Label htmlFor="last_name">Nachname *</Label>
                     <Input
-                      id="website"
-                      value={applicationData.website}
+                      id="last_name"
+                      value={applicationData.last_name}
                       onChange={(e) => setApplicationData(prev => ({
                         ...prev,
-                        website: e.target.value
+                        last_name: e.target.value
                       }))}
-                      placeholder="https://..."
+                      required
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="social_media">Social Media Profile</Label>
-                  <Input
-                    id="social_media"
-                    value={applicationData.social_media}
-                    onChange={(e) => setApplicationData(prev => ({
-                      ...prev,
-                      social_media: e.target.value
-                    }))}
-                    placeholder="Instagram, TikTok, YouTube, etc."
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="experience">Marketing Erfahrung</Label>
+                  <Label htmlFor="address">Adresse</Label>
                   <Textarea
-                    id="experience"
-                    value={applicationData.experience}
+                    id="address"
+                    value={applicationData.address}
                     onChange={(e) => setApplicationData(prev => ({
                       ...prev,
-                      experience: e.target.value
+                      address: e.target.value
                     }))}
-                    placeholder="Beschreiben Sie Ihre Erfahrung im Marketing oder Verkauf..."
+                    placeholder="Straße, Hausnummer, PLZ, Ort"
                   />
                 </div>
 

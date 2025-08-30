@@ -62,7 +62,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           data: fullName ? { full_name: fullName } : undefined
         }
       });
+      
       console.log('Sign up result:', { data, error });
+      
+      // Send registration confirmation email if signup was successful
+      if (!error && data.user) {
+        try {
+          const { error: emailError } = await supabase.functions.invoke('send-registration-confirmation', {
+            body: {
+              email: email,
+              name: fullName || email.split('@')[0]
+            }
+          });
+
+          if (emailError) {
+            console.error('Error sending registration confirmation:', emailError);
+          } else {
+            console.log('Registration confirmation email sent');
+          }
+        } catch (emailError) {
+          console.error('Failed to send registration confirmation:', emailError);
+        }
+      }
+      
       return { error };
     } catch (error) {
       console.error('Sign up error:', error);

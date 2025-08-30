@@ -86,12 +86,42 @@ export default function Admin() {
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
+      // Get current order data for email notification
+      const { data: orderData } = await supabase
+        .from('orders')
+        .select('status, customer_email, customer_name, order_number')
+        .eq('id', orderId)
+        .single();
+
+      const oldStatus = orderData?.status;
+
       const { error } = await supabase
         .from('orders')
         .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq('id', orderId);
 
       if (error) throw error;
+
+      // Send status update email if customer email exists and status actually changed
+      if (orderData?.customer_email && oldStatus !== newStatus) {
+        try {
+          const { error: emailError } = await supabase.functions.invoke('send-order-status-update', {
+            body: {
+              orderId: orderId,
+              newStatus: newStatus,
+              oldStatus: oldStatus
+            }
+          });
+
+          if (emailError) {
+            console.error('Error sending order status update email:', emailError);
+          } else {
+            console.log('Order status update email sent successfully');
+          }
+        } catch (emailError) {
+          console.error('Failed to send order status update email:', emailError);
+        }
+      }
 
       await loadOrders();
       toast({

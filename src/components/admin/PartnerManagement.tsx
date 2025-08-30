@@ -115,12 +115,43 @@ export default function PartnerManagement() {
         updateData.approved_by = (await supabase.auth.getUser()).data.user?.id;
       }
 
+      // Get partner data before update for email
+      const { data: partnerData } = await supabase
+        .from('partners')
+        .select(`
+          *,
+          profiles!partners_user_id_fkey(full_name)
+        `)
+        .eq('id', partnerId)
+        .single();
+
       const { error } = await supabase
         .from('partners')
         .update(updateData)
         .eq('id', partnerId);
 
       if (error) throw error;
+
+      // Send status update email
+      if (partnerData && (status === 'approved' || status === 'rejected')) {
+        try {
+          // Call email function with user_id, let the function handle getting the email
+          const { error: emailError } = await supabase.functions.invoke('send-partner-confirmation', {
+            body: {
+              userId: partnerData.user_id,
+              name: (partnerData as any).profiles?.full_name || 'Partner',
+              partnerCode: partnerData.partner_code,
+              status: status
+            }
+          });
+
+          if (emailError) {
+            console.error('Error sending status update email:', emailError);
+          }
+        } catch (emailError) {
+          console.error('Failed to send partner status email:', emailError);
+        }
+      }
 
       toast.success('Partner-Status aktualisiert');
       await loadData();
@@ -373,21 +404,18 @@ export default function PartnerManagement() {
                               <div>
                                 <Label>Bewerbungsdaten</Label>
                                 <div className="bg-muted p-3 rounded text-sm space-y-2">
-                                  {selectedPartner.application_data.company_name && (
-                                    <p><strong>Firma:</strong> {selectedPartner.application_data.company_name}</p>
-                                  )}
-                                  {selectedPartner.application_data.website && (
-                                    <p><strong>Website:</strong> {selectedPartner.application_data.website}</p>
-                                  )}
-                                  {selectedPartner.application_data.social_media && (
-                                    <p><strong>Social Media:</strong> {selectedPartner.application_data.social_media}</p>
-                                  )}
-                                  {selectedPartner.application_data.experience && (
-                                    <p><strong>Erfahrung:</strong> {selectedPartner.application_data.experience}</p>
-                                  )}
-                                  {selectedPartner.application_data.motivation && (
-                                    <p><strong>Motivation:</strong> {selectedPartner.application_data.motivation}</p>
-                                  )}
+                                   {selectedPartner.application_data.first_name && (
+                                     <p><strong>Vorname:</strong> {selectedPartner.application_data.first_name}</p>
+                                   )}
+                                   {selectedPartner.application_data.last_name && (
+                                     <p><strong>Nachname:</strong> {selectedPartner.application_data.last_name}</p>
+                                   )}
+                                   {selectedPartner.application_data.address && (
+                                     <p><strong>Adresse:</strong> {selectedPartner.application_data.address}</p>
+                                   )}
+                                   {selectedPartner.application_data.motivation && (
+                                     <p><strong>Motivation:</strong> {selectedPartner.application_data.motivation}</p>
+                                   )}
                                 </div>
                               </div>
                             )}

@@ -125,6 +125,25 @@ serve(async (req) => {
 
     console.log("Order items created");
 
+    // Send order confirmation email
+    try {
+      const { error: emailError } = await supabaseService.functions.invoke('send-order-confirmation', {
+        body: {
+          orderId: order.id,
+          customerEmail: orderData.customer_data.email,
+          customerName: `${orderData.customer_data.firstName} ${orderData.customer_data.lastName}`
+        }
+      });
+
+      if (emailError) {
+        console.error('Error sending order confirmation email:', emailError);
+      } else {
+        console.log('Order confirmation email sent successfully');
+      }
+    } catch (emailError) {
+      console.error('Failed to send order confirmation email:', emailError);
+    }
+
     // Create partner commission if referral exists
     if (partnerId && orderData.total_amount > 0) {
       const { data: partnerData } = await supabaseService

@@ -8,10 +8,9 @@ const corsHeaders = {
 
 interface PartnerApplication {
   application_data: {
-    company_name?: string;
-    website?: string;
-    social_media: string;
-    experience: string;
+    first_name: string;
+    last_name: string;
+    address: string;
     motivation: string;
   };
   bank_details: {
@@ -97,8 +96,34 @@ serve(async (req) => {
 
     console.log("Partner application created:", partner);
 
-    // TODO: Send notification email to admin
-    // You could add email notification here using Resend or similar service
+    // Get user profile for email
+    const { data: profile } = await supabaseService
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single();
+
+    const fullName = profile?.full_name || `${applicationData.application_data.first_name} ${applicationData.application_data.last_name}`;
+
+    // Send confirmation email
+    try {
+      const { error: emailError } = await supabaseService.functions.invoke('send-partner-confirmation', {
+        body: {
+          email: user.email,
+          name: fullName,
+          partnerCode: partnerCode,
+          status: 'applied'
+        }
+      });
+
+      if (emailError) {
+        console.error('Error sending confirmation email:', emailError);
+      } else {
+        console.log('Partner application confirmation email sent');
+      }
+    } catch (emailError) {
+      console.error('Failed to send confirmation email:', emailError);
+    }
 
     return new Response(JSON.stringify({ 
       success: true,
