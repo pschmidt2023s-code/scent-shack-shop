@@ -104,6 +104,33 @@ export type Database = {
         }
         Relationships: []
       }
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          perfume_id: string
+          updated_at: string
+          user_id: string
+          variant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          perfume_id: string
+          updated_at?: string
+          user_id: string
+          variant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          perfume_id?: string
+          updated_at?: string
+          user_id?: string
+          variant_id?: string
+        }
+        Relationships: []
+      }
       newsletter_subscriptions: {
         Row: {
           email: string

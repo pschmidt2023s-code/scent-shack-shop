@@ -11,6 +11,7 @@ import { LiveChat } from '@/components/LiveChat';
 // Lazy load non-critical routes for better performance
 const ProductDetail = React.lazy(() => import('@/pages/ProductDetail'));
 const Products = React.lazy(() => import('@/pages/Products'));
+const Favorites = React.lazy(() => import('@/pages/Favorites'));
 const Profile = React.lazy(() => import('@/pages/Profile'));
 const Contact = React.lazy(() => import('@/pages/Contact'));
 const Returns = React.lazy(() => import('@/pages/Returns'));
@@ -54,6 +55,11 @@ function App() {
                 <Route path="/products" element={
                   <Suspense fallback={<LoadingSpinner />}>
                     <Products />
+                  </Suspense>
+                } />
+                <Route path="/favorites" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Favorites />
                   </Suspense>
                 } />
                 <Route path="/product/:id" element={

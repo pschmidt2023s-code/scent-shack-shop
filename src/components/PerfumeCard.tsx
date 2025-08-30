@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Heart, Star, Eye } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { useFavorites } from '@/hooks/useFavorites';
 import { Perfume } from '@/types/perfume';
 import { Link } from 'react-router-dom';
-import { usePerfumeRatings } from '@/hooks/usePerfumeRatings';
 import { toast } from '@/hooks/use-toast';
 
 interface PerfumeCardProps {
@@ -15,21 +15,16 @@ interface PerfumeCardProps {
 
 export function PerfumeCard({ perfume }: PerfumeCardProps) {
   const [selectedVariant, setSelectedVariant] = useState(0);
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const { addToCart } = useCart();
+  const { isFavorite, toggleFavorite } = useFavorites();
   // Disable ratings to debug the issue
   // const { getRatingForPerfume } = usePerfumeRatings([perfume.id]);
-
-  // Load wishlist state from localStorage
-  useEffect(() => {
-    const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]')
-    setIsWishlisted(wishlist.includes(perfume.id))
-  }, [perfume.id]);
 
   const currentVariant = perfume.variants[selectedVariant];
   // Use static ratings for debugging
   const averageRating = currentVariant.rating || 0;
   const totalReviews = currentVariant.reviewCount || 0;
+  const isInFavorites = isFavorite(perfume.id, currentVariant.id);
 
   const handleAddToCart = () => {
     addToCart(perfume, currentVariant);
@@ -39,25 +34,8 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
     });
   };
 
-  const handleWishlistToggle = () => {
-    const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]')
-    let newWishlist
-    if (wishlist.includes(perfume.id)) {
-      newWishlist = wishlist.filter((id: string) => id !== perfume.id)
-      setIsWishlisted(false)
-    } else {
-      newWishlist = [...wishlist, perfume.id]
-      setIsWishlisted(true)
-    }
-    localStorage.setItem('wishlist', JSON.stringify(newWishlist))
-    
-    // Dispatch custom event to update wishlist counter in MobileBottomNav
-    window.dispatchEvent(new CustomEvent('wishlistUpdated'))
-    
-    toast({
-      title: isWishlisted ? "Von Wunschliste entfernt" : "Zur Wunschliste hinzugefügt",
-      description: `${currentVariant.name} wurde ${isWishlisted ? 'entfernt' : 'hinzugefügt'}.`,
-    });
+  const handleWishlistToggle = async () => {
+    await toggleFavorite(perfume.id, currentVariant.id);
   };
 
   const handleProductClick = () => {
@@ -100,7 +78,7 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
                   handleWishlistToggle();
                 }}
               >
-                <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
+                <Heart className={`w-4 h-4 ${isInFavorites ? 'fill-red-500 text-red-500' : ''}`} />
               </Button>
             </div>
 
