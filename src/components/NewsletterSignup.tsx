@@ -176,7 +176,7 @@ export function NewsletterSignup({
 
   // Default variant
   return (
-    <Card className={cn("border-foreground", className)}>
+    <Card className={cn("border-foreground bg-card", className)}>
       <CardHeader className="text-center">
         <CardTitle className="flex items-center justify-center gap-2">
           <Mail className="w-6 h-6" />
