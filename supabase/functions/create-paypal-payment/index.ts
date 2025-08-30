@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { encode as base64Encode } from "https://deno.land/std@0.190.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,10 +41,9 @@ serve(async (req) => {
     // Get PayPal access token
     console.log("Getting PayPal access token...");
     const authString = `${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET}`;
-    const encodedAuth = btoa(authString);
+    const encodedAuth = base64Encode(new TextEncoder().encode(authString));
     
-    console.log("Auth string length:", authString.length);
-    console.log("Encoded auth length:", encodedAuth.length);
+    console.log("Auth string prepared, making request...");
 
     const authResponse = await fetch("https://api-m.sandbox.paypal.com/v1/oauth2/token", {
       method: "POST",
@@ -57,17 +57,21 @@ serve(async (req) => {
     });
 
     console.log("PayPal auth response status:", authResponse.status);
-    const authData = await authResponse.json();
-    console.log("PayPal auth response:", authData);
-
+    
     if (!authResponse.ok) {
-      const errorMessage = `PayPal auth failed: ${authData.error_description || authData.error || 'Unknown error'}`;
-      console.error(errorMessage);
-      throw new Error(errorMessage);
+      const errorText = await authResponse.text();
+      console.error("PayPal auth failed with status:", authResponse.status);
+      console.error("PayPal auth error response:", errorText);
+      throw new Error(`PayPal auth failed: ${errorText}`);
     }
 
+    const authData = await authResponse.json();
+    console.log("PayPal auth successful, got access token");
+
     const accessToken = authData.access_token;
-    console.log("Access token received:", !!accessToken);
+    if (!accessToken) {
+      throw new Error("No access token received from PayPal");
+    }
 
     // Create PayPal order
     console.log("Creating PayPal order...");
@@ -91,7 +95,7 @@ serve(async (req) => {
       }
     };
 
-    console.log("Order payload:", JSON.stringify(orderPayload, null, 2));
+    console.log("Order payload prepared, making request...");
 
     const orderResponse = await fetch("https://api-m.sandbox.paypal.com/v2/checkout/orders", {
       method: "POST",
@@ -104,15 +108,16 @@ serve(async (req) => {
     });
 
     console.log("PayPal order response status:", orderResponse.status);
-    const orderData = await orderResponse.json();
-    console.log("PayPal order response:", orderData);
 
     if (!orderResponse.ok) {
-      const errorMessage = `PayPal order creation failed: ${orderData.message || orderData.error || 'Unknown error'}`;
-      console.error(errorMessage);
-      console.error("Full PayPal error response:", JSON.stringify(orderData, null, 2));
-      throw new Error(errorMessage);
+      const errorText = await orderResponse.text();
+      console.error("PayPal order creation failed with status:", orderResponse.status);
+      console.error("PayPal order error response:", errorText);
+      throw new Error(`PayPal order creation failed: ${errorText}`);
     }
+
+    const orderData = await orderResponse.json();
+    console.log("PayPal order created successfully:", orderData.id);
 
     // Find approval URL
     const approvalUrl = orderData.links?.find((link: any) => link.rel === "approve")?.href;
@@ -123,8 +128,7 @@ serve(async (req) => {
       throw new Error("PayPal approval URL not found");
     }
 
-    console.log("PayPal order created successfully:", orderData.id);
-    console.log("Approval URL:", approvalUrl);
+    console.log("Approval URL found:", approvalUrl);
 
     return new Response(JSON.stringify({
       paypal_order_id: orderData.id,
@@ -136,7 +140,7 @@ serve(async (req) => {
     });
 
   } catch (error: any) {
-    console.error("Error in create-paypal-payment:", error);
+    console.error("=== PayPal Function Error ===");
     console.error("Error name:", error.name);
     console.error("Error message:", error.message);
     console.error("Error stack:", error.stack);
