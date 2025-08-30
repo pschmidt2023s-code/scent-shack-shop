@@ -6,7 +6,7 @@ import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 import { CartSidebar } from './CartSidebar'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const NAV_ITEMS = [
   {
@@ -50,16 +50,34 @@ export function MobileBottomNav() {
   const { itemCount } = useCart()
   const { user } = useAuth()
   const [showCart, setShowCart] = useState(false)
-  const [wishlist, setWishlist] = useState<string[]>([])
+  const [wishlist, setWishlist] = useState<string[]>(() => {
+    const saved = localStorage.getItem('wishlist')
+    return saved ? JSON.parse(saved) : []
+  })
+
+  // Listen for wishlist updates
+  useEffect(() => {
+    const handleWishlistUpdate = () => {
+      const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]')
+      setWishlist(wishlist)
+    }
+    
+    window.addEventListener('wishlistUpdated', handleWishlistUpdate)
+    return () => window.removeEventListener('wishlistUpdated', handleWishlistUpdate)
+  }, [])
 
   const handleCartClick = () => {
     setShowCart(true)
   }
 
   const handleWishlistClick = () => {
-    // Simple wishlist toggle for now - could be enhanced with Supabase later
-    console.log('Wishlist clicked - showing', wishlist.length, 'items')
-    alert(`Wunschliste (${wishlist.length} Artikel)\n\nDiese Funktion wird bald verfügbar sein!`)
+    // Show actual wishlist count from localStorage
+    const wishlistItems = JSON.parse(localStorage.getItem('wishlist') || '[]')
+    if (wishlistItems.length === 0) {
+      alert('Ihre Wunschliste ist leer.\n\nFügen Sie Produkte zu Ihren Favoriten hinzu, indem Sie auf das Herz-Symbol bei den Produkten klicken!')
+    } else {
+      alert(`Wunschliste (${wishlistItems.length} Artikel)\n\n${wishlistItems.map((id: string) => `• Produkt ${id}`).join('\n')}\n\nDetaillierte Wunschliste wird bald verfügbar sein!`)
+    }
   }
 
   const handleItemClick = (item: any) => {
@@ -116,6 +134,16 @@ export function MobileBottomNav() {
                         isActive && "scale-110"
                       )} 
                     />
+                    
+                    {/* Wishlist badge */}
+                    {item.label === 'Favoriten' && wishlist.length > 0 && (
+                      <Badge 
+                        variant="destructive" 
+                        className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs animate-bounce"
+                      >
+                        {wishlist.length > 99 ? '99+' : wishlist.length}
+                      </Badge>
+                    )}
                     
                     {/* Cart badge */}
                     {item.showBadge && itemCount > 0 && (
@@ -177,7 +205,7 @@ export function MobileBottomNav() {
       </nav>
 
       {/* Cart Sidebar */}
-      {showCart && <CartSidebar />}
+      <CartSidebar open={showCart} onOpenChange={setShowCart} />
     </>
   )
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,12 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
   // Disable ratings to debug the issue
   // const { getRatingForPerfume } = usePerfumeRatings([perfume.id]);
 
+  // Load wishlist state from localStorage
+  useEffect(() => {
+    const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]')
+    setIsWishlisted(wishlist.includes(perfume.id))
+  }, [perfume.id]);
+
   const currentVariant = perfume.variants[selectedVariant];
   // Use static ratings for debugging
   const averageRating = currentVariant.rating || 0;
@@ -34,19 +40,19 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
   };
 
   const handleWishlistToggle = () => {
-    setIsWishlisted(!isWishlisted);
-    
-    // Simple local storage wishlist for now
-    const wishlistKey = `wishlist_${perfume.id}_${currentVariant.id}`;
-    if (!isWishlisted) {
-      localStorage.setItem(wishlistKey, JSON.stringify({
-        perfume: perfume.name,
-        variant: currentVariant.name,
-        addedAt: new Date().toISOString()
-      }));
+    const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]')
+    let newWishlist
+    if (wishlist.includes(perfume.id)) {
+      newWishlist = wishlist.filter((id: string) => id !== perfume.id)
+      setIsWishlisted(false)
     } else {
-      localStorage.removeItem(wishlistKey);
+      newWishlist = [...wishlist, perfume.id]
+      setIsWishlisted(true)
     }
+    localStorage.setItem('wishlist', JSON.stringify(newWishlist))
+    
+    // Dispatch custom event to update wishlist counter in MobileBottomNav
+    window.dispatchEvent(new CustomEvent('wishlistUpdated'))
     
     toast({
       title: isWishlisted ? "Von Wunschliste entfernt" : "Zur Wunschliste hinzugefügt",

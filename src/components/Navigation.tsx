@@ -10,6 +10,7 @@ import { DarkModeToggle } from './DarkModeToggle';
 const Navigation = () => {
   const { user, signOut } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showCart, setShowCart] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -61,7 +62,7 @@ const Navigation = () => {
               <DarkModeToggle />
 
               {/* Cart */}
-              <CartSidebar />
+              <CartSidebar open={showCart} onOpenChange={setShowCart} />
 
               {/* User Authentication */}
               {user ? (

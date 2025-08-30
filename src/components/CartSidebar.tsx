@@ -1,28 +1,23 @@
 
 import { useState } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
 import CheckoutModal from './CheckoutModal';
 import { ShoppingBag, Minus, Plus, Trash2 } from 'lucide-react';
 
-export function CartSidebar() {
+interface CartSidebarProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function CartSidebar({ open, onOpenChange }: CartSidebarProps) {
   const { items, updateQuantity, removeFromCart, total, itemCount } = useCart();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   return (
     <>
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative">
-            <ShoppingBag className="h-5 w-5" />
-            {itemCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-luxury-gold text-luxury-black rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
-                {itemCount}
-              </span>
-            )}
-          </Button>
-        </SheetTrigger>
+      <Sheet open={open} onOpenChange={onOpenChange}>
         
         <SheetContent className="w-full sm:max-w-md">
           <SheetHeader>
