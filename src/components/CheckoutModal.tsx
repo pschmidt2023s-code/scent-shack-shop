@@ -31,12 +31,12 @@ export default function CheckoutModal({ open, onOpenChange }: CheckoutModalProps
   const totalAmount = total;
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Calculate discount amount
-  const discountAmount = appliedCoupon ? 
-    appliedCoupon.discount_type === 'percentage' 
-      ? Math.min(totalAmount * (appliedCoupon.discount_value / 100), totalAmount)
-      : Math.min(appliedCoupon.discount_value / 100, totalAmount)
-    : 0;
+   // Calculate discount amount
+   const discountAmount = appliedCoupon ? 
+     appliedCoupon.discount_type === 'percentage' 
+       ? Math.min(totalAmount * (appliedCoupon.discount_value / 100), totalAmount)
+       : Math.min((appliedCoupon.discount_value / 100), totalAmount)
+     : 0;
   
   const finalAmount = totalAmount - discountAmount;
 
@@ -74,12 +74,12 @@ export default function CheckoutModal({ open, onOpenChange }: CheckoutModalProps
         return;
       }
 
-      // Check minimum order amount
-      if (coupon.min_order_amount && totalAmount < coupon.min_order_amount / 100) {
-        toast.error(`Mindestbestellwert: €${(coupon.min_order_amount / 100).toFixed(2)}`);
-        setAppliedCoupon(null);
-        return;
-      }
+       // Check minimum order amount (convert to euros for comparison)
+       if (coupon.min_order_amount && totalAmount < (coupon.min_order_amount / 100)) {
+         toast.error(`Mindestbestellwert: €${(coupon.min_order_amount / 100).toFixed(2)}`);
+         setAppliedCoupon(null);
+         return;
+       }
 
       // Check usage limits
       if (coupon.max_uses && coupon.current_uses >= coupon.max_uses) {
@@ -88,12 +88,12 @@ export default function CheckoutModal({ open, onOpenChange }: CheckoutModalProps
         return;
       }
 
-      setAppliedCoupon(coupon);
-      const discount = coupon.discount_type === 'percentage' 
-        ? Math.min(totalAmount * (coupon.discount_value / 100), totalAmount)
-        : Math.min(coupon.discount_value / 100, totalAmount);
-      
-      toast.success(`Rabattcode angewendet! Sie sparen €${discount.toFixed(2)}`);
+       setAppliedCoupon(coupon);
+       const discount = coupon.discount_type === 'percentage' 
+         ? Math.min(totalAmount * (coupon.discount_value / 100), totalAmount)
+         : Math.min((coupon.discount_value / 100), totalAmount);
+       
+       toast.success(`Rabattcode angewendet! Sie sparen €${discount.toFixed(2)}`);
 
     } catch (error) {
       console.error('Coupon validation error:', error);
@@ -150,11 +150,11 @@ export default function CheckoutModal({ open, onOpenChange }: CheckoutModalProps
           <div className="bg-muted/50 p-4 rounded-lg space-y-2">
             <h3 className="font-semibold">Bestellübersicht</h3>
             {items.map((item: any) => (
-              <div key={`${item.id}-${item.selectedVariant}`} className="flex justify-between text-sm">
-                <span>{item.quantity}x {item.name} - {item.selectedVariant}</span>
-                <span>€{(item.price * item.quantity).toFixed(2)}</span>
-              </div>
-            ))}
+               <div key={`${item.perfume.id}-${item.variant.id}`} className="flex justify-between text-sm">
+                 <span>{item.quantity}x {item.perfume.name} - {item.variant.name}</span>
+                 <span>€{((item.variant.price / 100) * item.quantity).toFixed(2)}</span>
+               </div>
+             ))}
             <div className="border-t pt-2 space-y-1">
               <div className="flex justify-between text-sm">
                 <span>Zwischensumme ({itemCount} Artikel)</span>

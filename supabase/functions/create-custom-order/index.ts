@@ -116,7 +116,7 @@ serve(async (req) => {
         {
           body: {
             order_id: order.id,
-            amount: orderData.total_amount / 100, // Convert back to euros for PayPal
+            amount: orderData.total_amount, // Already in euros
             currency: orderData.currency.toUpperCase(),
             order_number: orderData.order_number,
             customer_email: orderData.customer_data.email

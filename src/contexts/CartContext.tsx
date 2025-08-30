@@ -21,8 +21,8 @@ type CartAction =
   | { type: 'CLEAR_CART' };
 
 const calculateTotal = (items: CartItem[]): number => {
-  return items.reduce((total, item) => total + item.variant.price * item.quantity, 0);
-};
+   return items.reduce((total, item) => total + (item.variant.price / 100) * item.quantity, 0);
+ };
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {

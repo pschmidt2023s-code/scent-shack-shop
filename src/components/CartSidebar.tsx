@@ -54,7 +54,7 @@ export function CartSidebar() {
                           <h3 className="font-semibold text-sm">{item.perfume.name}</h3>
                           <p className="text-xs text-muted-foreground">{item.perfume.brand}</p>
                           <p className="text-xs text-muted-foreground">#{item.variant.number} - {item.variant.name}</p>
-                          <p className="font-bold">€{item.variant.price.toFixed(2)}</p>
+                          <p className="font-bold">€{(item.variant.price / 100).toFixed(2)}</p>
                         </div>
                         
                         <div className="flex items-center justify-between">
@@ -95,7 +95,7 @@ export function CartSidebar() {
                 <div className="border-t pt-4 space-y-4">
                   <div className="flex justify-between items-center font-bold text-lg">
                     <span>Gesamt:</span>
-                    <span>€{total.toFixed(2)}</span>
+                    <span>€{(total / 100).toFixed(2)}</span>
                   </div>
                   
                   <Button 

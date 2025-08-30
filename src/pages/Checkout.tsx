@@ -101,7 +101,7 @@ export default function Checkout() {
         order_number: orderNumber,
         user_id: user?.id || null,
         guest_email: !user ? guestEmail : null,
-        total_amount: Math.round(checkoutData.finalAmount * 100), // Convert to cents
+        total_amount: Math.round(checkoutData.finalAmount), // Already in euros, just ensure integer
         currency: 'eur',
         payment_method: paymentMethod,
         customer_data: customerData,
@@ -109,13 +109,13 @@ export default function Checkout() {
            perfume_id: item.perfume?.id || item.id,
            variant_id: item.variant?.id || item.selectedVariant,
            quantity: item.quantity,
-           unit_price: Math.round((item.variant?.price || item.price || 0) * 100),
-           total_price: Math.round((item.variant?.price || item.price || 0) * item.quantity * 100)
+            unit_price: Math.round(item.variant?.price || item.price || 0),
+            total_price: Math.round((item.variant?.price || item.price || 0) * item.quantity)
         })),
-        coupon_data: checkoutData.appliedCoupon ? {
-          code: checkoutData.appliedCoupon.code,
-          discount_amount: Math.round(checkoutData.discountAmount * 100)
-        } : null
+         coupon_data: checkoutData.appliedCoupon ? {
+           code: checkoutData.appliedCoupon.code,
+           discount_amount: Math.round(checkoutData.discountAmount)
+         } : null
       };
 
       console.log("=== ORDER DEBUG ===");
@@ -192,7 +192,7 @@ export default function Checkout() {
                      <p className="text-sm text-muted-foreground">Größe: {item.variant?.name || item.selectedVariant}</p>
                      <p className="text-sm text-muted-foreground">Menge: {item.quantity}</p>
                    </div>
-                   <p className="font-medium">{((item.variant?.price || item.price) * item.quantity).toFixed(2)}€</p>
+                   <p className="font-medium">{((item.variant?.price || item.price) / 100 * item.quantity).toFixed(2)}€</p>
                  </div>
                ))}
 
