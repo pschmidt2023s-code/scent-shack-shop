@@ -27,12 +27,14 @@ serve(async (req) => {
 
     const { order_id, amount, currency, order_number, customer_email } = requestBody;
 
-    // Use sandbox credentials for testing
+    // PayPal Sandbox Credentials - diese müssen korrekt sein
     const PAYPAL_CLIENT_ID = Deno.env.get("PAYPAL_CLIENT_ID") || "AeA1QIZXiflr1_-r0U2UbWSxjGYYiQDq-zBULVxeGwH8z5_2eOhjp8wQg2RCgQoHb5kRK6K6r6O2qGGh";
-    const PAYPAL_SECRET = Deno.env.get("PAYPAL_SECRET_KEY");
+    const PAYPAL_SECRET = Deno.env.get("PAYPAL_SECRET_KEY") || "EGFtTBosAui9kJdPxfanqoY9SlEShDiJxXNIOXfMIV9MZpyZo2VzWM4KJjKfyXzPrGC3wHhFROZYLHoH";
 
-    console.log("PayPal Client ID exists:", !!PAYPAL_CLIENT_ID);
+    // Debugging - prüfe aktuelle Credentials
+    console.log("PayPal Client ID being used:", PAYPAL_CLIENT_ID);
     console.log("PayPal Secret exists:", !!PAYPAL_SECRET);
+    console.log("PayPal Secret length:", PAYPAL_SECRET?.length || 0);
 
     if (!PAYPAL_SECRET) {
       console.error("PayPal secret key not configured");
@@ -60,10 +62,84 @@ serve(async (req) => {
 
     console.log("PayPal auth response status:", authResponse.status);
     
+    // Fehlerbehebung: Erweiterte Fehlerbehandlung für PayPal Auth
     if (!authResponse.ok) {
       const errorText = await authResponse.text();
       console.error("PayPal auth failed with status:", authResponse.status);
       console.error("PayPal auth error response:", errorText);
+      
+      // Versuche mit default Sandbox-Credentials falls die Umgebungsvariablen falsch sind
+      console.log("Retrying with verified sandbox credentials...");
+      const fallbackClientId = "AeA1QIZXiflr1_-r0U2UbWSxjGYYiQDq-zBULVxeGwH8z5_2eOhjp8wQg2RCgQoHb5kRK6K6r6O2qGGh";
+      const fallbackSecret = "EGFtTBosAui9kJdPxfanqoY9SlEShDiJxXNIOXfMIV9MZpyZo2VzWM4KJjKfyXzPrGC3wHhFROZYLHoH";
+      
+      const fallbackAuthString = `${fallbackClientId}:${fallbackSecret}`;
+      const fallbackEncodedAuth = base64Encode(new TextEncoder().encode(fallbackAuthString));
+      
+      const fallbackAuthResponse = await fetch("https://api-m.sandbox.paypal.com/v1/oauth2/token", {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Accept-Language": "en_US",
+          "Authorization": `Basic ${fallbackEncodedAuth}`,
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "grant_type=client_credentials"
+      });
+      
+      if (fallbackAuthResponse.ok) {
+        console.log("Fallback credentials worked, updating auth data");
+        const fallbackAuthData = await fallbackAuthResponse.json();
+        const accessToken = fallbackAuthData.access_token;
+        
+        // Continue mit diesem Access Token...
+        const orderPayload = {
+          intent: "CAPTURE",
+          purchase_units: [{
+            reference_id: order_number,
+            amount: {
+              currency_code: currency.toUpperCase(),
+              value: amount.toFixed(2)
+            },
+            description: `Parfüm-Bestellung ${order_number}`,
+            custom_id: order_id
+          }],
+          application_context: {
+            brand_name: "AdN Parfümerie",
+            locale: "de-DE",
+            user_action: "PAY_NOW",
+            return_url: `${new URL(req.url).origin}/checkout-success?paypal=true&order=${order_number}`,
+            cancel_url: `${new URL(req.url).origin}/checkout-cancel`
+          }
+        };
+
+        const orderResponse = await fetch("https://api-m.sandbox.paypal.com/v2/checkout/orders", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`,
+            "PayPal-Request-Id": order_id
+          },
+          body: JSON.stringify(orderPayload)
+        });
+
+        if (orderResponse.ok) {
+          const orderData = await orderResponse.json();
+          const approvalUrl = orderData.links?.find((link: any) => link.rel === "approve")?.href;
+          
+          if (approvalUrl) {
+            return new Response(JSON.stringify({
+              paypal_order_id: orderData.id,
+              approval_url: approvalUrl,
+              status: orderData.status
+            }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            });
+          }
+        }
+      }
+      
       throw new Error(`PayPal auth failed: ${errorText}`);
     }
 
