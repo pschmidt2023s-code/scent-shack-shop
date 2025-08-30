@@ -147,8 +147,8 @@ export default function Checkout() {
       if (paymentMethod === 'stripe') {
         // Call new V8 Stripe payment function with better debugging
         try {
-          console.log("Attempting to use DIRECT stripe function...");
-          const { data: stripeData, error: stripeError } = await supabase.functions.invoke('stripe-direct', {
+          console.log("Attempting to use payment function...");
+          const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-payment-simple', {
             body: {
               items: checkoutData.items,
               guestEmail: !user ? guestEmail : undefined,
