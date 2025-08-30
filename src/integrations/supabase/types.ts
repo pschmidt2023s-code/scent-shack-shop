@@ -158,6 +158,7 @@ export type Database = {
           id: string
           notes: string | null
           order_number: string | null
+          partner_id: string | null
           shipping_address_data: Json | null
           shipping_address_id: string | null
           status: string
@@ -178,6 +179,7 @@ export type Database = {
           id?: string
           notes?: string | null
           order_number?: string | null
+          partner_id?: string | null
           shipping_address_data?: Json | null
           shipping_address_id?: string | null
           status?: string
@@ -198,6 +200,7 @@ export type Database = {
           id?: string
           notes?: string | null
           order_number?: string | null
+          partner_id?: string | null
           shipping_address_data?: Json | null
           shipping_address_id?: string | null
           status?: string
@@ -215,6 +218,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orders_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orders_shipping_address_id_fkey"
             columns: ["shipping_address_id"]
             isOneToOne: false
@@ -222,6 +232,143 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      partner_payouts: {
+        Row: {
+          amount: number
+          bank_details: Json
+          id: string
+          notes: string | null
+          partner_id: string
+          processed_at: string | null
+          processed_by: string | null
+          requested_at: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          bank_details: Json
+          id?: string
+          notes?: string | null
+          partner_id: string
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_at?: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          bank_details?: Json
+          id?: string
+          notes?: string | null
+          partner_id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_payouts_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_sales: {
+        Row: {
+          commission_amount: number
+          created_at: string
+          id: string
+          order_id: string
+          partner_id: string
+          status: string
+        }
+        Insert: {
+          commission_amount: number
+          created_at?: string
+          id?: string
+          order_id: string
+          partner_id: string
+          status?: string
+        }
+        Update: {
+          commission_amount?: number
+          created_at?: string
+          id?: string
+          order_id?: string
+          partner_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_sales_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_sales_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          application_data: Json | null
+          approved_at: string | null
+          approved_by: string | null
+          bank_details: Json | null
+          commission_rate: number
+          created_at: string
+          id: string
+          partner_code: string
+          status: Database["public"]["Enums"]["partner_status"]
+          total_commission: number
+          total_paid_out: number
+          total_sales: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          application_data?: Json | null
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_details?: Json | null
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          partner_code: string
+          status?: Database["public"]["Enums"]["partner_status"]
+          total_commission?: number
+          total_paid_out?: number
+          total_sales?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          application_data?: Json | null
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_details?: Json | null
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          partner_code?: string
+          status?: Database["public"]["Enums"]["partner_status"]
+          total_commission?: number
+          total_paid_out?: number
+          total_sales?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -378,6 +525,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      generate_partner_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -389,6 +540,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      partner_status: "pending" | "approved" | "rejected" | "suspended"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -517,6 +669,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      partner_status: ["pending", "approved", "rejected", "suspended"],
     },
   },
 } as const
