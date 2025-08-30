@@ -10,7 +10,11 @@ import { Package } from 'lucide-react';
 export function PerfumeGrid() {
   const [filter, setFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
-  const { getRatingForPerfume } = usePerfumeRatings(perfumes.map(p => p.id));
+  // Disable ratings to fix performance issues
+  // const { getRatingForPerfume } = usePerfumeRatings(perfumes.map(p => p.id));
+
+  console.log('PerfumeGrid rendering');
+  console.log('Perfumes available:', perfumes.length);
 
   const categories = ['all', '50ML Bottles', 'Proben'];
 
@@ -25,14 +29,19 @@ export function PerfumeGrid() {
       case 'price-high':
         return Math.max(...b.variants.map(v => v.price)) - Math.max(...a.variants.map(v => v.price));
       case 'rating':
-        const avgRatingA = getRatingForPerfume(a.id).averageRating || 0;
-        const avgRatingB = getRatingForPerfume(b.id).averageRating || 0;
+        // Use static ratings from variants
+        const avgRatingA = a.variants.reduce((sum, v) => sum + (v.rating || 0), 0) / a.variants.length;
+        const avgRatingB = b.variants.reduce((sum, v) => sum + (v.rating || 0), 0) / b.variants.length;
         return avgRatingB - avgRatingA;
       case 'name':
       default:
         return a.name.localeCompare(b.name);
     }
   });
+
+  console.log('Filtered perfumes:', filteredPerfumes.length);
+  console.log('Sorted perfumes:', sortedPerfumes.length);
+  console.log('Current filter:', filter);
 
   return (
     <section className="py-16 bg-background">
@@ -88,7 +97,7 @@ export function PerfumeGrid() {
           {sortedPerfumes.map((perfume, index) => (
             <div 
               key={perfume.id} 
-              className="stagger-item hover:z-20 relative"
+              className="opacity-100 hover:z-20 relative"
             >
               <PerfumeCard perfume={perfume} />
             </div>
