@@ -200,7 +200,7 @@ serve(async (req) => {
     if (finalTotal === 0) {
       console.log("Free order detected, redirecting to success page");
       return new Response(JSON.stringify({ 
-        url: `${req.headers.get("origin")}/checkout/success?free_order=true`,
+        url: `${req.headers.get("origin")}/checkout-success?free_order=true`,
         free_order: true 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -216,8 +216,8 @@ serve(async (req) => {
       customer_email: customerId ? undefined : customerEmail,
       line_items: lineItems,
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/checkout/cancel`,
+      success_url: `${req.headers.get("origin")}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.get("origin")}/checkout`,
       payment_method_types: ['card'],
       shipping_address_collection: {
         allowed_countries: ['DE', 'AT', 'CH', 'NL', 'BE', 'LU', 'FR', 'IT', 'ES', 'PT'],
@@ -270,7 +270,7 @@ serve(async (req) => {
         coupon_code: couponCode || '',
       },
       automatic_tax: {
-        enabled: true,
+        enabled: false,
       },
       phone_number_collection: {
         enabled: true,
