@@ -41,7 +41,7 @@ export function HeroSection() {
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center opacity-0 animate-slide-up" style={{ animationDelay: '1.1s', animationFillMode: 'forwards' }}>
           <Button variant="hero" size="lg" className="group text-lg px-8 py-4 hover-glow transition-all duration-500 hover:scale-105 hover:rotate-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] relative overflow-hidden" asChild>
-            <Link to="/products">
+            <Link to="/products?category=50ML Bottles">
               <span className="relative z-10 transition-transform duration-300 group-hover:scale-110">
                 Parfüms entdecken
               </span>
@@ -50,7 +50,7 @@ export function HeroSection() {
           </Button>
           
           <Button variant="luxury" size="lg" className="group text-lg px-8 py-4 hover-lift transition-all duration-500 hover:scale-105 hover:-rotate-1 relative overflow-hidden" asChild>
-            <Link to="/products#proben">
+            <Link to="/products?category=Proben">
               <span className="relative z-10 transition-transform duration-300 group-hover:scale-110">
                 Proben bestellen
               </span>

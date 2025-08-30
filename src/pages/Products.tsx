@@ -1,100 +1,37 @@
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SearchInput } from '@/components/ui/search-input';
-import { SortAsc, Filter } from 'lucide-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { PerfumeCard } from '@/components/PerfumeCard';
 import { perfumes } from '@/data/perfumes';
-import { ProductGridSkeleton } from '@/components/ProductSkeleton';
-import { FilterSidebar } from '@/components/FilterSidebar';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
 import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 
 export default function Products() {
-  const [sortBy, setSortBy] = useState<string>('name');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<any>({});
   const [searchParams] = useSearchParams();
+  const categoryFilter = searchParams.get('category');
 
-  // Handle URL search parameters
-  useEffect(() => {
-    const urlSearch = searchParams.get('search');
-    const urlCategory = searchParams.get('category');
-    
-    if (urlSearch) {
-      setSearchQuery(urlSearch);
-      console.log('URL search parameter found:', urlSearch);
-    }
-    
-    if (urlCategory) {
-      setFilters({ category: urlCategory });
-      console.log('URL category parameter found:', urlCategory);
-    }
-  }, [searchParams]);
+  console.log('Products page - Category filter:', categoryFilter);
 
-  const prestigeCollection = perfumes.find(p => p.category === '50ML Bottles');
-  const probenCollection = perfumes.find(p => p.category === 'Proben');
+  // Get the specific collection based on URL parameter
+  let selectedCollection = null;
+  let pageTitle = 'ALDENAIR Parfüm-Kollektion';
+  let pageDescription = 'Entdecke unsere komplette Parfüm-Kollektion';
 
-  // Debug logging
-  console.log('Products component rendered');
-  console.log('Total perfumes:', perfumes.length);
-  console.log('Prestige collection:', prestigeCollection);
-  console.log('Proben collection:', probenCollection);
+  if (categoryFilter === '50ML Bottles') {
+    selectedCollection = perfumes.find(p => p.category === '50ML Bottles');
+    pageTitle = 'ALDENAIR Prestige Edition';
+    pageDescription = 'Exklusive 50ml Parfüm-Flakons der Premium-Kollektion';
+  } else if (categoryFilter === 'Proben') {
+    selectedCollection = perfumes.find(p => p.category === 'Proben');
+    pageTitle = 'ALDENAIR Proben Kollektion';
+    pageDescription = 'Entdecke alle Düfte in praktischen 5ml Proben';
+  } else {
+    // Show all collections if no filter
+    selectedCollection = null;
+  }
 
-  // Filter variants based on search query
-  const filterVariants = (variants: any[]) => {
-    if (!searchQuery) return variants;
-    
-    return variants.filter(variant =>
-      variant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      variant.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      variant.number.includes(searchQuery)
-    );
-  };
-
-  const sortVariants = (variants: any[]) => {
-    return [...variants].sort((a, b) => {
-      switch (sortBy) {
-        case 'price-low':
-          return a.price - b.price;
-        case 'price-high':
-          return b.price - a.price;
-        case 'rating':
-          return (b.rating || 0) - (a.rating || 0);
-        case 'name':
-        default:
-          return a.name.localeCompare(b.name);
-      }
-    });
-  };
-
-  const handleSearch = (value: string) => {
-    setIsLoading(true);
-    setSearchQuery(value);
-    // Simulate search delay for better UX
-    setTimeout(() => setIsLoading(false), 300);
-  };
-
-  const clearSearch = () => {
-    setSearchQuery('');
-    setIsLoading(false);
-  };
-
-  const filteredPrestige = filterVariants(prestigeCollection?.variants || []);
-  const filteredProben = filterVariants(probenCollection?.variants || []);
-  const hasResults = filteredPrestige.length > 0 || filteredProben.length > 0;
-
-  // Debug logging for filtered results
-  console.log('Filtered prestige variants:', filteredPrestige.length);
-  console.log('Filtered proben variants:', filteredProben.length);
-  console.log('Has results:', hasResults);
-  console.log('Search query:', searchQuery);
-  console.log('Is loading:', isLoading);
+  console.log('Selected collection:', selectedCollection);
 
   return (
     <div className="min-h-screen bg-background">
@@ -104,7 +41,7 @@ export default function Products() {
         {/* Header */}
         <section className="bg-gradient-primary text-primary-foreground py-16">
           <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-4xl mx-auto text-center">
               <div className="mb-6">
                 <Breadcrumb 
                   items={[
@@ -114,172 +51,105 @@ export default function Products() {
                 />
               </div>
               
-              <div className="text-center animate-slide-up">
+              <div className="animate-slide-up">
                 <h1 className="text-5xl md:text-6xl font-bold mb-4">
-                  ALDENAIR Parfüm-Kollektion
+                  {pageTitle}
                 </h1>
                 <p className="text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-8">
-                  Entdecke unsere komplette Parfüm-Kollektion - Von luxuriösen 50ml Flakons bis zu praktischen 5ml Proben
+                  {pageDescription}
                 </p>
                 
-                {/* Search and Filters */}
-                <div className="flex flex-col sm:flex-row gap-4 max-w-4xl mx-auto">
-                  <div className="flex-1">
-                    <SearchInput
-                      placeholder="Parfüm suchen... (Name, Nummer oder Beschreibung)"
-                      value={searchQuery}
-                      onChange={(e) => handleSearch(e.target.value)}
-                      onClear={clearSearch}
-                      isLoading={isLoading}
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Select value={sortBy} onValueChange={setSortBy}>
-                      <SelectTrigger className="w-full sm:w-48 bg-white/10 border-white/20 text-primary-foreground">
-                        <SortAsc className="w-4 h-4 mr-2" />
-                        <SelectValue placeholder="Sortieren" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="name">Name</SelectItem>
-                        <SelectItem value="price-low">Preis: Niedrig bis Hoch</SelectItem>
-                        <SelectItem value="price-high">Preis: Hoch bis Niedrig</SelectItem>
-                        <SelectItem value="rating">Bewertung</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    <Button
-                      variant="secondary"
-                      onClick={() => setShowFilters(true)}
-                      className="bg-white/10 border-white/20 text-primary-foreground hover:bg-white/20"
-                    >
-                      <Filter className="w-4 h-4 mr-2" />
-                      Filter
-                    </Button>
-                  </div>
-                </div>
+                {selectedCollection && (
+                  <p className="text-lg text-primary-foreground/90">
+                    {selectedCollection.variants.length} Produkte verfügbar
+                  </p>
+                )}
               </div>
             </div>
           </div>
         </section>
 
-        {/* Main Content with Sidebar */}
-        <div className="flex gap-6">
-          {/* Desktop Filter Sidebar */}
-          <div className="hidden lg:block w-80 flex-shrink-0">
-            <div className="sticky top-4">
-              <FilterSidebar
-                isOpen={true}
-                onClose={() => {}}
-                onFiltersChange={setFilters}
-              />
-            </div>
-          </div>
-
-          {/* Products Grid */}
-          <div className="flex-1">
-            {/* Loading State */}
-            {isLoading && (
-              <ProductGridSkeleton />
-            )}
-
-            {/* No Results */}
-            {searchQuery && !hasResults && !isLoading && (
-              <div className="text-center py-16">
-                <div className="max-w-md mx-auto animate-fade-in">
-                  <h3 className="text-2xl font-display font-semibold mb-4">Keine Ergebnisse gefunden</h3>
-                  <p className="text-muted-foreground mb-6">
-                    Für "{searchQuery}" wurden keine Parfüms gefunden.
-                  </p>
-                  <Button onClick={clearSearch} variant="outline">
-                    Suche zurücksetzen
-                  </Button>
+        {/* Products Content */}
+        <section className="py-16">
+          <div className="container mx-auto px-4">
+            {/* Single Collection Display */}
+            {selectedCollection && (
+              <div className="max-w-7xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {selectedCollection.variants.map((variant, index) => (
+                    <div key={variant.id} className="hover:scale-105 transition-transform duration-300">
+                      <PerfumeCard 
+                        perfume={{
+                          ...selectedCollection,
+                          variants: [variant]
+                        }}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* Prestige Collection Section */}
-            {!isLoading && (prestigeCollection && (searchQuery ? filteredPrestige.length > 0 : true)) && (
-              <section className="mb-12">
-                <div className="text-center mb-8 animate-slide-up">
-                  <h2 className="text-3xl font-bold mb-4 text-luxury-black">
-                    ALDENAIR Prestige Edition
-                  </h2>
-                  <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                    Exklusive 50ml Parfüm-Flakons der Premium-Kollektion
-                  </p>
-                   {searchQuery && (
-                     <p className="text-sm text-luxury-gold mt-2 font-medium">
-                       {filteredPrestige.length} Ergebnis{filteredPrestige.length !== 1 ? 'se' : ''}
-                     </p>
-                   )}
-                   {!searchQuery && (
-                     <p className="text-sm text-muted-foreground mt-2">
-                       {prestigeCollection?.variants.length || 0} Parfüms verfügbar
-                     </p>
-                   )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {sortVariants(searchQuery ? filteredPrestige : (prestigeCollection?.variants || [])).map((variant, index) => (
-                    <div key={variant.id} className="stagger-item hover-lift">
-                      <PerfumeCard 
-                        perfume={{
-                          ...prestigeCollection!,
-                          variants: [variant]
-                        }}
-                      />
+            {/* All Collections Display (fallback) */}
+            {!selectedCollection && (
+              <div className="max-w-7xl mx-auto space-y-16">
+                {/* Prestige Collection */}
+                {perfumes.find(p => p.category === '50ML Bottles') && (
+                  <div>
+                    <div className="text-center mb-8">
+                      <h2 className="text-3xl font-bold mb-4">
+                        ALDENAIR Prestige Edition
+                      </h2>
+                      <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                        Exklusive 50ml Parfüm-Flakons der Premium-Kollektion
+                      </p>
                     </div>
-                  ))}
-                </div>
-              </section>
-            )}
 
-            {/* Proben Collection Section */}
-            {!isLoading && (probenCollection && (searchQuery ? filteredProben.length > 0 : true)) && (
-              <section>
-                <div className="text-center mb-8 animate-slide-up">
-                  <h2 className="text-3xl font-bold mb-4 text-luxury-black">
-                    ALDENAIR Proben Kollektion
-                  </h2>
-                  <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                    Entdecke alle Düfte in praktischen 5ml Proben
-                  </p>
-                   {searchQuery && (
-                     <p className="text-sm text-luxury-gold mt-2 font-medium">
-                       {filteredProben.length} Ergebnis{filteredProben.length !== 1 ? 'se' : ''}
-                     </p>
-                   )}
-                   {!searchQuery && (
-                     <p className="text-sm text-muted-foreground mt-2">
-                       {probenCollection?.variants.length || 0} Proben verfügbar
-                     </p>
-                   )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {sortVariants(searchQuery ? filteredProben : (probenCollection?.variants || [])).map((variant, index) => (
-                    <div key={variant.id} className="stagger-item hover-lift">
-                      <PerfumeCard 
-                        perfume={{
-                          ...probenCollection!,
-                          variants: [variant]
-                        }}
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+                      {perfumes.find(p => p.category === '50ML Bottles')?.variants.slice(0, 8).map((variant, index) => (
+                        <div key={variant.id} className="hover:scale-105 transition-transform duration-300">
+                          <PerfumeCard 
+                            perfume={{
+                              ...perfumes.find(p => p.category === '50ML Bottles')!,
+                              variants: [variant]
+                            }}
+                          />
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </section>
+                  </div>
+                )}
+
+                {/* Proben Collection */}
+                {perfumes.find(p => p.category === 'Proben') && (
+                  <div>
+                    <div className="text-center mb-8">
+                      <h2 className="text-3xl font-bold mb-4">
+                        ALDENAIR Proben Kollektion
+                      </h2>
+                      <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                        Entdecke alle Düfte in praktischen 5ml Proben
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {perfumes.find(p => p.category === 'Proben')?.variants.slice(0, 8).map((variant, index) => (
+                        <div key={variant.id} className="hover:scale-105 transition-transform duration-300">
+                          <PerfumeCard 
+                            perfume={{
+                              ...perfumes.find(p => p.category === 'Proben')!,
+                              variants: [variant]
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
-        </div>
-
-        {/* Mobile Filter Sidebar */}
-        <FilterSidebar
-          isOpen={showFilters}
-          onClose={() => setShowFilters(false)}
-          onFiltersChange={setFilters}
-        />
+        </section>
       </main>
 
       <Footer />
