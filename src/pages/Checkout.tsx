@@ -101,7 +101,7 @@ export default function Checkout() {
         order_number: orderNumber,
         user_id: user?.id || null,
         guest_email: !user ? guestEmail : null,
-        total_amount: Math.round(checkoutData.finalAmount), // Already in euros, just ensure integer
+        total_amount: Math.round(checkoutData.finalAmount * 100) / 100, // Ensure proper decimal precision
         currency: 'eur',
         payment_method: paymentMethod,
         customer_data: customerData,
@@ -109,12 +109,12 @@ export default function Checkout() {
            perfume_id: item.perfume?.id || item.id,
            variant_id: item.variant?.id || item.selectedVariant,
            quantity: item.quantity,
-            unit_price: Math.round(item.variant?.price || item.price || 0),
-            total_price: Math.round((item.variant?.price || item.price || 0) * item.quantity)
+           unit_price: Math.round((item.variant?.price || item.price || 0) * 100) / 100,
+           total_price: Math.round((item.variant?.price || item.price || 0) * item.quantity * 100) / 100
         })),
          coupon_data: checkoutData.appliedCoupon ? {
            code: checkoutData.appliedCoupon.code,
-           discount_amount: Math.round(checkoutData.discountAmount)
+           discount_amount: Math.round(checkoutData.discountAmount * 100) / 100
          } : null
       };
 
@@ -192,7 +192,7 @@ export default function Checkout() {
                      <p className="text-sm text-muted-foreground">Größe: {item.variant?.name || item.selectedVariant}</p>
                      <p className="text-sm text-muted-foreground">Menge: {item.quantity}</p>
                    </div>
-                   <p className="font-medium">{((item.variant?.price || item.price) / 100 * item.quantity).toFixed(2)}€</p>
+                   <p className="font-medium">{((item.variant?.price || item.price) * item.quantity).toFixed(2)}€</p>
                  </div>
                ))}
 
@@ -208,11 +208,11 @@ export default function Checkout() {
                   <div className="flex justify-between text-green-600">
                     <span>
                       Rabatt ({checkoutData.appliedCoupon.code})
-                      <Badge variant="secondary" className="ml-2">
-                        {checkoutData.appliedCoupon.discount_type === 'percentage' 
-                          ? `${checkoutData.appliedCoupon.discount_value}%`
-                          : `${(checkoutData.appliedCoupon.discount_value / 100).toFixed(2)}€`}
-                      </Badge>
+                       <Badge variant="secondary" className="ml-2">
+                         {checkoutData.appliedCoupon.discount_type === 'percentage' 
+                           ? `${checkoutData.appliedCoupon.discount_value}%`
+                           : `${checkoutData.appliedCoupon.discount_value.toFixed(2)}€`}
+                       </Badge>
                     </span>
                     <span>-{checkoutData.discountAmount.toFixed(2)}€</span>
                   </div>

@@ -31,11 +31,11 @@ export default function CheckoutModal({ open, onOpenChange }: CheckoutModalProps
   const totalAmount = total;
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
-   // Calculate discount amount
+   // Calculate discount amount (both values now in euros)
    const discountAmount = appliedCoupon ? 
      appliedCoupon.discount_type === 'percentage' 
        ? Math.min(totalAmount * (appliedCoupon.discount_value / 100), totalAmount)
-       : Math.min((appliedCoupon.discount_value / 100), totalAmount)
+       : Math.min(appliedCoupon.discount_value, totalAmount)
      : 0;
   
   const finalAmount = totalAmount - discountAmount;
@@ -74,9 +74,9 @@ export default function CheckoutModal({ open, onOpenChange }: CheckoutModalProps
         return;
       }
 
-       // Check minimum order amount (convert to euros for comparison)
-       if (coupon.min_order_amount && totalAmount < (coupon.min_order_amount / 100)) {
-         toast.error(`Mindestbestellwert: €${(coupon.min_order_amount / 100).toFixed(2)}`);
+       // Check minimum order amount (both values now in euros)
+       if (coupon.min_order_amount && totalAmount < coupon.min_order_amount) {
+         toast.error(`Mindestbestellwert: €${coupon.min_order_amount.toFixed(2)}`);
          setAppliedCoupon(null);
          return;
        }
@@ -91,7 +91,7 @@ export default function CheckoutModal({ open, onOpenChange }: CheckoutModalProps
        setAppliedCoupon(coupon);
        const discount = coupon.discount_type === 'percentage' 
          ? Math.min(totalAmount * (coupon.discount_value / 100), totalAmount)
-         : Math.min((coupon.discount_value / 100), totalAmount);
+         : Math.min(coupon.discount_value, totalAmount);
        
        toast.success(`Rabattcode angewendet! Sie sparen €${discount.toFixed(2)}`);
 
@@ -152,7 +152,7 @@ export default function CheckoutModal({ open, onOpenChange }: CheckoutModalProps
             {items.map((item: any) => (
                <div key={`${item.perfume.id}-${item.variant.id}`} className="flex justify-between text-sm">
                  <span>{item.quantity}x {item.perfume.name} - {item.variant.name}</span>
-                 <span>€{((item.variant.price / 100) * item.quantity).toFixed(2)}</span>
+                 <span>€{(item.variant.price * item.quantity).toFixed(2)}</span>
                </div>
              ))}
             <div className="border-t pt-2 space-y-1">
@@ -165,9 +165,9 @@ export default function CheckoutModal({ open, onOpenChange }: CheckoutModalProps
                   <span>
                     Rabatt ({appliedCoupon.code})
                     <Badge variant="secondary" className="ml-2">
-                      {appliedCoupon.discount_type === 'percentage' 
-                        ? `${appliedCoupon.discount_value}%`
-                        : `${(appliedCoupon.discount_value / 100).toFixed(2)}€`}
+                         {appliedCoupon.discount_type === 'percentage' 
+                           ? `${appliedCoupon.discount_value}%`
+                           : `${appliedCoupon.discount_value.toFixed(2)}€`}
                     </Badge>
                   </span>
                   <span>-€{discountAmount.toFixed(2)}</span>
