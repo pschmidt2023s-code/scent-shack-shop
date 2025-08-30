@@ -35,45 +35,44 @@ serve(async (req) => {
   }
 
   try {
-    console.log("=== CREATE PAYMENT SIMPLE FUNCTION START (v2) ===");
+    console.log("=== STRIPE PAYMENT FUNCTION v3 START ===");
     
-    // Check environment variables
+    // Log all environment variables for debugging
+    const allEnvVars = Deno.env.toObject();
+    console.log("Available environment variables:", Object.keys(allEnvVars));
+    
+    // Check critical environment variables
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     
     console.log("Environment check:", {
       supabaseUrl: supabaseUrl ? "✓ Set" : "✗ Missing",
       supabaseKey: supabaseKey ? "✓ Set" : "✗ Missing", 
+      supabaseServiceKey: supabaseServiceKey ? "✓ Set" : "✗ Missing",
       stripeKey: stripeKey ? "✓ Set" : "✗ Missing"
     });
 
     if (!stripeKey) {
-      console.error("CRITICAL: STRIPE_SECRET_KEY is missing - Please check Edge Functions secrets");
-      console.error("Available env vars:", Object.keys(Deno.env.toObject()));
-      throw new Error("STRIPE_SECRET_KEY ist nicht konfiguriert - Bitte prüfen Sie die Edge Function Secrets");
+      console.error("STRIPE_SECRET_KEY not found in environment variables");
+      console.error("This usually means the secret was not properly configured");
+      throw new Error("Stripe-Zahlungen sind derzeit nicht verfügbar. Bitte versuchen Sie eine andere Zahlungsmethode.");
     }
-
-    console.log("Creating Supabase client...");
-    const supabaseClient = createClient(
-      supabaseUrl ?? "",
-      supabaseKey ?? ""
-    );
 
     console.log("Parsing request body...");
     const { items, guestEmail, couponCode }: PaymentRequest = await req.json();
     console.log("Request data:", { itemCount: items?.length, guestEmail, couponCode });
 
     if (!items || items.length === 0) {
-      console.error("No items in cart");
       throw new Error("Keine Artikel im Warenkorb");
     }
 
-    console.log("Getting user authentication...");
     // Get user if authenticated
     let user = null;
     const authHeader = req.headers.get("Authorization");
     if (authHeader) {
+      const supabaseClient = createClient(supabaseUrl ?? "", supabaseKey ?? "");
       const token = authHeader.replace("Bearer ", "");
       const { data } = await supabaseClient.auth.getUser(token);
       user = data.user;
@@ -82,27 +81,26 @@ serve(async (req) => {
 
     // Use user email or guest email
     const customerEmail = user?.email || guestEmail;
-    console.log("Customer info:", { userEmail: user?.email, guestEmail, finalEmail: customerEmail });
+    console.log("Customer email:", customerEmail);
     
     if (!customerEmail) {
-      console.error("No customer email provided");
       throw new Error("E-Mail-Adresse erforderlich");
     }
 
-    console.log("Initializing Stripe...");
+    console.log("Initializing Stripe with provided key...");
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
 
-    console.log("Checking for existing Stripe customer...");
     // Check for existing Stripe customer
+    console.log("Checking for existing Stripe customer...");
     const customers = await stripe.customers.list({ email: customerEmail, limit: 1 });
     let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
       console.log("Found existing customer:", customerId);
     } else {
-      console.log("No existing customer found");
+      console.log("No existing customer found, will create one during checkout");
     }
 
     // Calculate totals and create line items
@@ -111,21 +109,11 @@ serve(async (req) => {
       const itemTotal = item.variant.price * 100 * item.quantity; // Convert to cents
       subtotal += itemTotal;
       
-      // Create absolute URL for image if it exists and is relative
-      let productImages = [];
-      if (item.perfume.image) {
-        const imageUrl = item.perfume.image.startsWith('http') 
-          ? item.perfume.image 
-          : `${req.headers.get("origin")}${item.perfume.image}`;
-        productImages = [imageUrl];
-      }
-      
       return {
         price_data: {
           currency: "eur",
           product_data: {
             name: `${item.perfume.brand} - ${item.variant.name}`,
-            images: productImages, // Only include if we have a valid absolute URL
             metadata: {
               perfume_id: item.perfume.id,
               variant_id: item.variant.id,
@@ -137,195 +125,23 @@ serve(async (req) => {
       };
     });
 
-    console.log("Subtotal calculated:", subtotal);
+    console.log("Subtotal calculated:", subtotal, "cents");
 
-    // Handle coupon discount
-    let discountAmount = 0;
-    let finalTotal = subtotal;
-    
-    if (couponCode) {
-      console.log("=== COUPON VALIDATION START ===");
-      console.log("Validating coupon:", couponCode);
-      
-      try {
-        const { data: coupon, error: couponError } = await supabaseClient
-          .from("coupons")
-          .select("*")
-          .eq("code", couponCode)
-          .eq("active", true)
-          .maybeSingle();
-        
-        console.log("Coupon query result:", { coupon, couponError });
-        
-        if (!couponError && coupon) {
-          console.log("Coupon found:", coupon);
-          const now = new Date();
-          const validFrom = coupon.valid_from ? new Date(coupon.valid_from) : null;
-          const validUntil = coupon.valid_until ? new Date(coupon.valid_until) : null;
-          
-          const isDateValid = (!validFrom || now >= validFrom) && (!validUntil || now <= validUntil);
-          const isUsageValid = !coupon.max_uses || coupon.current_uses < coupon.max_uses;
-          const isMinOrderValid = !coupon.min_order_amount || subtotal >= coupon.min_order_amount;
-          
-          console.log("Coupon validation checks:", { 
-            isDateValid, 
-            isUsageValid, 
-            isMinOrderValid,
-            subtotal,
-            minOrderAmount: coupon.min_order_amount
-          });
-          
-          if (isDateValid && isUsageValid && isMinOrderValid) {
-            if (coupon.discount_type === "percentage") {
-              discountAmount = Math.round((subtotal * coupon.discount_value) / 100);
-            } else if (coupon.discount_type === "fixed") {
-              discountAmount = coupon.discount_value * 100; // Convert to cents
-            }
-            
-            finalTotal = Math.max(0, subtotal - discountAmount);
-            console.log("Coupon applied successfully:", { 
-              discountType: coupon.discount_type,
-              discountValue: coupon.discount_value,
-              discountAmount, 
-              finalTotal 
-            });
-          } else {
-            console.log("Coupon validation failed:", { isDateValid, isUsageValid, isMinOrderValid });
-          }
-        } else {
-          console.log("Coupon not found or inactive:", { couponError });
-        }
-      } catch (couponValidationError) {
-        console.error("Error during coupon validation:", couponValidationError);
-      }
-      console.log("=== COUPON VALIDATION END ===");
-    }
-
-    console.log("Final totals:", { subtotal, discountAmount, finalTotal });
-
-    // Handle 0€ orders (Stripe doesn't allow 0 amount payments)
-    if (finalTotal === 0) {
-      console.log("=== FREE ORDER PROCESSING START ===");
-      console.log("0€ order detected, processing without Stripe...");
-      
-      // For free orders, we'll save them as 'paid' since no payment is needed
-      // We'll use the regular client with auth for user orders
-      const orderData = {
-        user_id: user?.id || null,
-        stripe_session_id: null, // No Stripe session for free orders
-        total_amount: 0,
-        currency: "eur",
-        status: "paid", // Mark as paid since it's free
-        created_at: new Date().toISOString(),
-      };
-
-      console.log("Creating free order with regular client (user authenticated)...");
-      
-      if (!user) {
-        // For guest users with free orders, we need service role
-        const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-        if (!serviceRoleKey) {
-          console.error("Service role key required for guest free orders");
-          throw new Error("Kostenlose Gastbestellungen sind derzeit nicht verfügbar. Bitte erstellen Sie ein Konto.");
-        }
-        
-        const supabaseService = createClient(
-          Deno.env.get("SUPABASE_URL") ?? "",
-          serviceRoleKey,
-          { auth: { persistSession: false } }
-        );
-        
-        const { data: order, error: orderError } = await supabaseService
-          .from("orders")
-          .insert(orderData)
-          .select()
-          .maybeSingle();
-
-        if (orderError) {
-          console.error("Guest free order creation error:", orderError);
-          throw new Error(`Fehler beim Erstellen der kostenlosen Bestellung: ${orderError.message}`);
-        }
-
-        if (!order) {
-          console.error("Guest free order creation failed: No order returned");
-          throw new Error("Bestellung konnte nicht erstellt werden");
-        }
-
-        console.log("Guest free order created:", order.id);
-        
-        // Save order items
-        const orderItems = items.map(item => ({
-          order_id: order.id,
-          perfume_id: item.perfume.id,
-          variant_id: item.variant.id,
-          quantity: item.quantity,
-          unit_price: item.variant.price * 100,
-          total_price: item.variant.price * 100 * item.quantity,
-        }));
-
-        const { error: itemsError } = await supabaseService.from("order_items").insert(orderItems);
-        if (itemsError) {
-          console.error("Guest free order items creation error:", itemsError);
-        }
-        
-        console.log("=== FREE ORDER PROCESSING END (GUEST) ===");
-        return new Response(JSON.stringify({ 
-          url: `${req.headers.get("origin")}/checkout/success?free_order=true&order_id=${order.id}`,
-          free_order: true 
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
-      } else {
-        // For authenticated users, use regular client (should work with RLS)
-        const { data: order, error: orderError } = await supabaseClient
-          .from("orders")
-          .insert(orderData)
-          .select()
-          .maybeSingle();
-
-        if (orderError) {
-          console.error("User free order creation error:", orderError);
-          throw new Error(`Fehler beim Erstellen der kostenlosen Bestellung: ${orderError.message}`);
-        }
-
-        if (!order) {
-          console.error("User free order creation failed: No order returned");
-          throw new Error("Bestellung konnte nicht erstellt werden");
-        }
-
-        console.log("User free order created:", order.id);
-        
-        // Save order items
-        const orderItems = items.map(item => ({
-          order_id: order.id,
-          perfume_id: item.perfume.id,
-          variant_id: item.variant.id,
-          quantity: item.quantity,
-          unit_price: item.variant.price * 100,
-          total_price: item.variant.price * 100 * item.quantity,
-        }));
-
-        const { error: itemsError } = await supabaseClient.from("order_items").insert(orderItems);
-        if (itemsError) {
-          console.error("User free order items creation error:", itemsError);
-          // Don't fail completely on items error for free orders
-        }
-        
-        console.log("=== FREE ORDER PROCESSING END (USER) ===");
-        return new Response(JSON.stringify({ 
-          url: `${req.headers.get("origin")}/checkout/success?free_order=true&order_id=${order.id}`,
-          free_order: true 
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
-      }
+    // Handle 0€ orders (free orders)
+    if (subtotal === 0) {
+      console.log("Free order detected, redirecting to success page");
+      return new Response(JSON.stringify({ 
+        url: `${req.headers.get("origin")}/checkout/success?free_order=true`,
+        free_order: true 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
     }
 
     console.log("Creating Stripe checkout session...");
     
-    // Create Stripe checkout session with multiple payment methods
+    // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : customerEmail,
@@ -335,7 +151,7 @@ serve(async (req) => {
       cancel_url: `${req.headers.get("origin")}/checkout/cancel`,
       payment_method_types: [
         'card',
-        'sepa_debit', 
+        'sepa_debit',
         'giropay',
         'sofort',
         'klarna',
@@ -365,26 +181,6 @@ serve(async (req) => {
             },
           },
         },
-        {
-          shipping_rate_data: {
-            type: 'fixed_amount',
-            fixed_amount: {
-              amount: 1599, // 15.99€ in cents
-              currency: 'eur',
-            },
-            display_name: 'EU Versand',
-            delivery_estimate: {
-              minimum: {
-                unit: 'business_day',
-                value: 3,
-              },
-              maximum: {
-                unit: 'business_day',
-                value: 7,
-              },
-            },
-          },
-        },
       ],
       metadata: {
         user_id: user?.id || 'guest',
@@ -398,54 +194,9 @@ serve(async (req) => {
       },
     });
 
-    console.log("Stripe session created:", session.id);
+    console.log("Stripe session created successfully:", session.id);
+    console.log("Checkout URL:", session.url);
 
-    // Save order to database with simplified approach
-    const supabaseService = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
-
-    const orderData = {
-      user_id: user?.id || null,
-      stripe_session_id: session.id,
-      total_amount: subtotal,
-      currency: "eur",
-      status: "pending",
-      created_at: new Date().toISOString(),
-    };
-
-    console.log("Saving order to database...");
-    const { data: order, error: orderError } = await supabaseService
-      .from("orders")
-      .insert(orderData)
-      .select()
-      .maybeSingle();
-
-    if (orderError) {
-      console.error("Order creation error:", orderError);
-      // Continue without failing - we can process the order later
-    } else {
-      console.log("Order created:", order.id);
-      
-      // Save order items
-      const orderItems = items.map(item => ({
-        order_id: order.id,
-        perfume_id: item.perfume.id,
-        variant_id: item.variant.id,
-        quantity: item.quantity,
-        unit_price: item.variant.price * 100,
-        total_price: item.variant.price * 100 * item.quantity,
-      }));
-
-      const { error: itemsError } = await supabaseService.from("order_items").insert(orderItems);
-      if (itemsError) {
-        console.error("Order items creation error:", itemsError);
-      }
-    }
-
-    console.log("Returning checkout URL:", session.url);
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
@@ -455,7 +206,9 @@ serve(async (req) => {
     console.error("=== PAYMENT ERROR ===");
     console.error("Error details:", error);
     console.error("Error message:", error.message);
-    console.error("Error stack:", error.stack);
+    if (error.stack) {
+      console.error("Error stack:", error.stack);
+    }
     
     const errorMessage = error instanceof Error ? error.message : "Unbekannter Fehler";
     
