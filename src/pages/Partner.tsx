@@ -58,7 +58,7 @@ interface PartnerPayout {
   notes?: string;
 }
 
-function Partner() {
+export default function Partner() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [partner, setPartner] = useState<Partner | null>(null);
@@ -640,5 +640,3 @@ function Partner() {
     </div>
   );
 }
-
-export default Partner;
