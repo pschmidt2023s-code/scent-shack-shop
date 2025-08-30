@@ -84,34 +84,6 @@ export default function Admin() {
     }
   };
 
-  const deleteOrder = async (orderId: string) => {
-    if (!confirm('Sind Sie sicher, dass Sie diese Bestellung löschen möchten?')) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('orders')
-        .delete()
-        .eq('id', orderId);
-
-      if (error) throw error;
-
-      await loadOrders();
-      toast({
-        title: "Erfolg",
-        description: "Bestellung wurde gelöscht",
-      });
-    } catch (error) {
-      console.error('Error deleting order:', error);
-      toast({
-        title: "Fehler",
-        description: "Bestellung konnte nicht gelöscht werden",
-        variant: "destructive",
-      });
-    }
-  };
-
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
       const { error } = await supabase
@@ -131,6 +103,34 @@ export default function Admin() {
       toast({
         title: "Fehler",
         description: "Bestellstatus konnte nicht aktualisiert werden",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteOrder = async (orderId: string) => {
+    if (!confirm('Sind Sie sicher, dass Sie diese Bestellung löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      await loadOrders();
+      toast({
+        title: "Erfolg",
+        description: "Bestellung wurde erfolgreich gelöscht",
+      });
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      toast({
+        title: "Fehler",
+        description: "Bestellung konnte nicht gelöscht werden",
         variant: "destructive",
       });
     }
@@ -204,11 +204,11 @@ export default function Admin() {
           <TabsContent value="orders" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Bestellungen ({orders.length})</CardTitle>
+                <CardTitle>Aufgegebene Bestellungen ({orders.length})</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                          {orders.map((order) => (
+                  {orders.map((order) => (
                     <div key={order.id} className="border rounded-lg p-4 space-y-2">
                       <div className="flex items-center justify-between">
                         <div>
@@ -217,10 +217,10 @@ export default function Admin() {
                             {new Date(order.created_at).toLocaleDateString('de-DE')}
                           </p>
                         </div>
-                         <div className="flex items-center gap-2">
-                           <span className="font-semibold">€{order.total_amount.toFixed(2)}</span>
-                           {getStatusBadge(order.status)}
-                         </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">€{order.total_amount.toFixed(2)}</span>
+                          {getStatusBadge(order.status)}
+                        </div>
                       </div>
                       
                       <div className="flex items-center gap-2">
@@ -232,129 +232,129 @@ export default function Admin() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-            <SelectItem value="pending">Ausstehend</SelectItem>
-                             <SelectItem value="pending_payment">Zahlung ausstehend</SelectItem>
-                             <SelectItem value="processing">In Bearbeitung</SelectItem>
-                             <SelectItem value="paid">Bezahlt</SelectItem>
-                             <SelectItem value="shipped">Versendet</SelectItem>
-                             <SelectItem value="delivered">Zugestellt</SelectItem>
-                             <SelectItem value="cancelled">Storniert</SelectItem>
+                            <SelectItem value="pending">Ausstehend</SelectItem>
+                            <SelectItem value="pending_payment">Zahlung ausstehend</SelectItem>
+                            <SelectItem value="processing">In Bearbeitung</SelectItem>
+                            <SelectItem value="paid">Bezahlt</SelectItem>
+                            <SelectItem value="shipped">Versendet</SelectItem>
+                            <SelectItem value="delivered">Zugestellt</SelectItem>
+                            <SelectItem value="cancelled">Storniert</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
-                       <div className="flex items-center gap-2 mt-2">
-                         <Dialog>
-                           <DialogTrigger asChild>
-                             <Button 
-                               variant="outline" 
-                               size="sm"
-                               onClick={() => setSelectedOrder(order)}
-                             >
-                               <Eye className="w-4 h-4 mr-1" />
-                               Details anzeigen
-                             </Button>
-                           </DialogTrigger>
-                           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                             <DialogHeader>
-                               <DialogTitle>Bestelldetails - #{order.order_number || order.id.slice(-8).toUpperCase()}</DialogTitle>
-                             </DialogHeader>
-                             
-                             <div className="space-y-6">
-                               {/* Customer Information */}
-                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                 <div className="space-y-3">
-                                   <div className="flex items-center gap-2">
-                                     <User className="w-4 h-4" />
-                                     <h3 className="font-medium">Kundeninformationen</h3>
-                                   </div>
-                                   <div className="bg-muted p-3 rounded-lg space-y-2">
-                                     {order.customer_name && (
-                                       <p className="text-sm"><strong>Name:</strong> {order.customer_name}</p>
-                                     )}
-                                     {order.customer_email && (
-                                       <p className="text-sm"><strong>E-Mail:</strong> {order.customer_email}</p>
-                                     )}
-                                     {order.customer_phone && (
-                                       <p className="text-sm"><strong>Telefon:</strong> {order.customer_phone}</p>
-                                     )}
-                                   </div>
-                                 </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setSelectedOrder(order)}
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              Details anzeigen
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle>Bestelldetails - #{order.order_number || order.id.slice(-8).toUpperCase()}</DialogTitle>
+                            </DialogHeader>
+                            
+                            <div className="space-y-6">
+                              {/* Customer Information */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <User className="w-4 h-4" />
+                                    <h3 className="font-medium">Kundeninformationen</h3>
+                                  </div>
+                                  <div className="bg-muted p-3 rounded-lg space-y-2">
+                                    {order.customer_name && (
+                                      <p className="text-sm"><strong>Name:</strong> {order.customer_name}</p>
+                                    )}
+                                    {order.customer_email && (
+                                      <p className="text-sm"><strong>E-Mail:</strong> {order.customer_email}</p>
+                                    )}
+                                    {order.customer_phone && (
+                                      <p className="text-sm"><strong>Telefon:</strong> {order.customer_phone}</p>
+                                    )}
+                                  </div>
+                                </div>
 
-                                 <div className="space-y-3">
-                                   <div className="flex items-center gap-2">
-                                     <Package className="w-4 h-4" />
-                                     <h3 className="font-medium">Bestellinformationen</h3>
-                                   </div>
-                                   <div className="bg-muted p-3 rounded-lg space-y-2">
-                                     <p className="text-sm"><strong>Status:</strong> {getStatusBadge(order.status)}</p>
-                                     <p className="text-sm"><strong>Betrag:</strong> €{order.total_amount.toFixed(2)}</p>
-                                     <p className="text-sm"><strong>Datum:</strong> {new Date(order.created_at).toLocaleDateString('de-DE')}</p>
-                                   </div>
-                                 </div>
-                               </div>
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <Package className="w-4 h-4" />
+                                    <h3 className="font-medium">Bestellinformationen</h3>
+                                  </div>
+                                  <div className="bg-muted p-3 rounded-lg space-y-2">
+                                    <p className="text-sm"><strong>Status:</strong> {getStatusBadge(order.status)}</p>
+                                    <p className="text-sm"><strong>Betrag:</strong> €{order.total_amount.toFixed(2)}</p>
+                                    <p className="text-sm"><strong>Datum:</strong> {new Date(order.created_at).toLocaleDateString('de-DE')}</p>
+                                  </div>
+                                </div>
+                              </div>
 
-                               {/* Shipping Address */}
-                               {order.shipping_address_data && (
-                                 <div className="space-y-3">
-                                   <div className="flex items-center gap-2">
-                                     <MapPin className="w-4 h-4" />
-                                     <h3 className="font-medium">Lieferadresse</h3>
-                                   </div>
-                                   <div className="bg-muted p-3 rounded-lg">
-                                     <div className="text-sm space-y-1">
-                                       <p>{order.shipping_address_data.firstName} {order.shipping_address_data.lastName}</p>
-                                       <p>{order.shipping_address_data.street}</p>
-                                       <p>{order.shipping_address_data.postalCode} {order.shipping_address_data.city}</p>
-                                       <p>{order.shipping_address_data.country}</p>
-                                     </div>
-                                   </div>
-                                 </div>
-                               )}
+                              {/* Shipping Address */}
+                              {order.shipping_address_data && (
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <MapPin className="w-4 h-4" />
+                                    <h3 className="font-medium">Lieferadresse</h3>
+                                  </div>
+                                  <div className="bg-muted p-3 rounded-lg">
+                                    <div className="text-sm space-y-1">
+                                      <p>{order.shipping_address_data.firstName} {order.shipping_address_data.lastName}</p>
+                                      <p>{order.shipping_address_data.street}</p>
+                                      <p>{order.shipping_address_data.postalCode} {order.shipping_address_data.city}</p>
+                                      <p>{order.shipping_address_data.country}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
 
-                               {/* Order Items */}
-                               {order.order_items && order.order_items.length > 0 && (
-                                 <div className="space-y-3">
-                                   <h3 className="font-medium">Bestellte Artikel</h3>
-                                   <div className="border rounded-lg divide-y">
-                                     {order.order_items.map((item) => (
-                                       <div key={item.id} className="p-3 flex justify-between items-center">
-                                        <div>
-                                            <p className="font-medium text-sm">
-                                              {item.quantity}x {getPerfumeNameById(item.perfume_id, item.variant_id)}
-                                            </p>
-                                             <p className="text-xs text-muted-foreground">
-                                               Einzelpreis: €{item.unit_price.toFixed(2)}
-                                             </p>
-                                          </div>
-                                          <div className="text-right">
-                                            <p className="font-medium">€{item.total_price.toFixed(2)}</p>
-                                            <p className="text-xs text-muted-foreground">{item.quantity}x</p>
-                                          </div>
-                                       </div>
-                                     ))}
-                                   </div>
-                                 </div>
-                               )}
-                             </div>
-                           </DialogContent>
-                         </Dialog>
-                         
-                         <Button 
-                           variant="destructive" 
-                           size="sm"
-                           onClick={() => deleteOrder(order.id)}
-                         >
-                           <Trash2 className="w-4 h-4 mr-1" />
-                           Löschen
-                         </Button>
-                       </div>
+                              {/* Order Items */}
+                              {order.order_items && order.order_items.length > 0 && (
+                                <div className="space-y-3">
+                                  <h3 className="font-medium">Bestellte Artikel</h3>
+                                  <div className="border rounded-lg divide-y">
+                                    {order.order_items.map((item) => (
+                                      <div key={item.id} className="p-3 flex justify-between items-center">
+                                       <div>
+                                           <p className="font-medium text-sm">
+                                             {item.quantity}x {getPerfumeNameById(item.perfume_id, item.variant_id)}
+                                           </p>
+                                           <p className="text-xs text-muted-foreground">
+                                             Einzelpreis: €{item.unit_price.toFixed(2)}
+                                           </p>
+                                         </div>
+                                        <div className="text-right">
+                                          <p className="font-medium">€{item.total_price.toFixed(2)}</p>
+                                          <p className="text-xs text-muted-foreground">{item.quantity}x</p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                        
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => deleteOrder(order.id)}
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Löschen
+                        </Button>
+                      </div>
                     </div>
                   ))}
                   
                   {orders.length === 0 && (
                     <div className="text-center py-8">
-                      <p className="text-muted-foreground">Keine Bestellungen gefunden.</p>
+                      <p className="text-muted-foreground">Keine aufgegebenen Bestellungen gefunden.</p>
                     </div>
                   )}
                 </div>
