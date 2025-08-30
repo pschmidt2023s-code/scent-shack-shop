@@ -235,8 +235,8 @@ export function NewsletterSignup({
               />
 
               {/* Preferences */}
-              <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
-                <h4 className="font-medium text-sm">Was möchten Sie erhalten?</h4>
+              <div className="space-y-3 p-4 bg-accent/20 border border-border rounded-lg">
+                <h4 className="font-medium text-sm text-foreground">Was möchten Sie erhalten?</h4>
                 
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">

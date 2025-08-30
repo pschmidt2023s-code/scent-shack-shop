@@ -30,7 +30,7 @@ const Navigation = () => {
 
   return (
     <>
-      <nav className="bg-white shadow-sm border-b">
+      <nav className="bg-background border-b border-border shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
@@ -40,7 +40,7 @@ const Navigation = () => {
                   alt="ALDENAIR Logo" 
                   className="h-8 w-auto transition-transform duration-300 hover:scale-110"
                 />
-                <span className="text-2xl font-bold text-gray-900">ALDENAIR</span>
+                <span className="text-2xl font-bold text-foreground">ALDENAIR</span>
               </Link>
             </div>
 
@@ -58,7 +58,7 @@ const Navigation = () => {
               {/* Cart */}
               <button
                 onClick={() => setShowCart(true)}
-                className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors"
+                className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 1.5M7 13l-1.5-1.5M16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM9 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
@@ -79,7 +79,7 @@ const Navigation = () => {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center space-x-2 p-2 text-gray-600 hover:text-gray-900"
+                    className="flex items-center space-x-2 p-2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <User className="w-6 h-6" />
                     <span className="hidden sm:block">
@@ -89,10 +89,10 @@ const Navigation = () => {
                   </button>
 
                   {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border">
+                    <div className="absolute right-0 mt-2 w-48 bg-popover rounded-md shadow-lg py-1 z-50 border border-border">
                       <Link
                         to="/profile"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className="block px-4 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
                         onClick={() => setShowUserMenu(false)}
                       >
                         <User className="w-4 h-4 inline-block mr-2" />
@@ -100,7 +100,7 @@ const Navigation = () => {
                       </Link>
                       <Link
                         to="/admin"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className="block px-4 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
                         onClick={() => setShowUserMenu(false)}
                       >
                         <User className="w-4 h-4 inline-block mr-2" />
@@ -111,7 +111,7 @@ const Navigation = () => {
                           signOut();
                           setShowUserMenu(false);
                         }}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className="block w-full text-left px-4 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
                       >
                         <LogOut className="w-4 h-4 inline-block mr-2" />
                         Abmelden
@@ -121,7 +121,7 @@ const Navigation = () => {
                 </div>
               ) : (
                 <AuthModal>
-                  <button className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800">
+                  <button className="bg-foreground text-background px-4 py-2 rounded-md hover:bg-foreground/90 transition-colors">
                     Anmelden
                   </button>
                 </AuthModal>

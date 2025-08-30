@@ -29,7 +29,7 @@ export function DarkModeToggle() {
       aria-label="Toggle theme"
     >
       {theme === 'dark' ? (
-        <Sun className="w-4 h-4 transition-all duration-300 text-luxury-gold hover:text-accent-foreground" />
+        <Sun className="w-4 h-4 transition-all duration-300 text-luxury-gold drop-shadow-sm" />
       ) : (
         <Moon className="w-4 h-4 transition-all duration-300 text-muted-foreground hover:text-accent-foreground" />
       )}
