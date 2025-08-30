@@ -39,18 +39,18 @@ serve(async (req) => {
 
     const { order_id, amount, currency, order_number, customer_email } = requestBody;
 
-    // PayPal Sandbox Credentials - verwende immer funktionierende Test-Credentials
-    const PAYPAL_CLIENT_ID = "AeA1QIZXiflr1_-r0U2UbWSxjGYYiQDq-zBULVxeGwH8z5_2eOhjp8wQg2RCgQoHb5kRK6K6r6O2qGGh";
-    const PAYPAL_SECRET = "EGFtTBosAui9kJdPxfanqoY9SlEShDiJxXNIOXfMIV9MZpyZo2VzWM4KJjKfyXzPrGC3wHhFROZYLHoH";
+    // PayPal Credentials from Secrets
+    const PAYPAL_CLIENT_ID = Deno.env.get("PAYPAL_CLIENT_ID");
+    const PAYPAL_SECRET = Deno.env.get("PAYPAL_SECRET_KEY");
 
     // Debugging - prüfe aktuelle Credentials
     console.log("PayPal Client ID being used:", PAYPAL_CLIENT_ID);
     console.log("PayPal Secret exists:", !!PAYPAL_SECRET);
     console.log("PayPal Secret length:", PAYPAL_SECRET?.length || 0);
 
-    if (!PAYPAL_SECRET) {
-      console.error("PayPal secret key not configured");
-      throw new Error("PayPal secret key not configured");
+    if (!PAYPAL_CLIENT_ID || !PAYPAL_SECRET) {
+      console.error("PayPal credentials not configured");
+      throw new Error("PayPal credentials not configured");
     }
 
     // Get PayPal access token
