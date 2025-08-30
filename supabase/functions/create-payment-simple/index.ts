@@ -11,51 +11,42 @@ serve(async (req) => {
   }
 
   try {
-    console.log("=== DEBUG: Environment Variables Test ===");
+    console.log("=== SIMPLE TEST START ===");
     
-    // Get all environment variables
-    const allEnvVars = Deno.env.toObject();
-    const envKeys = Object.keys(allEnvVars);
-    
-    console.log("Total environment variables count:", envKeys.length);
-    console.log("Environment variable keys:", envKeys);
-    
-    // Specifically check for Stripe key
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    console.log("STRIPE_SECRET_KEY exists:", !!stripeKey);
-    console.log("STRIPE_SECRET_KEY length:", stripeKey?.length || 0);
-    console.log("STRIPE_SECRET_KEY starts with sk_:", stripeKey?.startsWith("sk_") || false);
+    console.log("STRIPE_SECRET_KEY found:", !!stripeKey);
     
-    // Check other important keys
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY");
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    
-    console.log("Environment summary:", {
-      SUPABASE_URL: !!supabaseUrl,
-      SUPABASE_ANON_KEY: !!supabaseKey,
-      SUPABASE_SERVICE_ROLE_KEY: !!serviceKey,
-      STRIPE_SECRET_KEY: !!stripeKey,
-    });
+    if (!stripeKey) {
+      console.log("No Stripe key - checking all env vars...");
+      const allVars = Deno.env.toObject();
+      console.log("Available env vars:", Object.keys(allVars));
+      
+      return new Response(JSON.stringify({
+        error: "STRIPE_SECRET_KEY nicht verfügbar",
+        availableKeys: Object.keys(allVars)
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
 
+    console.log("Stripe key exists, length:", stripeKey.length);
+    
     return new Response(JSON.stringify({
       success: true,
-      message: "Environment variables debug completed",
-      envVarCount: envKeys.length,
-      hasStripeKey: !!stripeKey,
-      stripeKeyLength: stripeKey?.length || 0,
-      startsWithSk: stripeKey?.startsWith("sk_") || false,
-      availableKeys: envKeys
+      message: "Stripe key is available",
+      keyLength: stripeKey.length,
+      startsWithSk: stripeKey.startsWith("sk_")
     }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },  
       status: 200,
     });
     
   } catch (error) {
-    console.error("Debug error:", error);
+    console.error("Test error:", error);
     return new Response(JSON.stringify({ 
-      error: "Debug failed",
-      details: error.message
+      error: "Test failed",
+      message: error.message
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
