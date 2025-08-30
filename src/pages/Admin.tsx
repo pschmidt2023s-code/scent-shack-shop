@@ -14,6 +14,7 @@ import UserManagement from '@/components/admin/UserManagement';
 import ReturnManagement from '@/components/admin/ReturnManagement';
 import PartnerManagement from '@/components/admin/PartnerManagement';
 import NewsletterManagement from '@/components/admin/NewsletterManagement';
+import PaybackManagement from '@/components/admin/PaybackManagement';
 import { getPerfumeNameById } from '@/lib/perfume-utils';
 
 interface Order {
@@ -209,10 +210,14 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid grid-cols-6 w-full max-w-4xl">
+          <TabsList className="grid grid-cols-7 w-full max-w-5xl">
             <TabsTrigger value="orders" className="flex items-center gap-2">
               <Package className="w-4 h-4" />
               Bestellungen
+            </TabsTrigger>
+            <TabsTrigger value="payback" className="flex items-center gap-2">
+              <CreditCard className="w-4 h-4" />
+              Payback
             </TabsTrigger>
             <TabsTrigger value="returns" className="flex items-center gap-2">
               <Package className="w-4 h-4" />
@@ -235,6 +240,10 @@ export default function Admin() {
               Benutzer
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="payback" className="space-y-6">
+            <PaybackManagement />
+          </TabsContent>
 
           <TabsContent value="orders" className="space-y-6">
             <Card>

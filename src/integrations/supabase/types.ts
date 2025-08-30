@@ -457,11 +457,84 @@ export type Database = {
         }
         Relationships: []
       }
+      payback_earnings: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          earned_at: string
+          id: string
+          order_id: string | null
+          percentage: number
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          earned_at?: string
+          id?: string
+          order_id?: string | null
+          percentage?: number
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          earned_at?: string
+          id?: string
+          order_id?: string | null
+          percentage?: number
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payback_payouts: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          bank_details: Json | null
+          id: string
+          notes: string | null
+          requested_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_details?: Json | null
+          id?: string
+          notes?: string | null
+          requested_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_details?: Json | null
+          id?: string
+          notes?: string | null
+          requested_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
           full_name: string | null
           id: string
+          payback_balance: number | null
           phone: string | null
           updated_at: string
         }
@@ -469,6 +542,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          payback_balance?: number | null
           phone?: string | null
           updated_at?: string
         }
@@ -476,6 +550,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          payback_balance?: number | null
           phone?: string | null
           updated_at?: string
         }
