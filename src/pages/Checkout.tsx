@@ -141,10 +141,10 @@ export default function Checkout() {
 
       if (error) throw error;
 
-      // Clear cart and redirect based on payment method
-      clearCart();
+      console.log("Order created successfully, payment method:", paymentMethod);
 
       if (paymentMethod === 'stripe') {
+        console.log("Processing Stripe payment...");
         // Call new V8 Stripe payment function with better debugging
         try {
           console.log("Attempting to use payment function...");
@@ -156,6 +156,8 @@ export default function Checkout() {
               stripeKey: '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' // Ersetze mit sk_live_...
             }
           });
+
+          console.log("Stripe function response received:", { data: !!stripeData, error: !!stripeError });
 
           if (stripeError) {
             console.error("Direct Payment function error:", stripeError);
@@ -171,14 +173,8 @@ export default function Checkout() {
               containsStripe: stripeData.url.includes('stripe.com')
             });
             
-            // Test if URL is reachable before redirect
-            try {
-              console.log("Testing URL accessibility...");
-              const testResponse = await fetch(stripeData.url, { method: 'HEAD' });
-              console.log("URL test response:", testResponse.status);
-            } catch (urlError) {
-              console.error("URL accessibility test failed:", urlError);
-            }
+            // Clear cart only after successful Stripe session creation
+            clearCart();
             
             console.log("Attempting redirect to:", stripeData.url);
             // Redirect to Stripe Checkout in the same tab
