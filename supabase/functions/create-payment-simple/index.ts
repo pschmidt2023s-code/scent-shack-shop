@@ -35,7 +35,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log("=== STRIPE PAYMENT FUNCTION v4 START ===");
+    console.log("=== STRIPE PAYMENT FUNCTION v5 START ===");
     
     // Check critical environment variables
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
