@@ -1,9 +1,12 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Home, Search, ShoppingBag, User, Heart } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
+import { CartSidebar } from './CartSidebar'
+import { useState } from 'react'
 
 const NAV_ITEMS = [
   {
@@ -21,15 +24,17 @@ const NAV_ITEMS = [
   {
     icon: ShoppingBag,
     label: 'Warenkorb',
-    href: '/cart',
+    href: '#cart',
     activeHref: '/cart',
-    showBadge: true
+    showBadge: true,
+    isAction: true
   },
   {
     icon: Heart,
     label: 'Favoriten',
-    href: '/wishlist',
-    activeHref: '/wishlist'
+    href: '#wishlist',
+    activeHref: '/wishlist',
+    isAction: true
   },
   {
     icon: User,
@@ -44,6 +49,28 @@ export function MobileBottomNav() {
   const location = useLocation()
   const { itemCount } = useCart()
   const { user } = useAuth()
+  const [showCart, setShowCart] = useState(false)
+  const [wishlist, setWishlist] = useState<string[]>([])
+
+  const handleCartClick = () => {
+    setShowCart(true)
+  }
+
+  const handleWishlistClick = () => {
+    // Simple wishlist toggle for now - could be enhanced with Supabase later
+    console.log('Wishlist clicked - showing', wishlist.length, 'items')
+    alert(`Wunschliste (${wishlist.length} Artikel)\n\nDiese Funktion wird bald verfügbar sein!`)
+  }
+
+  const handleItemClick = (item: any) => {
+    if (item.isAction) {
+      if (item.label === 'Warenkorb') {
+        handleCartClick()
+      } else if (item.label === 'Favoriten') {
+        handleWishlistClick()
+      }
+    }
+  }
 
   return (
     <>
@@ -67,6 +94,53 @@ export function MobileBottomNav() {
               )
             }
 
+            // Handle action items (cart, wishlist)
+            if (item.isAction) {
+              return (
+                <Button
+                  key={item.href}
+                  variant="ghost"
+                  onClick={() => handleItemClick(item)}
+                  className={cn(
+                    "flex flex-col items-center justify-center px-2 py-2 transition-all duration-200 h-16 rounded-none",
+                    "hover:bg-muted/50 active:scale-95",
+                    isActive 
+                      ? "text-primary bg-primary/5" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <div className="relative">
+                    <Icon 
+                      className={cn(
+                        "w-5 h-5 transition-transform duration-200",
+                        isActive && "scale-110"
+                      )} 
+                    />
+                    
+                    {/* Cart badge */}
+                    {item.showBadge && itemCount > 0 && (
+                      <Badge 
+                        variant="destructive" 
+                        className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs animate-bounce"
+                      >
+                        {itemCount > 99 ? '99+' : itemCount}
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <span 
+                    className={cn(
+                      "text-xs mt-1 transition-all duration-200",
+                      isActive ? "font-medium" : "font-normal"
+                    )}
+                  >
+                    {item.label}
+                  </span>
+                </Button>
+              )
+            }
+
+            // Regular link items
             return (
               <Link
                 key={item.href}
@@ -86,16 +160,6 @@ export function MobileBottomNav() {
                       isActive && "scale-110"
                     )} 
                   />
-                  
-                  {/* Cart badge */}
-                  {item.showBadge && itemCount > 0 && (
-                    <Badge 
-                      variant="destructive" 
-                      className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs animate-bounce"
-                    >
-                      {itemCount > 99 ? '99+' : itemCount}
-                    </Badge>
-                  )}
                 </div>
                 
                 <span 
@@ -111,6 +175,9 @@ export function MobileBottomNav() {
           })}
         </div>
       </nav>
+
+      {/* Cart Sidebar */}
+      {showCart && <CartSidebar />}
     </>
   )
 }

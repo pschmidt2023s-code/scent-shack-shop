@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SearchInput } from '@/components/ui/search-input';
 import { SortAsc, Filter } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { PerfumeCard } from '@/components/PerfumeCard';
 import { perfumes } from '@/data/perfumes';
 import { ProductGridSkeleton } from '@/components/ProductSkeleton';
@@ -19,6 +19,23 @@ export default function Products() {
   const [isLoading, setIsLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<any>({});
+  const [searchParams] = useSearchParams();
+
+  // Handle URL search parameters
+  useEffect(() => {
+    const urlSearch = searchParams.get('search');
+    const urlCategory = searchParams.get('category');
+    
+    if (urlSearch) {
+      setSearchQuery(urlSearch);
+      console.log('URL search parameter found:', urlSearch);
+    }
+    
+    if (urlCategory) {
+      setFilters({ category: urlCategory });
+      console.log('URL category parameter found:', urlCategory);
+    }
+  }, [searchParams]);
 
   const prestigeCollection = perfumes.find(p => p.category === '50ML Bottles');
   const probenCollection = perfumes.find(p => p.category === 'Proben');

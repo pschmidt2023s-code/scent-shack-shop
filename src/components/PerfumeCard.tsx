@@ -25,10 +25,6 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
   const averageRating = currentVariant.rating || 0;
   const totalReviews = currentVariant.reviewCount || 0;
 
-  console.log('PerfumeCard: Rendering card for', perfume.name);
-  console.log('PerfumeCard: Current variant:', currentVariant);
-  console.log('PerfumeCard: Average rating:', averageRating);
-
   const handleAddToCart = () => {
     addToCart(perfume, currentVariant);
     toast({
@@ -39,6 +35,19 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
 
   const handleWishlistToggle = () => {
     setIsWishlisted(!isWishlisted);
+    
+    // Simple local storage wishlist for now
+    const wishlistKey = `wishlist_${perfume.id}_${currentVariant.id}`;
+    if (!isWishlisted) {
+      localStorage.setItem(wishlistKey, JSON.stringify({
+        perfume: perfume.name,
+        variant: currentVariant.name,
+        addedAt: new Date().toISOString()
+      }));
+    } else {
+      localStorage.removeItem(wishlistKey);
+    }
+    
     toast({
       title: isWishlisted ? "Von Wunschliste entfernt" : "Zur Wunschliste hinzugefügt",
       description: `${currentVariant.name} wurde ${isWishlisted ? 'entfernt' : 'hinzugefügt'}.`,
