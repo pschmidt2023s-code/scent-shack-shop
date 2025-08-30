@@ -64,3 +64,6 @@ verify_jwt = false
 
 [functions.stripe-payment]
 verify_jwt = false
+
+[functions.create-stripe-payment]
+verify_jwt = false

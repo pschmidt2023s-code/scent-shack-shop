@@ -153,71 +153,25 @@ export default function Checkout() {
       if (paymentMethod === 'stripe') {
         console.log("Processing Stripe payment...");
         
-        // Direct Stripe Checkout redirect without Edge Function
         try {
-          console.log("Direct Stripe frontend integration...");
-          
-          // Ensure Stripe is loaded
-          let stripe;
-          
-          // Function to load Stripe script dynamically
-          const loadStripe = (): Promise<any> => {
-            return new Promise((resolve, reject) => {
-              if (window.Stripe) {
-                resolve(window.Stripe);
-                return;
-              }
-              
-              const script = document.createElement('script');
-              script.src = 'https://js.stripe.com/v3/';
-              script.async = true;
-              script.onload = () => {
-                if (window.Stripe) {
-                  resolve(window.Stripe);
-                } else {
-                  reject(new Error('Stripe failed to load'));
-                }
-              };
-              script.onerror = () => reject(new Error('Failed to load Stripe script'));
-              document.head.appendChild(script);
-            });
-          };
-          
-          // Load Stripe and initialize
-          const StripeConstructor: any = await loadStripe();
-          stripe = StripeConstructor('pk_live_51S1wvMA12Fv3z8UXmcKZSaYucq7c6SJgDWb4YakcQeRsa7EX1sfmXQuz6hsqj69XyniYtghzo5i2vXZLgvodW4sj00ZWwSzx9v');
-          
-          if (!stripe) {
-            throw new Error('Failed to initialize Stripe');
-          }
-
-          console.log("Stripe loaded successfully, redirecting to checkout...");
-
-          // WICHTIG: Sie müssen eine echte Price ID aus Ihrem Stripe Dashboard verwenden!
-          // 1. Gehen Sie zu: https://dashboard.stripe.com/products
-          // 2. Erstellen Sie ein Produkt "ALDENAIR Probe" für 4.99€
-          // 3. Kopieren Sie die Price ID (beginnt mit "price_") und ersetzen Sie den Wert unten
-          
-          const priceId = 'PRICE_ID_HIER_EINSETZEN'; // ← Hier Ihre echte Price ID einfügen!
-          
-          if (priceId === 'PRICE_ID_HIER_EINSETZEN') {
-            throw new Error('Bitte ersetzen Sie PRICE_ID_HIER_EINSETZEN mit Ihrer echten Stripe Price ID aus dem Dashboard!');
-          }
-          
-          const { error } = await stripe.redirectToCheckout({
-            lineItems: [{
-              price: priceId,
-              quantity: 1,
-            }],
-            mode: 'payment',
-            successUrl: window.location.origin + '/checkout-success',
-            cancelUrl: window.location.origin + '/checkout',
-            customerEmail: user?.email || guestEmail,
-            clientReferenceId: newOrderNumber,
+          // Call the new Stripe Edge Function
+          const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-stripe-payment', {
+            body: {
+              orderNumber: newOrderNumber,
+              items: checkoutData.items,
+              totalAmount: checkoutData.finalAmount,
+              customerEmail: user?.email || guestEmail
+            }
           });
 
-          if (error) {
-            throw error;
+          if (stripeError) throw stripeError;
+          
+          if (stripeData?.success && stripeData?.checkout_url) {
+            console.log('Redirecting to Stripe Checkout:', stripeData.checkout_url);
+            window.location.href = stripeData.checkout_url;
+            return; // Prevent further execution
+          } else {
+            throw new Error('Stripe session creation failed: ' + (stripeData?.error || 'Unknown error'));
           }
           
         } catch (stripeError) {
@@ -228,7 +182,7 @@ export default function Checkout() {
           const paypalUrl = `https://paypal.me/threed48/${checkoutData.finalAmount.toFixed(2)}EUR`;
           window.open(paypalUrl, '_blank');
           
-          toast.success('PayPal-Link geöffnet als Alternative zu Stripe');
+          toast.error('Stripe-Fehler: ' + (stripeError.message || 'Unbekannter Fehler') + '. PayPal-Link als Alternative geöffnet.');
         }
       } else if (paymentMethod === 'paypal') {
         // Redirect to PayPal
