@@ -146,7 +146,7 @@ export default function Checkout() {
 
       if (paymentMethod === 'stripe') {
         // Call Stripe payment function
-        const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-payment-simple', {
+        const { data: stripeData, error: stripeError } = await supabase.functions.invoke('stripe-checkout', {
           body: {
             items: checkoutData.items,
             guestEmail: !user ? guestEmail : undefined,
