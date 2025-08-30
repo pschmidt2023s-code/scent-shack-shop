@@ -186,7 +186,7 @@ export function NewsletterSignup({
 
   // Default variant
   return (
-    <Card className={cn("border-2 border-luxury-black dark:border-luxury-gold bg-card", className)}>
+    <Card className={cn("bg-luxury-black dark:bg-luxury-black border-2 border-luxury-gold text-luxury-light dark:text-luxury-light", className)}>
       <CardHeader className="text-center">
         <CardTitle className="flex items-center justify-center gap-2">
           <Mail className="w-6 h-6" />
@@ -245,8 +245,8 @@ export function NewsletterSignup({
               />
 
               {/* Preferences */}
-              <div className="space-y-3 p-4 bg-accent/20 border border-border rounded-lg">
-                <h4 className="font-medium text-sm text-foreground">Was möchten Sie erhalten?</h4>
+              <div className="space-y-3 p-4 bg-luxury-gray/20 border border-luxury-gold/30 rounded-lg">
+                <h4 className="font-medium text-sm text-luxury-light">Was möchten Sie erhalten?</h4>
                 
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
@@ -255,7 +255,7 @@ export function NewsletterSignup({
                       checked={preferences.product_updates}
                       onCheckedChange={(checked) => updatePreference('product_updates', checked as boolean)}
                     />
-                    <label htmlFor="product_updates" className="text-sm cursor-pointer">
+                    <label htmlFor="product_updates" className="text-sm cursor-pointer text-luxury-light">
                       Produktupdates und neue Düfte
                     </label>
                   </div>
@@ -266,7 +266,7 @@ export function NewsletterSignup({
                       checked={preferences.promotions}
                       onCheckedChange={(checked) => updatePreference('promotions', checked as boolean)}
                     />
-                    <label htmlFor="promotions" className="text-sm cursor-pointer">
+                    <label htmlFor="promotions" className="text-sm cursor-pointer text-luxury-light">
                       Angebote und Rabattaktionen
                     </label>
                   </div>
@@ -277,7 +277,7 @@ export function NewsletterSignup({
                       checked={preferences.tips}
                       onCheckedChange={(checked) => updatePreference('tips', checked as boolean)}
                     />
-                    <label htmlFor="tips" className="text-sm cursor-pointer">
+                    <label htmlFor="tips" className="text-sm cursor-pointer text-luxury-light">
                       Duft-Tipps und Style-Guides
                     </label>
                   </div>
@@ -289,9 +289,9 @@ export function NewsletterSignup({
               </Button>
             </form>
 
-            <p className="text-xs text-center text-muted-foreground">
-              Sie können sich jederzeit wieder abmelden. Ihre Daten werden vertraulich behandelt.
-            </p>
+          <p className="text-xs text-center text-luxury-gray">
+            Sie können sich jederzeit wieder abmelden. Ihre Daten werden vertraulich behandelt.
+          </p>
           </>
         ) : (
           <div className="text-center space-y-4">
@@ -300,7 +300,7 @@ export function NewsletterSignup({
               <h3 className="text-xl font-bold text-green-600 mb-2">
                 Erfolgreich angemeldet!
               </h3>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-luxury-gray">
                 {showIncentive 
                   ? "Sie erhalten in Kürze eine E-Mail mit Ihrem 10%-Rabattcode."
                   : "Danke für Ihre Anmeldung zu unserem Newsletter."
