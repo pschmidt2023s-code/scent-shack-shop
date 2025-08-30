@@ -146,10 +146,12 @@ export default function Checkout() {
 
       if (paymentMethod === 'paypal') {
         // Redirect to PayPal
-        if (data.paypal_url) {
+        console.log('PayPal payment data received:', data);
+        if (data?.paypal_url) {
           window.location.href = data.paypal_url;
         } else {
-          toast.error('PayPal-URL konnte nicht erstellt werden');
+          console.error('PayPal response:', data);
+          toast.error('PayPal-URL konnte nicht erstellt werden: ' + (data?.error || 'Unbekannter Fehler'));
         }
       } else if (paymentMethod === 'bank') {
         // Show bank transfer details

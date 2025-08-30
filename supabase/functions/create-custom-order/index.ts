@@ -157,35 +157,48 @@ serve(async (req) => {
     if (orderData.payment_method === 'paypal') {
       console.log("Creating PayPal payment...");
       
-      const { data: paypalData, error: paypalError } = await supabaseService.functions.invoke(
-        'create-paypal-payment',
-        {
-          body: {
-            order_id: order.id,
-            amount: orderData.total_amount, // Already in euros
-            currency: orderData.currency.toUpperCase(),
-            order_number: orderData.order_number,
-            customer_email: orderData.customer_data.email
+      try {
+        const { data: paypalData, error: paypalError } = await supabaseService.functions.invoke(
+          'create-paypal-payment',
+          {
+            body: {
+              order_id: order.id,
+              amount: orderData.total_amount, // Already in euros
+              currency: orderData.currency.toUpperCase(),
+              order_number: orderData.order_number,
+              customer_email: orderData.customer_data.email
+            }
           }
-        }
-      );
+        );
 
-      if (paypalError) {
-        console.error("PayPal payment error:", paypalError);
+        console.log("PayPal function response:", { paypalData, paypalError });
+
+        if (paypalError) {
+          console.error("PayPal payment error:", paypalError);
+          throw paypalError;
+        }
+
+        if (!paypalData || !paypalData.approval_url) {
+          console.error("PayPal data missing approval URL:", paypalData);
+          throw new Error("PayPal approval URL not received");
+        }
+
+        console.log("PayPal payment created:", paypalData);
+        
+        return new Response(JSON.stringify({ 
+          success: true,
+          order_id: order.id,
+          order_number: orderData.order_number,
+          paypal_url: paypalData.approval_url
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+
+      } catch (paypalError) {
+        console.error("PayPal payment creation failed:", paypalError);
         throw paypalError;
       }
-
-      console.log("PayPal payment created:", paypalData);
-      
-      return new Response(JSON.stringify({ 
-        success: true,
-        order_id: order.id,
-        order_number: orderData.order_number,
-        paypal_url: paypalData.approval_url
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
     }
 
     // For bank transfer, just return success
