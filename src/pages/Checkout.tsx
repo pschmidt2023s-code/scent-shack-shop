@@ -148,25 +148,41 @@ export default function Checkout() {
         
         // Direct Stripe Checkout redirect without Edge Function
         try {
-          console.log("Using new stripe-payment function...");
+          console.log("Direct Stripe frontend integration...");
           
-          const { data: stripeData } = await supabase.functions.invoke('stripe-payment', {
-            body: {
-              amount: checkoutData.finalAmount,
-              customerEmail: user?.email || guestEmail
-            }
+          // Direkte Stripe Integration ohne Edge Functions
+          const stripe = (window as any).Stripe('pk_live_51S1wvMA12Fv3z8UXmcKZSaYucq7c6SJgDWb4YakcQeRsa7EX1sfmXQuz6hsqj69XyniYtghzo5i2vXZLgvodW4sj00ZWwSzx9v');
+          
+          if (!stripe) {
+            throw new Error('Stripe could not be loaded');
+          }
+
+          // Redirect direkt zu einer Stripe Price ID (erstellen Sie diese in Ihrem Stripe Dashboard)
+          const { error } = await stripe.redirectToCheckout({
+            lineItems: [{
+              price: 'price_1QWTmwA12Fv3z8UXh5vF7kG1', // Ersetzen Sie mit Ihrer Price ID
+              quantity: 1,
+            }],
+            mode: 'payment',
+            successUrl: window.location.origin + '/checkout-success',
+            cancelUrl: window.location.origin + '/checkout',
+            customerEmail: user?.email || guestEmail,
+            clientReferenceId: newOrderNumber,
           });
-          
-          if (stripeData?.success && stripeData?.url) {
-            console.log("Stripe session created, redirecting to:", stripeData.url);
-            window.location.href = stripeData.url;
-          } else {
-            throw new Error(stripeData?.error || 'Stripe payment failed');
+
+          if (error) {
+            throw error;
           }
           
         } catch (stripeError) {
           console.error("Stripe payment failed:", stripeError);
-          toast.error('Stripe-Zahlung fehlgeschlagen. Versuchen Sie PayPal oder Überweisung.');
+          
+          // Fallback: PayPal öffnen
+          console.log("Opening PayPal fallback...");
+          const paypalUrl = `https://paypal.me/threed48/${checkoutData.finalAmount.toFixed(2)}EUR`;
+          window.open(paypalUrl, '_blank');
+          
+          toast.success('PayPal-Link geöffnet als Alternative zu Stripe');
         }
       } else if (paymentMethod === 'paypal') {
         // Redirect to PayPal
