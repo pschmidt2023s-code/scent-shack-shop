@@ -148,6 +148,8 @@ export default function Checkout() {
         // Call new V8 Stripe payment function with better debugging
         try {
           console.log("Attempting to use payment function...");
+          console.log("Items being sent to Stripe:", JSON.stringify(checkoutData.items, null, 2));
+          
           const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-payment-simple', {
             body: {
               items: checkoutData.items,
@@ -158,6 +160,8 @@ export default function Checkout() {
           });
 
           console.log("Stripe function response received:", { data: !!stripeData, error: !!stripeError });
+          console.log("Stripe data:", stripeData);
+          console.log("Stripe error:", stripeError);
 
           if (stripeError) {
             console.error("Direct Payment function error:", stripeError);
