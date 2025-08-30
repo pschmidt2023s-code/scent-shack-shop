@@ -151,7 +151,7 @@ export default function Checkout() {
           console.log("Creating direct Stripe redirect...");
           
           // Simple Stripe Checkout with your publishable key
-          const stripe = (window as any).Stripe('pk_live_DEIN_PUBLISHABLE_KEY_HIER');
+          const stripe = (window as any).Stripe('pk_live_51S1wvMA12Fv3z8UXmcKZSaYucq7c6SJgDWb4YakcQeRsa7EX1sfmXQuz6hsqj69XyniYtghzo5i2vXZLgvodW4sj00ZWwSzx9v');
           
           if (!stripe) {
             toast.error('Stripe konnte nicht geladen werden');
