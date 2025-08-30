@@ -158,12 +158,19 @@ export default function Checkout() {
             return;
           }
           
-          // Redirect to Stripe Checkout
+          // Redirect to Stripe Checkout mit dynamischen Produktdaten
           const { error } = await stripe.redirectToCheckout({
-            lineItems: [{
-              price: 'prod_Sxtx0HerbpQVIq',  // Ersetze mit deiner Price ID aus Stripe Dashboard
-              quantity: 1,
-            }],
+            lineItems: checkoutData.items.map(item => ({
+              price_data: {
+                currency: 'eur',
+                product_data: {
+                  name: `${item.perfume?.name || item.name} - ${item.variant?.name || item.selectedVariant}`,
+                  description: item.variant?.description || item.description || '',
+                },
+                unit_amount: Math.round((item.variant?.price || item.price) * 100), // Preis in Cent
+              },
+              quantity: item.quantity,
+            })),
             mode: 'payment',
             successUrl: window.location.origin + '/checkout-success',
             cancelUrl: window.location.origin + '/checkout',
