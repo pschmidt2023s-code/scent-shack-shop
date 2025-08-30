@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log("=== ULTRA SIMPLE STRIPE START ===");
+    console.log("=== STRIPE CHECKOUT (Updated) ===");
     
     const { amount = 4.99 } = await req.json();
     console.log("Amount:", amount);
