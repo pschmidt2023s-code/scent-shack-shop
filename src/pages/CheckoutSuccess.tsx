@@ -173,7 +173,7 @@ export default function CheckoutSuccess() {
                     <h4 className="font-medium mb-2 text-blue-800">PayPal.me Zahlung</h4>
                     <p className="text-sm text-blue-700">
                       Bitte schließen Sie die Zahlung in dem geöffneten PayPal.me Tab ab. 
-                      Nach erfolgreicher Zahlung wird Ihre Bestellung automatisch bearbeitet.
+                      Ihre Bestellung wird nach Zahlungseingang bearbeitet und Sie erhalten eine weitere Bestätigung per E-Mail.
                     </p>
                   </div>
                 )}

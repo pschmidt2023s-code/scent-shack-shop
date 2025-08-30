@@ -105,7 +105,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send confirmation email
     const emailResponse = await resend.emails.send({
-      from: "ALDENAIR <noreply@resend.dev>", // You'll need to configure your domain
+      from: "ALDENAIR <support@aldenairperfumes.de>",
       to: [customerEmail],
       subject: `Bestellbestätigung - ${orderDetails.order_number}`,
       html: `

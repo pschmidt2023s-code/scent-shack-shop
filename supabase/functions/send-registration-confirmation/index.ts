@@ -26,7 +26,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Sending registration confirmation to: ${email}`);
 
     const emailResponse = await resend.emails.send({
-      from: "ALDENAIR <noreply@resend.dev>",
+      from: "ALDENAIR <support@aldenairperfumes.de>",
       to: [email],
       subject: "Willkommen bei ALDENAIR - Registrierung erfolgreich!",
       html: `

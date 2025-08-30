@@ -229,7 +229,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailResponse = await resend.emails.send({
-      from: "ALDENAIR <noreply@resend.dev>",
+      from: "ALDENAIR <support@aldenairperfumes.de>",
       to: [order.customer_email],
       subject: subject,
       html: content,
