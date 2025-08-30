@@ -13,6 +13,7 @@ import CouponManagement from '@/components/admin/CouponManagement';
 import UserManagement from '@/components/admin/UserManagement';
 import ReturnManagement from '@/components/admin/ReturnManagement';
 import PartnerManagement from '@/components/admin/PartnerManagement';
+import NewsletterManagement from '@/components/admin/NewsletterManagement';
 import { getPerfumeNameById } from '@/lib/perfume-utils';
 
 interface Order {
@@ -208,7 +209,7 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid grid-cols-5 w-full max-w-3xl">
+          <TabsList className="grid grid-cols-6 w-full max-w-4xl">
             <TabsTrigger value="orders" className="flex items-center gap-2">
               <Package className="w-4 h-4" />
               Bestellungen
@@ -224,6 +225,10 @@ export default function Admin() {
             <TabsTrigger value="partners" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Partner
+            </TabsTrigger>
+            <TabsTrigger value="newsletter" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Newsletter
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
@@ -402,6 +407,10 @@ export default function Admin() {
 
           <TabsContent value="partners" className="space-y-6">
             <PartnerManagement />
+          </TabsContent>
+
+          <TabsContent value="newsletter" className="space-y-6">
+            <NewsletterManagement />
           </TabsContent>
 
           <TabsContent value="users">
