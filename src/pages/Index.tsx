@@ -4,7 +4,6 @@ import { PerfumeGrid } from '@/components/PerfumeGrid';
 import { RecentlyViewed } from '@/components/RecentlyViewed';
 import { NewsletterSignup } from '@/components/NewsletterSignup';
 import { SocialProof } from '@/components/SocialProof';
-import { LiveChat } from '@/components/LiveChat';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
