@@ -59,8 +59,6 @@ interface PartnerPayout {
 }
 
 export default function Partner() {
-  console.log('Partner component loading...');
-  
   const { user } = useAuth();
   const navigate = useNavigate();
   const [partner, setPartner] = useState<Partner | null>(null);
@@ -82,20 +80,15 @@ export default function Partner() {
     motivation: ''
   });
 
-  console.log('Partner component state initialized', { user, loading });
-
   useEffect(() => {
-    console.log('Partner useEffect triggered', { user });
     if (user) {
       loadPartnerData();
     } else {
-      console.log('No user, setting loading to false');
       setLoading(false);
     }
   }, [user]);
 
   const loadPartnerData = async () => {
-    console.log('loadPartnerData called');
     try {
       // Load partner data
       const { data: partnerData, error: partnerError } = await supabase
@@ -104,14 +97,11 @@ export default function Partner() {
         .eq('user_id', user?.id)
         .single();
 
-      console.log('Partner data loaded:', { partnerData, partnerError });
-
       if (partnerError && partnerError.code !== 'PGRST116') {
         throw partnerError;
       }
 
       if (partnerData) {
-        console.log('Partner found, loading sales and payouts');
         setPartner(partnerData);
         setBankDetails(partnerData.bank_details as any || bankDetails);
 
@@ -140,14 +130,11 @@ export default function Partner() {
 
         if (payoutsError) throw payoutsError;
         setPayouts(payoutsData || []);
-      } else {
-        console.log('No partner data found');
       }
     } catch (error) {
       console.error('Error loading partner data:', error);
       toast.error('Fehler beim Laden der Partner-Daten');
     } finally {
-      console.log('Setting loading to false');
       setLoading(false);
     }
   };
@@ -258,15 +245,12 @@ export default function Partner() {
   };
 
   if (loading) {
-    console.log('Rendering loading state');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
-
-  console.log('Rendering partner component', { partner, user });
 
   // Partner Application Form
   if (!partner) {

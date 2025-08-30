@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { User, ChevronDown, LogOut } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
+import { useCart } from '@/contexts/CartContext';
+import { Badge } from '@/components/ui/badge';
 import { AuthModal } from './AuthModal';
 import { CartSidebar } from './CartSidebar';
 import { AdvancedSearch } from './AdvancedSearch';
@@ -9,6 +11,7 @@ import { DarkModeToggle } from './DarkModeToggle';
 
 const Navigation = () => {
   const { user, signOut } = useAuth();
+  const { itemCount } = useCart();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showCart, setShowCart] = useState(false);
 
@@ -60,6 +63,14 @@ const Navigation = () => {
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 1.5M7 13l-1.5-1.5M16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM9 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
                 </svg>
+                {itemCount > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                  >
+                    {itemCount > 99 ? '99+' : itemCount}
+                  </Badge>
+                )}
               </button>
               <CartSidebar open={showCart} onOpenChange={setShowCart} />
 
