@@ -148,12 +148,12 @@ export default function Checkout() {
         
         // Direct Stripe Checkout redirect without Edge Function
         try {
-          console.log("Using existing create-stripe-checkout function...");
+          console.log("Using create-stripe-checkout function with updated secret...");
           
           const { data: stripeData } = await supabase.functions.invoke('create-stripe-checkout', {
             body: {
-              amount: checkoutData.finalAmount,
-              stripeKey: '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' // Ihr Live Secret Key
+              amount: checkoutData.finalAmount
+              // stripeKey wird jetzt aus den Supabase Secrets geladen
             }
           });
           
