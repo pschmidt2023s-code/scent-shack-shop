@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-// Using standard JS fetch for simple SMTP (basic implementation)
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,7 +13,7 @@ interface EmailRequest {
 
 const sendSMTPEmail = async (to: string, subject: string, html: string) => {
   const smtpHost = Deno.env.get("SMTP_HOST");
-  const smtpPort = Deno.env.get("SMTP_PORT") || "587";
+  const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "587");
   const smtpUsername = Deno.env.get("SMTP_USERNAME");
   const smtpPassword = Deno.env.get("SMTP_PASSWORD");
   const fromEmail = Deno.env.get("SMTP_FROM_EMAIL");
@@ -23,34 +22,95 @@ const sendSMTPEmail = async (to: string, subject: string, html: string) => {
     throw new Error("SMTP configuration missing");
   }
 
-  console.log(`Using SMTP: ${smtpHost}:${smtpPort}, from: ${fromEmail}`);
+  console.log(`Connecting to SMTP server: ${smtpHost}:${smtpPort}`);
 
-  // For now, we'll use a simple HTTP approach to send emails
-  // This is a placeholder implementation - in production you'd want a proper SMTP client
   try {
-    // Create a simple email payload
-    const emailPayload = {
-      from: fromEmail,
-      to: to,
-      subject: subject,
-      html: html,
-      smtp_host: smtpHost,
-      smtp_port: smtpPort,
-      smtp_username: smtpUsername,
-      smtp_password: smtpPassword
-    };
-
-    console.log("Email prepared for SMTP sending:", {
-      to: to,
-      subject: subject,
-      from: fromEmail
+    // Create connection to SMTP server
+    const conn = await Deno.connect({
+      hostname: smtpHost,
+      port: smtpPort,
     });
 
-    // For now, just log that we would send the email
-    // This prevents errors while we implement proper SMTP
-    console.log("SMTP Email would be sent:", emailPayload);
-    
-    return { success: true, message: "Email queued for SMTP sending" };
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+
+    // Helper function to send command and read response
+    const sendCommand = async (command: string) => {
+      console.log(`> ${command}`);
+      await conn.write(encoder.encode(command + "\r\n"));
+      
+      const buffer = new Uint8Array(1024);
+      const bytesRead = await conn.read(buffer);
+      if (bytesRead) {
+        const response = decoder.decode(buffer.slice(0, bytesRead));
+        console.log(`< ${response.trim()}`);
+        return response;
+      }
+      return "";
+    };
+
+    try {
+      // Read server greeting
+      const greeting = new Uint8Array(1024);
+      const greetingBytes = await conn.read(greeting);
+      if (greetingBytes) {
+        console.log(`< ${decoder.decode(greeting.slice(0, greetingBytes)).trim()}`);
+      }
+
+      // Send EHLO
+      await sendCommand(`EHLO ${smtpHost}`);
+
+      // Send AUTH LOGIN
+      await sendCommand("AUTH LOGIN");
+      
+      // Send username (base64 encoded)
+      const usernameB64 = btoa(smtpUsername);
+      await sendCommand(usernameB64);
+      
+      // Send password (base64 encoded)  
+      const passwordB64 = btoa(smtpPassword);
+      await sendCommand(passwordB64);
+
+      // Send MAIL FROM
+      await sendCommand(`MAIL FROM:<${fromEmail}>`);
+
+      // Send RCPT TO
+      await sendCommand(`RCPT TO:<${to}>`);
+
+      // Send DATA
+      await sendCommand("DATA");
+
+      // Send email content
+      const emailContent = [
+        `From: ALDENAIR <${fromEmail}>`,
+        `To: ${to}`,
+        `Subject: ${subject}`,
+        "MIME-Version: 1.0",
+        "Content-Type: text/html; charset=utf-8",
+        "",
+        html,
+        "."
+      ].join("\r\n");
+
+      await conn.write(encoder.encode(emailContent + "\r\n"));
+
+      // Read final response
+      const finalBuffer = new Uint8Array(1024);
+      const finalBytesRead = await conn.read(finalBuffer);
+      if (finalBytesRead) {
+        const finalResponse = decoder.decode(finalBuffer.slice(0, finalBytesRead));
+        console.log(`< ${finalResponse.trim()}`);
+      }
+
+      // Send QUIT
+      await sendCommand("QUIT");
+
+      console.log("Email sent successfully via SMTP");
+      return { success: true, message: "Email sent successfully" };
+
+    } finally {
+      conn.close();
+    }
 
   } catch (error: any) {
     console.error("SMTP Error:", error);
