@@ -32,8 +32,6 @@ serve(async (req) => {
 
     console.log("=== DETAILED PAYPAL DEBUG ===");
     console.log("Request body received:", JSON.stringify(requestBody, null, 2));
-    console.log("PayPal Client ID (first 10 chars):", Deno.env.get("PAYPAL_CLIENT_ID")?.substring(0, 10));
-    console.log("PayPal Secret exists:", !!Deno.env.get("PAYPAL_SECRET_KEY"));
     console.log("Amount being processed:", requestBody.amount);
     console.log("Currency:", requestBody.currency);
 
@@ -42,9 +40,9 @@ serve(async (req) => {
     // PayPal Credentials from Secrets
     const PAYPAL_CLIENT_ID = Deno.env.get("PAYPAL_CLIENT_ID");
     const PAYPAL_SECRET = Deno.env.get("PAYPAL_SECRET_KEY");
-
-    // Debugging - prüfe aktuelle Credentials
-    console.log("PayPal Client ID being used:", PAYPAL_CLIENT_ID);
+    
+    console.log("PayPal Client ID exists:", !!PAYPAL_CLIENT_ID);
+    console.log("PayPal Client ID (first 10 chars):", PAYPAL_CLIENT_ID?.substring(0, 10));
     console.log("PayPal Secret exists:", !!PAYPAL_SECRET);
     console.log("PayPal Secret length:", PAYPAL_SECRET?.length || 0);
 
