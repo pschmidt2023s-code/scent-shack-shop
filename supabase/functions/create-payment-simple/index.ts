@@ -35,7 +35,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log("=== CREATE PAYMENT SIMPLE FUNCTION START ===");
+    console.log("=== CREATE PAYMENT SIMPLE FUNCTION START (v2) ===");
     
     // Check environment variables
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
