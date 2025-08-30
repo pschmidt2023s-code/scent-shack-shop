@@ -69,27 +69,58 @@ export default function PartnerManagement() {
 
   const loadData = async () => {
     try {
-      // Load partners
+      // Load partners - simple query without foreign key constraints
       const { data: partnersData, error: partnersError } = await supabase
         .from('partners')
-        .select(`
-          *,
-          profiles!partners_user_id_fkey(full_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (partnersError) throw partnersError;
-      setPartners(partnersData as any || []);
+      
+      // For each partner, try to get profile data if user_id exists
+      const partnersWithProfiles = await Promise.all(
+        (partnersData || []).map(async (partner: any) => {
+          if (partner.user_id) {
+            try {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('id', partner.user_id)
+                .single();
+              
+              return {
+                ...partner,
+                profiles: profile ? { full_name: profile.full_name } : null
+              };
+            } catch {
+              // If profile doesn't exist, use email from application_data
+              const name = partner.application_data?.email || 
+                          `${partner.application_data?.first_name || ''} ${partner.application_data?.last_name || ''}`.trim();
+              return {
+                ...partner,
+                profiles: { full_name: name }
+              };
+            }
+          } else {
+            // For partners without user_id, use application data
+            const name = partner.application_data?.email || 
+                        `${partner.application_data?.first_name || ''} ${partner.application_data?.last_name || ''}`.trim();
+            return {
+              ...partner,
+              profiles: { full_name: name }
+            };
+          }
+        })
+      );
+      
+      setPartners(partnersWithProfiles);
 
       // Load pending payouts
       const { data: payoutsData, error: payoutsError } = await supabase
         .from('partner_payouts')
         .select(`
           *,
-          partners!inner(
-            partner_code,
-            profiles!partners_user_id_fkey(full_name)
-          )
+          partners!inner(partner_code)
         `)
         .order('requested_at', { ascending: false });
 
@@ -118,10 +149,7 @@ export default function PartnerManagement() {
       // Get partner data before update for email
       const { data: partnerData } = await supabase
         .from('partners')
-        .select(`
-          *,
-          profiles!partners_user_id_fkey(full_name)
-        `)
+        .select('*')
         .eq('id', partnerId)
         .single();
 
@@ -138,8 +166,11 @@ export default function PartnerManagement() {
           // Call email function with user_id, let the function handle getting the email
           const { error: emailError } = await supabase.functions.invoke('send-partner-confirmation', {
             body: {
-              userId: partnerData.user_id,
-              name: (partnerData as any).profiles?.full_name || 'Partner',
+              email: (partnerData?.application_data as any)?.email || partnerData?.user_id, // Use email or user_id
+              userId: partnerData?.user_id,
+              name: (partnerData?.application_data as any)?.email || 
+                    `${(partnerData?.application_data as any)?.first_name || ''} ${(partnerData?.application_data as any)?.last_name || ''}`.trim() ||
+                    'Partner',
               partnerCode: partnerData.partner_code,
               status: status
             }

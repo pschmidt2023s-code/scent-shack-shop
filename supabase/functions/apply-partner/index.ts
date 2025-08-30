@@ -82,19 +82,25 @@ serve(async (req) => {
     }
 
     // Create partner application
+    const partnerData: any = {
+      partner_code: partnerCode,
+      status: 'pending',
+      commission_rate: 2.50, // Default commission rate
+      application_data: {
+        ...applicationData.application_data,
+        email: userEmail
+      },
+      bank_details: applicationData.bank_details
+    };
+
+    // Only add user_id if it exists and is valid
+    if (userId && userId !== 'null') {
+      partnerData.user_id = userId;
+    }
+
     const { data: partner, error: partnerError } = await supabaseService
       .from('partners')
-      .insert({
-        user_id: userId,
-        partner_code: partnerCode,
-        status: 'pending',
-        commission_rate: 2.50, // Default commission rate
-        application_data: {
-          ...applicationData.application_data,
-          email: userEmail
-        },
-        bank_details: applicationData.bank_details
-      })
+      .insert(partnerData)
       .select()
       .single();
 
