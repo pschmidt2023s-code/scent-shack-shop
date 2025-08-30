@@ -27,7 +27,6 @@ interface PaymentRequest {
   items: CartItem[];
   guestEmail?: string;
   couponCode?: string;
-  stripeKey?: string; // Temporär für Testing
 }
 
 serve(async (req) => {
@@ -40,8 +39,8 @@ serve(async (req) => {
     console.log("Current timestamp:", new Date().toISOString());
 
     // Parse request
-    const { items, guestEmail, couponCode, stripeKey }: PaymentRequest = await req.json();
-    console.log("Request data:", { itemCount: items?.length, guestEmail, couponCode, hasStripeKey: !!stripeKey });
+    const { items, guestEmail, couponCode }: PaymentRequest = await req.json();
+    console.log("Request data:", { itemCount: items?.length, guestEmail, couponCode });
 
     if (!items || items.length === 0) {
       return new Response(JSON.stringify({ 
@@ -52,19 +51,13 @@ serve(async (req) => {
       });
     }
 
-    // Use provided stripe key or try environment
-    let finalStripeKey = stripeKey;
-    if (!finalStripeKey) {
-      finalStripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-      console.log("Using environment key:", !!finalStripeKey);
-    } else {
-      console.log("Using provided key:", finalStripeKey.substring(0, 12) + "...");
-    }
+    // Get Stripe secret key from environment
+    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
+    console.log("Using environment key:", !!stripeSecretKey);
 
-    if (!finalStripeKey) {
+    if (!stripeSecretKey) {
       return new Response(JSON.stringify({ 
-        error: "STRIPE_SECRET_KEY not available - please provide in request body for testing",
-        instruction: "Add your Stripe key as 'stripeKey' in the request body"
+        error: "STRIPE_SECRET_KEY not configured in environment"
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
@@ -110,8 +103,8 @@ serve(async (req) => {
       });
     }
 
-    console.log("Initializing Stripe with direct key...");
-    const stripe = new Stripe(finalStripeKey, {
+    console.log("Initializing Stripe...");
+    const stripe = new Stripe(stripeSecretKey, {
       apiVersion: "2023-10-16",
     });
 
