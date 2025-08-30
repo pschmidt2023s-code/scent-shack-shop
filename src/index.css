@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 /* Luxury Perfume Store Design System - All colors MUST be HSL */
+/* Performance optimized CSS with hardware acceleration */
 
 @layer base {
   :root {
@@ -144,17 +145,34 @@
     background-size: 200px 100%;
   }
   
-  /* Hover Effects */
+  /* Hover Effects - GPU Accelerated */
   .hover-lift {
-    @apply transition-all duration-500 ease-smooth hover:-translate-y-2 hover:shadow-luxury hover:scale-[1.02];
+    @apply transition-all duration-500 ease-smooth;
+    will-change: transform, box-shadow;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--shadow-luxury);
   }
   
   .hover-glow {
-    @apply transition-all duration-500 ease-smooth hover:shadow-glow hover:scale-105;
+    @apply transition-all duration-500 ease-smooth;
+    will-change: transform, box-shadow;
+  }
+
+  .hover-glow:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-glow);
   }
 
   .hover-magnetic {
-    @apply transition-all duration-300 ease-smooth hover:animate-magnetic;
+    @apply transition-all duration-300 ease-smooth;
+    will-change: transform;
+  }
+  
+  .hover-magnetic:hover {
+    animation: magnetic 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
   
   /* Enhanced Interactive Effects */
@@ -203,15 +221,17 @@
   .stagger-item:nth-child(11) { animation-delay: 0.6s; }
   .stagger-item:nth-child(12) { animation-delay: 0.65s; }
 
-  /* Page transition enhancements */
+  /* Page transition enhancements - GPU accelerated */
   .page-enter {
     animation: page-enter 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: opacity, transform;
   }
 
-  /* Smooth navigation link transitions */
+  /* Smooth navigation link transitions - GPU optimized */
   .nav-link {
     position: relative;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
   }
 
   .nav-link::after {
@@ -223,9 +243,39 @@
     height: 2px;
     background: hsl(var(--primary));
     transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: width;
   }
 
   .nav-link:hover::after {
     width: 100%;
+  }
+
+  /* Performance optimizations */
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  input, textarea, [contenteditable] {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Image loading optimization */
+  img {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 400px;
   }
 }

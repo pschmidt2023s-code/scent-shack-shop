@@ -9,17 +9,18 @@ export function HeroSection() {
     <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
-          <img
-            src={heroImage}
-            srcSet={`${heroImageMd} 896w, ${heroImage} 1344w`}
-            sizes="100vw"
-            alt="ALDENAIR luxury perfume collection - Premium Parfüms und exklusive Duftkreationen"
-            className="w-full h-full object-cover"
-            loading="eager"
-            decoding="async"
-            width="1344"
-            height="768"
-          />
+        <img
+          src={heroImage}
+          srcSet={`${heroImageMd} 896w, ${heroImage} 1344w`}
+          sizes="100vw"
+          alt="ALDENAIR luxury perfume collection - Premium Parfüms und exklusive Duftkreationen"
+          className="w-full h-full object-cover"
+          loading="eager"
+          decoding="async"
+          width="1344"
+          height="768"
+          style={{ contentVisibility: 'auto', containIntrinsicSize: '1344px 768px' }}
+        />
         <div className="absolute inset-0 bg-gradient-hero opacity-80"></div>
       </div>
 
