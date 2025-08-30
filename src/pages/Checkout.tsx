@@ -106,11 +106,11 @@ export default function Checkout() {
         payment_method: paymentMethod,
         customer_data: customerData,
         items: checkoutData.items.map(item => ({
-          perfume_id: item.id || item.perfume?.id,
-          variant_id: item.selectedVariant || item.variant?.id,
-          quantity: item.quantity,
-          unit_price: Math.round((item.price || item.variant?.price || 0) * 100),
-          total_price: Math.round((item.price || item.variant?.price || 0) * item.quantity * 100)
+           perfume_id: item.perfume?.id || item.id,
+           variant_id: item.variant?.id || item.selectedVariant,
+           quantity: item.quantity,
+           unit_price: Math.round((item.variant?.price || item.price || 0) * 100),
+           total_price: Math.round((item.variant?.price || item.price || 0) * item.quantity * 100)
         })),
         coupon_data: checkoutData.appliedCoupon ? {
           code: checkoutData.appliedCoupon.code,
@@ -185,16 +185,16 @@ export default function Checkout() {
             </CardHeader>
             <CardContent className="space-y-4">
               {checkoutData.items.map((item: any) => (
-                <div key={`${item.id}-${item.selectedVariant}`} className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h4 className="font-medium">{item.name}</h4>
-                    <p className="text-sm text-muted-foreground">{item.brand}</p>
-                    <p className="text-sm text-muted-foreground">Größe: {item.selectedVariant}</p>
-                    <p className="text-sm text-muted-foreground">Menge: {item.quantity}</p>
-                  </div>
-                  <p className="font-medium">{(item.price * item.quantity).toFixed(2)}€</p>
-                </div>
-              ))}
+                 <div key={`${item.perfume?.id || item.id}-${item.variant?.id || item.selectedVariant}`} className="flex justify-between items-start">
+                   <div className="flex-1">
+                     <h4 className="font-medium">{item.perfume?.name || item.name}</h4>
+                     <p className="text-sm text-muted-foreground">{item.perfume?.brand || item.brand}</p>
+                     <p className="text-sm text-muted-foreground">Größe: {item.variant?.name || item.selectedVariant}</p>
+                     <p className="text-sm text-muted-foreground">Menge: {item.quantity}</p>
+                   </div>
+                   <p className="font-medium">{((item.variant?.price || item.price) * item.quantity).toFixed(2)}€</p>
+                 </div>
+               ))}
 
               <Separator />
 
