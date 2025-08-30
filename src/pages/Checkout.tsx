@@ -193,10 +193,11 @@ export default function Checkout() {
 
           console.log("Stripe loaded successfully, redirecting to checkout...");
 
-          // Redirect direkt zu einer Stripe Price ID (erstellen Sie diese in Ihrem Stripe Dashboard)
+          // WICHTIG: Ersetzen Sie 'price_1QWTmwA12Fv3z8UXh5vF7kG1' mit Ihrer echten Price ID aus dem Stripe Dashboard
+          // Erstellen Sie ein Produkt "ALDENAIR Probe" für 4.99€ und kopieren Sie die Price ID hierher
           const { error } = await stripe.redirectToCheckout({
             lineItems: [{
-              price: 'prod_Sxtx0HerbpQVIq', // Ersetzen Sie mit Ihrer Price ID
+              price: 'price_1QWTmwA12Fv3z8UXh5vF7kG1', // Ersetzen Sie mit Ihrer Price ID (beginnt mit "price_...")
               quantity: 1,
             }],
             mode: 'payment',
