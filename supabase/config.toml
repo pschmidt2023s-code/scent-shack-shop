@@ -38,5 +38,8 @@ verify_jwt = false
 [functions.create-paypal-payment]
 verify_jwt = false
 
+[functions.test-paypal-credentials]
+verify_jwt = false
+
 [functions.send-newsletter]
 verify_jwt = false

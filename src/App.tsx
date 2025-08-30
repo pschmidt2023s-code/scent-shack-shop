@@ -64,6 +64,7 @@ const Checkout = React.lazy(() => import('@/pages/Checkout'));
 const CheckoutBank = React.lazy(() => import('@/pages/CheckoutBank'));
 const CheckoutSuccess = React.lazy(() => import('@/pages/CheckoutSuccess'));
 const CheckoutCancel = React.lazy(() => import('@/pages/CheckoutCancel'));
+const PayPalTest = React.lazy(() => import('@/pages/PayPalTest'));
 const NotFound = React.lazy(() => import('@/pages/NotFound'));
 
 // Create QueryClient instance
@@ -179,6 +180,11 @@ function App() {
                 <Route path="/checkout-cancel" element={
                   <Suspense fallback={<LoadingSpinner />}>
                     <CheckoutCancel />
+                  </Suspense>
+                } />
+                <Route path="/paypal-test" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <PayPalTest />
                   </Suspense>
                 } />
                 <Route path="*" element={
