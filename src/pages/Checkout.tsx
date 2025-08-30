@@ -161,7 +161,7 @@ export default function Checkout() {
           // Redirect to Stripe Checkout
           const { error } = await stripe.redirectToCheckout({
             lineItems: [{
-              price: 'price_DEINE_PRICE_ID_HIER',  // Ersetze mit deiner Price ID aus Stripe Dashboard
+              price: 'prod_Sxtx0HerbpQVIq',  // Ersetze mit deiner Price ID aus Stripe Dashboard
               quantity: 1,
             }],
             mode: 'payment',
