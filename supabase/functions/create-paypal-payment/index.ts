@@ -37,14 +37,21 @@ serve(async (req) => {
 
     const { order_id, amount, currency, order_number, customer_email } = requestBody;
 
+    // Debug: Liste alle verfügbaren Environment Variables
+    console.log("=== ENVIRONMENT VARIABLES DEBUG ===");
+    console.log("All Deno.env keys:", Object.keys(Deno.env.toObject()));
+    console.log("SUPABASE_URL exists:", !!Deno.env.get("SUPABASE_URL"));
+    console.log("SUPABASE_SERVICE_ROLE_KEY exists:", !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"));
+
     // PayPal Credentials from Secrets
     const PAYPAL_CLIENT_ID = Deno.env.get("PAYPAL_CLIENT_ID");
     const PAYPAL_SECRET = Deno.env.get("PAYPAL_SECRET_KEY");
     
-    console.log("PayPal Client ID exists:", !!PAYPAL_CLIENT_ID);
-    console.log("PayPal Client ID (first 10 chars):", PAYPAL_CLIENT_ID?.substring(0, 10));
-    console.log("PayPal Secret exists:", !!PAYPAL_SECRET);
-    console.log("PayPal Secret length:", PAYPAL_SECRET?.length || 0);
+    console.log("=== PAYPAL CREDENTIALS DEBUG ===");
+    console.log("PAYPAL_CLIENT_ID exists:", !!PAYPAL_CLIENT_ID);
+    console.log("PAYPAL_CLIENT_ID value:", PAYPAL_CLIENT_ID);
+    console.log("PAYPAL_SECRET_KEY exists:", !!PAYPAL_SECRET);
+    console.log("PAYPAL_SECRET_KEY value:", PAYPAL_SECRET ? PAYPAL_SECRET.substring(0, 10) + "..." : "null");
 
     if (!PAYPAL_CLIENT_ID || !PAYPAL_SECRET) {
       console.error("PayPal credentials not configured");
