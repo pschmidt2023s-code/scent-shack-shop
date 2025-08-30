@@ -5,27 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { 
   Mail, 
   Send, 
   Users, 
   Eye, 
-  Clock,
-  CheckCircle
+  Clock
 } from 'lucide-react';
-
-interface Newsletter {
-  id: string;
-  subject: string;
-  content: string;
-  sent_at?: string;
-  sent_to_count: number;
-  status: string;
-  created_at: string;
-}
 
 interface NewsletterSubscriber {
   id: string;
@@ -36,7 +23,6 @@ interface NewsletterSubscriber {
 }
 
 export default function NewsletterManagement() {
-  const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -46,21 +32,11 @@ export default function NewsletterManagement() {
   });
 
   useEffect(() => {
-    loadData();
+    loadSubscribers();
   }, []);
 
-  const loadData = async () => {
+  const loadSubscribers = async () => {
     try {
-      // Load newsletters
-      const { data: newslettersData, error: newslettersError } = await supabase
-        .from('newsletters')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (!newslettersError) {
-        setNewsletters(newslettersData || []);
-      }
-
       // Load subscribers
       const { data: subscribersData, error: subscribersError } = await supabase
         .from('newsletter_subscriptions')
@@ -104,7 +80,6 @@ export default function NewsletterManagement() {
 
       toast.success(`Newsletter erfolgreich an ${subscribers.length} Abonnenten versendet!`);
       setNewNewsletter({ subject: '', content: '' });
-      await loadData();
     } catch (error: any) {
       console.error('Error sending newsletter:', error);
       toast.error('Fehler beim Versenden: ' + (error.message || 'Unbekannter Fehler'));
@@ -149,24 +124,6 @@ export default function NewsletterManagement() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      draft: 'secondary',
-      sent: 'default',
-      sending: 'outline',
-      failed: 'destructive'
-    };
-
-    const labels: Record<string, string> = {
-      draft: 'Entwurf',
-      sent: 'Versendet',
-      sending: 'Wird versendet...',
-      failed: 'Fehler'
-    };
-
-    return <Badge variant={variants[status] || 'secondary'}>{labels[status] || status}</Badge>;
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -178,7 +135,7 @@ export default function NewsletterManagement() {
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Aktive Abonnenten</CardTitle>
@@ -191,24 +148,12 @@ export default function NewsletterManagement() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Newsletter versendet</CardTitle>
+            <CardTitle className="text-sm font-medium">Bereit zum Versenden</CardTitle>
             <Mail className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {newsletters.filter(n => n.status === 'sent').length}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gesamt-Reichweite</CardTitle>
-            <Send className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {newsletters.reduce((sum, n) => sum + (n.sent_to_count || 0), 0)}
+            <div className="text-2xl font-bold text-green-600">
+              {newNewsletter.subject && newNewsletter.content ? 'Ja' : 'Nein'}
             </div>
           </CardContent>
         </Card>
@@ -217,7 +162,7 @@ export default function NewsletterManagement() {
       {/* Create Newsletter */}
       <Card>
         <CardHeader>
-          <CardTitle>Neuen Newsletter erstellen</CardTitle>
+          <CardTitle>Newsletter erstellen und versenden</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -267,54 +212,6 @@ export default function NewsletterManagement() {
               <Eye className="w-4 h-4 mr-2" />
               Vorschau
             </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Newsletter History */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Newsletter Verlauf</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {newsletters.map((newsletter) => (
-              <div key={newsletter.id} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold">{newsletter.subject}</h3>
-                  <div className="flex items-center gap-2">
-                    {getStatusBadge(newsletter.status)}
-                    <span className="text-sm text-muted-foreground">
-                      {newsletter.sent_to_count || 0} Empfänger
-                    </span>
-                  </div>
-                </div>
-                
-                <p className="text-sm text-muted-foreground mb-2">
-                  {newsletter.content.length > 100 
-                    ? newsletter.content.substring(0, 100) + '...'
-                    : newsletter.content
-                  }
-                </p>
-                
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>
-                    Erstellt: {new Date(newsletter.created_at).toLocaleDateString('de-DE')}
-                  </span>
-                  {newsletter.sent_at && (
-                    <span>
-                      Versendet: {new Date(newsletter.sent_at).toLocaleDateString('de-DE')}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-            
-            {newsletters.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">Noch keine Newsletter erstellt.</p>
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>

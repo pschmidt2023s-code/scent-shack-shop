@@ -155,6 +155,42 @@ export type Database = {
         }
         Relationships: []
       }
+      newsletters: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          sent_at: string | null
+          sent_to_count: number
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          sent_at?: string | null
+          sent_to_count?: number
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          sent_at?: string | null
+          sent_to_count?: number
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
