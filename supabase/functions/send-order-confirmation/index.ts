@@ -1,8 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -103,12 +100,12 @@ const handler = async (req: Request): Promise<Response> => {
       `).join('');
     }
 
-    // Send confirmation email
-    const emailResponse = await resend.emails.send({
-      from: "ALDENAIR <support@aldenairperfumes.de>",
-      to: [customerEmail],
-      subject: `Bestellbestätigung - ${orderDetails.order_number}`,
-      html: `
+    // Send confirmation email via SMTP
+    const { data: emailResponse, error: emailError } = await supabaseService.functions.invoke('send-smtp-email', {
+      body: {
+        to: customerEmail,
+        subject: `Bestellbestätigung - ${orderDetails.order_number}`,
+        html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
           <div style="background: #d4af37; color: #1a1a1a; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
             <h1 style="margin: 0; font-size: 32px; font-weight: bold; color: #1a1a1a;">ALDENAIR</h1>
@@ -178,8 +175,14 @@ const handler = async (req: Request): Promise<Response> => {
             <p>Diese E-Mail wurde automatisch generiert. Bitte antworten Sie nicht direkt auf diese E-Mail.</p>
           </div>
         </div>
-      `,
+      `
+      }
     });
+
+    if (emailError) {
+      console.error("Error sending email:", emailError);
+      throw emailError;
+    }
 
     console.log("Order confirmation email sent successfully:", emailResponse);
 

@@ -8,7 +8,8 @@ const corsHeaders = {
 
 interface PaybackRequest {
   orderId: string;
-  userId: string;
+  userId: string | null;
+  guestEmail?: string;
   orderAmount: number;
   paybackPercentage?: number;
 }
@@ -25,23 +26,30 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    const { orderId, userId, orderAmount, paybackPercentage = 5.0 }: PaybackRequest = await req.json();
+    const { orderId, userId, guestEmail, orderAmount, paybackPercentage = 5.0 }: PaybackRequest = await req.json();
     
-    console.log(`Creating payback earning for order: ${orderId}, user: ${userId}, amount: ${orderAmount}`);
+    console.log(`Creating payback earning for ${userId ? `user ${userId}` : `guest ${guestEmail}`}, order ${orderId}, amount ${orderAmount}`);
 
     // Calculate payback amount (5% default)
     const paybackAmount = (orderAmount * paybackPercentage) / 100;
 
     // Create payback earning record
+    const insertData: any = {
+      order_id: orderId,
+      amount: paybackAmount,
+      percentage: paybackPercentage,
+      status: 'pending'
+    };
+
+    if (userId) {
+      insertData.user_id = userId;
+    } else if (guestEmail) {
+      insertData.guest_email = guestEmail;
+    }
+
     const { data: paybackEarning, error: paybackError } = await supabaseService
       .from('payback_earnings')
-      .insert({
-        user_id: userId,
-        order_id: orderId,
-        amount: paybackAmount,
-        percentage: paybackPercentage,
-        status: 'pending'
-      })
+      .insert(insertData)
       .select()
       .single();
 

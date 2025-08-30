@@ -125,25 +125,6 @@ serve(async (req) => {
 
     console.log("Order items created");
 
-    // Send order confirmation email
-    try {
-      const { error: emailError } = await supabaseService.functions.invoke('send-order-confirmation', {
-        body: {
-          orderId: order.id,
-          customerEmail: orderData.customer_data.email,
-          customerName: `${orderData.customer_data.firstName} ${orderData.customer_data.lastName}`
-        }
-      });
-
-      if (emailError) {
-        console.error('Error sending order confirmation email:', emailError);
-      } else {
-        console.log('Order confirmation email sent successfully');
-      }
-    } catch (emailError) {
-      console.error('Failed to send order confirmation email:', emailError);
-    }
-
     // Create partner commission if referral exists
     if (partnerId && orderData.total_amount > 0) {
       const { data: partnerData } = await supabaseService
@@ -170,6 +151,56 @@ serve(async (req) => {
           console.log("Partner commission tracked:", { partnerId, commissionAmount });
         }
       }
+    }
+
+    // Create payback earning for the order
+    try {
+      console.log("Creating payback earning...");
+      const { data: paybackData, error: paybackError } = await supabaseService.functions.invoke(
+        'create-payback-earning',
+        {
+          body: {
+            orderId: order.id,
+            userId: orderData.user_id,
+            guestEmail: orderData.guest_email,
+            orderAmount: orderData.total_amount,
+            paybackPercentage: 5.0
+          }
+        }
+      );
+
+      if (paybackError) {
+        console.error("Payback earning creation error:", paybackError);
+      } else {
+        console.log("Payback earning created successfully:", paybackData);
+      }
+    } catch (paybackError) {
+      console.error("Payback earning creation failed:", paybackError);
+      // Don't fail the order for payback issues
+    }
+
+    // Send order confirmation email
+    try {
+      console.log("Sending order confirmation email...");
+      const { data: emailData, error: emailError } = await supabaseService.functions.invoke(
+        'send-order-confirmation',
+        {
+          body: {
+            orderId: order.id,
+            customerEmail: orderData.customer_data.email,
+            customerName: `${orderData.customer_data.firstName} ${orderData.customer_data.lastName}`
+          }
+        }
+      );
+
+      if (emailError) {
+        console.error("Order confirmation email error:", emailError);
+      } else {
+        console.log("Order confirmation email sent successfully:", emailData);
+      }
+    } catch (emailError) {
+      console.error("Order confirmation email failed:", emailError);
+      // Don't fail the order for email issues
     }
 
     // Handle PayPal payment

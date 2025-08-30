@@ -256,6 +256,19 @@ export default function Checkout() {
                 </div>
               </div>
 
+              {/* Cashback Info */}
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-4 rounded-lg border border-primary/20">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-primary">💰 Cashback erhalten</span>
+                  <span className="text-lg font-bold text-primary">
+                    {(checkoutData.finalAmount * 0.05).toFixed(2)}€
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Sie erhalten 5% Cashback auf diese Bestellung. {!user && "Melden Sie sich nach der Bestellung mit Ihrer E-Mail an, um den Cashback zu erhalten."}
+                </p>
+              </div>
+
               <div className="bg-muted/50 p-4 rounded-lg">
                 <p className="text-sm font-medium mb-2">Ihre Bestellnummer wird nach dem Absenden generiert</p>
                 <p className="text-xs text-muted-foreground">
