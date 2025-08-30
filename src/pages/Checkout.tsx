@@ -153,7 +153,7 @@ export default function Checkout() {
               items: checkoutData.items,
               guestEmail: !user ? guestEmail : undefined,
               couponCode: checkoutData.appliedCoupon?.code,
-              stripeKey: 'HIER_DEINEN_LIVE_STRIPE_KEY_EINFÜGEN' // Ersetze mit sk_live_...
+              stripeKey: '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' // Ersetze mit sk_live_...
             }
           });
 
