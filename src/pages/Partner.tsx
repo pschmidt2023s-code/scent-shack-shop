@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +19,8 @@ import {
   TrendingUp, 
   Banknote,
   ExternalLink,
-  Share2
+  Share2,
+  ArrowLeft
 } from 'lucide-react';
 
 interface Partner {
@@ -57,6 +59,7 @@ interface PartnerPayout {
 
 export default function Partner() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [partner, setPartner] = useState<Partner | null>(null);
   const [sales, setSales] = useState<PartnerSale[]>([]);
   const [payouts, setPayouts] = useState<PartnerPayout[]>([]);
@@ -236,6 +239,14 @@ export default function Partner() {
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-2xl mx-auto">
+            <Button 
+              onClick={() => navigate(-1)}
+              variant="outline" 
+              className="mb-6"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Zurück
+            </Button>
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold mb-4">Partner werden</h1>
               <p className="text-muted-foreground">
@@ -379,6 +390,14 @@ export default function Partner() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
+        <Button 
+          onClick={() => navigate(-1)}
+          variant="outline" 
+          className="mb-6"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Zurück
+        </Button>
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Partner Dashboard</h1>
           <div className="flex items-center gap-2">

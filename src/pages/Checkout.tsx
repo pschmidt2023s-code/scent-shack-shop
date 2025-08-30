@@ -156,7 +156,7 @@ export default function Checkout() {
         }
       } else if (paymentMethod === 'paypal_me') {
         // Direct PayPal.me link
-        const paypalMeUrl = `https://paypal.me/PatricMauriceSchmidt/${checkoutData.finalAmount.toFixed(2)}EUR`;
+        const paypalMeUrl = `https://paypal.me/threed48/${checkoutData.finalAmount.toFixed(2)}EUR`;
         console.log('Opening PayPal.me link:', paypalMeUrl);
         window.open(paypalMeUrl, '_blank');
         
