@@ -24,7 +24,7 @@ const Index = () => {
         <RecentlyViewed />
         
         {/* Newsletter Signup */}
-        <section className="py-16 bg-gradient-subtle">
+        <section className="py-16 bg-black">
           <div className="container mx-auto px-4">
             <NewsletterSignup className="max-w-4xl mx-auto" showIncentive={true} />
           </div>
