@@ -17,7 +17,7 @@ const FAQ = React.lazy(() => import('@/pages/FAQ'));
 const Privacy = React.lazy(() => import('@/pages/Privacy'));
 const Terms = React.lazy(() => import('@/pages/Terms'));
 const Imprint = React.lazy(() => import('@/pages/Imprint'));
-const Partner = React.lazy(() => import('@/pages/Partner'));
+const Partner = React.lazy(() => import('@/pages/Partner').then(module => ({ default: module.default })));
 const Admin = React.lazy(() => import('@/pages/Admin'));
 const Checkout = React.lazy(() => import('@/pages/Checkout'));
 const CheckoutBank = React.lazy(() => import('@/pages/CheckoutBank'));
