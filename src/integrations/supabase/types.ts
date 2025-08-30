@@ -104,6 +104,30 @@ export type Database = {
         }
         Relationships: []
       }
+      newsletter_subscriptions: {
+        Row: {
+          email: string
+          id: string
+          is_active: boolean | null
+          preferences: Json | null
+          subscribed_at: string
+        }
+        Insert: {
+          email: string
+          id?: string
+          is_active?: boolean | null
+          preferences?: Json | null
+          subscribed_at?: string
+        }
+        Update: {
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          preferences?: Json | null
+          subscribed_at?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -438,10 +462,43 @@ export type Database = {
           },
         ]
       }
+      review_votes: {
+        Row: {
+          created_at: string
+          id: string
+          is_helpful: boolean
+          review_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_helpful: boolean
+          review_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_helpful?: boolean
+          review_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_votes_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           content: string | null
           created_at: string
+          helpful_count: number | null
           id: string
           images: string[] | null
           is_verified: boolean | null
@@ -456,6 +513,7 @@ export type Database = {
         Insert: {
           content?: string | null
           created_at?: string
+          helpful_count?: number | null
           id?: string
           images?: string[] | null
           is_verified?: boolean | null
@@ -470,6 +528,7 @@ export type Database = {
         Update: {
           content?: string | null
           created_at?: string
+          helpful_count?: number | null
           id?: string
           images?: string[] | null
           is_verified?: boolean | null
