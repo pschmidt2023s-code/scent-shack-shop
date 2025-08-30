@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { isValidIBAN, formatIBAN } from '@/lib/iban-validator';
 import { 
   Users, 
   Euro, 
@@ -139,12 +140,28 @@ export default function Partner() {
   const applyAsPartner = async () => {
     if (!user) return;
 
+    // Validate required fields
+    if (!applicationData.first_name || !applicationData.last_name || !bankDetails.account_holder || !bankDetails.iban || !bankDetails.bic || !bankDetails.bank_name) {
+      toast.error('Bitte füllen Sie alle Pflichtfelder aus');
+      return;
+    }
+
+    // Validate IBAN
+    const cleanIban = bankDetails.iban.replace(/\s/g, '');
+    if (!isValidIBAN(cleanIban)) {
+      toast.error('Bitte geben Sie eine gültige IBAN ein');
+      return;
+    }
+
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('apply-partner', {
         body: {
           application_data: applicationData,
-          bank_details: bankDetails
+          bank_details: {
+            ...bankDetails,
+            iban: cleanIban
+          }
         }
       });
 
@@ -316,7 +333,7 @@ export default function Partner() {
                   <h3 className="font-semibold">Bankverbindung für Auszahlungen</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="account_holder">Kontoinhaber</Label>
+                      <Label htmlFor="account_holder">Kontoinhaber *</Label>
                       <Input
                         id="account_holder"
                         value={bankDetails.account_holder}
@@ -328,7 +345,7 @@ export default function Partner() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="bank_name">Bank</Label>
+                      <Label htmlFor="bank_name">Bank *</Label>
                       <Input
                         id="bank_name"
                         value={bankDetails.bank_name}
@@ -342,19 +359,23 @@ export default function Partner() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="iban">IBAN</Label>
+                      <Label htmlFor="iban">IBAN *</Label>
                       <Input
                         id="iban"
                         value={bankDetails.iban}
                         onChange={(e) => setBankDetails(prev => ({
                           ...prev,
-                          iban: e.target.value
+                          iban: formatIBAN(e.target.value)
                         }))}
+                        placeholder="DE89 3704 0044 0532 0130 00"
                         required
                       />
+                      {bankDetails.iban && !isValidIBAN(bankDetails.iban.replace(/\s/g, '')) && (
+                        <p className="text-sm text-red-500 mt-1">Ungültige IBAN</p>
+                      )}
                     </div>
                     <div>
-                      <Label htmlFor="bic">BIC</Label>
+                      <Label htmlFor="bic">BIC *</Label>
                       <Input
                         id="bic"
                         value={bankDetails.bic}
