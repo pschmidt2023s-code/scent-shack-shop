@@ -65,7 +65,7 @@ export function HeroSection() {
             <div className="w-16 h-16 bg-gradient-to-br from-luxury-gold to-luxury-gold-light rounded-full flex items-center justify-center mx-auto mb-4 hover-glow transition-all duration-500 group-hover:rotate-12 group-hover:scale-110 animate-float shadow-luxury">
               <span className="text-luxury-black font-bold text-2xl transition-transform duration-300 group-hover:scale-110">✓</span>
             </div>
-            <h3 className="font-semibold text-xl group-hover:text-luxury-gold transition-colors duration-300">Kostenloser Versand</h3>
+            <h3 className="font-semibold text-xl group-hover:text-luxury-gold transition-colors duration-300 dark:text-gradient-hero-dark">Kostenloser Versand</h3>
             <p className="text-gray-300 group-hover:text-gray-200 transition-colors duration-300">innerhalb Deutschland</p>
           </div>
           
@@ -73,7 +73,7 @@ export function HeroSection() {
             <div className="w-16 h-16 bg-gradient-to-br from-luxury-gold to-luxury-gold-light rounded-full flex items-center justify-center mx-auto mb-4 hover-glow transition-all duration-500 group-hover:rotate-12 group-hover:scale-110 animate-float shadow-luxury" style={{ animationDelay: '1s' }}>
               <span className="text-luxury-black font-bold text-2xl transition-transform duration-300 group-hover:scale-110">⚡</span>
             </div>
-            <h3 className="font-semibold text-xl group-hover:text-luxury-gold transition-colors duration-300">Schnelle Lieferung</h3>
+            <h3 className="font-semibold text-xl group-hover:text-luxury-gold transition-colors duration-300 dark:text-gradient-hero-dark">Schnelle Lieferung</h3>
             <p className="text-gray-300 group-hover:text-gray-200 transition-colors duration-300">3-7 Werktage</p>
           </div>
           
@@ -81,7 +81,7 @@ export function HeroSection() {
             <div className="w-16 h-16 bg-gradient-to-br from-luxury-gold to-luxury-gold-light rounded-full flex items-center justify-center mx-auto mb-4 hover-glow transition-all duration-500 group-hover:rotate-12 group-hover:scale-110 animate-float shadow-luxury" style={{ animationDelay: '2s' }}>
               <span className="text-luxury-black font-bold text-2xl transition-transform duration-300 group-hover:scale-110">♥</span>
             </div>
-            <h3 className="font-semibold text-xl group-hover:text-luxury-gold transition-colors duration-300">Proben verfügbar</h3>
+            <h3 className="font-semibold text-xl group-hover:text-luxury-gold transition-colors duration-300 dark:text-gradient-hero-dark">Proben verfügbar</h3>
             <p className="text-gray-300 group-hover:text-gray-200 transition-colors duration-300">5ml für nur 4,99€</p>
           </div>
         </div>
