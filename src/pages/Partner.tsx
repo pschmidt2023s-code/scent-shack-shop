@@ -142,16 +142,23 @@ export default function Partner() {
   const applyAsPartner = async () => {
     console.log('applyAsPartner called', { user, applicationData, bankDetails });
     
-    if (!user) {
-      console.log('No user found, cannot apply as partner');
-      toast.error('Sie müssen angemeldet sein, um sich als Partner zu bewerben');
+    // Validate required fields
+    if (!applicationData.first_name || !applicationData.last_name || !bankDetails.account_holder || !bankDetails.iban || !bankDetails.bic || !bankDetails.bank_name) {
+      console.log('Validation failed - missing required fields');
+      toast.error('Bitte füllen Sie alle Pflichtfelder aus');
       return;
     }
 
-    // Validate required fields
-    if (!applicationData.first_name || !applicationData.last_name || !bankDetails.account_holder || !bankDetails.iban || !bankDetails.bic || !bankDetails.bank_name) {
-      toast.error('Bitte füllen Sie alle Pflichtfelder aus');
-      return;
+    // Check for email (required for partner application)
+    let userEmail = user?.email;
+    if (!userEmail) {
+      // If no user, we need an email address for the application
+      const email = prompt('Bitte geben Sie Ihre E-Mail-Adresse für die Partner-Bewerbung ein:');
+      if (!email || !email.includes('@')) {
+        toast.error('Eine gültige E-Mail-Adresse ist erforderlich');
+        return;
+      }
+      userEmail = email;
     }
 
     // Validate IBAN
@@ -163,20 +170,28 @@ export default function Partner() {
 
     setLoading(true);
     try {
+      console.log('Sending partner application...');
       const { data, error } = await supabase.functions.invoke('apply-partner', {
         body: {
           application_data: applicationData,
           bank_details: {
             ...bankDetails,
             iban: cleanIban
-          }
+          },
+          email: userEmail,
+          user_id: user?.id || null
         }
       });
+
+      console.log('Partner application response:', { data, error });
 
       if (error) throw error;
 
       toast.success('Bewerbung wurde eingereicht! Sie erhalten eine Bestätigung per E-Mail.');
-      await loadPartnerData();
+      
+      if (user) {
+        await loadPartnerData();
+      }
     } catch (error: any) {
       console.error('Error applying as partner:', error);
       toast.error('Fehler bei der Bewerbung: ' + error.message);
@@ -398,10 +413,14 @@ export default function Partner() {
                 </div>
 
                 <Button 
-                  onClick={applyAsPartner} 
+                  onClick={() => {
+                    console.log('Button clicked!');
+                    applyAsPartner();
+                  }}
                   disabled={loading}
                   className="w-full"
                   size="lg"
+                  type="button"
                 >
                   Als Partner bewerben
                 </Button>

@@ -19,6 +19,8 @@ interface PartnerApplication {
     bic: string;
     bank_name: string;
   };
+  email: string;
+  user_id?: string;
 }
 
 serve(async (req) => {
@@ -35,28 +37,32 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // Get user from request
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header');
-    }
-
-    const { data: { user }, error: userError } = await supabaseService.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
-
-    if (userError || !user) {
-      throw new Error('Unauthorized');
-    }
-
     const applicationData: PartnerApplication = await req.json();
     console.log("Partner application data:", applicationData);
 
-    // Check if user already has a partner application
+    let userId = applicationData.user_id;
+    let userEmail = applicationData.email;
+
+    // If user is logged in, verify the authentication
+    if (userId) {
+      const authHeader = req.headers.get('Authorization');
+      if (authHeader) {
+        const { data: { user }, error: userError } = await supabaseService.auth.getUser(
+          authHeader.replace('Bearer ', '')
+        );
+
+        if (!userError && user) {
+          userId = user.id;
+          userEmail = user.email || applicationData.email;
+        }
+      }
+    }
+
+    // Check if there's already a partner application for this email
     const { data: existingPartner, error: checkError } = await supabaseService
       .from('partners')
       .select('id, status')
-      .eq('user_id', user.id)
+      .or(`user_id.eq.${userId},application_data->email.eq.${userEmail}`)
       .single();
 
     if (checkError && checkError.code !== 'PGRST116') {
@@ -64,7 +70,7 @@ serve(async (req) => {
     }
 
     if (existingPartner) {
-      throw new Error('Sie haben bereits eine Partner-Bewerbung eingereicht');
+      throw new Error('Für diese E-Mail-Adresse wurde bereits eine Partner-Bewerbung eingereicht');
     }
 
     // Generate unique partner code
@@ -79,11 +85,14 @@ serve(async (req) => {
     const { data: partner, error: partnerError } = await supabaseService
       .from('partners')
       .insert({
-        user_id: user.id,
+        user_id: userId,
         partner_code: partnerCode,
         status: 'pending',
         commission_rate: 2.50, // Default commission rate
-        application_data: applicationData.application_data,
+        application_data: {
+          ...applicationData.application_data,
+          email: userEmail
+        },
         bank_details: applicationData.bank_details
       })
       .select()
@@ -96,20 +105,13 @@ serve(async (req) => {
 
     console.log("Partner application created:", partner);
 
-    // Get user profile for email
-    const { data: profile } = await supabaseService
-      .from('profiles')
-      .select('full_name')
-      .eq('id', user.id)
-      .single();
-
-    const fullName = profile?.full_name || `${applicationData.application_data.first_name} ${applicationData.application_data.last_name}`;
+    const fullName = `${applicationData.application_data.first_name} ${applicationData.application_data.last_name}`;
 
     // Send confirmation email
     try {
       const { error: emailError } = await supabaseService.functions.invoke('send-partner-confirmation', {
         body: {
-          email: user.email,
+          email: userEmail,
           name: fullName,
           partnerCode: partnerCode,
           status: 'applied'
