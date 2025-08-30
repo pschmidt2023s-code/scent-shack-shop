@@ -50,5 +50,8 @@ verify_jwt = false
 [functions.stripe-checkout]
 verify_jwt = false
 
+[functions.test-stripe-env]
+verify_jwt = false
+
 [functions.stripe-payment-v8]
 verify_jwt = false
