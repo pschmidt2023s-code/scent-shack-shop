@@ -49,7 +49,11 @@ const faqData = [
       },
       {
         question: "Bieten Sie Proben an?",
-        answer: "Aktuell bieten wir noch keine kostenlosen Proben an, dies ist jedoch für die Zukunft geplant. Sie können aber gerne kleinere Größen unserer Parfüms bestellen."
+        answer: "Ja! Wir bieten 2ml Proben unserer Parfüms an, damit Sie neue Düfte risikofrei testen können. Perfekt, um Ihren neuen Lieblingsduft zu finden."
+      },
+      {
+        question: "Kann ich verschiedene Größen kaufen?",
+        answer: "Ja, unsere Parfüms sind in verschiedenen Größen verfügbar: 2ml Proben zum Testen, 50ml und 100ml Flaschen für den täglichen Gebrauch."
       }
     ]
   },
@@ -79,7 +83,7 @@ const faqData = [
     questions: [
       {
         question: "Welche Zahlungsmethoden akzeptieren Sie?",
-        answer: "Wir akzeptieren alle gängigen Kredit- und Debitkarten über unseren sicheren Zahlungsanbieter Stripe. Die Zahlung erfolgt über eine sichere, verschlüsselte Verbindung."
+        answer: "Wir bieten verschiedene Zahlungsmethoden: Kreditkarte, SEPA, Apple Pay und Google Pay über Stripe (empfohlen), PayPal, PayPal.me und klassische Banküberweisung. Alle Zahlungen sind sicher verschlüsselt."
       },
       {
         question: "Ist meine Zahlung sicher?",
@@ -87,7 +91,11 @@ const faqData = [
       },
       {
         question: "Was passiert, wenn die Zahlung fehlschlägt?",
-        answer: "Bei Zahlungsproblemen werden Sie automatisch zu einer Fehlerseite weitergeleitet. Sie können den Bestellvorgang einfach wiederholen oder eine andere Zahlungsmethode wählen."
+        answer: "Bei Zahlungsproblemen können Sie einfach eine andere Zahlungsmethode wählen. Falls Stripe nicht funktioniert, probieren Sie PayPal.me oder Banküberweisung als Alternative."
+      },
+      {
+        question: "Wie funktioniert die Banküberweisung?",
+        answer: "Nach Ihrer Bestellung erhalten Sie unsere Bankdaten und Ihre eindeutige Bestellnummer als Verwendungszweck. Nach Zahlungseingang versenden wir Ihre Bestellung umgehend."
       },
       {
         question: "Erhalte ich eine Rechnung?",
@@ -96,11 +104,36 @@ const faqData = [
     ]
   },
   {
+    category: "Cashback & Partner-Programm",
+    questions: [
+      {
+        question: "Wie funktioniert das Cashback-System?",
+        answer: "Sie erhalten 5% Cashback auf jede Bestellung! Als registrierter Kunde wird das Cashback automatisch Ihrem Konto gutgeschrieben. Gäste können sich nach der Bestellung mit der verwendeten E-Mail registrieren."
+      },
+      {
+        question: "Wann wird mein Cashback gutgeschrieben?",
+        answer: "Ihr Cashback wird nach erfolgreichem Versand Ihrer Bestellung gutgeschrieben und kann bei Ihrer nächsten Bestellung verwendet werden."
+      },
+      {
+        question: "Gibt es ein Partner-Programm?",
+        answer: "Ja! Melden Sie sich für unser Partner-Programm an und erhalten Sie einen eigenen Referral-Code. Für jede erfolgreiche Weiterempfehlung erhalten Sie eine Provision."
+      },
+      {
+        question: "Wie werde ich Partner?",
+        answer: "Besuchen Sie unsere Partner-Seite und füllen Sie das Anmeldeformular aus. Nach Prüfung erhalten Sie Ihren persönlichen Partner-Code und Zugang zum Partner-Dashboard."
+      }
+    ]
+  },
+  {
     category: "Konto & Service",
     questions: [
       {
         question: "Muss ich ein Konto erstellen?",
-        answer: "Nein, Sie können auch als Gast bestellen. Mit einem Konto haben Sie jedoch Vorteile: Bestellhistorie, Adressverwaltung, einfache Rückgaben und Zugang zu exklusiven Angeboten."
+        answer: "Nein, Sie können auch als Gast bestellen. Mit einem Konto haben Sie jedoch Vorteile: 5% Cashback, Bestellhistorie, Adressverwaltung, einfache Rückgaben und Zugang zu exklusiven Angeboten."
+      },
+      {
+        question: "Kann ich Produkte bewerten?",
+        answer: "Ja! Als registrierter Kunde können Sie nach dem Kauf Bewertungen für Produkte abgeben. Ihre ehrliche Meinung hilft anderen Kunden bei der Auswahl."
       },
       {
         question: "Wie kann ich mein Passwort zurücksetzen?",
