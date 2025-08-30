@@ -255,7 +255,7 @@ export function NewsletterSignup({
                       checked={preferences.product_updates}
                       onCheckedChange={(checked) => updatePreference('product_updates', checked as boolean)}
                     />
-                    <label htmlFor="product_updates" className="text-sm cursor-pointer text-luxury-light">
+                    <label htmlFor="product_updates" className="text-sm cursor-pointer text-white/90">
                       Produktupdates und neue Düfte
                     </label>
                   </div>
@@ -266,7 +266,7 @@ export function NewsletterSignup({
                       checked={preferences.promotions}
                       onCheckedChange={(checked) => updatePreference('promotions', checked as boolean)}
                     />
-                    <label htmlFor="promotions" className="text-sm cursor-pointer text-luxury-light">
+                    <label htmlFor="promotions" className="text-sm cursor-pointer text-white/90">
                       Angebote und Rabattaktionen
                     </label>
                   </div>
@@ -277,7 +277,7 @@ export function NewsletterSignup({
                       checked={preferences.tips}
                       onCheckedChange={(checked) => updatePreference('tips', checked as boolean)}
                     />
-                    <label htmlFor="tips" className="text-sm cursor-pointer text-luxury-light">
+                    <label htmlFor="tips" className="text-sm cursor-pointer text-white/90">
                       Duft-Tipps und Style-Guides
                     </label>
                   </div>
