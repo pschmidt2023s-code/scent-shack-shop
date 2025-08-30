@@ -35,35 +35,5 @@ port = 54328
 [functions.create-custom-order]
 verify_jwt = false
 
-[functions.create-paypal-payment]
-verify_jwt = false
-
-[functions.test-paypal-credentials]
-verify_jwt = false
-
 [functions.send-newsletter]
-verify_jwt = false
-
-[functions.stripe-webhook]
-verify_jwt = false
-
-[functions.stripe-checkout]
-verify_jwt = false
-
-[functions.stripe-direct]
-verify_jwt = false
-
-[functions.test-stripe-env]
-verify_jwt = false
-
-[functions.stripe-payment-v8]
-verify_jwt = false
-
-[functions.create-payment-simple]
-verify_jwt = false
-
-[functions.stripe-payment]
-verify_jwt = false
-
-[functions.create-stripe-payment]
 verify_jwt = false

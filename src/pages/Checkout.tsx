@@ -36,7 +36,7 @@ export default function Checkout() {
   const { user } = useAuth();
   
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'paypal' | 'paypal_me' | 'bank' | 'stripe'>('stripe');
+  const [paymentMethod, setPaymentMethod] = useState<'paypal_me' | 'bank'>('paypal_me');
   const [guestEmail, setGuestEmail] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [customerData, setCustomerData] = useState({
@@ -150,51 +150,7 @@ export default function Checkout() {
 
       console.log("Order created successfully, payment method:", paymentMethod);
 
-      if (paymentMethod === 'stripe') {
-        console.log("Processing Stripe payment...");
-        
-        try {
-          // Call the new Stripe Edge Function
-          const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-stripe-payment', {
-            body: {
-              orderNumber: newOrderNumber,
-              items: checkoutData.items,
-              totalAmount: checkoutData.finalAmount,
-              customerEmail: user?.email || guestEmail
-            }
-          });
-
-          if (stripeError) throw stripeError;
-          
-          if (stripeData?.success && stripeData?.checkout_url) {
-            console.log('Redirecting to Stripe Checkout:', stripeData.checkout_url);
-            window.location.href = stripeData.checkout_url;
-            return; // Prevent further execution
-          } else {
-            throw new Error('Stripe session creation failed: ' + (stripeData?.error || 'Unknown error'));
-          }
-          
-        } catch (stripeError) {
-          console.error("Stripe payment failed:", stripeError);
-          
-          // Fallback: PayPal öffnen
-          console.log("Opening PayPal fallback...");
-          const paypalUrl = `https://paypal.me/threed48/${checkoutData.finalAmount.toFixed(2)}EUR`;
-          window.open(paypalUrl, '_blank');
-          
-          toast.error('Stripe-Fehler: ' + (stripeError.message || 'Unbekannter Fehler') + '. PayPal-Link als Alternative geöffnet.');
-        }
-      } else if (paymentMethod === 'paypal') {
-        // Redirect to PayPal
-        console.log('PayPal payment data received:', data);
-        if (data?.paypal_url) {
-          window.location.href = data.paypal_url;
-        } else {
-          console.error('PayPal response:', data);
-          toast.error('PayPal-Fehler: ' + (data?.error || 'Unbekannter Fehler') + '. Probieren Sie bitte PayPal.me oder Überweisung.');
-          setPaymentMethod('paypal_me'); // Fallback to PayPal.me
-        }
-      } else if (paymentMethod === 'paypal_me') {
+      if (paymentMethod === 'paypal_me') {
         // Direct PayPal.me link
         const paypalMeUrl = `https://paypal.me/threed48/${checkoutData.finalAmount.toFixed(2)}EUR`;
         console.log('Opening PayPal.me link:', paypalMeUrl);
@@ -409,39 +365,28 @@ export default function Checkout() {
                 <CardTitle>Zahlungsart</CardTitle>
               </CardHeader>
               <CardContent>
-                  <RadioGroup 
+                {/* Hinweis für andere Zahlungsarten */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <h3 className="font-medium text-blue-900 mb-2">💳 Kreditkarte oder PayPal gewünscht?</h3>
+                  <p className="text-sm text-blue-800">
+                    Für Kreditkartenzahlung oder PayPal kontaktieren Sie uns bitte unter: 
+                    <a href="mailto:support@aldenairperfumes.de" className="font-medium underline ml-1">
+                      support@aldenairperfumes.de
+                    </a>
+                  </p>
+                </div>
+
+                <RadioGroup 
                   value={paymentMethod} 
-                  onValueChange={(value: 'paypal' | 'paypal_me' | 'bank' | 'stripe') => setPaymentMethod(value)}
+                  onValueChange={(value: 'paypal_me' | 'bank') => setPaymentMethod(value)}
                   className="space-y-4"
                 >
-                  <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-muted/50">
-                    <RadioGroupItem value="stripe" id="stripe" />
-                    <Label htmlFor="stripe" className="flex items-center gap-2 cursor-pointer flex-1">
-                      <CreditCard className="w-5 h-5 text-purple-600" />
-                      <div>
-                        <div className="font-medium">Stripe (Empfohlen)</div>
-                        <div className="text-sm text-muted-foreground">Kreditkarte, SEPA, Apple Pay, Google Pay</div>
-                      </div>
-                    </Label>
-                  </div>
-
-                  <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-muted/50">
-                    <RadioGroupItem value="paypal" id="paypal" />
-                    <Label htmlFor="paypal" className="flex items-center gap-2 cursor-pointer flex-1">
-                      <CreditCard className="w-5 h-5" />
-                      <div>
-                        <div className="font-medium">PayPal (Standard)</div>
-                        <div className="text-sm text-muted-foreground">Kreditkarte, Bankkonto oder PayPal-Guthaben</div>
-                      </div>
-                    </Label>
-                  </div>
-
                   <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-muted/50">
                     <RadioGroupItem value="paypal_me" id="paypal_me" />
                     <Label htmlFor="paypal_me" className="flex items-center gap-2 cursor-pointer flex-1">
                       <CreditCard className="w-5 h-5 text-blue-600" />
                       <div>
-                        <div className="font-medium">PayPal.me</div>
+                        <div className="font-medium">PayPal.me (Empfohlen)</div>
                         <div className="text-sm text-muted-foreground">Direkte PayPal-Zahlung mit automatischem Betrag</div>
                       </div>
                     </Label>
@@ -505,10 +450,6 @@ export default function Checkout() {
             >
               {loading ? (
                 'Bestellung wird verarbeitet...'
-              ) : paymentMethod === 'stripe' ? (
-                `Mit Stripe bezahlen (${checkoutData.finalAmount.toFixed(2)}€)`
-              ) : paymentMethod === 'paypal' ? (
-                `Jetzt mit PayPal bezahlen (${checkoutData.finalAmount.toFixed(2)}€)`
               ) : paymentMethod === 'paypal_me' ? (
                 `Mit PayPal.me bezahlen (${checkoutData.finalAmount.toFixed(2)}€)`
               ) : (
