@@ -219,61 +219,10 @@ serve(async (req) => {
       success_url: `${req.headers.get("origin")}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/checkout`,
       payment_method_types: ['card'],
-      shipping_address_collection: {
-        allowed_countries: ['DE', 'AT', 'CH', 'NL', 'BE', 'LU', 'FR', 'IT', 'ES', 'PT'],
-      },
-      shipping_options: [
-        {
-          shipping_rate_data: {
-            type: 'fixed_amount',
-            fixed_amount: {
-              amount: 0,
-              currency: 'eur',
-            },
-            display_name: 'Kostenloser Versand (Deutschland)',
-            delivery_estimate: {
-              minimum: {
-                unit: 'business_day',
-                value: 2,
-              },
-              maximum: {
-                unit: 'business_day',
-                value: 5,
-              },
-            },
-          },
-        },
-        {
-          shipping_rate_data: {
-            type: 'fixed_amount',
-            fixed_amount: {
-              amount: 1599, // 15.99€ in cents
-              currency: 'eur',
-            },
-            display_name: 'EU Versand',
-            delivery_estimate: {
-              minimum: {
-                unit: 'business_day',
-                value: 3,
-              },
-              maximum: {
-                unit: 'business_day',
-                value: 7,
-              },
-            },
-          },
-        },
-      ],
       metadata: {
         user_id: user?.id || 'guest',
         guest_email: guestEmail || '',
         coupon_code: couponCode || '',
-      },
-      automatic_tax: {
-        enabled: false,
-      },
-      phone_number_collection: {
-        enabled: true,
       },
     });
 
