@@ -85,6 +85,16 @@ export function NewsletterSignup({
       setSuccess(true)
       setEmail('')
       
+      // Send welcome email
+      try {
+        await supabase.functions.invoke('send-newsletter-welcome', {
+          body: { email: email.trim().toLowerCase(), preferences }
+        })
+      } catch (emailError) {
+        console.error('Welcome email error:', emailError)
+        // Don't fail the signup if email fails
+      }
+      
       toast({
         title: "Erfolgreich angemeldet!",
         description: showIncentive 
@@ -176,7 +186,7 @@ export function NewsletterSignup({
 
   // Default variant
   return (
-    <Card className={cn("border-foreground bg-card", className)}>
+    <Card className={cn("border-2 border-luxury-black dark:border-luxury-gold bg-card", className)}>
       <CardHeader className="text-center">
         <CardTitle className="flex items-center justify-center gap-2">
           <Mail className="w-6 h-6" />
