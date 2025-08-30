@@ -150,7 +150,7 @@ export default function Checkout() {
           console.log("Attempting to use payment function...");
           console.log("Items being sent to Stripe:", JSON.stringify(checkoutData.items, null, 2));
           
-          const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-stripe-checkout', {
+          const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-payment-simple', {
             body: {
               amount: checkoutData.finalAmount,
               stripeKey: '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'

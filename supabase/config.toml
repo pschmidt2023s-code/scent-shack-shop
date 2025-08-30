@@ -58,3 +58,6 @@ verify_jwt = false
 
 [functions.stripe-payment-v8]
 verify_jwt = false
+
+[functions.create-payment-simple]
+verify_jwt = false
