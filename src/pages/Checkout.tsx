@@ -29,7 +29,7 @@ export default function Checkout() {
   const { user } = useAuth();
   
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'paypal' | 'bank' | 'card'>('paypal');
+  const [paymentMethod, setPaymentMethod] = useState<'paypal' | 'bank' | 'card' | 'test'>('paypal');
   const [guestEmail, setGuestEmail] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [customerData, setCustomerData] = useState({
@@ -151,8 +151,47 @@ export default function Checkout() {
           window.location.href = data.paypal_url;
         } else {
           console.error('PayPal response:', data);
-          toast.error('PayPal-URL konnte nicht erstellt werden: ' + (data?.error || 'Unbekannter Fehler'));
+          toast.error('PayPal-Fehler: ' + (data?.error || 'Unbekannter Fehler') + '. Probieren Sie eine andere Zahlungsart.');
+          setPaymentMethod('bank'); // Fallback to bank transfer
         }
+      } else if (paymentMethod === 'card') {
+        // Handle Stripe payment
+        try {
+          const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-payment-simple', {
+            body: {
+              items: checkoutData.items.map(item => ({
+                perfume_id: item.perfume?.id || item.id,
+                variant_id: item.variant?.id || item.selectedVariant,
+                quantity: item.quantity,
+                price: item.variant?.price || item.price
+              })),
+              coupon_code: checkoutData.appliedCoupon?.code || null,
+              guest_email: !user ? guestEmail : null
+            }
+          });
+          
+          if (stripeError) throw stripeError;
+          
+          if (stripeData?.url) {
+            window.location.href = stripeData.url;
+          } else {
+            throw new Error('Stripe-URL konnte nicht erstellt werden');
+          }
+        } catch (stripeError: any) {
+          console.error('Stripe error:', stripeError);
+          toast.error('Kreditkarten-Zahlung nicht verfügbar. Verwenden Sie bitte Überweisung.');
+          setPaymentMethod('bank');
+        }
+      } else if (paymentMethod === 'test') {
+        // Test payment - redirect to success immediately
+        toast.success('Test-Bestellung erfolgreich erstellt!');
+        navigate('/checkout-success', { 
+          state: { 
+            orderNumber: newOrderNumber,
+            totalAmount: checkoutData.finalAmount,
+            paymentMethod: 'test'
+          }
+        });
       } else if (paymentMethod === 'bank') {
         // Show bank transfer details
         navigate('/checkout-bank', { 
@@ -341,9 +380,9 @@ export default function Checkout() {
                 <CardTitle>Zahlungsart</CardTitle>
               </CardHeader>
               <CardContent>
-                <RadioGroup 
+                 <RadioGroup 
                   value={paymentMethod} 
-                  onValueChange={(value: 'paypal' | 'bank' | 'card') => setPaymentMethod(value)}
+                  onValueChange={(value: 'paypal' | 'bank' | 'card' | 'test') => setPaymentMethod(value)}
                   className="space-y-4"
                 >
                   <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-muted/50">
@@ -364,6 +403,28 @@ export default function Checkout() {
                       <div>
                         <div className="font-medium">Überweisung</div>
                         <div className="text-sm text-muted-foreground">Klassische Banküberweisung</div>
+                      </div>
+                    </Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-muted/50">
+                    <RadioGroupItem value="card" id="card" />
+                    <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer flex-1">
+                      <CreditCard className="w-5 h-5" />
+                      <div>
+                        <div className="font-medium">Kreditkarte (Stripe)</div>
+                        <div className="text-sm text-muted-foreground">Visa, Mastercard, American Express</div>
+                      </div>
+                    </Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-muted/50 border-dashed">
+                    <RadioGroupItem value="test" id="test" />
+                    <Label htmlFor="test" className="flex items-center gap-2 cursor-pointer flex-1">
+                      <Banknote className="w-5 h-5" />
+                      <div>
+                        <div className="font-medium">Test-Zahlung</div>
+                        <div className="text-sm text-muted-foreground">Nur für Testzwecke - keine echte Zahlung</div>
                       </div>
                     </Label>
                   </div>
@@ -417,6 +478,10 @@ export default function Checkout() {
                 'Bestellung wird verarbeitet...'
               ) : paymentMethod === 'paypal' ? (
                 `Jetzt mit PayPal bezahlen (${checkoutData.finalAmount.toFixed(2)}€)`
+              ) : paymentMethod === 'card' ? (
+                `Mit Kreditkarte bezahlen (${checkoutData.finalAmount.toFixed(2)}€)`
+              ) : paymentMethod === 'test' ? (
+                `Test-Bestellung erstellen (${checkoutData.finalAmount.toFixed(2)}€)`
               ) : (
                 `Bestellung abschicken (${checkoutData.finalAmount.toFixed(2)}€)`
               )}

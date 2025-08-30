@@ -46,6 +46,7 @@ serve(async (req) => {
     
     console.log("Auth string prepared, making request...");
 
+    // Make request to PayPal sandbox
     const authResponse = await fetch("https://api-m.sandbox.paypal.com/v1/oauth2/token", {
       method: "POST",
       headers: {
