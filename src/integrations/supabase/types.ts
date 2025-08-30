@@ -463,6 +463,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           earned_at: string
+          guest_email: string | null
           id: string
           order_id: string | null
           percentage: number
@@ -474,6 +475,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           earned_at?: string
+          guest_email?: string | null
           id?: string
           order_id?: string | null
           percentage?: number
@@ -485,6 +487,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           earned_at?: string
+          guest_email?: string | null
           id?: string
           order_id?: string | null
           percentage?: number
