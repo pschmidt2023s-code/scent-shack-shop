@@ -1,160 +1,172 @@
-
-import { Star, ShoppingBag, Eye } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ShoppingCart, Heart, Star, Eye } from 'lucide-react';
+import { useCart } from '@/contexts/CartContext';
 import { Perfume } from '@/types/perfume';
+import { Link } from 'react-router-dom';
 import { usePerfumeRatings } from '@/hooks/usePerfumeRatings';
-import { useNavigate } from 'react-router-dom';
+import { toast } from '@/hooks/use-toast';
+import { QuickViewModal } from './QuickViewModal';
+import { StockStatus } from './StockStatus';
+import { addPerfumeToRecentlyViewed } from './RecentlyViewed';
 
 interface PerfumeCardProps {
   perfume: Perfume;
 }
 
 export function PerfumeCard({ perfume }: PerfumeCardProps) {
-  const navigate = useNavigate();
+  const [selectedVariant, setSelectedVariant] = useState(0);
+  const [showQuickView, setShowQuickView] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const { addToCart } = useCart();
   const { getRatingForPerfume } = usePerfumeRatings([perfume.id]);
 
-  const handleViewProduct = () => {
-    navigate(`/product/${perfume.id}`);
+  const currentVariant = perfume.variants[selectedVariant];
+  const rating = getRatingForPerfume(perfume.id);
+  const averageRating = rating.averageRating || 0;
+  const totalReviews = rating.totalReviews || 0;
+
+  const handleAddToCart = () => {
+    addToCart(perfume, currentVariant);
+    toast({
+      title: "Zum Warenkorb hinzugefügt",
+      description: `${currentVariant.name} wurde erfolgreich hinzugefügt.`,
+    });
   };
 
-  const perfumeRating = getRatingForPerfume(perfume.id);
-  const averageRating = perfumeRating.averageRating || 0;
-  const totalReviews = perfumeRating.totalReviews || 0;
-  const priceRange = {
-    min: Math.min(...perfume.variants.map(v => v.price)),
-    max: Math.max(...perfume.variants.map(v => v.price))
+  const handleWishlistToggle = () => {
+    setIsWishlisted(!isWishlisted);
+    toast({
+      title: isWishlisted ? "Von Wunschliste entfernt" : "Zur Wunschliste hinzugefügt",
+      description: `${currentVariant.name} wurde ${isWishlisted ? 'entfernt' : 'hinzugefügt'}.`,
+    });
   };
 
-  const renderStars = (rating: number) => {
-    return (
-      <div className="flex items-center space-x-1">
-        {[...Array(5)].map((_, i) => (
-          <Star
-            key={i}
-            className={`w-4 h-4 ${
-              i < Math.floor(rating) 
-                ? 'fill-luxury-gold text-luxury-gold' 
-                : 'text-muted-foreground'
-            }`}
-          />
-        ))}
-        <span className="text-sm text-muted-foreground ml-2">
-          ({totalReviews})
-        </span>
-      </div>
-    );
+  const handleProductClick = () => {
+    addPerfumeToRecentlyViewed(perfume);
   };
 
   return (
-    <Card 
-      className="group hover:shadow-glow hover-lift transition-all duration-700 cursor-pointer overflow-hidden bg-gradient-to-br from-white via-white to-gray-50/30 border-0 shadow-lg animate-scale-in hover:scale-[1.03] hover:-rotate-1 hover:z-10 relative backdrop-blur-sm h-full flex flex-col" 
-      onClick={handleViewProduct}
-      onMouseEnter={(e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const x = e.clientX - rect.left - rect.width / 2;
-        const y = e.clientY - rect.top - rect.height / 2;
-        e.currentTarget.style.setProperty('--magnetic-x', `${x * 0.1}px`);
-        e.currentTarget.style.setProperty('--magnetic-y', `${y * 0.1}px`);
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.setProperty('--magnetic-x', '0px');
-        e.currentTarget.style.setProperty('--magnetic-y', '0px');
-      }}
-    >
-      <div className="relative overflow-hidden rounded-t-lg flex-shrink-0">
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/5 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-all duration-500" />
-        <div className="absolute inset-0 bg-gradient-to-br from-luxury-gold/10 via-transparent to-luxury-gold/5 z-10 opacity-0 group-hover:opacity-100 transition-all duration-700" />
-        
-        <div className="h-64 w-full bg-gray-100 flex items-center justify-center">
-          <img
-            src={perfume.image}
-            alt={`${perfume.name} - ${perfume.brand} ${perfume.category} ${perfume.size} Parfüm`}
-            className="max-h-full max-w-full object-contain group-hover:scale-115 transition-all duration-1000 group-hover:brightness-110 group-hover:saturate-110"
-            loading="lazy"
-            decoding="async"
-            width="306"
-            height="256"
-          />
-        </div>
-        
-        {/* Quick Actions */}
-        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-4 translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0 flex flex-col gap-2 z-20">
-          <Button
-            size="icon"
-            variant="luxury"
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-            className="shadow-xl hover:shadow-glow bg-white/30 backdrop-blur-md hover:bg-white/40 transition-all duration-300 hover:scale-110 hover:rotate-12 border border-white/20"
-          >
-            <Eye className="w-4 h-4 transition-transform duration-300 group-hover:scale-110" />
-          </Button>
-        </div>
-
-        {/* Variant Count Badge */}
-        <div className="absolute top-4 left-4 z-20 transform opacity-0 group-hover:opacity-100 transition-all duration-500 -translate-x-2 group-hover:translate-x-0">
-          <Badge variant="secondary" className="bg-gradient-to-r from-luxury-gold via-luxury-gold-light to-luxury-gold text-luxury-black backdrop-blur-sm hover-glow shadow-lg animate-glow-pulse border border-luxury-gold/20">
-            {perfume.variants.length} Varianten
-          </Badge>
-        </div>
-      </div>
-
-      <CardContent className="p-6 relative backdrop-blur-sm flex-1 flex flex-col">
-        <div className="space-y-4 flex-1 flex flex-col">
-          <p className="text-sm text-luxury-gold font-semibold tracking-wider uppercase opacity-80 group-hover:opacity-100 transition-all duration-300 transform group-hover:translate-x-1">
-            {perfume.brand}
-          </p>
-          <h3 className="font-bold text-xl group-hover:text-luxury-gold transition-all duration-500 leading-tight transform group-hover:translate-x-2 group-hover:scale-105 flex-shrink-0">
-            {perfume.name}
-          </h3>
-          
-          <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:translate-x-1 flex-shrink-0">
-            {totalReviews > 0 ? renderStars(averageRating) : (
-              <div className="flex items-center space-x-1">
-                <span className="text-sm text-muted-foreground group-hover:text-luxury-gold/70 transition-colors duration-300">Noch keine Bewertungen</span>
-              </div>
-            )}
-          </div>
-          
-          <p className="text-sm text-muted-foreground font-medium group-hover:text-luxury-gold/60 transition-all duration-300 transform group-hover:translate-x-1 flex-shrink-0">
-            {perfume.category} • {perfume.size}
-          </p>
-          
-          <div className="flex-1 flex flex-col justify-end">
-            <div className="flex items-center justify-between pt-4 border-t border-gray-100 group-hover:border-luxury-gold/20 transition-all duration-500 mb-4">
-              <div className="flex items-center space-x-2">
-                <span className="text-2xl font-bold text-foreground group-hover:text-luxury-gold transition-all duration-500 transform group-hover:scale-110 group-hover:translate-x-2">
-                  {priceRange.min === priceRange.max 
-                    ? `€${priceRange.min.toFixed(2)}`
-                    : `€${priceRange.min.toFixed(2)} - €${priceRange.max.toFixed(2)}`
-                  }
-                </span>
-              </div>
-              
-              <Badge variant="outline" className="text-xs border-luxury-gold/30 text-luxury-gray group-hover:border-luxury-gold group-hover:text-luxury-gold group-hover:bg-luxury-gold/10 transition-all duration-300 transform group-hover:scale-105">
-                {perfume.size}
-              </Badge>
-            </div>
-
-            <div className="flex gap-2 transform transition-all duration-500 group-hover:translate-y-1">
-              <Button 
-                className="flex-1 bg-gradient-primary hover:shadow-glow transition-all duration-500 hover:scale-105 font-semibold relative overflow-hidden group/btn"
+    <>
+      <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
+        <CardContent className="p-0">
+          <div className="relative">
+            <Link to={`/product/${perfume.id}`} onClick={handleProductClick}>
+              <img
+                src={perfume.image}
+                alt={currentVariant.name}
+                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            </Link>
+            
+            {/* Quick View & Wishlist */}
+            <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <Button
+                size="sm"
+                variant="secondary"
+                className="h-8 w-8 p-0"
                 onClick={(e) => {
-                  e.stopPropagation();
+                  e.preventDefault();
+                  setShowQuickView(true);
                 }}
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-luxury-gold/20 via-luxury-gold-light/20 to-luxury-gold/20 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
-                <ShoppingBag className="w-4 h-4 mr-2 transition-transform duration-300 group-hover/btn:scale-110 group-hover/btn:rotate-12 relative z-10" />
-                <span className="relative z-10 transition-transform duration-300 group-hover/btn:scale-105">
-                  Varianten ansehen
-                </span>
+                <Eye className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="h-8 w-8 p-0"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleWishlistToggle();
+                }}
+              >
+                <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
               </Button>
             </div>
+
+            {/* Stock Status */}
+            <div className="absolute top-2 left-2">
+              <StockStatus stock={Math.floor(Math.random() * 20) + 1} />
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+
+          <div className="p-4">
+            <Link to={`/product/${perfume.id}`} onClick={handleProductClick}>
+              <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
+                {currentVariant.name}
+              </h3>
+            </Link>
+            
+            <p className="text-sm text-muted-foreground mb-2">{currentVariant.number}</p>
+            
+            {/* Rating */}
+            <div className="flex items-center gap-1 mb-2">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`w-4 h-4 ${
+                    i < Math.floor(averageRating) 
+                      ? 'fill-yellow-400 text-yellow-400' 
+                      : 'text-gray-300'
+                  }`}
+                />
+              ))}
+              <span className="text-sm text-muted-foreground ml-1">
+                ({totalReviews})
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xl font-bold">€{currentVariant.price.toFixed(2)}</span>
+              <Badge variant="secondary">{perfume.category}</Badge>
+            </div>
+
+            {/* Variant Selection */}
+            {perfume.variants.length > 1 && (
+              <div className="mb-3">
+                <div className="flex flex-wrap gap-1">
+                  {perfume.variants.map((variant, index) => (
+                    <button
+                      key={variant.id}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setSelectedVariant(index);
+                      }}
+                      className={`px-2 py-1 text-xs border rounded transition-colors ${
+                        selectedVariant === index
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'border-muted-foreground/20 hover:border-primary'
+                      }`}
+                    >
+                      {variant.name.split(' - ')[1] || variant.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <Button 
+              onClick={(e) => {
+                e.preventDefault();
+                handleAddToCart();
+              }}
+              className="w-full"
+            >
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              In den Warenkorb
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <QuickViewModal
+        perfume={perfume}
+        isOpen={showQuickView}
+        onClose={() => setShowQuickView(false)}
+      />
+    </>
   );
 }

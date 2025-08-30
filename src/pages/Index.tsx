@@ -1,7 +1,8 @@
 
-import Navigation from '@/components/Navigation';
 import { HeroSection } from '@/components/HeroSection';
 import { PerfumeGrid } from '@/components/PerfumeGrid';
+import { RecentlyViewed } from '@/components/RecentlyViewed';
+import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 
 const Index = () => {
@@ -12,6 +13,7 @@ const Index = () => {
       <main>
         <HeroSection />
         <PerfumeGrid />
+        <RecentlyViewed />
       </main>
       <Footer />
     </div>

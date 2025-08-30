@@ -4,6 +4,7 @@ import { User, ChevronDown, LogOut } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from './AuthModal';
 import { CartSidebar } from './CartSidebar';
+import { AdvancedSearch } from './AdvancedSearch';
 
 const Navigation = () => {
   const { user, signOut } = useAuth();
@@ -39,6 +40,11 @@ const Navigation = () => {
             </div>
 
             <div className="flex items-center space-x-4">
+              {/* Advanced Search */}
+              <div className="hidden md:flex flex-1 max-w-md">
+                <AdvancedSearch className="w-full" />
+              </div>
+
               {/* Cart */}
               <CartSidebar />
 
