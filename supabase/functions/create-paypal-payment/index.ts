@@ -20,43 +20,42 @@ serve(async (req) => {
   }
 
   try {
-    console.log("=== CREATE PAYPAL PAYMENT START ===");
+    console.log("=== PAYPAL PAYMENT FUNCTION START ===");
     
     const requestBody: PayPalOrderRequest = await req.json();
-    console.log("PayPal payment request:", requestBody);
+    console.log("Request received:", requestBody);
     
-    const { order_id, amount, currency, order_number, customer_email } = requestBody;
-
-    // Get PayPal credentials from environment
+    // Check environment variables
     const PAYPAL_CLIENT_ID = Deno.env.get("PAYPAL_CLIENT_ID");
     const PAYPAL_SECRET = Deno.env.get("PAYPAL_SECRET_KEY");
     
-    console.log("PayPal credentials check:");
-    console.log("PAYPAL_CLIENT_ID exists:", !!PAYPAL_CLIENT_ID);
-    console.log("PAYPAL_SECRET_KEY exists:", !!PAYPAL_SECRET);
-    console.log("CLIENT_ID starts with:", PAYPAL_CLIENT_ID?.substring(0, 10));
-
+    console.log("Environment check:");
+    console.log("- PAYPAL_CLIENT_ID exists:", !!PAYPAL_CLIENT_ID);
+    console.log("- PAYPAL_SECRET_KEY exists:", !!PAYPAL_SECRET);
+    console.log("- CLIENT_ID preview:", PAYPAL_CLIENT_ID?.substring(0, 20) + "...");
+    
     if (!PAYPAL_CLIENT_ID || !PAYPAL_SECRET) {
-      console.error("PayPal credentials missing");
-      throw new Error("PayPal credentials not configured");
+      const errorMsg = "PayPal credentials not configured in environment";
+      console.error(errorMsg);
+      return new Response(JSON.stringify({ error: errorMsg }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
     }
 
-    // Determine if we're using sandbox or live based on client ID
-    const isLive = PAYPAL_CLIENT_ID.startsWith('A') && !PAYPAL_CLIENT_ID.includes('sandbox');
-    const paypalBaseUrl = isLive 
-      ? "https://api-m.paypal.com" 
-      : "https://api-m.sandbox.paypal.com";
-
+    // Determine environment (sandbox vs live)
+    const isLive = !PAYPAL_CLIENT_ID.includes('sandbox') && PAYPAL_CLIENT_ID.startsWith('A');
+    const baseUrl = isLive ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
+    
     console.log("PayPal environment:", isLive ? "LIVE" : "SANDBOX");
-    console.log("PayPal base URL:", paypalBaseUrl);
+    console.log("Base URL:", baseUrl);
 
-    // Get PayPal access token
-    console.log("Getting PayPal access token...");
+    // Step 1: Get access token
+    console.log("Step 1: Getting PayPal access token...");
     const authString = `${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET}`;
     const encodedAuth = base64Encode(new TextEncoder().encode(authString));
-
-    // Make request to PayPal
-    const authResponse = await fetch(`${paypalBaseUrl}/v1/oauth2/token`, {
+    
+    const authResponse = await fetch(`${baseUrl}/v1/oauth2/token`, {
       method: "POST",
       headers: {
         "Accept": "application/json",
@@ -67,27 +66,39 @@ serve(async (req) => {
       body: "grant_type=client_credentials"
     });
 
-    console.log("PayPal auth response status:", authResponse.status);
+    console.log("Auth response status:", authResponse.status);
     
-    // Fehlerbehebung: Erweiterte Fehlerbehandlung für PayPal Auth
     if (!authResponse.ok) {
       const errorText = await authResponse.text();
-      console.error("PayPal auth failed with status:", authResponse.status);
-      console.error("PayPal auth error response:", errorText);
-      
-      throw new Error(`PayPal auth failed: ${errorText}`);
+      console.error("PayPal auth failed:", errorText);
+      return new Response(JSON.stringify({ 
+        error: `PayPal authentication failed: ${errorText}` 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
     }
 
     const authData = await authResponse.json();
-    console.log("PayPal auth successful, got access token");
-
     const accessToken = authData.access_token;
+    
     if (!accessToken) {
-      throw new Error("No access token received from PayPal");
+      console.error("No access token received");
+      return new Response(JSON.stringify({ 
+        error: "No access token received from PayPal" 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
     }
 
-    // Create PayPal order
-    console.log("Creating PayPal order...");
+    console.log("✓ Access token received");
+
+    // Step 2: Create PayPal order
+    console.log("Step 2: Creating PayPal order...");
+    
+    const { order_id, amount, currency, order_number, customer_email } = requestBody;
+    
     const orderPayload = {
       intent: "CAPTURE",
       purchase_units: [{
@@ -96,21 +107,21 @@ serve(async (req) => {
           currency_code: currency.toUpperCase(),
           value: amount.toFixed(2)
         },
-        description: `Parfüm-Bestellung ${order_number}`,
+        description: `AdN Parfümerie Bestellung ${order_number}`,
         custom_id: order_id
       }],
       application_context: {
         brand_name: "AdN Parfümerie",
         locale: "de-DE",
         user_action: "PAY_NOW",
-        return_url: `${new URL(req.url).origin}/checkout-success?paypal=true&order=${order_number}`,
-        cancel_url: `${new URL(req.url).origin}/checkout-cancel`
+        return_url: `https://8e9b04f2-784a-4e4d-aa8a-9a93b82040fa.sandbox.lovable.dev/checkout-success?paypal=true&order=${order_number}`,
+        cancel_url: `https://8e9b04f2-784a-4e4d-aa8a-9a93b82040fa.sandbox.lovable.dev/checkout-cancel`
       }
     };
 
-    console.log("Order payload prepared, making request...");
+    console.log("Order payload:", JSON.stringify(orderPayload, null, 2));
 
-    const orderResponse = await fetch(`${paypalBaseUrl}/v2/checkout/orders`, {
+    const orderResponse = await fetch(`${baseUrl}/v2/checkout/orders`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -120,47 +131,63 @@ serve(async (req) => {
       body: JSON.stringify(orderPayload)
     });
 
-    console.log("PayPal order response status:", orderResponse.status);
+    console.log("Order response status:", orderResponse.status);
 
     if (!orderResponse.ok) {
       const errorText = await orderResponse.text();
-      console.error("PayPal order creation failed with status:", orderResponse.status);
-      console.error("PayPal order error response:", errorText);
-      throw new Error(`PayPal order creation failed: ${errorText}`);
+      console.error("PayPal order creation failed:", errorText);
+      return new Response(JSON.stringify({ 
+        error: `PayPal order creation failed: ${errorText}` 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
     }
 
     const orderData = await orderResponse.json();
-    console.log("PayPal order created successfully:", orderData.id);
+    console.log("Order created with ID:", orderData.id);
+    console.log("Order status:", orderData.status);
+    console.log("Links available:", orderData.links?.map((l: any) => l.rel));
 
     // Find approval URL
     const approvalUrl = orderData.links?.find((link: any) => link.rel === "approve")?.href;
 
     if (!approvalUrl) {
-      console.error("PayPal approval URL not found in response");
-      console.error("Available links:", orderData.links);
-      throw new Error("PayPal approval URL not found");
+      console.error("No approval URL found in PayPal response");
+      return new Response(JSON.stringify({ 
+        error: "PayPal approval URL not found" 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
     }
 
-    console.log("Approval URL found:", approvalUrl);
+    console.log("✓ Approval URL found:", approvalUrl);
 
-    return new Response(JSON.stringify({
+    const result = {
       paypal_order_id: orderData.id,
       approval_url: approvalUrl,
       status: orderData.status
-    }), {
+    };
+
+    console.log("=== SUCCESS - Returning result ===");
+    console.log(result);
+
+    return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
 
   } catch (error: any) {
-    console.error("=== PayPal Function Error ===");
+    console.error("=== PAYPAL FUNCTION ERROR ===");
+    console.error("Error type:", typeof error);
     console.error("Error name:", error.name);
     console.error("Error message:", error.message);
     console.error("Error stack:", error.stack);
     
     return new Response(JSON.stringify({ 
-      error: error.message || "An error occurred while creating PayPal payment",
-      details: error.name || "UnknownError"
+      error: error.message || "Unknown error occurred in PayPal function",
+      type: error.name || "UnknownError"
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
