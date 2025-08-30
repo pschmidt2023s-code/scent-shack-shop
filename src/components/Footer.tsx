@@ -27,6 +27,9 @@ export function Footer() {
               <Link to="/faq" className="block hover:text-luxury-gold transition-colors">
                 FAQ
               </Link>
+              <Link to="/partner" className="block hover:text-luxury-gold transition-colors">
+                Partner werden
+              </Link>
             </div>
           </div>
 

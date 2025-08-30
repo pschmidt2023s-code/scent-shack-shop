@@ -24,6 +24,11 @@ serve(async (req) => {
     
     const requestBody: PayPalOrderRequest = await req.json();
     console.log("PayPal payment request:", requestBody);
+    
+    console.log("Environment check:");
+    console.log("SUPABASE_URL exists:", !!Deno.env.get("SUPABASE_URL"));
+    console.log("PAYPAL_CLIENT_ID exists:", !!Deno.env.get("PAYPAL_CLIENT_ID"));
+    console.log("PAYPAL_SECRET_KEY exists:", !!Deno.env.get("PAYPAL_SECRET_KEY"));
 
     const { order_id, amount, currency, order_number, customer_email } = requestBody;
 
