@@ -106,8 +106,12 @@ export default function Checkout() {
     setLoading(true);
 
     try {
+      // Generate new order number for each submission to avoid duplicates
+      const newOrderNumber = 'ADN' + Date.now().toString() + Math.random().toString(36).substr(2, 3).toUpperCase();
+      console.log('Generated new order number:', newOrderNumber);
+      
       const orderData = {
-        order_number: orderNumber,
+        order_number: newOrderNumber,
         user_id: user?.id || null,
         guest_email: !user ? guestEmail : null,
         total_amount: Math.round(checkoutData.finalAmount * 100) / 100, // Ensure proper decimal precision
@@ -157,13 +161,13 @@ export default function Checkout() {
         // Show bank transfer details
         navigate('/checkout-bank', { 
           state: { 
-            orderNumber,
+            orderNumber: newOrderNumber,
             totalAmount: checkoutData.finalAmount,
             bankDetails: {
               recipient: 'Patric-Maurice Schmidt',
               iban: 'DE77100123450827173501',
               bic: 'TRBKDEBBXXX',
-              purpose: orderNumber
+              purpose: newOrderNumber
             }
           }
         });
