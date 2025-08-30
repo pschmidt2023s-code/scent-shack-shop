@@ -1,6 +1,10 @@
 
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { CustomerReviews } from '@/components/CustomerReviews';
+import { ProductImageZoom } from '@/components/ProductImageZoom';
+import { StockStatus } from '@/components/StockStatus';
+import { MobileBottomNav } from '@/components/MobileBottomNav';
 import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -281,9 +285,17 @@ const ProductDetail = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Customer Reviews Section */}
+        <CustomerReviews 
+          perfumeId={perfume.id}
+          variantId={selectedVariant?.id}
+          className="mb-12"
+        />
       </main>
       
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 };

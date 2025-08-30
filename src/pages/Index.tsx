@@ -2,6 +2,8 @@
 import { HeroSection } from '@/components/HeroSection';
 import { PerfumeGrid } from '@/components/PerfumeGrid';
 import { RecentlyViewed } from '@/components/RecentlyViewed';
+import { NewsletterSignup } from '@/components/NewsletterSignup';
+import { MobileBottomNav } from '@/components/MobileBottomNav';
 import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 
@@ -14,8 +16,17 @@ const Index = () => {
         <HeroSection />
         <PerfumeGrid />
         <RecentlyViewed />
+        
+        {/* Newsletter Signup */}
+        <section className="py-16 bg-gradient-subtle">
+          <div className="container mx-auto px-4">
+            <NewsletterSignup className="max-w-4xl mx-auto" showIncentive={true} />
+          </div>
+        </section>
       </main>
+      
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 };
