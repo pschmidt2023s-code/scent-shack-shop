@@ -55,6 +55,7 @@ const Profile = React.lazy(() => import('@/pages/Profile'));
 const Contact = React.lazy(() => import('@/pages/Contact'));
 const Returns = React.lazy(() => import('@/pages/Returns'));
 const FAQ = React.lazy(() => import('@/pages/FAQ'));
+const Newsletter = React.lazy(() => import('@/pages/Newsletter'));
 const Privacy = React.lazy(() => import('@/pages/Privacy'));
 const Terms = React.lazy(() => import('@/pages/Terms'));
 const Imprint = React.lazy(() => import('@/pages/Imprint'));
@@ -145,6 +146,11 @@ function App() {
                 <Route path="/faq" element={
                   <Suspense fallback={<LoadingSpinner />}>
                     <FAQ />
+                  </Suspense>
+                } />
+                <Route path="/newsletter" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Newsletter />
                   </Suspense>
                 } />
                 <Route path="/privacy" element={

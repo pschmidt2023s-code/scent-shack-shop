@@ -27,6 +27,9 @@ export function Footer() {
               <Link to="/faq" className="block text-muted-foreground hover:text-luxury-gold transition-colors">
                 FAQ
               </Link>
+              <Link to="/newsletter" className="block text-muted-foreground hover:text-luxury-gold transition-colors">
+                Newsletter
+              </Link>
               <Link to="/partner" className="block text-muted-foreground hover:text-luxury-gold transition-colors">
                 Partner werden
               </Link>
