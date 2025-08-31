@@ -39,6 +39,59 @@ interface PaymentRequest {
   couponCode?: string;
 }
 
+// Enhanced input validation
+function validatePaymentRequest(data: any): { isValid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  if (!data || typeof data !== 'object') {
+    errors.push('Invalid request data');
+    return { isValid: false, errors };
+  }
+  
+  if (!Array.isArray(data.items) || data.items.length === 0) {
+    errors.push('Cart items are required');
+  } else {
+    data.items.forEach((item: any, index: number) => {
+      if (!item.perfume?.id || typeof item.perfume.id !== 'string') {
+        errors.push(`Invalid perfume ID at item ${index}`);
+      }
+      if (!item.variant?.id || typeof item.variant.id !== 'string') {
+        errors.push(`Invalid variant ID at item ${index}`);
+      }
+      if (!item.quantity || typeof item.quantity !== 'number' || item.quantity <= 0 || item.quantity > 100) {
+        errors.push(`Invalid quantity at item ${index} (must be 1-100)`);
+      }
+      if (!item.variant?.price || typeof item.variant.price !== 'number' || item.variant.price <= 0) {
+        errors.push(`Invalid price at item ${index}`);
+      }
+    });
+  }
+  
+  if (data.guestEmail && typeof data.guestEmail === 'string') {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(data.guestEmail)) {
+      errors.push('Invalid guest email format');
+    }
+  }
+  
+  if (data.couponCode && typeof data.couponCode === 'string') {
+    if (data.couponCode.length > 50 || !/^[A-Z0-9-_]+$/i.test(data.couponCode)) {
+      errors.push('Invalid coupon code format');
+    }
+  }
+  
+  return { isValid: errors.length === 0, errors };
+}
+
+function sanitizeString(str: string): string {
+  return str.replace(/[<>'"&]/g, (char) => {
+    const entities: Record<string, string> = {
+      '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '&': '&amp;'
+    };
+    return entities[char] || char;
+  }).trim();
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -67,12 +120,29 @@ serve(async (req) => {
       supabaseKey ?? ""
     );
 
-    const { items, guestEmail, couponCode }: PaymentRequest = await req.json();
-    console.log("Request data:", { itemCount: items?.length, guestEmail, couponCode });
-
-    if (!items || items.length === 0) {
-      throw new Error("Keine Artikel im Warenkorb");
+    const requestData = await req.json();
+    console.log("Request data received");
+    
+    // Validate and sanitize input
+    const validation = validatePaymentRequest(requestData);
+    if (!validation.isValid) {
+      console.error("Validation errors:", validation.errors);
+      return new Response(JSON.stringify({ 
+        error: "Invalid request data", 
+        details: validation.errors 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
     }
+
+    const { items, guestEmail, couponCode }: PaymentRequest = requestData;
+    
+    // Sanitize string inputs
+    const sanitizedGuestEmail = guestEmail ? sanitizeString(guestEmail) : undefined;
+    const sanitizedCouponCode = couponCode ? sanitizeString(couponCode.toUpperCase()) : undefined;
+    
+    console.log("Request data:", { itemCount: items?.length, guestEmail: sanitizedGuestEmail, couponCode: sanitizedCouponCode });
 
     // Get user if authenticated
     let user = null;
@@ -84,7 +154,7 @@ serve(async (req) => {
     }
 
     // Use user email or guest email
-    const customerEmail = user?.email || guestEmail;
+    const customerEmail = user?.email || sanitizedGuestEmail;
     console.log("Customer info:", { userEmail: user?.email, guestEmail, finalEmail: customerEmail });
     
     if (!customerEmail) {
@@ -129,7 +199,7 @@ serve(async (req) => {
     // Apply coupon if provided
     let couponDiscount = 0;
     let validCoupon = null;
-    if (couponCode) {
+    if (sanitizedCouponCode) {
       const supabaseService = createClient(
         Deno.env.get("SUPABASE_URL") ?? "",
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -139,7 +209,7 @@ serve(async (req) => {
       const { data: coupon } = await supabaseService
         .from("coupons")
         .select("*")
-        .eq("code", couponCode.toUpperCase())
+        .eq("code", sanitizedCouponCode)
         .eq("active", true)
         .single();
 
@@ -231,7 +301,7 @@ serve(async (req) => {
       }] : undefined,
       metadata: {
         user_id: user?.id || 'guest',
-        guest_email: guestEmail || '',
+        guest_email: sanitizedGuestEmail || '',
         coupon_code: validCoupon?.code || '',
         coupon_id: validCoupon?.id || '',
       },

@@ -6,6 +6,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
+import { sanitizeInput } from '@/lib/validation'
+import DOMPurify from 'dompurify'
 import { 
   MessageCircle, 
   X, 
@@ -208,7 +210,7 @@ export function LiveChat({ className }: LiveChatProps) {
   };
 
   const sendMessage = async (content?: string) => {
-    const messageContent = content || inputValue.trim();
+    const messageContent = sanitizeInput(content || inputValue.trim());
     if (!messageContent || !sessionId || !user) return;
 
     const userMessage: Message = {
@@ -395,7 +397,12 @@ export function LiveChat({ className }: LiveChatProps) {
                             ? "bg-primary text-primary-foreground" 
                             : "bg-muted"
                         )}>
-                          <p>{message.content}</p>
+                          <p dangerouslySetInnerHTML={{ 
+                            __html: DOMPurify.sanitize(message.content, { 
+                              ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'br'],
+                              ALLOWED_ATTR: []
+                            })
+                          }} />
                           <div className="flex items-center justify-between mt-1 gap-2">
                             <span className="text-xs opacity-70">
                               {formatTime(message.timestamp)}
