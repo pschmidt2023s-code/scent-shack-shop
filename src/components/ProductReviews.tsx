@@ -62,20 +62,12 @@ export function ProductReviews({ perfumeId, variantId, perfumeName }: ProductRev
 
   const fetchReviews = async () => {
     try {
+      // Use secure database function that hides user identifiers
       const { data, error } = await supabase
-        .from('reviews')
-        .select(`
-          id,
-          rating,
-          title,
-          content,
-          images,
-          is_verified,
-          created_at
-        `)
-        .eq('perfume_id', perfumeId)
-        .eq('variant_id', variantId)
-        .order('created_at', { ascending: false });
+        .rpc('get_public_reviews', {
+          p_perfume_id: perfumeId,
+          p_variant_id: variantId
+        });
 
       if (error) {
         console.error('Error fetching reviews:', error);
@@ -85,12 +77,11 @@ export function ProductReviews({ perfumeId, variantId, perfumeName }: ProductRev
           variant: "destructive",
         });
       } else {
-        // For public users, we can't access user_id or profiles
-        // Show anonymous names for privacy protection
+        // The secure function already returns anonymized data
         const processedReviews = (data || []).map((review) => ({
           ...review,
-          user_id: undefined, // Hide user_id for privacy
-          profiles: { full_name: 'Verifizierter Kunde' } // Anonymous name
+          user_id: undefined, // Already hidden by secure function
+          profiles: { full_name: review.reviewer_name } // Use provided anonymous name
         }));
         
         setReviews(processedReviews);

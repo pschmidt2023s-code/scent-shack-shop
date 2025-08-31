@@ -729,6 +729,19 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_public_reviews: {
+        Args: { p_perfume_id: string; p_variant_id: string }
+        Returns: {
+          content: string
+          created_at: string
+          id: string
+          images: string[]
+          is_verified: boolean
+          rating: number
+          reviewer_name: string
+          title: string
+        }[]
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
