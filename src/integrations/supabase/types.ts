@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      address_access_log: {
+        Row: {
+          accessed_address_id: string
+          accessed_at: string
+          action: string
+          admin_user_id: string
+          customer_user_id: string
+          id: string
+          ip_address: unknown | null
+          new_data: Json | null
+          old_data: Json | null
+          reason: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          accessed_address_id: string
+          accessed_at?: string
+          action: string
+          admin_user_id: string
+          customer_user_id: string
+          id?: string
+          ip_address?: unknown | null
+          new_data?: Json | null
+          old_data?: Json | null
+          reason?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          accessed_address_id?: string
+          accessed_at?: string
+          action?: string
+          admin_user_id?: string
+          customer_user_id?: string
+          id?: string
+          ip_address?: unknown | null
+          new_data?: Json | null
+          old_data?: Json | null
+          reason?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       addresses: {
         Row: {
           city: string
