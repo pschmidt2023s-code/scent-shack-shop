@@ -186,17 +186,17 @@ export function NewsletterSignup({
 
   // Default variant
   return (
-    <Card className={cn("bg-black dark:bg-black border-2 border-luxury-gold text-luxury-light dark:text-luxury-light", className)}>
+    <Card className={cn("bg-gradient-to-br from-background to-muted border-2 border-luxury-gold/30 dark:border-luxury-gold/50", className)}>
       <CardHeader className="text-center">
-        <CardTitle className="flex items-center justify-center gap-2">
-          <Mail className="w-6 h-6" />
+        <CardTitle className="flex items-center justify-center gap-2 text-foreground">
+          <Mail className="w-6 h-6 text-luxury-gold" />
           Newsletter abonnieren
         </CardTitle>
         
         {showIncentive && (
           <div className="flex items-center justify-center gap-2 mt-4">
-            <Gift className="w-5 h-5 text-primary" />
-            <Badge variant="default" className="text-sm px-3 py-1">
+            <Gift className="w-5 h-5 text-luxury-gold" />
+            <Badge variant="default" className="text-sm px-3 py-1 bg-luxury-gold text-luxury-black">
               10% Rabatt für Neukunden
             </Badge>
           </div>
@@ -209,24 +209,24 @@ export function NewsletterSignup({
             {/* Benefits */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
               <div className="space-y-2">
-                <Sparkles className="w-8 h-8 mx-auto text-primary" />
-                <h3 className="font-semibold text-sm">Neue Produkte</h3>
+                <Sparkles className="w-8 h-8 mx-auto text-luxury-gold" />
+                <h3 className="font-semibold text-sm text-foreground">Neue Produkte</h3>
                 <p className="text-xs text-muted-foreground">
                   Erfahren Sie zuerst von neuen Düften
                 </p>
               </div>
               
               <div className="space-y-2">
-                <TrendingUp className="w-8 h-8 mx-auto text-primary" />
-                <h3 className="font-semibold text-sm">Exklusive Angebote</h3>
+                <TrendingUp className="w-8 h-8 mx-auto text-luxury-gold" />
+                <h3 className="font-semibold text-sm text-foreground">Exklusive Angebote</h3>
                 <p className="text-xs text-muted-foreground">
                   Spezielle Rabatte nur für Abonnenten
                 </p>
               </div>
               
               <div className="space-y-2">
-                <Mail className="w-8 h-8 mx-auto text-primary" />
-                <h3 className="font-semibold text-sm">Duft-Tipps</h3>
+                <Mail className="w-8 h-8 mx-auto text-luxury-gold" />
+                <h3 className="font-semibold text-sm text-foreground">Duft-Tipps</h3>
                 <p className="text-xs text-muted-foreground">
                   Experten-Tipps und Anwendungshinweise
                 </p>
@@ -241,12 +241,12 @@ export function NewsletterSignup({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
-                className="text-center"
+                className="text-center border-luxury-gold/30 focus:border-luxury-gold"
               />
 
               {/* Preferences */}
-              <div className="space-y-3 p-4 bg-luxury-gray/20 border border-luxury-gold/30 rounded-lg">
-                <h4 className="font-medium text-sm text-luxury-light">Was möchten Sie erhalten?</h4>
+              <div className="space-y-3 p-4 bg-muted/50 border border-luxury-gold/30 rounded-lg">
+                <h4 className="font-medium text-sm text-foreground">Was möchten Sie erhalten?</h4>
                 
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
@@ -255,7 +255,7 @@ export function NewsletterSignup({
                       checked={preferences.product_updates}
                       onCheckedChange={(checked) => updatePreference('product_updates', checked as boolean)}
                     />
-                    <label htmlFor="product_updates" className="text-sm cursor-pointer text-white/90">
+                    <label htmlFor="product_updates" className="text-sm cursor-pointer text-foreground">
                       Produktupdates und neue Düfte
                     </label>
                   </div>
@@ -266,7 +266,7 @@ export function NewsletterSignup({
                       checked={preferences.promotions}
                       onCheckedChange={(checked) => updatePreference('promotions', checked as boolean)}
                     />
-                    <label htmlFor="promotions" className="text-sm cursor-pointer text-white/90">
+                    <label htmlFor="promotions" className="text-sm cursor-pointer text-foreground">
                       Angebote und Rabattaktionen
                     </label>
                   </div>
@@ -277,19 +277,19 @@ export function NewsletterSignup({
                       checked={preferences.tips}
                       onCheckedChange={(checked) => updatePreference('tips', checked as boolean)}
                     />
-                    <label htmlFor="tips" className="text-sm cursor-pointer text-white/90">
+                    <label htmlFor="tips" className="text-sm cursor-pointer text-foreground">
                       Duft-Tipps und Style-Guides
                     </label>
                   </div>
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading || !email.trim()}>
+              <Button type="submit" className="w-full bg-luxury-gold text-luxury-black hover:bg-luxury-gold-light" disabled={loading || !email.trim()}>
                 {loading ? "Wird angemeldet..." : showIncentive ? "Jetzt anmelden & 10% sparen" : "Jetzt anmelden"}
               </Button>
             </form>
 
-          <p className="text-xs text-center text-luxury-gray">
+          <p className="text-xs text-center text-muted-foreground">
             Sie können sich jederzeit wieder abmelden. Ihre Daten werden vertraulich behandelt.
           </p>
           </>
@@ -300,7 +300,7 @@ export function NewsletterSignup({
               <h3 className="text-xl font-bold text-green-600 mb-2">
                 Erfolgreich angemeldet!
               </h3>
-              <p className="text-muted-foreground text-luxury-gray">
+              <p className="text-muted-foreground">
                 {showIncentive 
                   ? "Sie erhalten in Kürze eine E-Mail mit Ihrem 10%-Rabattcode."
                   : "Danke für Ihre Anmeldung zu unserem Newsletter."

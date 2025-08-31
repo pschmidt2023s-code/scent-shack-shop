@@ -41,9 +41,9 @@ export function HeroSection() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center opacity-0 animate-slide-up" style={{ animationDelay: '1.1s', animationFillMode: 'forwards' }}>
-          <Button variant="hero" size="lg" className="group text-lg px-8 py-4 hover-glow transition-all duration-500 hover:scale-105 hover:rotate-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] relative overflow-hidden" asChild>
+          <Button variant="hero" size="lg" className="group text-lg px-8 py-4 bg-white/90 text-luxury-black hover:bg-white border-2 border-white/50 hover:border-white hover-glow transition-all duration-500 hover:scale-105 hover:rotate-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] relative overflow-hidden font-semibold" asChild>
             <Link to="/products?category=50ML Bottles">
-              <span className="relative z-10 transition-transform duration-300 group-hover:scale-110">
+              <span className="relative z-10 transition-transform duration-300 group-hover:scale-110 drop-shadow-sm">
                 Parfüms entdecken
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-luxury-gold via-luxury-gold-light to-luxury-gold opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
