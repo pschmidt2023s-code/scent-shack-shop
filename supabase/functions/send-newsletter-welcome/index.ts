@@ -1,5 +1,35 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
+// Enhanced input sanitization for edge functions
+const sanitizeInput = (input: string): string => {
+  if (typeof input !== 'string') {
+    return '';
+  }
+  
+  return input
+    .replace(/[<>'"&]/g, (char) => {
+      const entities: Record<string, string> = {
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#x27;',
+        '&': '&amp;'
+      };
+      return entities[char] || char;
+    })
+    .replace(/javascript:/gi, '')
+    .replace(/data:/gi, '')
+    .replace(/vbscript:/gi, '')
+    .replace(/on\w+=/gi, '')
+    .trim();
+};
+
+// Email validation
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(email);
+};
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -105,9 +135,21 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email, preferences }: NewsletterWelcomeRequest = await req.json();
 
-    console.log("Sending newsletter welcome email to:", email);
+    // Sanitize and validate email
+    const sanitizedEmail = sanitizeInput(email);
+    if (!validateEmail(sanitizedEmail)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email address" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
 
-    const result = await sendNewsletterWelcome(email, preferences);
+    console.log("Sending newsletter welcome email to:", sanitizedEmail);
+
+    const result = await sendNewsletterWelcome(sanitizedEmail, preferences);
 
     return new Response(JSON.stringify({ success: true, result }), {
       status: 200,

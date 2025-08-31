@@ -9,7 +9,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { User, UserPlus, AlertCircle, Shield } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
-import { sanitizeInput, validatePasswordStrength } from '@/lib/validation';
+import { sanitizeInput, validatePasswordStrength, validateEmail } from '@/lib/validation';
+import { authRateLimiter } from '@/lib/security';
 import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
 import { TwoFactorVerification } from '@/components/auth/TwoFactorVerification';
 
@@ -60,9 +61,43 @@ export function AuthModal({ children }: AuthModalProps) {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Rate limiting check
+    const clientId = `auth-signin-${Date.now().toString(36)}`;
+    if (!authRateLimiter.isAllowed(clientId)) {
+      toast({
+        title: "Zu viele Anmeldeversuche",
+        description: "Bitte warten Sie 15 Minuten, bevor Sie es erneut versuchen.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Sanitize and validate inputs
+    const sanitizedEmail = sanitizeInput(email);
+    const emailValidation = validateEmail(sanitizedEmail);
+    
+    if (!emailValidation.isValid) {
+      toast({
+        title: "Ungültige E-Mail",
+        description: emailValidation.message || "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!password || password.length < 6) {
+      toast({
+        title: "Passwort erforderlich",
+        description: "Bitte geben Sie Ihr Passwort ein (mindestens 6 Zeichen).",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     
-    const { error, needsMfa, challengeId } = await signIn(email, password);
+    const { error, needsMfa, challengeId } = await signIn(sanitizedEmail, password);
     
     if (needsMfa && challengeId) {
       setMfaChallengeId(challengeId);
@@ -86,7 +121,40 @@ export function AuthModal({ children }: AuthModalProps) {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    
+    // Rate limiting check
+    const clientId = `auth-signup-${Date.now().toString(36)}`;
+    if (!authRateLimiter.isAllowed(clientId)) {
+      toast({
+        title: "Zu viele Registrierungsversuche",
+        description: "Bitte warten Sie 15 Minuten, bevor Sie es erneut versuchen.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Sanitize and validate inputs
+    const sanitizedEmail = sanitizeInput(email);
+    const sanitizedFullName = sanitizeInput(fullName);
+    
+    const emailValidation = validateEmail(sanitizedEmail);
+    if (!emailValidation.isValid) {
+      toast({
+        title: "Ungültige E-Mail",
+        description: emailValidation.message || "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!sanitizedFullName.trim() || sanitizedFullName.length < 2) {
+      toast({
+        title: "Name erforderlich",
+        description: "Bitte geben Sie Ihren vollständigen Namen ein (mindestens 2 Zeichen).",
+        variant: "destructive",
+      });
+      return;
+    }
 
     // Validate password strength
     const passwordValidation = validatePasswordStrength(password);
@@ -98,9 +166,9 @@ export function AuthModal({ children }: AuthModalProps) {
     setLoading(true);
     
     const { error } = await signUp(
-      sanitizeInput(email), 
+      sanitizedEmail, 
       password, 
-      sanitizeInput(fullName)
+      sanitizedFullName
     );
     
     if (error) {

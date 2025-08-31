@@ -8,6 +8,8 @@ import { Mail, Gift, Sparkles, TrendingUp, CheckCircle } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { sanitizeInput, validateEmail } from '@/lib/validation'
+import { newsletterRateLimiter } from '@/lib/security'
 
 interface NewsletterSignupProps {
   variant?: 'default' | 'compact' | 'floating'
@@ -39,6 +41,17 @@ export function NewsletterSignup({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Rate limiting check
+    const clientId = `newsletter-${Date.now().toString(36)}`;
+    if (!newsletterRateLimiter.isAllowed(clientId)) {
+      toast({
+        title: "Zu viele Versuche",
+        description: "Bitte warten Sie einen Moment, bevor Sie es erneut versuchen.",
+        variant: "destructive"
+      })
+      return
+    }
+    
     if (!email.trim()) {
       toast({
         title: "E-Mail erforderlich",
@@ -48,12 +61,14 @@ export function NewsletterSignup({
       return
     }
 
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
+    // Enhanced email validation and sanitization
+    const sanitizedEmail = sanitizeInput(email.trim())
+    const emailValidation = validateEmail(sanitizedEmail)
+    
+    if (!emailValidation.isValid) {
       toast({
         title: "Ungültige E-Mail",
-        description: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+        description: emailValidation.message || "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
         variant: "destructive"
       })
       return
@@ -65,7 +80,7 @@ export function NewsletterSignup({
       const { error } = await supabase
         .from('newsletter_subscriptions')
         .insert({
-          email: email.trim().toLowerCase(),
+          email: sanitizedEmail.toLowerCase(),
           preferences: preferences as any  // Cast to any for JSON compatibility
         })
 
@@ -88,7 +103,7 @@ export function NewsletterSignup({
       // Send welcome email
       try {
         await supabase.functions.invoke('send-newsletter-welcome', {
-          body: { email: email.trim().toLowerCase(), preferences }
+          body: { email: sanitizedEmail.toLowerCase(), preferences }
         })
       } catch (emailError) {
         console.error('Welcome email error:', emailError)

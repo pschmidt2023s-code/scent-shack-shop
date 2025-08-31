@@ -261,12 +261,25 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
                   <h3 className="font-semibold">QR-Code scannen</h3>
                   <div className="flex justify-center">
                     <div 
-                      className="qr-code-container"
-                      dangerouslySetInnerHTML={{ __html: qrCode }}
-                      style={{ 
-                        display: 'inline-block',
-                        maxWidth: '200px',
-                        maxHeight: '200px'
+                      className="qr-code-container max-w-[200px] max-h-[200px] inline-block"
+                      ref={(el) => {
+                        if (el && qrCode) {
+                          // Safely render SVG content
+                          try {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(qrCode, 'image/svg+xml');
+                            const svg = doc.querySelector('svg');
+                            if (svg) {
+                              // Clear existing content
+                              el.innerHTML = '';
+                              // Clone and append the SVG safely
+                              el.appendChild(svg.cloneNode(true));
+                            }
+                          } catch (error) {
+                            console.error('Error rendering QR code:', error);
+                            el.textContent = 'QR-Code konnte nicht angezeigt werden';
+                          }
+                        }
                       }}
                     />
                   </div>

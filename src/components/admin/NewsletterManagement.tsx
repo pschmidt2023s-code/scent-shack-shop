@@ -113,36 +113,76 @@ export default function NewsletterManagement() {
   const previewNewsletter = () => {
     const previewWindow = window.open('', '_blank');
     if (previewWindow) {
-      previewWindow.document.write(`
-        <html>
-          <head>
-            <title>${newNewsletter.subject}</title>
-            <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px; }
-              .header { background: #d4af37; color: #1a1a1a; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-              .content { background: #fff; padding: 30px; }
-              .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; }
-              h1 { margin: 0; font-size: 32px; font-weight: bold; }
-              .subtitle { margin: 10px 0 0 0; font-size: 16px; font-weight: 500; }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h1>ALDENAIR</h1>
-              <p class="subtitle">Premium Parfümerie</p>
-            </div>
-            <div class="content">
-              <h2>${newNewsletter.subject}</h2>
-              <div>${newNewsletter.content.replace(/\n/g, '<br>')}</div>
-            </div>
-            <div class="footer">
-              <p>ALDENAIR - Premium Parfümerie</p>
-              <p>Sie erhalten diese E-Mail, weil Sie sich für unseren Newsletter angemeldet haben.</p>
-            </div>
-          </body>
-        </html>
-      `);
-      previewWindow.document.close();
+      // Create safe HTML structure
+      const html = document.createElement('html');
+      const head = document.createElement('head');
+      const body = document.createElement('body');
+      
+      // Set title safely
+      const title = document.createElement('title');
+      title.textContent = newNewsletter.subject;
+      head.appendChild(title);
+      
+      // Add styles safely
+      const style = document.createElement('style');
+      style.textContent = `
+        body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #d4af37; color: #1a1a1a; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #fff; padding: 30px; }
+        .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; }
+        h1 { margin: 0; font-size: 32px; font-weight: bold; }
+        .subtitle { margin: 10px 0 0 0; font-size: 16px; font-weight: 500; }
+      `;
+      head.appendChild(style);
+      
+      // Create header
+      const header = document.createElement('div');
+      header.className = 'header';
+      const h1 = document.createElement('h1');
+      h1.textContent = 'ALDENAIR';
+      const subtitle = document.createElement('p');
+      subtitle.className = 'subtitle';
+      subtitle.textContent = 'Premium Parfümerie';
+      header.appendChild(h1);
+      header.appendChild(subtitle);
+      
+      // Create content
+      const content = document.createElement('div');
+      content.className = 'content';
+      const h2 = document.createElement('h2');
+      h2.textContent = newNewsletter.subject;
+      const contentDiv = document.createElement('div');
+      // Safely handle line breaks
+      const lines = newNewsletter.content.split('\n');
+      lines.forEach((line, index) => {
+        if (index > 0) {
+          contentDiv.appendChild(document.createElement('br'));
+        }
+        const textNode = document.createTextNode(line);
+        contentDiv.appendChild(textNode);
+      });
+      content.appendChild(h2);
+      content.appendChild(contentDiv);
+      
+      // Create footer
+      const footer = document.createElement('div');
+      footer.className = 'footer';
+      const p1 = document.createElement('p');
+      p1.textContent = 'ALDENAIR - Premium Parfümerie';
+      const p2 = document.createElement('p');
+      p2.textContent = 'Sie erhalten diese E-Mail, weil Sie sich für unseren Newsletter angemeldet haben.';
+      footer.appendChild(p1);
+      footer.appendChild(p2);
+      
+      // Assemble document
+      body.appendChild(header);
+      body.appendChild(content);
+      body.appendChild(footer);
+      html.appendChild(head);
+      html.appendChild(body);
+      
+      // Write safely to preview window
+      previewWindow.document.documentElement.replaceWith(html);
     }
   };
 

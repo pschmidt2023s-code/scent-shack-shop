@@ -2,8 +2,12 @@
  * Security validation utilities
  */
 
-// Input sanitization to prevent XSS
+// Enhanced input sanitization to prevent XSS
 export const sanitizeInput = (input: string): string => {
+  if (typeof input !== 'string') {
+    return '';
+  }
+  
   return input
     .replace(/[<>'"&]/g, (char) => {
       const entities: Record<string, string> = {
@@ -15,7 +19,54 @@ export const sanitizeInput = (input: string): string => {
       };
       return entities[char] || char;
     })
+    // Remove potentially dangerous patterns
+    .replace(/javascript:/gi, '')
+    .replace(/data:/gi, '')
+    .replace(/vbscript:/gi, '')
+    .replace(/on\w+=/gi, '')
+    .replace(/style\s*=/gi, '')
     .trim();
+};
+
+// Sanitize HTML content more aggressively
+export const sanitizeHtml = (html: string): string => {
+  if (typeof html !== 'string') {
+    return '';
+  }
+  
+  // Remove all HTML tags except safe ones
+  return html
+    .replace(/<script[^>]*>.*?<\/script>/gis, '')
+    .replace(/<style[^>]*>.*?<\/style>/gis, '')
+    .replace(/<iframe[^>]*>.*?<\/iframe>/gis, '')
+    .replace(/<object[^>]*>.*?<\/object>/gis, '')
+    .replace(/<embed[^>]*>/gis, '')
+    .replace(/<form[^>]*>.*?<\/form>/gis, '')
+    .replace(/on\w+\s*=\s*["'][^"']*["']/gis, '')
+    .replace(/javascript:/gis, '')
+    .replace(/data:/gis, '')
+    .replace(/vbscript:/gis, '')
+    .trim();
+};
+
+// Validate email format
+export const validateEmail = (email: string): { isValid: boolean; message?: string } => {
+  if (!email || typeof email !== 'string') {
+    return { isValid: false, message: 'Email is required' };
+  }
+  
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const sanitizedEmail = sanitizeInput(email);
+  
+  if (!emailRegex.test(sanitizedEmail)) {
+    return { isValid: false, message: 'Please enter a valid email address' };
+  }
+  
+  if (sanitizedEmail !== email) {
+    return { isValid: false, message: 'Email contains invalid characters' };
+  }
+  
+  return { isValid: true };
 };
 
 // Phone number validation (international format)
