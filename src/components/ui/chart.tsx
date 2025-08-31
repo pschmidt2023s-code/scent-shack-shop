@@ -74,28 +74,43 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
-      itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
-  })
-  .join("\n")}
-}
-`
-          )
-          .join("\n"),
-      }}
-    />
-  )
+  // Sanitize and validate CSS color values
+  const sanitizeColor = (color: string): string | null => {
+    if (typeof color !== 'string') return null
+    
+    // Allow only hex colors, rgb/rgba functions, and CSS custom properties
+    const validColorRegex = /^(#[0-9a-fA-F]{3,8}|rgb\([^)]*\)|rgba\([^)]*\)|hsl\([^)]*\)|hsla\([^)]*\)|var\(--[a-zA-Z0-9-_]+\)|[a-zA-Z]+)$/
+    
+    return validColorRegex.test(color.trim()) ? color.trim() : null
+  }
+
+  // Use React refs and useEffect to safely inject styles
+  const styleRef = React.useRef<HTMLStyleElement>(null)
+  
+  React.useEffect(() => {
+    const styleElement = styleRef.current
+    if (!styleElement) return
+
+    // Build CSS safely without dangerouslySetInnerHTML
+    const cssRules = Object.entries(THEMES).map(([theme, prefix]) => {
+      const selector = `${prefix} [data-chart="${id}"]`
+      const declarations = colorConfig
+        .map(([key, itemConfig]) => {
+          const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color
+          const sanitizedColor = color ? sanitizeColor(color) : null
+          return sanitizedColor ? `--color-${key}: ${sanitizedColor};` : null
+        })
+        .filter(Boolean)
+        .join(' ')
+      
+      return declarations ? `${selector} { ${declarations} }` : null
+    }).filter(Boolean).join(' ')
+
+    // Safely set textContent instead of innerHTML
+    styleElement.textContent = cssRules
+  }, [id, colorConfig])
+
+  return <style ref={styleRef} />
 }
 
 const ChartTooltip = RechartsPrimitive.Tooltip

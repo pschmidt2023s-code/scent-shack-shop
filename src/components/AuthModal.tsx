@@ -11,6 +11,7 @@ import { User, UserPlus, AlertCircle, Shield } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { sanitizeInput, validatePasswordStrength, validateEmail } from '@/lib/validation';
 import { authRateLimiter } from '@/lib/security';
+import { logAuthAttempt } from '@/lib/security-monitor';
 import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
 import { TwoFactorVerification } from '@/components/auth/TwoFactorVerification';
 
@@ -99,6 +100,9 @@ export function AuthModal({ children }: AuthModalProps) {
     
     const { error, needsMfa, challengeId } = await signIn(sanitizedEmail, password);
     
+    // Log authentication attempt for security monitoring
+    await logAuthAttempt(sanitizedEmail, !error && !needsMfa, 'password');
+    
     if (needsMfa && challengeId) {
       setMfaChallengeId(challengeId);
       setShowTwoFactorVerification(true);
@@ -170,6 +174,9 @@ export function AuthModal({ children }: AuthModalProps) {
       password, 
       sanitizedFullName
     );
+    
+    // Log registration attempt for security monitoring
+    await logAuthAttempt(sanitizedEmail, !error, 'registration');
     
     if (error) {
       toast({
