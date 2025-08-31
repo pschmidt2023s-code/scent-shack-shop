@@ -656,6 +656,39 @@ export type Database = {
           },
         ]
       }
+      profile_access_log: {
+        Row: {
+          accessed_at: string
+          accessed_profile_id: string
+          action: string
+          admin_justification: string | null
+          admin_user_id: string
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+        }
+        Insert: {
+          accessed_at?: string
+          accessed_profile_id: string
+          action: string
+          admin_justification?: string | null
+          admin_user_id: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+        }
+        Update: {
+          accessed_at?: string
+          accessed_profile_id?: string
+          action?: string
+          admin_justification?: string | null
+          admin_user_id?: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       profile_audit_log: {
         Row: {
           action: string
