@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Mail, Gift, Sparkles, TrendingUp, CheckCircle } from 'lucide-react'
+import { Mail, Gift, Sparkles, TrendingUp, CheckCircle, UserX } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { sanitizeInput, validateEmail } from '@/lib/validation'
 import { newsletterRateLimiter } from '@/lib/security'
+import { useAuth } from '@/contexts/AuthContext'
+import { Link } from 'react-router-dom'
 
 interface NewsletterSignupProps {
   variant?: 'default' | 'compact' | 'floating'
@@ -29,6 +31,7 @@ export function NewsletterSignup({
   className,
   showIncentive = true 
 }: NewsletterSignupProps) {
+  const { user } = useAuth()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -41,8 +44,18 @@ export function NewsletterSignup({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Check if user is authenticated
+    if (!user) {
+      toast({
+        title: "Anmeldung erforderlich",
+        description: "Bitte melden Sie sich an, um den Newsletter zu abonnieren.",
+        variant: "destructive"
+      })
+      return
+    }
+    
     // Rate limiting check
-    const clientId = `newsletter-${Date.now().toString(36)}`;
+    const clientId = `newsletter-${user.id}`;
     if (!newsletterRateLimiter.isAllowed(clientId)) {
       toast({
         title: "Zu viele Versuche",
@@ -89,6 +102,12 @@ export function NewsletterSignup({
           toast({
             title: "Bereits angemeldet",
             description: "Diese E-Mail-Adresse ist bereits für unseren Newsletter angemeldet.",
+            variant: "destructive"
+          })
+        } else if (error.code === '42501') { // Insufficient privileges / authentication required
+          toast({
+            title: "Anmeldung erforderlich",
+            description: "Bitte melden Sie sich an, um den Newsletter zu abonnieren.",
             variant: "destructive"
           })
         } else {
@@ -142,6 +161,17 @@ export function NewsletterSignup({
   }
 
   if (variant === 'compact') {
+    if (!user) {
+      return (
+        <div className={cn("flex items-center gap-2 text-muted-foreground", className)}>
+          <UserX className="w-4 h-4" />
+          <span className="text-sm">
+            <Link to="/auth" className="text-primary hover:underline">Anmelden</Link> für Newsletter
+          </span>
+        </div>
+      )
+    }
+
     return (
       <form onSubmit={handleSubmit} className={cn("flex gap-2", className)}>
         <Input
@@ -163,7 +193,26 @@ export function NewsletterSignup({
     return (
       <Card className={cn("fixed bottom-4 right-4 w-80 shadow-lg z-40", className)}>
         <CardContent className="p-4">
-          {!success ? (
+          {!user ? (
+            <div className="text-center space-y-3">
+              <div className="flex items-center gap-2 justify-center">
+                <Mail className="w-5 h-5 text-primary" />
+                <span className="font-semibold">Newsletter</span>
+                {showIncentive && (
+                  <Badge variant="secondary" className="text-xs">10% Rabatt</Badge>
+                )}
+              </div>
+              <div className="space-y-2">
+                <UserX className="w-8 h-8 text-muted-foreground mx-auto" />
+                <p className="text-sm text-muted-foreground">
+                  Melden Sie sich an, um den Newsletter zu abonnieren
+                </p>
+                <Link to="/auth">
+                  <Button className="w-full">Anmelden</Button>
+                </Link>
+              </div>
+            </div>
+          ) : !success ? (
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="flex items-center gap-2">
                 <Mail className="w-5 h-5 text-primary" />
@@ -219,7 +268,29 @@ export function NewsletterSignup({
       </CardHeader>
       
       <CardContent className="space-y-6 bg-background dark:bg-card">
-        {!success ? (
+        {!user ? (
+          <div className="text-center space-y-4">
+            <UserX className="w-16 h-16 text-muted-foreground mx-auto" />
+            <div>
+              <h3 className="text-xl font-semibold text-foreground mb-2">
+                Anmeldung erforderlich
+              </h3>
+              <p className="text-muted-foreground">
+                Melden Sie sich an, um unseren Newsletter zu abonnieren und {showIncentive ? 'Ihren 10%-Rabattcode zu erhalten.' : 'exklusive Updates zu bekommen.'}
+              </p>
+            </div>
+            
+            <Link to="/auth">
+              <Button className="bg-luxury-gold text-luxury-black hover:bg-luxury-gold-light">
+                Jetzt anmelden
+              </Button>
+            </Link>
+            
+            <p className="text-xs text-muted-foreground">
+              Bereits registriert? Einfach anmelden und Newsletter abonnieren.
+            </p>
+          </div>
+        ) : !success ? (
           <>
             {/* Benefits */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">

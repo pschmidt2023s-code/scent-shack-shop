@@ -62,6 +62,7 @@ const Terms = React.lazy(() => import('@/pages/Terms'));
 const Imprint = React.lazy(() => import('@/pages/Imprint'));
 const Partner = React.lazy(() => import('@/pages/Partner'));
 const Admin = React.lazy(() => import('@/pages/Admin'));
+const Auth = React.lazy(() => import('@/pages/Auth'));
 const Checkout = React.lazy(() => import('@/pages/Checkout'));
 const CheckoutBank = React.lazy(() => import('@/pages/CheckoutBank'));
 const CheckoutSuccess = React.lazy(() => import('@/pages/CheckoutSuccess'));
@@ -139,6 +140,13 @@ function AnimatedRoutes() {
         <Suspense fallback={<LoadingSpinner />}>
           <PageTransition>
             <Partner />
+          </PageTransition>
+        </Suspense>
+      } />
+      <Route path="/auth" element={
+        <Suspense fallback={<LoadingSpinner />}>
+          <PageTransition>
+            <Auth />
           </PageTransition>
         </Suspense>
       } />
