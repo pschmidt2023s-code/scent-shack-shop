@@ -144,10 +144,6 @@ export default function Admin() {
   }, [loadOrders, toast]);
 
   const deleteOrder = useCallback(async (orderId: string) => {
-    if (!confirm('Sind Sie sicher, dass Sie diese Bestellung löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.')) {
-      return;
-    }
-
     try {
       const { error } = await supabase
         .from('orders')

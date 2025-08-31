@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { BulkPaybackActions } from './BulkPaybackActions';
 import { 
   Euro, 
   Check, 
@@ -58,69 +59,41 @@ export function PaybackManagement() {
 
   const loadData = async () => {
     try {
-      // Load payback earnings
+      // Load payback earnings with profiles in a single optimized query
       const { data: earningsData, error: earningsError } = await supabase
         .from('payback_earnings')
-        .select('*')
+        .select(`
+          *,
+          profiles(full_name)
+        `)
         .order('earned_at', { ascending: false });
 
       if (earningsError) throw earningsError;
-
-      // For each earning, try to get user profile
-      const earningsWithProfiles = await Promise.all(
-        (earningsData || []).map(async (earning: any) => {
-          try {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('full_name')
-              .eq('id', earning.user_id)
-              .single();
-            
-            return {
-              ...earning,
-              profiles: profile ? { full_name: profile.full_name } : { full_name: 'Unbekannter Nutzer' }
-            };
-          } catch {
-            return {
-              ...earning,
-              profiles: { full_name: 'Unbekannter Nutzer' }
-            };
-          }
-        })
-      );
+      
+      // Transform the data to match the expected format
+      const earningsWithProfiles = (earningsData || []).map((earning: any) => ({
+        ...earning,
+        profiles: { full_name: earning.profiles?.full_name || 'Unbekannter Nutzer' }
+      }));
       
       setEarnings(earningsWithProfiles);
 
-      // Load payback payouts
+      // Load payback payouts with profiles in a single optimized query
       const { data: payoutsData, error: payoutsError } = await supabase
         .from('payback_payouts')
-        .select('*')
+        .select(`
+          *,
+          profiles(full_name)
+        `)
         .order('requested_at', { ascending: false });
 
       if (payoutsError) throw payoutsError;
 
-      // For each payout, try to get user profile
-      const payoutsWithProfiles = await Promise.all(
-        (payoutsData || []).map(async (payout: any) => {
-          try {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('full_name')
-              .eq('id', payout.user_id)
-              .single();
-            
-            return {
-              ...payout,
-              profiles: profile ? { full_name: profile.full_name } : { full_name: 'Unbekannter Nutzer' }
-            };
-          } catch {
-            return {
-              ...payout,
-              profiles: { full_name: 'Unbekannter Nutzer' }
-            };
-          }
-        })
-      );
+      // Transform the data to match the expected format
+      const payoutsWithProfiles = (payoutsData || []).map((payout: any) => ({
+        ...payout,
+        profiles: { full_name: payout.profiles?.full_name || 'Unbekannter Nutzer' }
+      }));
 
       setPayouts(payoutsWithProfiles);
 
@@ -140,10 +113,9 @@ export function PaybackManagement() {
         updateData.approved_at = new Date().toISOString();
         updateData.approved_by = (await supabase.auth.getUser()).data.user?.id;
 
-        // Update user's payback balance
+        // Update user's payback balance optimistically
         const earning = earnings.find(e => e.id === earningId);
         if (earning) {
-          // Get current balance
           const { data: profile } = await supabase
             .from('profiles')
             .select('payback_balance')
@@ -153,20 +125,27 @@ export function PaybackManagement() {
           const currentBalance = profile?.payback_balance || 0;
           const newBalance = currentBalance + earning.amount;
 
-          // Update balance
-          await supabase
-            .from('profiles')
-            .update({ payback_balance: newBalance })
-            .eq('id', earning.user_id);
+          // Update both earning status and balance in parallel
+          await Promise.all([
+            supabase
+              .from('payback_earnings')
+              .update(updateData)
+              .eq('id', earningId),
+            supabase
+              .from('profiles')
+              .update({ payback_balance: newBalance })
+              .eq('id', earning.user_id)
+          ]);
         }
+      } else {
+        // Just update the earning status
+        const { error } = await supabase
+          .from('payback_earnings')
+          .update(updateData)
+          .eq('id', earningId);
+
+        if (error) throw error;
       }
-
-      const { error } = await supabase
-        .from('payback_earnings')
-        .update(updateData)
-        .eq('id', earningId);
-
-      if (error) throw error;
 
       toast.success(`Payback-Gutschrift ${status === 'approved' ? 'genehmigt' : 'abgelehnt'}`);
       loadData();
@@ -280,6 +259,9 @@ export function PaybackManagement() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Bulk Actions */}
+      <BulkPaybackActions earnings={earnings} onUpdate={loadData} />
 
       {/* Payback Earnings */}
       <Card>
