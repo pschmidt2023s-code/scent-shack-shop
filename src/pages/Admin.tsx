@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,13 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Package, Users, CreditCard, Eye, MapPin, User, Trash2 } from 'lucide-react';
-import CouponManagement from '@/components/admin/CouponManagement';
-import UserManagement from '@/components/admin/UserManagement';
-import ReturnManagement from '@/components/admin/ReturnManagement';
-import PartnerManagement from '@/components/admin/PartnerManagement';
-import NewsletterManagement from '@/components/admin/NewsletterManagement';
-import PaybackManagement from '@/components/admin/PaybackManagement';
-import AdminChatInterface from '@/components/admin/AdminChatInterface';
+import { AdminLoadingSkeleton, SmoothLoader, TabContentLoader } from '@/components/LoadingStates';
+
+// Lazy load admin components for better performance
+const CouponManagement = lazy(() => import('@/components/admin/CouponManagement'));
+const UserManagement = lazy(() => import('@/components/admin/UserManagement'));
+const ReturnManagement = lazy(() => import('@/components/admin/ReturnManagement'));
+const PartnerManagement = lazy(() => import('@/components/admin/PartnerManagement'));
+const NewsletterManagement = lazy(() => import('@/components/admin/NewsletterManagement'));
+const PaybackManagement = lazy(() => import('@/components/admin/PaybackManagement'));
+const AdminChatInterface = lazy(() => import('@/components/admin/AdminChatInterface'));
 import { getPerfumeNameById } from '@/lib/perfume-utils';
 
 interface Order {
@@ -46,13 +49,12 @@ interface OrderItem {
 }
 
 export default function Admin() {
-  console.log('ADMIN COMPONENT LOADING - FULL VERSION');
-  
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [activeTab, setActiveTab] = useState('orders');
 
   useEffect(() => {
     if (user) {
@@ -62,7 +64,7 @@ export default function Admin() {
     }
   }, [user]);
 
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('orders')
@@ -70,7 +72,7 @@ export default function Admin() {
           *,
           order_items (*)
         `)
-        .not('order_number', 'is', null) // Only show orders with order numbers (completed orders)
+        .not('order_number', 'is', null)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -85,9 +87,9 @@ export default function Admin() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+  const updateOrderStatus = useCallback(async (orderId: string, newStatus: string) => {
     try {
       // Get current order data for email notification
       const { data: orderData } = await supabase
@@ -139,9 +141,9 @@ export default function Admin() {
         variant: "destructive",
       });
     }
-  };
+  }, [loadOrders, toast]);
 
-  const deleteOrder = async (orderId: string) => {
+  const deleteOrder = useCallback(async (orderId: string) => {
     if (!confirm('Sind Sie sicher, dass Sie diese Bestellung löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.')) {
       return;
     }
@@ -167,14 +169,27 @@ export default function Admin() {
         variant: "destructive",
       });
     }
-  };
+  }, [loadOrders, toast]);
+
+  // Memoized components for performance
+  const memoizedOrders = useMemo(() => orders, [orders]);
+  
+  const getStatusBadge = useCallback((status: string) => {
+    const variants = {
+       pending: 'secondary',
+       pending_payment: 'outline',
+       processing: 'default',
+       paid: 'default',
+       shipped: 'outline',
+       delivered: 'secondary',
+       cancelled: 'destructive',
+     } as const;
+
+    return <Badge variant={variants[status as keyof typeof variants] || 'secondary'}>{status}</Badge>;
+  }, []);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    );
+    return <AdminLoadingSkeleton />;
   }
 
   if (!user) {
@@ -188,80 +203,74 @@ export default function Admin() {
     );
   }
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-       pending: 'secondary',
-       pending_payment: 'outline',
-       processing: 'default',
-       paid: 'default',
-       shipped: 'outline',
-       delivered: 'secondary',
-       cancelled: 'destructive',
-     } as const;
-
-    return <Badge variant={variants[status as keyof typeof variants] || 'secondary'}>{status}</Badge>;
-  };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background animate-fade-in-up">
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+        <div className="mb-8 animate-slide-in-left">
+          <h1 className="text-3xl font-bold mb-2 text-gradient-luxury">Admin Dashboard</h1>
           <p className="text-muted-foreground">Verwalten Sie Bestellungen, Coupons und mehr</p>
         </div>
 
-        <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid grid-cols-8 w-full max-w-6xl">
-            <TabsTrigger value="orders" className="flex items-center gap-2">
-              <Package className="w-4 h-4" />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid grid-cols-8 w-full max-w-6xl animate-slide-in-right backdrop-blur-sm bg-card/80 border">
+            <TabsTrigger value="orders" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
+              <Package className="w-4 h-4 transition-transform duration-200" />
               Bestellungen
             </TabsTrigger>
-            <TabsTrigger value="chat" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
+            <TabsTrigger value="chat" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
+              <Users className="w-4 h-4 transition-transform duration-200" />
               Live Chat
             </TabsTrigger>
-            <TabsTrigger value="payback" className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4" />
+            <TabsTrigger value="payback" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
+              <CreditCard className="w-4 h-4 transition-transform duration-200" />
               Payback
             </TabsTrigger>
-            <TabsTrigger value="returns" className="flex items-center gap-2">
-              <Package className="w-4 h-4" />
+            <TabsTrigger value="returns" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
+              <Package className="w-4 h-4 transition-transform duration-200" />
               Retouren
             </TabsTrigger>
-            <TabsTrigger value="coupons" className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4" />
+            <TabsTrigger value="coupons" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
+              <CreditCard className="w-4 h-4 transition-transform duration-200" />
               Coupons
             </TabsTrigger>
-            <TabsTrigger value="partners" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
+            <TabsTrigger value="partners" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
+              <Users className="w-4 h-4 transition-transform duration-200" />
               Partner
             </TabsTrigger>
-            <TabsTrigger value="newsletter" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
+            <TabsTrigger value="newsletter" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
+              <Users className="w-4 h-4 transition-transform duration-200" />
               Newsletter
             </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
+            <TabsTrigger value="users" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
+              <Users className="w-4 h-4 transition-transform duration-200" />
               Benutzer
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="chat" className="space-y-6">
-            <AdminChatInterface />
+          <TabsContent value="chat" className="space-y-6 animate-fade-in duration-500">
+            <Suspense fallback={<TabContentLoader />}>
+              <AdminChatInterface />
+            </Suspense>
           </TabsContent>
 
-          <TabsContent value="payback" className="space-y-6">
-            <PaybackManagement />
+          <TabsContent value="payback" className="space-y-6 animate-fade-in duration-500">
+            <Suspense fallback={<TabContentLoader />}>
+              <PaybackManagement />
+            </Suspense>
           </TabsContent>
 
-          <TabsContent value="orders" className="space-y-6">
-            <Card>
+          <TabsContent value="orders" className="space-y-6 animate-fade-in duration-500">
+            <Card className="backdrop-blur-sm bg-card/90 border shadow-lg">
               <CardHeader>
-                <CardTitle>Aufgegebene Bestellungen ({orders.length})</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="w-5 h-5" />
+                  Aufgegebene Bestellungen ({memoizedOrders.length})
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {orders.map((order) => (
+                  {memoizedOrders.map((order, index) => (
                     <div key={order.id} className="border rounded-lg p-4 space-y-2">
                       <div className="flex items-center justify-between">
                         <div>
@@ -405,7 +414,7 @@ export default function Admin() {
                     </div>
                   ))}
                   
-                  {orders.length === 0 && (
+                  {memoizedOrders.length === 0 && (
                     <div className="text-center py-8">
                       <p className="text-muted-foreground">Keine aufgegebenen Bestellungen gefunden.</p>
                     </div>
@@ -415,24 +424,34 @@ export default function Admin() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="returns" className="space-y-6">
-            <ReturnManagement />
+          <TabsContent value="returns" className="space-y-6 animate-fade-in duration-500">
+            <Suspense fallback={<TabContentLoader />}>
+              <ReturnManagement />
+            </Suspense>
           </TabsContent>
 
-          <TabsContent value="coupons" className="space-y-6">
-            <CouponManagement />
+          <TabsContent value="coupons" className="space-y-6 animate-fade-in duration-500">
+            <Suspense fallback={<TabContentLoader />}>
+              <CouponManagement />
+            </Suspense>
           </TabsContent>
 
-          <TabsContent value="partners" className="space-y-6">
-            <PartnerManagement />
+          <TabsContent value="partners" className="space-y-6 animate-fade-in duration-500">
+            <Suspense fallback={<TabContentLoader />}>
+              <PartnerManagement />
+            </Suspense>
           </TabsContent>
 
-          <TabsContent value="newsletter" className="space-y-6">
-            <NewsletterManagement />
+          <TabsContent value="newsletter" className="space-y-6 animate-fade-in duration-500">
+            <Suspense fallback={<TabContentLoader />}>
+              <NewsletterManagement />
+            </Suspense>
           </TabsContent>
 
-          <TabsContent value="users">
-            <UserManagement />
+          <TabsContent value="users" className="animate-fade-in duration-500">
+            <Suspense fallback={<TabContentLoader />}>
+              <UserManagement />
+            </Suspense>
           </TabsContent>
         </Tabs>
       </div>
