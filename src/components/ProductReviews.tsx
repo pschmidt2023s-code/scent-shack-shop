@@ -14,7 +14,7 @@ import { AuthModal } from './AuthModal';
 
 interface Review {
   id: string;
-  user_id: string;
+  user_id?: string; // Optional for public access (hidden by RLS)
   rating: number;
   title: string;
   content: string;
@@ -66,7 +66,6 @@ export function ProductReviews({ perfumeId, variantId, perfumeName }: ProductRev
         .from('reviews')
         .select(`
           id,
-          user_id,
           rating,
           title,
           content,
@@ -86,23 +85,15 @@ export function ProductReviews({ perfumeId, variantId, perfumeName }: ProductRev
           variant: "destructive",
         });
       } else {
-        // Fetch user profiles separately for each review
-        const reviewsWithProfiles = await Promise.all(
-          (data || []).map(async (review) => {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('full_name')
-              .eq('id', review.user_id)
-              .single();
-            
-            return {
-              ...review,
-              profiles: profileData || null
-            };
-          })
-        );
+        // For public users, we can't access user_id or profiles
+        // Show anonymous names for privacy protection
+        const processedReviews = (data || []).map((review) => ({
+          ...review,
+          user_id: undefined, // Hide user_id for privacy
+          profiles: { full_name: 'Verifizierter Kunde' } // Anonymous name
+        }));
         
-        setReviews(reviewsWithProfiles);
+        setReviews(processedReviews);
       }
     } catch (error) {
       console.error('Error fetching reviews:', error);
