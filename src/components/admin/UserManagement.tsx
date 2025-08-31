@@ -62,43 +62,35 @@ export default function UserManagement() {
     }
   };
 
-  const updateUserRole = async (userId: string, newRole: string) => {
+  const updateUserRole = async (userId: string, newRole: 'admin' | 'user') => {
     try {
-      // Check if user already has a role entry
-      const { data: existingRole } = await supabase
-        .from('user_roles')
-        .select('id')
-        .eq('user_id', userId)
-        .single();
+      const { data, error } = await supabase.functions.invoke('update-user-role', {
+        body: {
+          userId,
+          role: newRole
+        }
+      });
 
-      if (existingRole) {
-        // Update existing role
-        const { error } = await supabase
-          .from('user_roles')
-          .update({ role: newRole as 'admin' | 'user' })
-          .eq('user_id', userId);
+      if (error) {
+        throw new Error(error.message || 'Failed to update role');
+      }
 
-        if (error) throw error;
-      } else {
-        // Insert new role
-        const { error } = await supabase
-          .from('user_roles')
-          .insert([{ user_id: userId, role: newRole as 'admin' | 'user' }]);
-
-        if (error) throw error;
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to update role');
       }
 
       toast({
-        title: "Erfolg",
-        description: "Benutzerrolle wurde aktualisiert",
+        title: "Rolle aktualisiert",
+        description: `Benutzer wurde erfolgreich zum ${newRole === 'admin' ? 'Administrator' : 'Benutzer'} gemacht.`,
       });
-      
+
+      // Reload users to show updated data
       loadUsers();
     } catch (error) {
       console.error('Error updating user role:', error);
       toast({
         title: "Fehler",
-        description: "Benutzerrolle konnte nicht aktualisiert werden",
+        description: error instanceof Error ? error.message : "Rolle konnte nicht aktualisiert werden.",
         variant: "destructive",
       });
     }
@@ -164,7 +156,7 @@ export default function UserManagement() {
                   <div className="flex items-center gap-2">
                     <Select
                       value={user.role || 'user'}
-                      onValueChange={(value) => updateUserRole(user.id, value)}
+                      onValueChange={(value) => updateUserRole(user.id, value as 'admin' | 'user')}
                     >
                       <SelectTrigger className="w-40">
                         <SelectValue />

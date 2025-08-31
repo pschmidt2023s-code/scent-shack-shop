@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/contexts/AuthContext'
 import { 
   MessageCircle, 
   X, 
@@ -72,6 +73,7 @@ function isSupportOnline(): boolean {
 }
 
 export function LiveChat({ className }: LiveChatProps) {
+  const { user } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES)
@@ -79,8 +81,6 @@ export function LiveChat({ className }: LiveChatProps) {
   const [isTyping, setIsTyping] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [sessionId, setSessionId] = useState<string | null>(null)
-  const [userInfo, setUserInfo] = useState({ name: '', email: '' })
-  const [isFirstMessage, setIsFirstMessage] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -91,12 +91,12 @@ export function LiveChat({ className }: LiveChatProps) {
   }, [messages])
 
   useEffect(() => {
-    if (isOpen && !sessionId) {
+    if (isOpen && !sessionId && user) {
       initializeSession()
       setUnreadCount(0)
       inputRef.current?.focus()
     }
-  }, [isOpen])
+  }, [isOpen, user])
 
   useEffect(() => {
     if (sessionId) {
@@ -160,11 +160,13 @@ export function LiveChat({ className }: LiveChatProps) {
   }
 
   const initializeSession = async () => {
+    if (!user) return;
+
     try {
       const { data: session, error: sessionError } = await supabase
         .from('chat_sessions')
         .insert([{
-          user_info: userInfo.name || userInfo.email ? userInfo : null,
+          user_id: user.id,
           status: 'active'
         }])
         .select()
@@ -207,24 +209,7 @@ export function LiveChat({ className }: LiveChatProps) {
 
   const sendMessage = async (content?: string) => {
     const messageContent = content || inputValue.trim();
-    if (!messageContent || !sessionId) return;
-
-    // If this is the first message and we don't have user info, ask for it
-    if (isFirstMessage && !userInfo.name && !userInfo.email) {
-      const name = prompt('Wie dürfen wir Sie ansprechen? (Optional)') || '';
-      const email = prompt('Ihre E-Mail für besseren Support: (Optional)') || '';
-      
-      if (name || email) {
-        setUserInfo({ name, email });
-        
-        // Update session with user info
-        await supabase
-          .from('chat_sessions')
-          .update({ user_info: { name, email } })
-          .eq('id', sessionId);
-      }
-      setIsFirstMessage(false);
-    }
+    if (!messageContent || !sessionId || !user) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -246,7 +231,7 @@ export function LiveChat({ className }: LiveChatProps) {
           sender_type: 'user',
           content: messageContent,
           status: 'sent',
-          user_info: userInfo.name || userInfo.email ? userInfo : null
+          user_id: user.id
         }]);
 
       // Update session last message time
@@ -376,61 +361,73 @@ export function LiveChat({ className }: LiveChatProps) {
           {!isMinimized && (
             <>
               <CardContent className="flex-1 overflow-y-auto p-3 space-y-3">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={cn(
-                      "flex gap-2",
-                      message.sender === 'user' ? "justify-end" : "justify-start"
-                    )}
-                  >
-                    {message.sender !== 'user' && (
-                      <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
-                        {message.sender === 'bot' ? (
-                          <Bot className="w-3 h-3" />
-                        ) : (
-                          <User className="w-3 h-3" />
+                {!user ? (
+                  <div className="text-center py-8">
+                    <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="font-semibold mb-2">Anmeldung erforderlich</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Bitte melden Sie sich an, um den Chat zu verwenden.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {messages.map((message) => (
+                      <div
+                        key={message.id}
+                        className={cn(
+                          "flex gap-2",
+                          message.sender === 'user' ? "justify-end" : "justify-start"
                         )}
+                      >
+                        {message.sender !== 'user' && (
+                          <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                            {message.sender === 'bot' ? (
+                              <Bot className="w-3 h-3" />
+                            ) : (
+                              <User className="w-3 h-3" />
+                            )}
+                          </div>
+                        )}
+                        
+                        <div className={cn(
+                          "max-w-[70%] rounded-lg px-3 py-2 text-sm",
+                          message.sender === 'user' 
+                            ? "bg-primary text-primary-foreground" 
+                            : "bg-muted"
+                        )}>
+                          <p>{message.content}</p>
+                          <div className="flex items-center justify-between mt-1 gap-2">
+                            <span className="text-xs opacity-70">
+                              {formatTime(message.timestamp)}
+                            </span>
+                            {message.sender === 'user' && getStatusIcon(message.status)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {isTyping && (
+                      <div className="flex gap-2 justify-start">
+                        <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center">
+                          <Bot className="w-3 h-3" />
+                        </div>
+                        <div className="bg-muted rounded-lg px-3 py-2">
+                          <div className="flex space-x-1">
+                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
+                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                          </div>
+                        </div>
                       </div>
                     )}
-                    
-                    <div className={cn(
-                      "max-w-[70%] rounded-lg px-3 py-2 text-sm",
-                      message.sender === 'user' 
-                        ? "bg-primary text-primary-foreground" 
-                        : "bg-muted"
-                    )}>
-                      <p>{message.content}</p>
-                      <div className="flex items-center justify-between mt-1 gap-2">
-                        <span className="text-xs opacity-70">
-                          {formatTime(message.timestamp)}
-                        </span>
-                        {message.sender === 'user' && getStatusIcon(message.status)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {isTyping && (
-                  <div className="flex gap-2 justify-start">
-                    <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center">
-                      <Bot className="w-3 h-3" />
-                    </div>
-                    <div className="bg-muted rounded-lg px-3 py-2">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
-                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                      </div>
-                    </div>
-                  </div>
+                  </>
                 )}
 
                 <div ref={messagesEndRef} />
               </CardContent>
 
               {/* FAQ Suggestions */}
-              {messages.length <= 1 && (
+              {user && messages.length <= 1 && (
                 <div className="p-3 border-t">
                   <p className="text-xs text-muted-foreground mb-2">Häufige Fragen:</p>
                   <div className="space-y-1">
@@ -450,30 +447,32 @@ export function LiveChat({ className }: LiveChatProps) {
               )}
 
               {/* Input */}
-              <div className="p-3 border-t">
-                <div className="flex gap-2">
-                  <Input
-                    ref={inputRef}
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    placeholder="Ihre Nachricht..."
-                    className="flex-1 text-sm"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        sendMessage()
-                      }
-                    }}
-                  />
-                  <Button 
-                    size="icon" 
-                    onClick={() => sendMessage()}
-                    disabled={!inputValue.trim()}
-                    className="flex-shrink-0"
-                  >
-                    <Send className="w-4 h-4" />
-                  </Button>
+              {user && (
+                <div className="p-3 border-t">
+                  <div className="flex gap-2">
+                    <Input
+                      ref={inputRef}
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      placeholder="Ihre Nachricht..."
+                      className="flex-1 text-sm"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          sendMessage()
+                        }
+                      }}
+                    />
+                    <Button 
+                      size="icon" 
+                      onClick={() => sendMessage()}
+                      disabled={!inputValue.trim()}
+                      className="flex-shrink-0"
+                    >
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
             </>
           )}
         </Card>
