@@ -186,9 +186,9 @@ export function NewsletterSignup({
 
   // Default variant
   return (
-    <Card className={cn("bg-gradient-to-br from-background to-muted border-2 border-luxury-gold/30 dark:border-luxury-gold/50", className)}>
+    <Card className={cn("bg-card border-2 border-luxury-gold/30 dark:border-luxury-gold/50", className)}>
       <CardHeader className="text-center">
-        <CardTitle className="flex items-center justify-center gap-2 text-foreground">
+        <CardTitle className="flex items-center justify-center gap-2 text-card-foreground">
           <Mail className="w-6 h-6 text-luxury-gold" />
           Newsletter abonnieren
         </CardTitle>
@@ -210,7 +210,7 @@ export function NewsletterSignup({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
               <div className="space-y-2">
                 <Sparkles className="w-8 h-8 mx-auto text-luxury-gold" />
-                <h3 className="font-semibold text-sm text-foreground">Neue Produkte</h3>
+                <h3 className="font-semibold text-sm text-card-foreground">Neue Produkte</h3>
                 <p className="text-xs text-muted-foreground">
                   Erfahren Sie zuerst von neuen Düften
                 </p>
@@ -218,7 +218,7 @@ export function NewsletterSignup({
               
               <div className="space-y-2">
                 <TrendingUp className="w-8 h-8 mx-auto text-luxury-gold" />
-                <h3 className="font-semibold text-sm text-foreground">Exklusive Angebote</h3>
+                <h3 className="font-semibold text-sm text-card-foreground">Exklusive Angebote</h3>
                 <p className="text-xs text-muted-foreground">
                   Spezielle Rabatte nur für Abonnenten
                 </p>
@@ -226,7 +226,7 @@ export function NewsletterSignup({
               
               <div className="space-y-2">
                 <Mail className="w-8 h-8 mx-auto text-luxury-gold" />
-                <h3 className="font-semibold text-sm text-foreground">Duft-Tipps</h3>
+                <h3 className="font-semibold text-sm text-card-foreground">Duft-Tipps</h3>
                 <p className="text-xs text-muted-foreground">
                   Experten-Tipps und Anwendungshinweise
                 </p>
@@ -241,12 +241,12 @@ export function NewsletterSignup({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
-                className="text-center border-luxury-gold/30 focus:border-luxury-gold"
+                className="text-center border-luxury-gold/30 focus:border-luxury-gold bg-background text-foreground"
               />
 
               {/* Preferences */}
               <div className="space-y-3 p-4 bg-muted/50 border border-luxury-gold/30 rounded-lg">
-                <h4 className="font-medium text-sm text-foreground">Was möchten Sie erhalten?</h4>
+                <h4 className="font-medium text-sm text-card-foreground">Was möchten Sie erhalten?</h4>
                 
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
@@ -255,7 +255,7 @@ export function NewsletterSignup({
                       checked={preferences.product_updates}
                       onCheckedChange={(checked) => updatePreference('product_updates', checked as boolean)}
                     />
-                    <label htmlFor="product_updates" className="text-sm cursor-pointer text-foreground">
+                    <label htmlFor="product_updates" className="text-sm cursor-pointer text-card-foreground">
                       Produktupdates und neue Düfte
                     </label>
                   </div>
@@ -266,7 +266,7 @@ export function NewsletterSignup({
                       checked={preferences.promotions}
                       onCheckedChange={(checked) => updatePreference('promotions', checked as boolean)}
                     />
-                    <label htmlFor="promotions" className="text-sm cursor-pointer text-foreground">
+                    <label htmlFor="promotions" className="text-sm cursor-pointer text-card-foreground">
                       Angebote und Rabattaktionen
                     </label>
                   </div>
@@ -277,7 +277,7 @@ export function NewsletterSignup({
                       checked={preferences.tips}
                       onCheckedChange={(checked) => updatePreference('tips', checked as boolean)}
                     />
-                    <label htmlFor="tips" className="text-sm cursor-pointer text-foreground">
+                    <label htmlFor="tips" className="text-sm cursor-pointer text-card-foreground">
                       Duft-Tipps und Style-Guides
                     </label>
                   </div>
