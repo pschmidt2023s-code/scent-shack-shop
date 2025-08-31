@@ -59,6 +59,72 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          sender_type: string
+          session_id: string
+          status: string | null
+          updated_at: string
+          user_id: string | null
+          user_info: Json | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          sender_type: string
+          session_id: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+          user_info?: Json | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          sender_type?: string
+          session_id?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+          user_info?: Json | null
+        }
+        Relationships: []
+      }
+      chat_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string | null
+          status: string | null
+          updated_at: string
+          user_id: string | null
+          user_info: Json | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+          user_info?: Json | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+          user_info?: Json | null
+        }
+        Relationships: []
+      }
       coupons: {
         Row: {
           active: boolean | null
