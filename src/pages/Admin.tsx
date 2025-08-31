@@ -15,6 +15,7 @@ import ReturnManagement from '@/components/admin/ReturnManagement';
 import PartnerManagement from '@/components/admin/PartnerManagement';
 import NewsletterManagement from '@/components/admin/NewsletterManagement';
 import PaybackManagement from '@/components/admin/PaybackManagement';
+import AdminChatInterface from '@/components/admin/AdminChatInterface';
 import { getPerfumeNameById } from '@/lib/perfume-utils';
 
 interface Order {
@@ -210,10 +211,14 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid grid-cols-7 w-full max-w-5xl">
+          <TabsList className="grid grid-cols-8 w-full max-w-6xl">
             <TabsTrigger value="orders" className="flex items-center gap-2">
               <Package className="w-4 h-4" />
               Bestellungen
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Live Chat
             </TabsTrigger>
             <TabsTrigger value="payback" className="flex items-center gap-2">
               <CreditCard className="w-4 h-4" />
@@ -240,6 +245,10 @@ export default function Admin() {
               Benutzer
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="chat" className="space-y-6">
+            <AdminChatInterface />
+          </TabsContent>
 
           <TabsContent value="payback" className="space-y-6">
             <PaybackManagement />

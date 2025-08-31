@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import { supabase } from '@/integrations/supabase/client'
 import { 
   MessageCircle, 
   X, 
@@ -77,6 +78,9 @@ export function LiveChat({ className }: LiveChatProps) {
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [userInfo, setUserInfo] = useState({ name: '', email: '' })
+  const [isFirstMessage, setIsFirstMessage] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -87,11 +91,53 @@ export function LiveChat({ className }: LiveChatProps) {
   }, [messages])
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !sessionId) {
+      initializeSession()
       setUnreadCount(0)
       inputRef.current?.focus()
     }
   }, [isOpen])
+
+  useEffect(() => {
+    if (sessionId) {
+      loadMessages()
+      
+      // Subscribe to real-time messages
+      const subscription = supabase
+        .channel(`chat-session-${sessionId}`)
+        .on(
+          'postgres_changes',
+          { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'chat_messages',
+            filter: `session_id=eq.${sessionId}`
+          },
+          (payload) => {
+            const newMessage = payload.new as any;
+            if (newMessage.sender_type === 'admin' || newMessage.sender_type === 'bot') {
+              const message: Message = {
+                id: newMessage.id,
+                content: newMessage.content,
+                sender: newMessage.sender_type === 'admin' ? 'support' : 'bot',
+                timestamp: new Date(newMessage.created_at),
+                status: 'read'
+              };
+              setMessages(prev => [...prev, message]);
+              
+              if (!isOpen) {
+                setUnreadCount(prev => prev + 1);
+              }
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(subscription);
+      };
+    }
+  }, [sessionId, isOpen])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -113,9 +159,72 @@ export function LiveChat({ className }: LiveChatProps) {
     }
   }
 
-  const sendMessage = (content?: string) => {
-    const messageContent = content || inputValue.trim()
-    if (!messageContent) return
+  const initializeSession = async () => {
+    try {
+      const { data: session, error: sessionError } = await supabase
+        .from('chat_sessions')
+        .insert([{
+          user_info: userInfo.name || userInfo.email ? userInfo : null,
+          status: 'active'
+        }])
+        .select()
+        .single();
+
+      if (sessionError) throw sessionError;
+      
+      setSessionId(session.id);
+    } catch (error) {
+      console.error('Error creating session:', error);
+    }
+  };
+
+  const loadMessages = async () => {
+    if (!sessionId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      const dbMessages: Message[] = data.map(msg => ({
+        id: msg.id,
+        content: msg.content,
+        sender: msg.sender_type === 'user' ? 'user' : (msg.sender_type === 'admin' ? 'support' : 'bot'),
+        timestamp: new Date(msg.created_at),
+        status: msg.status as 'sent' | 'delivered' | 'read'
+      }));
+
+      // Combine initial messages with database messages
+      setMessages([...INITIAL_MESSAGES, ...dbMessages]);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
+  const sendMessage = async (content?: string) => {
+    const messageContent = content || inputValue.trim();
+    if (!messageContent || !sessionId) return;
+
+    // If this is the first message and we don't have user info, ask for it
+    if (isFirstMessage && !userInfo.name && !userInfo.email) {
+      const name = prompt('Wie dürfen wir Sie ansprechen? (Optional)') || '';
+      const email = prompt('Ihre E-Mail für besseren Support: (Optional)') || '';
+      
+      if (name || email) {
+        setUserInfo({ name, email });
+        
+        // Update session with user info
+        await supabase
+          .from('chat_sessions')
+          .update({ user_info: { name, email } })
+          .eq('id', sessionId);
+      }
+      setIsFirstMessage(false);
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -123,30 +232,57 @@ export function LiveChat({ className }: LiveChatProps) {
       sender: 'user',
       timestamp: new Date(),
       status: 'sent'
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue('');
+
+    try {
+      // Save message to database
+      await supabase
+        .from('chat_messages')
+        .insert([{
+          session_id: sessionId,
+          sender_type: 'user',
+          content: messageContent,
+          status: 'sent',
+          user_info: userInfo.name || userInfo.email ? userInfo : null
+        }]);
+
+      // Update session last message time
+      await supabase
+        .from('chat_sessions')
+        .update({ 
+          last_message_at: new Date().toISOString(),
+          status: 'pending'
+        })
+        .eq('id', sessionId);
+
+      // Auto-respond with bot if no admin is available
+      if (!supportOnline) {
+        setIsTyping(true);
+        
+        setTimeout(async () => {
+          const botResponse = generateBotResponse(messageContent);
+          
+          await supabase
+            .from('chat_messages')
+            .insert([{
+              session_id: sessionId,
+              sender_type: 'bot',
+              content: botResponse,
+              status: 'sent'
+            }]);
+
+          setIsTyping(false);
+        }, 1000 + Math.random() * 2000);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Revert optimistic update on error
+      setMessages(prev => prev.filter(m => m.id !== userMessage.id));
     }
-
-    setMessages(prev => [...prev, userMessage])
-    setInputValue('')
-    setIsTyping(true)
-
-    // Simulate bot response
-    setTimeout(() => {
-      const botResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        content: generateBotResponse(messageContent),
-        sender: supportOnline ? 'support' : 'bot',
-        timestamp: new Date(),
-        status: 'read'
-      }
-
-      setMessages(prev => [...prev, botResponse])
-      setIsTyping(false)
-
-      if (!isOpen) {
-        setUnreadCount(prev => prev + 1)
-      }
-    }, 1000 + Math.random() * 2000)
-  }
+  };
 
   const handleSuggestionClick = (suggestion: string) => {
     sendMessage(suggestion)
