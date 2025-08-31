@@ -50,12 +50,12 @@ export function HeroSection() {
             </Link>
           </Button>
           
-          <Button variant="luxury" size="lg" className="group text-lg px-8 py-4 hover-lift transition-all duration-500 hover:scale-105 hover:-rotate-1 relative overflow-hidden" asChild>
+          <Button variant="gold" size="lg" className="group text-lg px-8 py-4 hover-lift transition-all duration-500 hover:scale-105 hover:-rotate-1 relative overflow-hidden" asChild>
             <Link to="/products?category=Proben">
               <span className="relative z-10 transition-transform duration-300 group-hover:scale-110">
                 Proben bestellen
               </span>
-              <div className="absolute inset-0 bg-luxury-gold opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-md"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-luxury-gold-light via-white/20 to-luxury-gold-light opacity-0 group-hover:opacity-30 transition-opacity duration-300 rounded-md"></div>
             </Link>
           </Button>
         </div>
