@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Heart, Star, Eye } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Perfume } from '@/types/perfume';
 import { Link } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
@@ -17,6 +18,7 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
   const [selectedVariant, setSelectedVariant] = useState(0);
   const { addToCart } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { discount, roleLabel, loading } = useUserRole();
   // Disable ratings to debug the issue
   // const { getRatingForPerfume } = usePerfumeRatings([perfume.id]);
 
@@ -25,6 +27,9 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
   const averageRating = currentVariant.rating || 0;
   const totalReviews = currentVariant.reviewCount || 0;
   const isInFavorites = isFavorite(perfume.id, currentVariant.id);
+
+  const originalPrice = currentVariant.price;
+  const discountedPrice = originalPrice * (1 - discount / 100);
 
   const handleAddToCart = () => {
     addToCart(perfume, currentVariant);
@@ -117,9 +122,30 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
             </div>
 
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xl font-bold">€{currentVariant.price.toFixed(2)}</span>
+              <div className="flex flex-col">
+                {discount > 0 && !loading ? (
+                  <>
+                    <span className="text-xl font-bold text-primary">€{discountedPrice.toFixed(2)}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm line-through text-muted-foreground">€{originalPrice.toFixed(2)}</span>
+                      <Badge variant="destructive" className="text-xs">-{discount.toFixed(1)}%</Badge>
+                    </div>
+                  </>
+                ) : (
+                  <span className="text-xl font-bold">€{originalPrice.toFixed(2)}</span>
+                )}
+              </div>
               <Badge variant="secondary">{perfume.category}</Badge>
             </div>
+
+            {/* Discount Information */}
+            {!loading && discount > 0 && (
+              <div className="mb-3 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <p className="text-xs text-green-700 dark:text-green-300">
+                  🎉 Ihr Rabatt: {discount.toFixed(1)}% ({roleLabel} + Newsletter)
+                </p>
+              </div>
+            )}
 
             {/* Variant Selection */}
             {perfume.variants.length > 1 && (
