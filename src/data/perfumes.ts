@@ -1,5 +1,7 @@
 
 import { Perfume } from '@/types/perfume';
+import autoparfumWhite from '@/assets/autoparfum-white.png';
+import autoparfumBlack from '@/assets/autoparfum-black.png';
 
 // Product images - Using original uploaded images
 const bottleImage = '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png';
@@ -183,6 +185,76 @@ export const perfumes: Perfume[] = [
         inStock: true,
         rating: 4.7,
         reviewCount: 189,
+      },
+    ],
+  },
+  {
+    id: 'autoparfum',
+    name: 'ALDENAIR Autoparfüm',
+    brand: 'ALDENAIR',
+    category: 'Autoparfüm',
+    size: '50ml',
+    image: autoparfumWhite,
+    variants: [
+      {
+        id: 'auto-399-white',
+        number: '399',
+        name: 'ALDENAIR Autoparfüm 399 - Weiß',
+        description: 'Luxuriöser orientalischer Duft für Ihr Auto. Die edle Komposition aus Bergamotte und Zedernholz verschmilzt mit kostbarem Oud zu einem unverwechselbaren Fahrerlebnis.',
+        price: 19.99,
+        inStock: true,
+        rating: 4.8,
+        reviewCount: 89,
+      },
+      {
+        id: 'auto-399-black',
+        number: '399',
+        name: 'ALDENAIR Autoparfüm 399 - Schwarz',
+        description: 'Luxuriöser orientalischer Duft für Ihr Auto. Die edle Komposition aus Bergamotte und Zedernholz verschmilzt mit kostbarem Oud zu einem unverwechselbaren Fahrerlebnis.',
+        price: 19.99,
+        inStock: true,
+        rating: 4.8,
+        reviewCount: 89,
+      },
+      {
+        id: 'auto-978-white',
+        number: '978',
+        name: 'ALDENAIR Autoparfüm 978 - Weiß',
+        description: 'Verführerischer süß-würziger Duft mit orientalischen Noten. Lavendel, Bergamotte und warmer Honig für eine sinnliche Autofahrt.',
+        price: 19.99,
+        inStock: true,
+        rating: 4.9,
+        reviewCount: 76,
+      },
+      {
+        id: 'auto-978-black',
+        number: '978',
+        name: 'ALDENAIR Autoparfüm 978 - Schwarz',
+        description: 'Verführerischer süß-würziger Duft mit orientalischen Noten. Lavendel, Bergamotte und warmer Honig für eine sinnliche Autofahrt.',
+        price: 19.99,
+        inStock: true,
+        rating: 4.9,
+        reviewCount: 76,
+      },
+      {
+        id: 'auto-527-white',
+        number: '527',
+        name: 'ALDENAIR Autoparfüm 527 - Weiß',
+        description: 'Orientalischer süßer Luxusduft für unterwegs. Rose und Oud treffen auf weiches Leder und kostbaren Safran.',
+        price: 19.99,
+        inStock: true,
+        rating: 4.9,
+        reviewCount: 92,
+      },
+      {
+        id: 'auto-527-black',
+        number: '527',
+        name: 'ALDENAIR Autoparfüm 527 - Schwarz',
+        description: 'Orientalischer süßer Luxusduft für unterwegs. Rose und Oud treffen auf weiches Leder und kostbaren Safran.',
+        price: 19.99,
+        inStock: true,
+        rating: 4.9,
+        reviewCount: 92,
       },
     ],
   },

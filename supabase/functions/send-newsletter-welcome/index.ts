@@ -94,7 +94,7 @@ const sendNewsletterWelcome = async (email: string, preferences: any) => {
                     ${preferences?.product_updates ? '<li>✨ Exklusive Vorabinformationen zu neuen Düften</li>' : ''}
                     ${preferences?.promotions ? '<li>🎁 Spezielle Rabatte nur für Newsletter-Abonnenten</li>' : ''}
                     ${preferences?.tips ? '<li>💡 Experten-Tipps zur perfekten Duftauswahl</li>' : ''}
-                    <li>🚚 Kostenloser Versand bei Bestellungen über 50€</li>
+                    
                     <li>💎 Zugang zu limitierten Editionen</li>
                   </ul>
                 </div>
@@ -109,7 +109,7 @@ const sendNewsletterWelcome = async (email: string, preferences: any) => {
               <div class="footer">
                 <p>© 2025 ALDENAIR. Alle Rechte vorbehalten.</p>
                 <p>Sie erhalten diese E-Mail, weil Sie sich für unseren Newsletter angemeldet haben.</p>
-                <p>Falls Sie sich abmelden möchten, kontaktieren Sie uns unter info@aldenair.de</p>
+                <p>Falls Sie sich abmelden möchten, kontaktieren Sie uns unter support@aldenairperfumes.de</p>
               </div>
             </div>
           </body>

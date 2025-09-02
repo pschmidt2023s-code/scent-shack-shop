@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { PerfumeCard } from './PerfumeCard';
+import { AutoparfumCard } from './AutoparfumCard';
 import { perfumes } from '@/data/perfumes';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,7 +18,7 @@ export function PerfumeGrid() {
   console.log('PerfumeGrid: Perfumes data:', perfumes);
   console.log('PerfumeGrid: Total perfumes:', perfumes.length);
 
-  const categories = ['all', '50ML Bottles', 'Proben'];
+  const categories = ['all', '50ML Bottles', 'Proben', 'Autoparfüm'];
 
   const filteredPerfumes = perfumes.filter(perfume => 
     filter === 'all' || perfume.category === filter
@@ -100,7 +101,11 @@ export function PerfumeGrid() {
               key={perfume.id} 
               className="hover:z-20 relative"
             >
-              <PerfumeCard perfume={perfume} />
+              {perfume.category === 'Autoparfüm' ? (
+                <AutoparfumCard perfume={perfume} />
+              ) : (
+                <PerfumeCard perfume={perfume} />
+              )}
             </div>
           ))}
         </div>
