@@ -9,6 +9,8 @@ import { usePerfumeRatings } from '@/hooks/usePerfumeRatings';
 import { Package } from 'lucide-react';
 
 export function PerfumeGrid() {
+  console.log('PerfumeGrid: Component rendering');
+  
   const [filter, setFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
   // Disable ratings temporarily to debug

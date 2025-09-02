@@ -20,6 +20,9 @@ export function useUserRole() {
       }
 
       try {
+        // Debug logs for troubleshooting
+        console.log('useUserRole: Fetching user role for user:', user?.id);
+
         // Check user role from user_roles table
         const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
@@ -44,13 +47,15 @@ export function useUserRole() {
           .single();
 
         const isSubscriber = !newsletterError && !!newsletterData;
+        console.log('useUserRole: Newsletter subscriber?', isSubscriber);
         setIsNewsletterSubscriber(isSubscriber);
 
         // Simplified role logic - in production you'd have proper business logic
         // For demonstration, we'll assign roles based on order count or other criteria
         // For now, let's set premium role for testing
         userRole = 'premium'; // Set to premium for testing
-
+        
+        console.log('useUserRole: Final role assigned:', userRole);
         setRole(userRole);
       } catch (error) {
         console.error('Error in useUserRole:', error);
@@ -67,6 +72,8 @@ export function useUserRole() {
   const getDiscount = () => {
     let discount = 0;
     
+    console.log('getDiscount: Calculating discount for role:', role, 'newsletter:', isNewsletterSubscriber);
+    
     // Role-based discounts
     if (role === 'loyal') discount += 3.5;
     if (role === 'premium') discount += 6.5;
@@ -74,6 +81,7 @@ export function useUserRole() {
     // Newsletter subscriber discount
     if (isNewsletterSubscriber) discount += 1.5;
     
+    console.log('getDiscount: Final discount calculated:', discount);
     return discount;
   };
 

@@ -18,16 +18,28 @@ interface AutoparfumCardImprovedProps {
 }
 
 export function AutoparfumCardImproved({ perfume }: AutoparfumCardImprovedProps) {
+  console.log('AutoparfumCardImproved: Rendering with perfume:', perfume.name);
+  
   const [selectedScent, setSelectedScent] = useState<string>('399');
   const [selectedColor, setSelectedColor] = useState<string>('black');
   const { addToCart } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { discount, roleLabel, loading } = useUserRole();
 
+  console.log('AutoparfumCardImproved: Hook values - discount:', discount, 'roleLabel:', roleLabel, 'loading:', loading);
+
   // Find the current variant based on selected scent and color
   const currentVariant = perfume.variants.find(v => 
     v.number === selectedScent && v.name.toLowerCase().includes(selectedColor)
   ) || perfume.variants[0];
+
+  console.log('AutoparfumCardImproved: Current variant:', currentVariant);
+
+  // Safety check to prevent white screen
+  if (!currentVariant) {
+    console.error('AutoparfumCardImproved: No variant found for perfume:', perfume);
+    return <div>Error: No variant found</div>;
+  }
 
   const averageRating = currentVariant.rating || 0;
   const totalReviews = currentVariant.reviewCount || 0;
