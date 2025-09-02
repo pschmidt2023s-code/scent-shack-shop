@@ -1,11 +1,10 @@
 
 import { Perfume } from '@/types/perfume';
-import autoparfumWhite from '@/assets/autoparfum-white-new.png';
-import autoparfumBlack from '@/assets/autoparfum-black-new.png';
 
 // Product images - Using original uploaded images
 const bottleImage = '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png';
 const sampleImage = '/lovable-uploads/dc821e74-0a27-4a45-a347-45a4ae0d55ef.png';
+const autoparfumImage = '/lovable-uploads/a8f5f8f2-c551-4c79-a16a-ec6fa216cf67.png';
 
 export const perfumes: Perfume[] = [
   {
@@ -194,7 +193,7 @@ export const perfumes: Perfume[] = [
     brand: 'ALDENAIR',
     category: 'Autoparfüm',
     size: '50ml',
-    image: autoparfumBlack,
+    image: autoparfumImage,
     variants: [
       {
         id: 'auto-399',
