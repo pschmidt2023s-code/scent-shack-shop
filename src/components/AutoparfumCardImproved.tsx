@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+// Remove Select imports since we're not using dropdowns anymore
 import { ShoppingCart, Heart, Star, Eye } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import autoparfumWhite from '@/assets/autoparfum-white.png';
 import autoparfumBlack from '@/assets/autoparfum-black.png';
+import autoparfumProduct from '@/assets/autoparfum-product.png';
 
 interface AutoparfumCardImprovedProps {
   perfume: Perfume;
@@ -49,7 +50,7 @@ export function AutoparfumCardImproved({ perfume }: AutoparfumCardImprovedProps)
   const discountedPrice = originalPrice * (1 - discount / 100);
 
   const getCurrentImage = () => {
-    return selectedColor === 'black' ? autoparfumBlack : autoparfumWhite;
+    return autoparfumProduct; // Use the correct product image you provided
   };
 
   const handleAddToCart = () => {
@@ -166,38 +167,59 @@ export function AutoparfumCardImproved({ perfume }: AutoparfumCardImprovedProps)
             </div>
           )}
 
-          {/* Color Selection */}
+          {/* Variant Selection - Button Style like other products */}
           <div className="mb-3">
-            <label className="text-sm font-medium mb-2 block">Farbe:</label>
-            <Select value={selectedColor} onValueChange={setSelectedColor}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Farbe wählen" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border border-border shadow-lg z-50">
-                <SelectItem value="black">Schwarz</SelectItem>
-                <SelectItem value="white">Weiß</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-wrap gap-1">
+              {/* Color Selection Buttons */}
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  setSelectedColor('black');
+                }}
+                className={`px-2 py-1 text-xs border rounded transition-colors ${
+                  selectedColor === 'black'
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-muted-foreground/20 hover:border-primary'
+                }`}
+              >
+                Schwarz
+              </button>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  setSelectedColor('white');
+                }}
+                className={`px-2 py-1 text-xs border rounded transition-colors ${
+                  selectedColor === 'white'
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-muted-foreground/20 hover:border-primary'
+                }`}
+              >
+                Weiß
+              </button>
+            </div>
           </div>
 
-          {/* Scent Selection */}
+          {/* Scent Selection Buttons */}
           <div className="mb-3">
-            <label className="text-sm font-medium mb-2 block">Duft:</label>
-            <Select value={selectedScent} onValueChange={setSelectedScent}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Duft wählen" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border border-border shadow-lg z-50">
-                <SelectItem value="399">ALDENAIR 399</SelectItem>
-                <SelectItem value="978">ALDENAIR 978</SelectItem>
-                <SelectItem value="999">ALDENAIR 999</SelectItem>
-                <SelectItem value="189">ALDENAIR 189</SelectItem>
-                <SelectItem value="390">ALDENAIR 390</SelectItem>
-                <SelectItem value="275">ALDENAIR 275</SelectItem>
-                <SelectItem value="527">ALDENAIR 527</SelectItem>
-                <SelectItem value="695">ALDENAIR 695</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-wrap gap-1">
+              {['399', '978', '999', '189', '390', '275', '527', '695'].map((scent) => (
+                <button
+                  key={scent}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setSelectedScent(scent);
+                  }}
+                  className={`px-2 py-1 text-xs border rounded transition-colors ${
+                    selectedScent === scent
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-muted-foreground/20 hover:border-primary'
+                  }`}
+                >
+                  ALDENAIR {scent}
+                </button>
+              ))}
+            </div>
           </div>
 
           <Button 
