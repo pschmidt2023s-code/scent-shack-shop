@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { PerfumeCard } from './PerfumeCard';
-import { AutoparfumCard } from './AutoparfumCard';
+import { AutoparfumCardImproved } from './AutoparfumCardImproved';
 import { perfumes } from '@/data/perfumes';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -102,7 +102,7 @@ export function PerfumeGrid() {
               className="hover:z-20 relative"
             >
               {perfume.category === 'Autoparfüm' ? (
-                <AutoparfumCard perfume={perfume} />
+                <AutoparfumCardImproved perfume={perfume} />
               ) : (
                 <PerfumeCard perfume={perfume} />
               )}

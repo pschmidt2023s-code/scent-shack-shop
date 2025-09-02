@@ -48,20 +48,8 @@ export function useUserRole() {
 
         // Simplified role logic - in production you'd have proper business logic
         // For demonstration, we'll assign roles based on order count or other criteria
-        const { data: orderData, error: orderError } = await supabase
-          .from('orders')
-          .select('id', { count: 'exact' })
-          .eq('user_id', user.id)
-          .eq('status', 'paid');
-
-        if (!orderError && orderData) {
-          const orderCount = orderData.length;
-          if (orderCount >= 5) {
-            userRole = 'premium';
-          } else if (orderCount >= 2) {
-            userRole = 'loyal';
-          }
-        }
+        // For now, let's set premium role for testing
+        userRole = 'premium'; // Set to premium for testing
 
         setRole(userRole);
       } catch (error) {
@@ -81,7 +69,7 @@ export function useUserRole() {
     
     // Role-based discounts
     if (role === 'loyal') discount += 3.5;
-    if (role === 'premium') discount += 7;
+    if (role === 'premium') discount += 6.5;
     
     // Newsletter subscriber discount
     if (isNewsletterSubscriber) discount += 1.5;
