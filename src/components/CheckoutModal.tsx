@@ -47,53 +47,24 @@ export default function CheckoutModal({ open, onOpenChange }: CheckoutModalProps
     }
 
     try {
-      const { data: coupon, error } = await supabase
-        .from('coupons')
-        .select('*')
-        .eq('code', code.trim().toUpperCase())
-        .eq('active', true)
-        .single();
+      // Use secure server-side coupon validation
+      const { data, error } = await supabase.functions.invoke('validate-coupon-secure', {
+        body: { 
+          code: code.trim().toUpperCase(),
+          orderAmount: totalAmount
+        }
+      });
 
-      if (error || !coupon) {
-        toast.error('Ungültiger Rabattcode');
+      if (error || !data?.valid) {
+        const errorMessage = error?.message || data?.error || 'Ungültiger Rabattcode';
+        toast.error(errorMessage);
         setAppliedCoupon(null);
         return;
       }
 
-      // Check validity dates
-      const now = new Date();
-      if (coupon.valid_from && new Date(coupon.valid_from) > now) {
-        toast.error('Dieser Rabattcode ist noch nicht gültig');
-        setAppliedCoupon(null);
-        return;
-      }
-
-      if (coupon.valid_until && new Date(coupon.valid_until) < now) {
-        toast.error('Dieser Rabattcode ist abgelaufen');
-        setAppliedCoupon(null);
-        return;
-      }
-
-       // Check minimum order amount (both values now in euros)
-       if (coupon.min_order_amount && totalAmount < coupon.min_order_amount) {
-         toast.error(`Mindestbestellwert: €${coupon.min_order_amount.toFixed(2)}`);
-         setAppliedCoupon(null);
-         return;
-       }
-
-      // Check usage limits
-      if (coupon.max_uses && coupon.current_uses >= coupon.max_uses) {
-        toast.error('Dieser Rabattcode wurde bereits maximal verwendet');
-        setAppliedCoupon(null);
-        return;
-      }
-
-       setAppliedCoupon(coupon);
-       const discount = coupon.discount_type === 'percentage' 
-         ? Math.min(totalAmount * (coupon.discount_value / 100), totalAmount)
-         : Math.min(coupon.discount_value, totalAmount);
-       
-       toast.success(`Rabattcode angewendet! Sie sparen €${discount.toFixed(2)}`);
+      // Set the validated coupon
+      setAppliedCoupon(data.coupon);
+      toast.success(`Rabattcode angewendet! Sie sparen €${data.discountAmount.toFixed(2)}`);
 
     } catch (error) {
       console.error('Coupon validation error:', error);

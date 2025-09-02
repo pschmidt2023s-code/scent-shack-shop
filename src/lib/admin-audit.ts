@@ -13,8 +13,10 @@ export interface AdminAuditLog {
   old_data?: any;
   new_data?: any;
   justification?: string;
+  admin_justification?: string;
   ip_address?: string;
   user_agent?: string;
+  data?: any;
 }
 
 class AdminAuditLogger {
@@ -22,14 +24,21 @@ class AdminAuditLogger {
   
   async logAction(log: AdminAuditLog): Promise<void> {
     try {
-      // Enhance log with client info
+      // Enhanced log with client details and security features
       const enhancedLog = {
         ...log,
         timestamp: new Date().toISOString(),
         ip_address: this.getClientIP(),
         user_agent: navigator.userAgent?.slice(0, 255),
-        session_id: this.getSessionId()
+        session_id: this.getSessionId(),
+        consent_required: this.isConsentRequired(log.action),
+        security_level: this.getSecurityLevel(log.action)
       };
+
+      // For actions requiring consent, ensure justification is provided
+      if (enhancedLog.consent_required && !log.admin_justification) {
+        throw new Error('Admin justification required for this action');
+      }
 
       // Sanitize sensitive data
       if (enhancedLog.old_data) {
@@ -37,6 +46,9 @@ class AdminAuditLogger {
       }
       if (enhancedLog.new_data) {
         enhancedLog.new_data = this.sanitizeSensitiveData(enhancedLog.new_data);
+      }
+      if (enhancedLog.data) {
+        enhancedLog.data = this.sanitizeSensitiveData(enhancedLog.data);
       }
 
       // Queue for batch processing
@@ -46,27 +58,46 @@ class AdminAuditLogger {
       if (this.isCriticalAction(log.action)) {
         await this.flushLogs();
       }
+
+      // Trigger security alert for high-risk actions
+      if (enhancedLog.security_level === 'high') {
+        this.triggerSecurityAlert(enhancedLog);
+      }
       
       console.log('Admin action logged:', {
         admin_id: log.admin_id,
         action: log.action,
         resource_type: log.resource_type,
-        target_user_id: log.target_user_id
+        target_user_id: log.target_user_id,
+        security_level: enhancedLog.security_level
       });
       
     } catch (error) {
       console.error('Failed to log admin action:', error);
+      // Fallback: store critical info in localStorage
+      this.fallbackLog(log);
     }
   }
   
-  async logGuestEmailAccess(adminId: string, guestEmail: string, justification: string): Promise<void> {
+  async logGuestEmailAccess(
+    adminId: string, 
+    guestEmail: string, 
+    justification: string
+  ): Promise<void> {
+    if (!justification) {
+      throw new Error('Justification required for guest email access');
+    }
+
     await this.logAction({
       admin_id: adminId,
       action: 'GUEST_EMAIL_ACCESS',
       resource_type: 'guest_email',
       resource_id: guestEmail,
-      justification,
-      new_data: { accessed_email: this.maskEmail(guestEmail) }
+      admin_justification: justification,
+      data: { 
+        accessed_email: this.maskEmail(guestEmail),
+        consent_timestamp: new Date().toISOString()
+      }
     });
   }
   
@@ -177,6 +208,51 @@ class AdminAuditLogger {
       sessionStorage.setItem('admin_session_id', sessionId);
     }
     return sessionId;
+  }
+
+  private isConsentRequired(action: string): boolean {
+    const consentRequiredActions = [
+      'GUEST_EMAIL_ACCESS',
+      'PROFILE_MODIFY',
+      'ADDRESS_MODIFY',
+      'ROLE_CHANGE'
+    ];
+    return consentRequiredActions.includes(action);
+  }
+
+  private getSecurityLevel(action: string): 'low' | 'medium' | 'high' {
+    const highRiskActions = ['ROLE_CHANGE', 'GUEST_EMAIL_ACCESS'];
+    const mediumRiskActions = ['PROFILE_MODIFY', 'ADDRESS_MODIFY'];
+    
+    if (highRiskActions.includes(action)) return 'high';
+    if (mediumRiskActions.includes(action)) return 'medium';
+    return 'low';
+  }
+
+  private triggerSecurityAlert(log: any): void {
+    // Log security alert for monitoring
+    console.warn('High-risk admin action detected:', {
+      action: log.action,
+      admin_id: log.admin_id,
+      timestamp: log.timestamp,
+      session_id: log.session_id
+    });
+    
+    // Could integrate with external monitoring service here
+  }
+
+  private fallbackLog(log: AdminAuditLog): void {
+    try {
+      const fallbackLogs = JSON.parse(localStorage.getItem('fallback_admin_logs') || '[]');
+      fallbackLogs.push({
+        ...log,
+        timestamp: new Date().toISOString(),
+        fallback: true
+      });
+      localStorage.setItem('fallback_admin_logs', JSON.stringify(fallbackLogs.slice(-100)));
+    } catch (error) {
+      console.error('Failed to create fallback log:', error);
+    }
   }
   
   // Periodic log flushing

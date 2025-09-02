@@ -1,7 +1,9 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
+import { sessionMonitor, securityEventMonitor } from '@/lib/session-monitor';
+import SecurityWarningModal from '@/components/SecurityWarningModal';
 
 interface AuthContextType {
   user: User | null;
@@ -20,15 +22,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [supabaseConnected, setSupabaseConnected] = useState(false);
+  const [showSessionWarning, setShowSessionWarning] = useState(false);
+  const initializingRef = useRef(false);
 
   useEffect(() => {
+    if (initializingRef.current) return;
+    initializingRef.current = true;
+
+    let mounted = true;
+
     // Set up auth state listener FIRST to prevent missing events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state changed:', event, session);
-        setSession(session);
-        setUser(session?.user ?? null);
+      (event, newSession) => {
+        if (!mounted) return;
+        
+        console.log('Auth state changed:', event, newSession);
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
         setLoading(false);
+
+        // Handle session changes for security monitoring
+        if (newSession?.user && event === 'SIGNED_IN') {
+          // User signed in - start session monitoring after a brief delay
+          setTimeout(() => {
+            startSessionMonitoring();
+            
+            // Check for suspicious activity
+            const userAgent = navigator.userAgent;
+            securityEventMonitor.checkForSuspiciousActivity(userAgent);
+          }, 100);
+        } else if (!newSession && event === 'SIGNED_OUT') {
+          // User signed out - stop session monitoring
+          sessionMonitor.stop();
+          setShowSessionWarning(false);
+        }
       }
     );
 
@@ -38,22 +65,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data, error } = await supabase.auth.getSession();
         console.log('Supabase connection check:', { data, error });
         setSupabaseConnected(!error);
-        if (data.session) {
+        if (mounted && data.session) {
           setSession(data.session);
           setUser(data.session.user);
+          
+          // Start session monitoring for existing sessions
+          setTimeout(() => {
+            startSessionMonitoring();
+          }, 100);
         }
       } catch (error) {
         console.error('Supabase connection error:', error);
-        setSupabaseConnected(false);
+        if (mounted) setSupabaseConnected(false);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
     checkConnection();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+      sessionMonitor.stop();
+    };
   }, []);
+
+  const startSessionMonitoring = () => {
+    const handleSessionWarning = () => {
+      setShowSessionWarning(true);
+    };
+
+    const handleSessionExpired = () => {
+      console.warn('Session expired due to inactivity');
+      signOut();
+    };
+
+    sessionMonitor.start(handleSessionWarning, handleSessionExpired);
+  };
+
+  const handleExtendSession = () => {
+    sessionMonitor.extendSession();
+    setShowSessionWarning(false);
+  };
+
+  const handleLogoutFromWarning = () => {
+    setShowSessionWarning(false);
+    signOut();
+  };
 
   const signUp = async (email: string, password: string, fullName?: string) => {
     console.log('Attempting sign up for:', email);
@@ -142,6 +201,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     console.log('Attempting sign out');
     try {
+      // Stop session monitoring and clear warning
+      sessionMonitor.stop();
+      setShowSessionWarning(false);
+      
+      // Clear any cached data
+      sessionStorage.clear();
+      
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Sign out error:', error);
@@ -164,6 +230,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       supabaseConnected
     }}>
       {children}
+      <SecurityWarningModal
+        isOpen={showSessionWarning}
+        onExtendSession={handleExtendSession}
+        onLogout={handleLogoutFromWarning}
+      />
     </AuthContext.Provider>
   );
 }

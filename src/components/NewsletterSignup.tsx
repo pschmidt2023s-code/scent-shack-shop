@@ -90,42 +90,56 @@ export function NewsletterSignup({
     setLoading(true)
     
     try {
-      const { error } = await supabase
-        .from('newsletter_subscriptions')
-        .insert({
-          email: sanitizedEmail.toLowerCase(),
-          preferences: preferences as any  // Cast to any for JSON compatibility
-        })
+      // Use secure server-side newsletter signup
+      const { data, error } = await supabase.functions.invoke('newsletter-signup-secure', {
+        body: { 
+          email: sanitizedEmail.toLowerCase(), 
+          preferences 
+        }
+      });
 
       if (error) {
-        if (error.code === '23505') { // Duplicate key error
+        console.error('Newsletter signup error:', error);
+        
+        // Handle specific error types
+        if (error.message?.includes('already subscribed')) {
           toast({
             title: "Bereits angemeldet",
             description: "Diese E-Mail-Adresse ist bereits für unseren Newsletter angemeldet.",
             variant: "destructive"
-          })
-        } else if (error.code === '42501') { // Insufficient privileges / authentication required
+          });
+        } else if (error.message?.includes('Authentication required')) {
           toast({
             title: "Anmeldung erforderlich",
             description: "Bitte melden Sie sich an, um den Newsletter zu abonnieren.",
             variant: "destructive"
-          })
+          });
+        } else if (error.message?.includes('Rate limit')) {
+          toast({
+            title: "Zu viele Versuche",
+            description: "Bitte warten Sie einen Moment, bevor Sie es erneut versuchen.",
+            variant: "destructive"
+          });
         } else {
-          throw error
+          toast({
+            title: "Fehler bei der Anmeldung",
+            description: "Bitte versuchen Sie es später erneut.",
+            variant: "destructive"
+          });
         }
-        return
+        return;
       }
 
-      setSuccess(true)
-      setEmail('')
+      setSuccess(true);
+      setEmail('');
       
       // Send welcome email
       try {
         await supabase.functions.invoke('send-newsletter-welcome', {
           body: { email: sanitizedEmail.toLowerCase(), preferences }
-        })
+        });
       } catch (emailError) {
-        console.error('Welcome email error:', emailError)
+        console.error('Welcome email error:', emailError);
         // Don't fail the signup if email fails
       }
       
@@ -134,16 +148,16 @@ export function NewsletterSignup({
         description: showIncentive 
           ? "Sie erhalten bald Ihren 10%-Rabattcode per E-Mail."
           : "Danke für Ihre Anmeldung zu unserem Newsletter.",
-      })
+      });
     } catch (error) {
-      console.error('Newsletter signup error:', error)
+      console.error('Newsletter signup error:', error);
       toast({
         title: "Fehler bei der Anmeldung",
         description: "Bitte versuchen Sie es später erneut.",
         variant: "destructive"
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
