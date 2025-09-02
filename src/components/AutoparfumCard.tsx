@@ -19,7 +19,7 @@ interface AutoparfumCardProps {
 
 export function AutoparfumCard({ perfume }: AutoparfumCardProps) {
   const [selectedScent, setSelectedScent] = useState<string>('399');
-  const [selectedColor, setSelectedColor] = useState<string>('white');
+  const [selectedColor, setSelectedColor] = useState<string>('black');
   const { addToCart } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { discount, roleLabel, loading } = useUserRole();
@@ -146,7 +146,12 @@ export function AutoparfumCard({ perfume }: AutoparfumCardProps) {
               <SelectContent className="bg-background border border-border shadow-lg">
                 <SelectItem value="399">ALDENAIR 399</SelectItem>
                 <SelectItem value="978">ALDENAIR 978</SelectItem>
+                <SelectItem value="999">ALDENAIR 999</SelectItem>
+                <SelectItem value="189">ALDENAIR 189</SelectItem>
+                <SelectItem value="390">ALDENAIR 390</SelectItem>
+                <SelectItem value="275">ALDENAIR 275</SelectItem>
                 <SelectItem value="527">ALDENAIR 527</SelectItem>
+                <SelectItem value="695">ALDENAIR 695</SelectItem>
               </SelectContent>
             </Select>
           </div>
