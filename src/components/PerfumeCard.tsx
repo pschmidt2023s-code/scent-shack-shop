@@ -89,8 +89,8 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
 
             {/* Stock Badge */}
             <div className="absolute top-2 left-2">
-              <Badge variant="secondary" className="text-xs">
-                Auf Lager
+              <Badge variant={currentVariant.preorder ? "default" : "secondary"} className="text-xs">
+                {currentVariant.preorder ? "Vorbestellung" : "Auf Lager"}
               </Badge>
             </div>
           </div>
@@ -179,7 +179,7 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
               className="w-full"
             >
               <ShoppingCart className="w-4 h-4 mr-2" />
-              In den Warenkorb
+              {currentVariant.preorder ? "Vorbestellen" : "In den Warenkorb"}
             </Button>
           </div>
         </CardContent>

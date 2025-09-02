@@ -5,6 +5,7 @@ import { Perfume } from '@/types/perfume';
 const bottleImage = '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png';
 const sampleImage = '/lovable-uploads/dc821e74-0a27-4a45-a347-45a4ae0d55ef.png';
 const autoparfumImage = '/lovable-uploads/a8f5f8f2-c551-4c79-a16a-ec6fa216cf67.png';
+const threedCollectionImage = '/lovable-uploads/a9ff5ec5-a969-4de6-9989-8e36f83f1b9b.png';
 
 export const perfumes: Perfume[] = [
   {
@@ -274,6 +275,28 @@ export const perfumes: Perfume[] = [
         inStock: true,
         rating: 4.7,
         reviewCount: 78,
+      },
+    ],
+  },
+  {
+    id: 'threed-collection',
+    name: 'THREED X ALDENAIR THREED WRLD 2 COLLECTION',
+    brand: 'THREED X ALDENAIR',
+    category: 'Special Edition',
+    size: '50ml',
+    image: threedCollectionImage,
+    variants: [
+      {
+        id: 'threed-wrld-2',
+        number: 'WRLD2',
+        name: 'THREED X ALDENAIR THREED WRLD 2 COLLECTION',
+        description: 'THREED X ALDENAIR – The WRLD in a Scent  \n\nZwei kreative Welten, eine Vision: THREED und ALDENAIR vereinen Musik und Parfümerie in einer limitierten Special Edition. Zum kommenden Album THREED WRLD 2, das am 09.10.2025 erscheint, haben wir einen exklusiven Duft entwickelt – intensiv, charakterstark, einzigartig.  \n\nMit über 70 Beats und 72 Songs ist dieses Album ein kreatives Meisterwerk – begleitet von einem Parfüm, das seine Tiefe spiegelt. Jede Vorbestellung enthält eine physische Albumkopie und den Signature-Duft – gefertigt aus den besten Rohstoffen Frankreichs und Deutschlands.\n\nJetzt vorbestellen – werde Teil dieser einmaligen Experience.',
+        price: 39.99,
+        inStock: false,
+        preorder: true,
+        releaseDate: '2025-10-09',
+        rating: 5.0,
+        reviewCount: 0,
       },
     ],
   },

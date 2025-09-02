@@ -7,6 +7,8 @@ export interface PerfumeVariant {
   price: number;
   originalPrice?: number;
   inStock: boolean;
+  preorder?: boolean;
+  releaseDate?: string;
   rating?: number;
   reviewCount?: number;
 }
