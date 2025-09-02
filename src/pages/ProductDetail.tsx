@@ -49,11 +49,15 @@ const ProductDetail = () => {
   }
 
   const handleAddToCart = () => {
-    if (!selectedVariant?.inStock || !selectedVariant) return;
+    if (!selectedVariant) return;
+    
+    // Allow pre-order for THREED collection even if not in stock
+    const isThreedCollection = perfume.id === "threed-collection";
+    if (!isThreedCollection && !selectedVariant.inStock) return;
     
     addToCart(perfume, selectedVariant);
     toast({
-      title: "Zum Warenkorb hinzugefügt",
+      title: isThreedCollection ? "Zur Vorbestellung hinzugefügt" : "Zum Warenkorb hinzugefügt",
       description: `${selectedVariant.name} wurde erfolgreich hinzugefügt.`,
     });
   };
@@ -148,42 +152,44 @@ const ProductDetail = () => {
               )}
             </div>
 
-            {/* Variant Selection */}
-            <div className="space-y-4">
-              <Label className="text-xl font-semibold">Duft-Variante wählen</Label>
-              <Select value={selectedVariant?.id} onValueChange={handleVariantChange}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Wählen Sie eine Variante" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border border-border shadow-lg">
-                  {perfume.variants.map((variant) => (
-                    <SelectItem key={variant.id} value={variant.id} className="cursor-pointer">
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{variant.name}</span>
-                          <Badge variant="outline" className="text-xs">
-                            Nr. {variant.number}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2 ml-4">
-                          <span className="font-bold">€{variant.price.toFixed(2)}</span>
-                          {variant.originalPrice && (
-                            <span className="text-sm text-muted-foreground line-through">
-                              €{variant.originalPrice.toFixed(2)}
-                            </span>
-                          )}
-                          {!variant.inStock && (
-                            <Badge variant="secondary" className="text-xs">
-                              Ausverkauft
+            {/* Variant Selection - Hidden for THREED collection */}
+            {perfume.id !== "threed-collection" && (
+              <div className="space-y-4">
+                <Label className="text-xl font-semibold">Duft-Variante wählen</Label>
+                <Select value={selectedVariant?.id} onValueChange={handleVariantChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Wählen Sie eine Variante" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border border-border shadow-lg">
+                    {perfume.variants.map((variant) => (
+                      <SelectItem key={variant.id} value={variant.id} className="cursor-pointer">
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{variant.name}</span>
+                            <Badge variant="outline" className="text-xs">
+                              Nr. {variant.number}
                             </Badge>
-                          )}
+                          </div>
+                          <div className="flex items-center gap-2 ml-4">
+                            <span className="font-bold">€{variant.price.toFixed(2)}</span>
+                            {variant.originalPrice && (
+                              <span className="text-sm text-muted-foreground line-through">
+                                €{variant.originalPrice.toFixed(2)}
+                              </span>
+                            )}
+                            {!variant.inStock && (
+                              <Badge variant="secondary" className="text-xs">
+                                Ausverkauft
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Selected Variant Details */}
             {selectedVariant && (
@@ -225,12 +231,13 @@ const ProductDetail = () => {
               <Button 
                 className="flex-1"
                 size="lg"
-                variant={selectedVariant?.inStock ? "default" : "secondary"}
+                variant="default"
                 onClick={handleAddToCart}
-                disabled={!selectedVariant?.inStock}
+                disabled={!selectedVariant}
               >
                 <ShoppingBag className="w-5 h-5 mr-2" />
-                {selectedVariant?.inStock ? "In den Warenkorb" : "Nicht verfügbar"}
+                {perfume.id === "threed-collection" ? "Jetzt vorbestellen" : 
+                 selectedVariant?.inStock ? "In den Warenkorb" : "Nicht verfügbar"}
               </Button>
               
               {selectedVariant && (
