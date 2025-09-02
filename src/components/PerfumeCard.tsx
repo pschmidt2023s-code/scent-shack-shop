@@ -57,11 +57,7 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
               <img
                 src={perfume.image}
                 alt={currentVariant.name}
-                className={`w-full h-48 group-hover:scale-105 transition-transform duration-300 ${
-                  perfume.category === 'Autoparfüm' 
-                    ? 'object-contain bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900' 
-                    : 'object-cover'
-                }`}
+                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
               />
             </Link>
             
