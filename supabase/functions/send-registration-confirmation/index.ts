@@ -3,10 +3,40 @@ import { Resend } from "npm:resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
-const corsHeaders = {
+// Enhanced security headers with CSRF protection
+const securityHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY", 
+  "X-XSS-Protection": "1; mode=block",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Content-Security-Policy": "default-src 'self'"
 };
+
+// Rate limiting for email sending
+class EmailRateLimiter {
+  private attempts: Map<string, { count: number; resetTime: number }> = new Map();
+  
+  isAllowed(email: string): boolean {
+    const now = Date.now();
+    const record = this.attempts.get(email);
+    
+    if (!record || now > record.resetTime) {
+      this.attempts.set(email, { count: 1, resetTime: now + 15 * 60 * 1000 }); // 15 min window
+      return true;
+    }
+    
+    if (record.count >= 3) { // Max 3 emails per 15 minutes per address
+      return false;
+    }
+    
+    record.count++;
+    return true;
+  }
+}
+
+const emailLimiter = new EmailRateLimiter();
 
 interface RegistrationConfirmationRequest {
   email: string;
@@ -17,17 +47,47 @@ const handler = async (req: Request): Promise<Response> => {
   console.log("Registration confirmation email function called");
 
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: securityHeaders });
   }
 
   try {
     const { email, name }: RegistrationConfirmationRequest = await req.json();
     
-    console.log(`Sending registration confirmation to: ${email}`);
+    // Validate and sanitize inputs
+    if (!email || !email.includes('@') || email.length > 255) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Invalid email address" 
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...securityHeaders }
+      });
+    }
+    
+    const sanitizedEmail = email.toLowerCase().trim();
+    const sanitizedName = (name || '').replace(/[<>\"'&]/g, '').slice(0, 100);
+    
+    // Rate limiting check
+    if (!emailLimiter.isAllowed(sanitizedEmail)) {
+      console.log(`Rate limit exceeded for email: ${sanitizedEmail}`);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Too many registration attempts. Please try again later." 
+      }), {
+        status: 429,
+        headers: { 
+          "Content-Type": "application/json", 
+          ...securityHeaders,
+          "Retry-After": "900" // 15 minutes
+        }
+      });
+    }
+    
+    console.log(`Sending registration confirmation to: ${sanitizedEmail}`);
 
     const emailResponse = await resend.emails.send({
       from: "ALDENAIR <support@aldenairperfumes.de>",
-      to: [email],
+      to: [sanitizedEmail],
       subject: "Willkommen bei ALDENAIR - Registrierung erfolgreich!",
       html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -39,7 +99,7 @@ const handler = async (req: Request): Promise<Response> => {
           <div style="padding: 30px; background: #fff;">
             <h2 style="color: #1a1a1a; margin-bottom: 20px;">🎉 Willkommen bei ALDENAIR!</h2>
             
-            <p>Liebe/r ${name},</p>
+            <p>Liebe/r ${sanitizedName},</p>
             
             <p>vielen Dank für Ihre Registrierung bei ALDENAIR! Ihr Konto wurde erfolgreich erstellt und Sie können nun unser komplettes Sortiment an exklusiven Parfüms entdecken.</p>
             
@@ -60,7 +120,7 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${Deno.env.get("SUPABASE_URL")?.replace('https://tqswuibgnkdvrfocwjou.supabase.co', window.location?.origin || 'https://ihr-shop.de')}" 
+              <a href="${req.headers.get("origin") || "https://aldenairperfumes.de"}" 
                  style="background: #1a1a1a; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
                 Jetzt einkaufen
               </a>
@@ -84,7 +144,7 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Registration confirmation email sent successfully:", emailResponse);
+    console.log("Registration confirmation email sent successfully:", emailResponse.id);
 
     return new Response(JSON.stringify({ 
       success: true, 
@@ -94,7 +154,7 @@ const handler = async (req: Request): Promise<Response> => {
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        ...corsHeaders,
+        ...securityHeaders,
       },
     });
 
@@ -103,13 +163,13 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: "Failed to send registration confirmation" 
       }),
       {
         status: 500,
         headers: { 
           "Content-Type": "application/json", 
-          ...corsHeaders 
+          ...securityHeaders 
         },
       }
     );
