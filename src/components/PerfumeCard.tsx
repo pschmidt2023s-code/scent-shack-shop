@@ -57,7 +57,9 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
               <img
                 src={perfume.image}
                 alt={currentVariant.name}
-                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                loading="lazy"
+                decoding="async"
               />
             </Link>
             
