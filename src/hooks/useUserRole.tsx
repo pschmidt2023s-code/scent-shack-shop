@@ -87,11 +87,15 @@ export function useUserRole() {
     
     console.log('getDiscount: Calculating discount for role:', role, 'newsletter:', isNewsletterSubscriber);
     
+    // Temporary base discount for testing - remove in production
+    discount += 2.0; // Base 2% for all users to test system
+    
     // Role-based discounts
     if (role === 'loyal') discount += 3.5;
     if (role === 'premium') discount += 6.5;
+    // 'user' role gets 0% additional discount
     
-    // Newsletter subscriber discount
+    // Newsletter subscriber bonus
     if (isNewsletterSubscriber) discount += 1.5;
     
     console.log('getDiscount: Final discount calculated:', discount);

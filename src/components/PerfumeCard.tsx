@@ -18,7 +18,7 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
   const [selectedVariant, setSelectedVariant] = useState(0);
   const { addToCart } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
-  const { discount, roleLabel, loading } = useUserRole();
+  const { discount, roleLabel, loading, isNewsletterSubscriber } = useUserRole();
   // Disable ratings to debug the issue
   // const { getRatingForPerfume } = usePerfumeRatings([perfume.id]);
 
