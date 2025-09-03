@@ -15,8 +15,8 @@ export function useUserRole() {
       setLoading(true);
       
       if (!user) {
-        // Even for non-authenticated users, provide some discount
-        setRole('premium'); // Set premium for testing
+        // Not logged in users get no discount
+        setRole('user');
         setIsNewsletterSubscriber(false);
         setLoading(false);
         return;
@@ -53,10 +53,20 @@ export function useUserRole() {
         console.log('useUserRole: Newsletter subscriber?', isSubscriber);
         setIsNewsletterSubscriber(isSubscriber);
 
-        // Simplified role logic - in production you'd have proper business logic
-        // For demonstration, we'll assign roles based on order count or other criteria
-        // Set all authenticated users to premium for testing discounts
-        userRole = 'premium';
+        // Role assignment based on database data
+        // Check if user has admin role in database
+        if (roleData?.role === 'admin') {
+          userRole = 'premium';
+        } else {
+          // Check newsletter subscription for loyal status
+          if (isSubscriber) {
+            userRole = 'loyal';
+          }
+          
+          // TODO: Add logic for premium role based on order history, spending, etc.
+          // For now, users start as 'user' and can become 'loyal' through newsletter
+          // Premium status would be assigned through admin or based on purchase history
+        }
         
         console.log('useUserRole: Final role assigned:', userRole);
         setRole(userRole);
