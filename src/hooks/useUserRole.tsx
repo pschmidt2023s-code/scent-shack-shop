@@ -12,8 +12,11 @@ export function useUserRole() {
 
   useEffect(() => {
     const fetchUserRole = async () => {
+      setLoading(true);
+      
       if (!user) {
-        setRole('user');
+        // Even for non-authenticated users, provide some discount
+        setRole('premium'); // Set premium for testing
         setIsNewsletterSubscriber(false);
         setLoading(false);
         return;
@@ -52,8 +55,8 @@ export function useUserRole() {
 
         // Simplified role logic - in production you'd have proper business logic
         // For demonstration, we'll assign roles based on order count or other criteria
-        // For now, let's set premium role for testing
-        userRole = 'premium'; // Set to premium for testing
+        // Set all authenticated users to premium for testing discounts
+        userRole = 'premium';
         
         console.log('useUserRole: Final role assigned:', userRole);
         setRole(userRole);
