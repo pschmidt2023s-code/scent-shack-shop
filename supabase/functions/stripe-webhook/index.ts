@@ -184,6 +184,25 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session, 
           console.error("Failed to send order confirmation:", emailError);
           // Don't fail the webhook for this
         }
+
+        try {
+          // Send admin notification email
+          console.log(`Sending admin notification for order ${data[0].order_number}`);
+          await supabase.functions.invoke('send-admin-notification', {
+            body: {
+              orderId: data[0].id,
+              orderNumber: data[0].order_number,
+              customerName: data[0].customer_name,
+              customerEmail: data[0].customer_email || session.customer_details?.email,
+              totalAmount: parseFloat(data[0].total_amount || 0) * 100, // Convert to cents
+              currency: data[0].currency || 'eur',
+              paymentMethod: 'stripe'
+            }
+          });
+        } catch (adminEmailError) {
+          console.error("Failed to send admin notification:", adminEmailError);
+          // Don't fail the webhook for this
+        }
       }
     } else {
       console.log(`No order found with stripe_session_id: ${session.id}`);
