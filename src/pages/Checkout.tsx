@@ -163,23 +163,47 @@ export default function Checkout() {
           }
         });
 
-        if (paypalError) throw paypalError;
+        if (paypalError) {
+          console.error('PayPal Error:', paypalError);
+          throw new Error(`PayPal-Zahlung fehlgeschlagen: ${paypalError.message}`);
+        }
 
         // Redirect to PayPal approval URL
         window.location.href = paypalData.approval_url;
         
-      } else if (paymentMethod === 'sepa' || paymentMethod === 'sofort') {
-        // Create Stripe payment session for SEPA/Sofort
-        const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-stripe-session', {
+      } else if (paymentMethod === 'sepa') {
+        // Create SEPA payment session
+        const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-sepa-payment', {
           body: {
             items: checkoutData.items,
             customerEmail: user?.email || guestEmail,
             orderNumber: newOrderNumber,
-            paymentMethod: paymentMethod
+            customerData: customerData
           }
         });
 
-        if (stripeError) throw stripeError;
+        if (stripeError) {
+          console.error('SEPA Error:', stripeError);
+          throw new Error(`SEPA-Zahlung fehlgeschlagen: ${stripeError.message}`);
+        }
+
+        // Redirect to Stripe checkout
+        window.location.href = stripeData.url;
+        
+      } else if (paymentMethod === 'sofort') {
+        // Create Sofort payment session
+        const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-sofort-payment', {
+          body: {
+            items: checkoutData.items,
+            customerEmail: user?.email || guestEmail,
+            orderNumber: newOrderNumber
+          }
+        });
+
+        if (stripeError) {
+          console.error('Sofort Error:', stripeError);
+          throw new Error(`Sofortüberweisung fehlgeschlagen: ${stripeError.message}`);
+        }
 
         // Redirect to Stripe checkout
         window.location.href = stripeData.url;
