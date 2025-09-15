@@ -11,7 +11,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, CreditCard, Building2, Banknote, Copy, Check, Zap } from 'lucide-react';
+import { ArrowLeft, CreditCard, Building2, Banknote, Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Declare Stripe types for window
