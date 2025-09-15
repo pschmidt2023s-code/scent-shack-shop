@@ -379,4 +379,41 @@
       transform: translateY(0);
     }
   }
+
+  /* Stagger animation for list items */
+  .stagger-item {
+    animation: stagger-fade 0.6s ease-out forwards;
+  }
+
+  .stagger-item:nth-child(1) { animation-delay: 0.1s; }
+  .stagger-item:nth-child(2) { animation-delay: 0.2s; }
+  .stagger-item:nth-child(3) { animation-delay: 0.3s; }
+  .stagger-item:nth-child(4) { animation-delay: 0.4s; }
+  .stagger-item:nth-child(5) { animation-delay: 0.5s; }
+
+  /* Mobile Navigation Enhancements */
+  @supports (backdrop-filter: blur(0)) {
+    .mobile-nav-blur {
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+  }
+
+  /* Smooth mobile interactions */
+  @media (max-width: 768px) {
+    .hover-lift {
+      transform: translateY(0);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .hover-lift:active {
+      transform: translateY(1px);
+    }
+    
+    /* Enhanced touch targets */
+    button, a[role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
 }

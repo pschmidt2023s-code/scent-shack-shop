@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ArrowLeft, CreditCard, Building2, Banknote, Copy, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Declare Stripe types for window
 declare global {
@@ -362,15 +363,24 @@ export default function Checkout() {
             {/* Payment Method */}
             <Card>
               <CardHeader>
-                <CardTitle>Zahlungsart</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="w-5 h-5" />
+                  Zahlungsart
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                {/* Hinweis für andere Zahlungsarten */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                  <h3 className="font-medium text-blue-900 mb-2">💳 Kreditkarte oder PayPal gewünscht?</h3>
-                  <p className="text-sm text-blue-800">
-                    Für Kreditkartenzahlung oder PayPal kontaktieren Sie uns bitte unter: 
-                    <a href="mailto:support@aldenairperfumes.de" className="font-medium underline ml-1">
+                {/* Premium Payment Options Coming Soon */}
+                <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4 mb-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                    <h3 className="font-semibold text-primary">🚀 Mehr Zahlungsoptionen bald verfügbar</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Wir arbeiten an der Integration von Kreditkarten, Klarna, Apple Pay und mehr!
+                  </p>
+                  <p className="text-xs text-primary/80">
+                    Für Express-Bestellung mit Kreditkarte: 
+                    <a href="mailto:support@aldenairperfumes.de" className="font-medium underline ml-1 hover:text-primary">
                       support@aldenairperfumes.de
                     </a>
                   </p>
@@ -379,28 +389,79 @@ export default function Checkout() {
                 <RadioGroup 
                   value={paymentMethod} 
                   onValueChange={(value: 'paypal_me' | 'bank') => setPaymentMethod(value)}
-                  className="space-y-4"
+                  className="space-y-3"
                 >
-                  <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-muted/50">
-                    <RadioGroupItem value="paypal_me" id="paypal_me" />
-                    <Label htmlFor="paypal_me" className="flex items-center gap-2 cursor-pointer flex-1">
-                      <CreditCard className="w-5 h-5 text-blue-600" />
-                      <div>
-                        <div className="font-medium">PayPal.me (Empfohlen)</div>
-                        <div className="text-sm text-muted-foreground">Direkte PayPal-Zahlung mit automatischem Betrag</div>
+                  <div className={`group relative overflow-hidden rounded-xl border-2 transition-all duration-300 hover:shadow-lg ${
+                    paymentMethod === 'paypal_me' 
+                      ? 'border-primary bg-primary/5 shadow-md' 
+                      : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                  }`}>
+                    <div className="flex items-center space-x-3 p-4">
+                      <RadioGroupItem value="paypal_me" id="paypal_me" />
+                      <Label htmlFor="paypal_me" className="flex items-center gap-3 cursor-pointer flex-1">
+                        <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center">
+                          <CreditCard className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="font-semibold text-base">PayPal.me</div>
+                            <Badge variant="default" className="text-xs bg-green-500 hover:bg-green-600">
+                              Empfohlen
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            Sofortige, sichere Zahlung • Käuferschutz inklusive
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-green-600 font-medium">✓ Sofort</div>
+                        </div>
+                      </Label>
+                    </div>
+                    {paymentMethod === 'paypal_me' && (
+                      <div className="px-4 pb-4 pt-0">
+                        <div className="bg-blue-50 dark:bg-blue-950/50 rounded-lg p-3 text-sm">
+                          <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            Sie werden direkt zu PayPal weitergeleitet
+                          </div>
+                        </div>
                       </div>
-                    </Label>
+                    )}
                   </div>
 
-                  <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-muted/50">
-                    <RadioGroupItem value="bank" id="bank" />
-                    <Label htmlFor="bank" className="flex items-center gap-2 cursor-pointer flex-1">
-                      <Building2 className="w-5 h-5" />
-                      <div>
-                        <div className="font-medium">Überweisung</div>
-                        <div className="text-sm text-muted-foreground">Klassische Banküberweisung</div>
+                  <div className={`group relative overflow-hidden rounded-xl border-2 transition-all duration-300 hover:shadow-lg ${
+                    paymentMethod === 'bank' 
+                      ? 'border-primary bg-primary/5 shadow-md' 
+                      : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                  }`}>
+                    <div className="flex items-center space-x-3 p-4">
+                      <RadioGroupItem value="bank" id="bank" />
+                      <Label htmlFor="bank" className="flex items-center gap-3 cursor-pointer flex-1">
+                        <div className="w-12 h-12 rounded-xl bg-slate-600 flex items-center justify-center">
+                          <Building2 className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-semibold text-base">Banküberweisung</div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            Klassische SEPA-Überweisung • Kostenlos
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-orange-600 font-medium">1-2 Werktage</div>
+                        </div>
+                      </Label>
+                    </div>
+                    {paymentMethod === 'bank' && (
+                      <div className="px-4 pb-4 pt-0">
+                        <div className="bg-orange-50 dark:bg-orange-950/50 rounded-lg p-3 text-sm">
+                          <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                            Bankdaten werden nach Bestellung angezeigt
+                          </div>
+                        </div>
                       </div>
-                    </Label>
+                    )}
                   </div>
                 </RadioGroup>
 
@@ -442,24 +503,50 @@ export default function Checkout() {
               </CardContent>
             </Card>
 
-            <Button 
-              onClick={handleOrderSubmit}
-              disabled={loading}
-              className="w-full"
-              size="lg"
-            >
-              {loading ? (
-                'Bestellung wird verarbeitet...'
-              ) : paymentMethod === 'paypal_me' ? (
-                `Mit PayPal.me bezahlen (${checkoutData.finalAmount.toFixed(2)}€)`
-              ) : (
-                `Bestellung abschicken (${checkoutData.finalAmount.toFixed(2)}€)`
-              )}
-            </Button>
-
-            <p className="text-xs text-muted-foreground text-center">
-              Mit dem Absenden bestätigen Sie unsere AGB und Datenschutzerklärung
-            </p>
+            {/* Enhanced Submit Button */}
+            <div className="space-y-4">
+              <Button 
+                onClick={handleOrderSubmit} 
+                disabled={loading} 
+                className={cn(
+                  "w-full py-6 text-lg font-bold rounded-xl transition-all duration-300",
+                  "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary",
+                  "shadow-lg hover:shadow-xl hover:shadow-primary/25",
+                  "transform hover:scale-[1.02] active:scale-[0.98]",
+                  loading && "animate-pulse"
+                )}
+                size="lg"
+              >
+                {loading ? (
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Bestellung wird erstellt...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-3">
+                    <span>
+                      {paymentMethod === 'paypal_me' 
+                        ? `🚀 Mit PayPal bezahlen (${checkoutData.finalAmount.toFixed(2)}€)` 
+                        : `✨ Bestellung abschließen (${checkoutData.finalAmount.toFixed(2)}€)`
+                      }
+                    </span>
+                    <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                      <span className="text-sm">→</span>
+                    </div>
+                  </div>
+                )}
+              </Button>
+              
+              {/* Security Notice */}
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <div className="w-4 h-4 text-green-600">🔒</div>
+                <span>Sichere SSL-verschlüsselte Übertragung</span>
+              </div>
+              
+              <p className="text-xs text-muted-foreground text-center">
+                Mit dem Absenden bestätigen Sie unsere AGB und Datenschutzerklärung
+              </p>
+            </div>
           </div>
         </div>
       </div>
