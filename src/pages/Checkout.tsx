@@ -11,7 +11,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, CreditCard, Building2, Banknote, Copy, Check } from 'lucide-react';
+import { ArrowLeft, CreditCard, Building2, Banknote, Copy, Check, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Declare Stripe types for window
@@ -37,7 +37,7 @@ export default function Checkout() {
   const { user } = useAuth();
   
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'paypal_me' | 'bank'>('paypal_me');
+  const [paymentMethod, setPaymentMethod] = useState<'paypal_checkout' | 'paypal_me' | 'bank' | 'sepa' | 'sofort'>('paypal_checkout');
   const [guestEmail, setGuestEmail] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [customerData, setCustomerData] = useState({
@@ -151,7 +151,40 @@ export default function Checkout() {
 
       console.log("Order created successfully, payment method:", paymentMethod);
 
-      if (paymentMethod === 'paypal_me') {
+      if (paymentMethod === 'paypal_checkout') {
+        // Create PayPal order via edge function
+        const { data: paypalData, error: paypalError } = await supabase.functions.invoke('create-paypal-payment', {
+          body: {
+            order_id: newOrderNumber,
+            amount: checkoutData.finalAmount,
+            currency: 'EUR',
+            order_number: newOrderNumber,
+            customer_email: user?.email || guestEmail
+          }
+        });
+
+        if (paypalError) throw paypalError;
+
+        // Redirect to PayPal approval URL
+        window.location.href = paypalData.approval_url;
+        
+      } else if (paymentMethod === 'sepa' || paymentMethod === 'sofort') {
+        // Create Stripe payment session for SEPA/Sofort
+        const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-stripe-session', {
+          body: {
+            items: checkoutData.items,
+            customerEmail: user?.email || guestEmail,
+            orderNumber: newOrderNumber,
+            paymentMethod: paymentMethod
+          }
+        });
+
+        if (stripeError) throw stripeError;
+
+        // Redirect to Stripe checkout
+        window.location.href = stripeData.url;
+        
+      } else if (paymentMethod === 'paypal_me') {
         // Direct PayPal.me link
         const paypalMeUrl = `https://paypal.me/threed48/${checkoutData.finalAmount.toFixed(2)}EUR`;
         console.log('Opening PayPal.me link:', paypalMeUrl);
@@ -388,9 +421,130 @@ export default function Checkout() {
 
                 <RadioGroup 
                   value={paymentMethod} 
-                  onValueChange={(value: 'paypal_me' | 'bank') => setPaymentMethod(value)}
+                  onValueChange={(value: 'paypal_checkout' | 'paypal_me' | 'bank' | 'sepa' | 'sofort') => setPaymentMethod(value)}
                   className="space-y-3"
                 >
+                  {/* PayPal Checkout - Premium Option */}
+                  <div className={`group relative overflow-hidden rounded-xl border-2 transition-all duration-300 hover:shadow-lg ${
+                    paymentMethod === 'paypal_checkout' 
+                      ? 'border-primary bg-primary/5 shadow-md' 
+                      : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                  }`}>
+                    <div className="flex items-center space-x-3 p-4">
+                      <RadioGroupItem value="paypal_checkout" id="paypal_checkout" />
+                      <Label htmlFor="paypal_checkout" className="flex items-center gap-3 cursor-pointer flex-1">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
+                          <span className="text-white font-bold text-sm">PP</span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="font-semibold text-base">PayPal Checkout</div>
+                            <Badge variant="default" className="text-xs bg-green-500 hover:bg-green-600">
+                              Empfohlen
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            Vollautomatisch • PayPal, Kreditkarte, Lastschrift
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-green-600 font-medium">✓ Sofort</div>
+                        </div>
+                      </Label>
+                    </div>
+                    {paymentMethod === 'paypal_checkout' && (
+                      <div className="px-4 pb-4 pt-0">
+                        <div className="bg-green-50 dark:bg-green-950/50 rounded-lg p-3 text-sm">
+                          <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            Automatische Auftragsverarbeitung nach Zahlung
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* SEPA Lastschrift */}
+                  <div className={`group relative overflow-hidden rounded-xl border-2 transition-all duration-300 hover:shadow-lg ${
+                    paymentMethod === 'sepa' 
+                      ? 'border-primary bg-primary/5 shadow-md' 
+                      : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                  }`}>
+                    <div className="flex items-center space-x-3 p-4">
+                      <RadioGroupItem value="sepa" id="sepa" />
+                      <Label htmlFor="sepa" className="flex items-center gap-3 cursor-pointer flex-1">
+                        <div className="w-12 h-12 rounded-xl bg-green-600 flex items-center justify-center">
+                          <Banknote className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="font-semibold text-base">SEPA Lastschrift</div>
+                            <Badge variant="secondary" className="text-xs">
+                              Stammkunden
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            Automatischer Einzug • Für Bestandskunden
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-green-600 font-medium">✓ Sofort</div>
+                        </div>
+                      </Label>
+                    </div>
+                    {paymentMethod === 'sepa' && (
+                      <div className="px-4 pb-4 pt-0">
+                        <div className="bg-green-50 dark:bg-green-950/50 rounded-lg p-3 text-sm">
+                          <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            Mandat wird beim Checkout erteilt
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sofortüberweisung */}
+                  <div className={`group relative overflow-hidden rounded-xl border-2 transition-all duration-300 hover:shadow-lg ${
+                    paymentMethod === 'sofort' 
+                      ? 'border-primary bg-primary/5 shadow-md' 
+                      : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                  }`}>
+                    <div className="flex items-center space-x-3 p-4">
+                      <RadioGroupItem value="sofort" id="sofort" />
+                      <Label htmlFor="sofort" className="flex items-center gap-3 cursor-pointer flex-1">
+                        <div className="w-12 h-12 rounded-xl bg-orange-600 flex items-center justify-center">
+                          <Building2 className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="font-semibold text-base">Sofortüberweisung</div>
+                            <Badge variant="secondary" className="text-xs">
+                              Deutsche Banken
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            Direkt über Ihr Online-Banking
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-green-600 font-medium">✓ Sofort</div>
+                        </div>
+                      </Label>
+                    </div>
+                    {paymentMethod === 'sofort' && (
+                      <div className="px-4 pb-4 pt-0">
+                        <div className="bg-orange-50 dark:bg-orange-950/50 rounded-lg p-3 text-sm">
+                          <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                            Weiterleitung zu Ihrem Online-Banking
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* PayPal.me - Alternative */}
                   <div className={`group relative overflow-hidden rounded-xl border-2 transition-all duration-300 hover:shadow-lg ${
                     paymentMethod === 'paypal_me' 
                       ? 'border-primary bg-primary/5 shadow-md' 
@@ -399,22 +553,22 @@ export default function Checkout() {
                     <div className="flex items-center space-x-3 p-4">
                       <RadioGroupItem value="paypal_me" id="paypal_me" />
                       <Label htmlFor="paypal_me" className="flex items-center gap-3 cursor-pointer flex-1">
-                        <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-xl bg-blue-500 flex items-center justify-center">
                           <CreditCard className="w-6 h-6 text-white" />
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <div className="font-semibold text-base">PayPal.me</div>
-                            <Badge variant="default" className="text-xs bg-green-500 hover:bg-green-600">
-                              Empfohlen
+                            <Badge variant="outline" className="text-xs">
+                              Alternative
                             </Badge>
                           </div>
                           <div className="text-sm text-muted-foreground mt-1">
-                            Sofortige, sichere Zahlung • Käuferschutz inklusive
+                            Manuelle PayPal-Zahlung
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xs text-green-600 font-medium">✓ Sofort</div>
+                          <div className="text-xs text-blue-600 font-medium">✓ Sofort</div>
                         </div>
                       </Label>
                     </div>
@@ -423,7 +577,7 @@ export default function Checkout() {
                         <div className="bg-blue-50 dark:bg-blue-950/50 rounded-lg p-3 text-sm">
                           <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
                             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            Sie werden direkt zu PayPal weitergeleitet
+                            Sie werden zu PayPal.me weitergeleitet
                           </div>
                         </div>
                       </div>
@@ -525,9 +679,11 @@ export default function Checkout() {
                 ) : (
                   <div className="flex items-center justify-center gap-3">
                     <span>
-                      {paymentMethod === 'paypal_me' 
-                        ? `🚀 Mit PayPal bezahlen (${checkoutData.finalAmount.toFixed(2)}€)` 
-                        : `✨ Bestellung abschließen (${checkoutData.finalAmount.toFixed(2)}€)`
+                      {paymentMethod === 'paypal_checkout' ? `🚀 Mit PayPal bezahlen (${checkoutData.finalAmount.toFixed(2)}€)` : 
+                       paymentMethod === 'sepa' ? `💳 SEPA Lastschrift (${checkoutData.finalAmount.toFixed(2)}€)` :
+                       paymentMethod === 'sofort' ? `⚡ Sofortüberweisung (${checkoutData.finalAmount.toFixed(2)}€)` :
+                       paymentMethod === 'paypal_me' ? `💰 PayPal.me (${checkoutData.finalAmount.toFixed(2)}€)` : 
+                       `✨ Bestellung abschließen (${checkoutData.finalAmount.toFixed(2)}€)`
                       }
                     </span>
                     <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
