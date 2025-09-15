@@ -8,6 +8,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { Toaster } from "@/components/ui/toaster";
 import { LiveChat } from '@/components/LiveChat';
 import { PageTransition } from '@/components/PageTransition';
+import { AnimatedLogo } from '@/components/AnimatedLogo';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<

@@ -239,6 +239,24 @@ export default {
             opacity: '1',
             transform: 'scale(1)'
           }
+        },
+        'twinkle': {
+          '0%, 100%': {
+            opacity: '0.3',
+            transform: 'scale(0.8)'
+          },
+          '50%': {
+            opacity: '1',
+            transform: 'scale(1.2)'
+          }
+        },
+        'spin-slow': {
+          '0%': {
+            transform: 'rotate(0deg)'
+          },
+          '100%': {
+            transform: 'rotate(360deg)'
+          }
         }
       },
       animation: {
@@ -258,7 +276,9 @@ export default {
         'glow-pulse': 'glow-pulse 2s ease-in-out infinite',
         'float': 'float 3s ease-in-out infinite',
         'magnetic': 'magnetic 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        'fade-in-scale': 'fade-in-scale 0.4s ease-out'
+        'fade-in-scale': 'fade-in-scale 0.4s ease-out',
+        'twinkle': 'twinkle 2s ease-in-out infinite',
+        'spin-slow': 'spin-slow 8s linear infinite'
       }
 		}
 	},

@@ -8,6 +8,7 @@ import { AuthModal } from './AuthModal';
 import { CartSidebar } from './CartSidebar';
 import { AdvancedSearch } from './AdvancedSearch';
 import { DarkModeToggle } from './DarkModeToggle';
+import { AnimatedLogo } from './AnimatedLogo';
 
 const Navigation = () => {
   const { user, signOut } = useAuth();
@@ -34,13 +35,13 @@ const Navigation = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <Link to="/" className="flex items-center space-x-3 nav-link">
-                <img 
-                  src="/lovable-uploads/f39391b1-7ea2-4b3f-9f06-15ca980668cb.png" 
-                  alt="ALDENAIR Logo" 
-                  className="h-8 w-auto transition-transform duration-300 hover:scale-110"
-                />
-                <span className="text-2xl font-bold text-foreground">ALDENAIR</span>
+              <Link to="/" className="flex items-center space-x-3 nav-link group">
+                <div className="relative">
+                  <AnimatedLogo className="h-10 w-10" />
+                </div>
+                <span className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors duration-300">
+                  ALDENAIR
+                </span>
               </Link>
             </div>
 

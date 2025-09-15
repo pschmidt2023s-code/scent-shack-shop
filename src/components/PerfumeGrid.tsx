@@ -51,10 +51,10 @@ export function PerfumeGrid() {
   console.log('PerfumeGrid: Sort by:', sortBy);
 
   return (
-    <section className="py-16 bg-background">
+    <section className="py-16 bg-gradient-to-b from-background via-background to-muted/20">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-foreground via-luxury-gold to-foreground bg-clip-text text-transparent">
+        <div className="text-center mb-12 animate-fade-in-up">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-foreground via-luxury-gold to-foreground bg-clip-text text-transparent animate-shimmer">
             ALDENAIR Parfüm-Kollektion
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
@@ -96,15 +96,23 @@ export function PerfumeGrid() {
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {sortedPerfumes.map((perfume) => (
-            <PerfumeCard key={perfume.id} perfume={perfume} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          {sortedPerfumes.map((perfume, index) => (
+            <div 
+              key={perfume.id} 
+              className="stagger-item hover-lift hover-glow group"
+              style={{ animationDelay: `${index * 0.15}s` }}
+            >
+              <PerfumeCard 
+                perfume={perfume} 
+              />
+            </div>
           ))}
         </div>
 
         {sortedPerfumes.length === 0 && (
-          <div className="text-center py-12">
-            <Package className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+          <div className="text-center py-12 animate-fade-in-up">
+            <Package className="w-16 h-16 mx-auto mb-4 text-muted-foreground animate-float" />
             <p className="text-xl text-muted-foreground">
               Keine Parfüms in dieser Kategorie gefunden.
             </p>
