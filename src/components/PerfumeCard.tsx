@@ -53,13 +53,23 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
       <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
         <CardContent className="p-0">
           <div className="relative">
-            <Link to={`/product/${perfume.id}`} onClick={handleProductClick}>
+            <Link 
+              to={`/product/${perfume.id}`} 
+              onClick={handleProductClick}
+              aria-label={`${currentVariant.name} Produktdetails ansehen`}
+            >
               <img
                 src={perfume.image}
-                alt={currentVariant.name}
+                alt={`${currentVariant.name} - ${perfume.category} Parfüm`}
                 className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                 loading="lazy"
                 decoding="async"
+                role="img"
+                aria-describedby={`product-${perfume.id}-description`}
+                style={{ 
+                  contentVisibility: 'auto',
+                  containIntrinsicSize: '0 192px'
+                }}
               />
             </Link>
             
@@ -73,8 +83,10 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
                   e.preventDefault();
                   console.log('Quick view:', currentVariant.name);
                 }}
+                aria-label={`Schnellansicht für ${currentVariant.name}`}
+                title="Schnellansicht öffnen"
               >
-                <Eye className="w-4 h-4" />
+                <Eye className="w-4 h-4" aria-hidden="true" />
               </Button>
               <Button
                 size="sm"
@@ -84,8 +96,13 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
                   e.preventDefault();
                   handleWishlistToggle();
                 }}
+                aria-label={isInFavorites ? `${currentVariant.name} von Favoriten entfernen` : `${currentVariant.name} zu Favoriten hinzufügen`}
+                title={isInFavorites ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
               >
-                <Heart className={`w-4 h-4 ${isInFavorites ? 'fill-red-500 text-red-500' : ''}`} />
+                <Heart 
+                  className={`w-4 h-4 ${isInFavorites ? 'fill-red-500 text-red-500' : ''}`} 
+                  aria-hidden="true"
+                />
               </Button>
             </div>
 
@@ -98,13 +115,22 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
           </div>
 
           <div className="p-4">
-            <Link to={`/product/${perfume.id}`} onClick={handleProductClick}>
+            <Link 
+              to={`/product/${perfume.id}`} 
+              onClick={handleProductClick}
+              aria-label={`${currentVariant.name} Produktdetails ansehen`}
+            >
               <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
                 {currentVariant.name}
               </h3>
             </Link>
             
-            <p className="text-sm text-muted-foreground mb-2">{currentVariant.number}</p>
+            <p 
+              className="text-sm text-muted-foreground mb-2"
+              id={`product-${perfume.id}-description`}
+            >
+              {currentVariant.number}
+            </p>
             
             {/* Rating */}
             <div className="flex items-center gap-1 mb-2">
@@ -179,8 +205,9 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
                 handleAddToCart();
               }}
               className="w-full"
+              aria-label={`${currentVariant.name} ${currentVariant.preorder ? 'vorbestellen' : 'in den Warenkorb legen'} für €${discountedPrice.toFixed(2)}`}
             >
-              <ShoppingCart className="w-4 h-4 mr-2" />
+              <ShoppingCart className="w-4 h-4 mr-2" aria-hidden="true" />
               {currentVariant.preorder ? "Vorbestellen" : "In den Warenkorb"}
             </Button>
           </div>

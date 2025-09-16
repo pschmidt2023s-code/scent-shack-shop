@@ -2,7 +2,7 @@
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
     <title>ALDENAIR - Premium Parfüms Online Kaufen</title>
     
     <!-- Security Headers -->
@@ -25,8 +25,11 @@
     <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" href="/lovable-uploads/f39391b1-7ea2-4b3f-9f06-15ca980668cb.png" />
     
-     <!-- Preload critical hero image for better LCP -->
+     <!-- Preload critical resources for better performance -->
      <link rel="preload" as="image" href="/src/assets/hero-perfumes-optimized.webp" fetchpriority="high" />
+     <link rel="preload" as="image" href="/src/assets/hero-perfumes-md.webp" fetchpriority="high" />
+     <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+     <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
      
      <!-- Stripe JavaScript SDK -->
      <script src="https://js.stripe.com/v3/"></script>

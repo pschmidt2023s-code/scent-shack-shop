@@ -7,17 +7,19 @@ import { MobileBottomNav } from '@/components/MobileBottomNav';
 import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { PerformanceOptimizer } from '@/components/PerformanceOptimizer';
+import { AccessibilityEnhancer } from '@/components/AccessibilityEnhancer';
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <PerformanceOptimizer />
+      <AccessibilityEnhancer />
       {/* Social Proof Banner */}
       {/* <SocialProof variant="banner" /> */}
       
       <Navigation />
       
-      <main>
+      <main id="main-content" role="main" aria-label="Hauptinhalt">
         <HeroSection />
         <PerfumeGrid />
         <RecentlyViewed />

@@ -12,25 +12,41 @@ export function HeroSection() {
         <img
           src={heroImage}
           srcSet={`${heroImageMd} 896w, ${heroImage} 1344w`}
-          sizes="100vw"
+          sizes="(max-width: 768px) 896px, 1344px"
           alt="ALDENAIR luxury perfume collection - Premium Parfüms und exklusive Duftkreationen"
           className="w-full h-full object-cover"
           loading="eager"
           decoding="async"
+          fetchPriority="high"
           width="1344"
           height="768"
-          style={{ contentVisibility: 'auto', containIntrinsicSize: '1344px 768px' }}
+          data-priority="high"
+          role="img"
+          aria-label="ALDENAIR Luxus-Parfüm-Kollektion Hintergrundbild"
+          style={{ 
+            contentVisibility: 'auto', 
+            containIntrinsicSize: '1344px 768px',
+            imageRendering: 'crisp-edges'
+          }}
         />
         <div className="absolute inset-0 bg-gradient-hero opacity-80"></div>
       </div>
 
       {/* Content */}
       <div className="relative z-10 text-center text-primary-foreground px-4 max-w-4xl mx-auto">
-        <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight animate-fade-in-up">
+        <h1 
+          className="text-5xl md:text-7xl font-bold mb-6 leading-tight animate-fade-in-up"
+          aria-label="Willkommen bei ALDENAIR - Premium Parfüms"
+        >
           <span className="inline-block opacity-0 animate-slide-in-left" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
             Willkommen bei
           </span>
-          <span className="block text-luxury-gold animate-scale-in-bounce glow-pulse" style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}>
+          <span 
+            className="block text-luxury-gold animate-scale-in-bounce glow-pulse" 
+            style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}
+            role="text"
+            aria-label="ALDENAIR Markenname"
+          >
             ALDENAIR
           </span>
         </h1>
@@ -41,8 +57,17 @@ export function HeroSection() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center opacity-0 animate-slide-up" style={{ animationDelay: '1.1s', animationFillMode: 'forwards' }}>
-          <Button variant="gold" size="lg" className="group text-lg px-8 py-4 hover-glow transition-all duration-500 hover:scale-105 hover:rotate-1 hover:shadow-[0_20px_40px_rgba(218,165,32,0.4)] relative overflow-hidden font-semibold" asChild>
-            <Link to="/products?category=50ML Bottles">
+          <Button 
+            variant="gold" 
+            size="lg" 
+            className="group text-lg px-8 py-4 hover-glow transition-all duration-500 hover:scale-105 hover:rotate-1 hover:shadow-[0_20px_40px_rgba(218,165,32,0.4)] relative overflow-hidden font-semibold" 
+            asChild
+          >
+            <Link 
+              to="/products?category=50ML Bottles"
+              aria-label="Parfüm-Kollektion entdecken - 50ml Flaschen"
+              role="button"
+            >
               <span className="relative z-10 transition-transform duration-300 group-hover:scale-110 drop-shadow-sm">
                 Parfüms entdecken
               </span>
@@ -50,8 +75,17 @@ export function HeroSection() {
             </Link>
           </Button>
           
-          <Button variant="gold" size="lg" className="group text-lg px-8 py-4 hover-lift transition-all duration-500 hover:scale-105 hover:-rotate-1 relative overflow-hidden" asChild>
-            <Link to="/products?category=Proben">
+          <Button 
+            variant="gold" 
+            size="lg" 
+            className="group text-lg px-8 py-4 hover-lift transition-all duration-500 hover:scale-105 hover:-rotate-1 relative overflow-hidden" 
+            asChild
+          >
+            <Link 
+              to="/products?category=Proben"
+              aria-label="Parfüm-Proben bestellen - 5ml Testgrößen"
+              role="button"
+            >
               <span className="relative z-10 transition-transform duration-300 group-hover:scale-110">
                 Proben bestellen
               </span>
