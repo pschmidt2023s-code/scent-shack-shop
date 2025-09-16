@@ -37,7 +37,7 @@ export default function Checkout() {
   const { user } = useAuth();
   
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'paypal_checkout' | 'paypal_me' | 'bank' | 'sepa' | 'sofort'>('paypal_checkout');
+  const [paymentMethod, setPaymentMethod] = useState<'paypal_checkout' | 'paypal_me' | 'bank' | 'sepa'>('paypal_checkout');
   const [guestEmail, setGuestEmail] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [customerData, setCustomerData] = useState({
@@ -185,24 +185,6 @@ export default function Checkout() {
         if (stripeError) {
           console.error('SEPA Error:', stripeError);
           throw new Error(`SEPA-Zahlung fehlgeschlagen: ${stripeError.message}`);
-        }
-
-        // Redirect to Stripe checkout
-        window.location.href = stripeData.url;
-        
-      } else if (paymentMethod === 'sofort') {
-        // Create Sofort payment session
-        const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-sofort-payment', {
-          body: {
-            items: checkoutData.items,
-            customerEmail: user?.email || guestEmail,
-            orderNumber: newOrderNumber
-          }
-        });
-
-        if (stripeError) {
-          console.error('Sofort Error:', stripeError);
-          throw new Error(`Sofortüberweisung fehlgeschlagen: ${stripeError.message}`);
         }
 
         // Redirect to Stripe checkout
@@ -445,8 +427,8 @@ export default function Checkout() {
 
                 <RadioGroup 
                   value={paymentMethod} 
-                  onValueChange={(value: 'paypal_checkout' | 'paypal_me' | 'bank' | 'sepa' | 'sofort') => setPaymentMethod(value)}
-                  className="space-y-3"
+                  onValueChange={(value: 'paypal_checkout' | 'paypal_me' | 'bank' | 'sepa') => setPaymentMethod(value)}
+                  className="space-y-4"
                 >
                   {/* PayPal Checkout - Premium Option */}
                   <div className={`group relative overflow-hidden rounded-xl border-2 transition-all duration-300 hover:shadow-lg ${
@@ -522,46 +504,6 @@ export default function Checkout() {
                           <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
                             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                             Mandat wird beim Checkout erteilt
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Sofortüberweisung */}
-                  <div className={`group relative overflow-hidden rounded-xl border-2 transition-all duration-300 hover:shadow-lg ${
-                    paymentMethod === 'sofort' 
-                      ? 'border-primary bg-primary/5 shadow-md' 
-                      : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                  }`}>
-                    <div className="flex items-center space-x-3 p-4">
-                      <RadioGroupItem value="sofort" id="sofort" />
-                      <Label htmlFor="sofort" className="flex items-center gap-3 cursor-pointer flex-1">
-                        <div className="w-12 h-12 rounded-xl bg-orange-600 flex items-center justify-center">
-                          <Building2 className="w-6 h-6 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <div className="font-semibold text-base">Sofortüberweisung</div>
-                            <Badge variant="secondary" className="text-xs">
-                              Deutsche Banken
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            Direkt über Ihr Online-Banking
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs text-green-600 font-medium">✓ Sofort</div>
-                        </div>
-                      </Label>
-                    </div>
-                    {paymentMethod === 'sofort' && (
-                      <div className="px-4 pb-4 pt-0">
-                        <div className="bg-orange-50 dark:bg-orange-950/50 rounded-lg p-3 text-sm">
-                          <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
-                            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                            Weiterleitung zu Ihrem Online-Banking
                           </div>
                         </div>
                       </div>
@@ -703,12 +645,11 @@ export default function Checkout() {
                 ) : (
                   <div className="flex items-center justify-center gap-3">
                     <span>
-                      {paymentMethod === 'paypal_checkout' ? `🚀 Mit PayPal bezahlen (${checkoutData.finalAmount.toFixed(2)}€)` : 
-                       paymentMethod === 'sepa' ? `💳 SEPA Lastschrift (${checkoutData.finalAmount.toFixed(2)}€)` :
-                       paymentMethod === 'sofort' ? `⚡ Sofortüberweisung (${checkoutData.finalAmount.toFixed(2)}€)` :
-                       paymentMethod === 'paypal_me' ? `💰 PayPal.me (${checkoutData.finalAmount.toFixed(2)}€)` : 
-                       `✨ Bestellung abschließen (${checkoutData.finalAmount.toFixed(2)}€)`
-                      }
+                       {paymentMethod === 'paypal_checkout' ? `🚀 Mit PayPal bezahlen (${checkoutData.finalAmount.toFixed(2)}€)` : 
+                        paymentMethod === 'sepa' ? `💳 SEPA Lastschrift (${checkoutData.finalAmount.toFixed(2)}€)` :
+                        paymentMethod === 'paypal_me' ? `💰 PayPal.me (${checkoutData.finalAmount.toFixed(2)}€)` : 
+                        `✨ Bestellung abschließen (${checkoutData.finalAmount.toFixed(2)}€)`
+                       }
                     </span>
                     <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
                       <span className="text-sm">→</span>
