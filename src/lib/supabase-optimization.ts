@@ -49,29 +49,14 @@ export function clearCache(key?: string) {
 }
 
 /**
- * Optimized perfume queries - only fetch required fields to reduce data transfer
+ * Optimized review queries - reviews are stored in Supabase
  */
-export const optimizedPerfumeQueries = {
-  // Get perfume list with minimal data for grid display
-  getPerfumeList: () => 
-    supabase
-      .from('perfumes')
-      .select('id, name, brand, category, image, variants(id, name, price, inStock)')
-      .limit(50), // Limit to reduce data transfer
-      
-  // Get single perfume with all details only when needed
-  getPerfumeDetails: (id: string) =>
-    supabase
-      .from('perfumes')
-      .select('*')
-      .eq('id', id)
-      .single(),
-      
+export const optimizedReviewQueries = {
   // Get reviews with essential data only
   getReviewsSummary: (perfumeId: string, variantId: string) =>
     supabase
       .from('reviews')
-      .select('id, rating, created_at, is_verified')
+      .select('id, rating, created_at, is_verified, title, content')
       .eq('perfume_id', perfumeId)
       .eq('variant_id', variantId)
       .order('created_at', { ascending: false })
@@ -138,30 +123,17 @@ export async function optimizedUpload(
 }
 
 /**
- * Get optimized image URLs with transformations
+ * Get optimized image URLs (basic implementation without transformations)
  * @param bucket Storage bucket name
  * @param path File path in storage
- * @param width Optional width for resizing
- * @param height Optional height for resizing
- * @param quality Optional quality (1-100)
  */
 export function getOptimizedImageUrl(
   bucket: string,
-  path: string,
-  width?: number,
-  height?: number,
-  quality: number = 85
+  path: string
 ): string {
   const { data } = supabase.storage
     .from(bucket)
-    .getPublicUrl(path, {
-      transform: {
-        width,
-        height,
-        quality,
-        format: 'webp' // Use WebP for better compression
-      }
-    });
+    .getPublicUrl(path);
     
   return data.publicUrl;
 }
@@ -172,15 +144,13 @@ export function getOptimizedImageUrl(
 export const batchOperations = {
   // Insert multiple records in one operation
   insertMultiple: async <T>(table: string, records: T[]) => {
-    return await supabase
-      .from(table)
-      .insert(records);
+    return await (supabase.from as any)(table).insert(records);
   },
   
   // Update multiple records with different conditions
   updateMultiple: async (table: string, updates: Array<{ id: string; data: any }>) => {
     const promises = updates.map(({ id, data }) =>
-      supabase.from(table).update(data).eq('id', id)
+      (supabase.from as any)(table).update(data).eq('id', id)
     );
     return await Promise.all(promises);
   }

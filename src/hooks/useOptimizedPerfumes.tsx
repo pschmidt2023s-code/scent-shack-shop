@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { cachedQuery, optimizedPerfumeQueries } from '@/lib/supabase-optimization';
+import { perfumes as staticPerfumes } from '@/data/perfumes';
 import type { Perfume } from '@/types/perfume';
 
 interface UseOptimizedPerfumesResult {
@@ -11,7 +11,7 @@ interface UseOptimizedPerfumesResult {
 
 /**
  * Optimized hook for fetching perfume data with caching
- * Reduces database calls and data transfer by using cached results
+ * Uses static data with simulated loading for consistent UX
  */
 export function useOptimizedPerfumes(): UseOptimizedPerfumesResult {
   const [perfumes, setPerfumes] = useState<Perfume[]>([]);
@@ -23,18 +23,10 @@ export function useOptimizedPerfumes(): UseOptimizedPerfumesResult {
       setLoading(true);
       setError(null);
       
-      // Use cached query to reduce database calls
-      const result = await cachedQuery(
-        'perfumes-list',
-        () => optimizedPerfumeQueries.getPerfumeList(),
-        10 // Cache for 10 minutes
-      );
+      // Simulate async loading for consistent UX
+      await new Promise(resolve => setTimeout(resolve, 100));
       
-      if (result.error) {
-        throw new Error(result.error.message);
-      }
-      
-      setPerfumes(result.data || []);
+      setPerfumes(staticPerfumes);
     } catch (err) {
       console.error('Error fetching perfumes:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch perfumes');
@@ -57,7 +49,7 @@ export function useOptimizedPerfumes(): UseOptimizedPerfumesResult {
 
 /**
  * Optimized hook for fetching single perfume details
- * Only fetches full data when needed, uses caching
+ * Uses static data with simulated loading
  */
 export function useOptimizedPerfumeDetails(perfumeId: string | undefined) {
   const [perfume, setPerfume] = useState<Perfume | null>(null);
@@ -65,24 +57,24 @@ export function useOptimizedPerfumeDetails(perfumeId: string | undefined) {
   const [error, setError] = useState<string | null>(null);
 
   const fetchPerfumeDetails = async () => {
-    if (!perfumeId) return;
+    if (!perfumeId) {
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
       setError(null);
       
-      // Use cached query with shorter TTL for details
-      const result = await cachedQuery(
-        `perfume-details-${perfumeId}`,
-        () => optimizedPerfumeQueries.getPerfumeDetails(perfumeId),
-        5 // Cache for 5 minutes
-      );
+      // Simulate async loading
+      await new Promise(resolve => setTimeout(resolve, 100));
       
-      if (result.error) {
-        throw new Error(result.error.message);
+      const foundPerfume = staticPerfumes.find(p => p.id === perfumeId);
+      setPerfume(foundPerfume || null);
+      
+      if (!foundPerfume) {
+        setError('Perfume not found');
       }
-      
-      setPerfume(result.data);
     } catch (err) {
       console.error('Error fetching perfume details:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch perfume details');
@@ -104,7 +96,7 @@ export function useOptimizedPerfumeDetails(perfumeId: string | undefined) {
 }
 
 /**
- * Optimized reviews hook with minimal data fetching
+ * Optimized reviews hook - uses Supabase for actual review data
  */
 export function useOptimizedReviews(perfumeId: string, variantId: string) {
   const [reviews, setReviews] = useState<any[]>([]);
@@ -116,18 +108,21 @@ export function useOptimizedReviews(perfumeId: string, variantId: string) {
       setLoading(true);
       setError(null);
       
-      // Use cached query for reviews summary
-      const result = await cachedQuery(
-        `reviews-${perfumeId}-${variantId}`,
-        () => optimizedPerfumeQueries.getReviewsSummary(perfumeId, variantId),
-        3 // Cache for 3 minutes (shorter for user content)
-      );
+      // Since reviews are in Supabase, we can use the actual query
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error: supabaseError } = await supabase
+        .from('reviews')
+        .select('id, rating, created_at, is_verified, title, content')
+        .eq('perfume_id', perfumeId)
+        .eq('variant_id', variantId)
+        .order('created_at', { ascending: false })
+        .limit(20);
       
-      if (result.error) {
-        throw new Error(result.error.message);
+      if (supabaseError) {
+        throw new Error(supabaseError.message);
       }
       
-      setReviews(result.data || []);
+      setReviews(data || []);
     } catch (err) {
       console.error('Error fetching reviews:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch reviews');
