@@ -37,7 +37,7 @@ export default function Checkout() {
   const { user } = useAuth();
   
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'paypal_checkout' | 'paypal_me' | 'bank' | 'sepa'>('paypal_checkout');
+  const [paymentMethod, setPaymentMethod] = useState<'paypal_checkout' | 'bank' | 'sepa'>('paypal_checkout');
   const [guestEmail, setGuestEmail] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [customerData, setCustomerData] = useState({
@@ -190,20 +190,6 @@ export default function Checkout() {
         // Redirect to Stripe checkout
         window.location.href = stripeData.url;
         
-      } else if (paymentMethod === 'paypal_me') {
-        // Direct PayPal.me link
-        const paypalMeUrl = `https://paypal.me/threed48/${checkoutData.finalAmount.toFixed(2)}EUR`;
-        console.log('Opening PayPal.me link:', paypalMeUrl);
-        window.open(paypalMeUrl, '_blank');
-        
-        // Show success page for PayPal.me
-        navigate('/checkout-success', { 
-          state: { 
-            orderNumber: newOrderNumber,
-            paymentMethod: 'paypal_me',
-            totalAmount: checkoutData.finalAmount 
-          }
-        });
       } else if (paymentMethod === 'bank') {
         // Show bank transfer details
         navigate('/checkout-bank', { 
@@ -427,7 +413,7 @@ export default function Checkout() {
 
                 <RadioGroup 
                   value={paymentMethod} 
-                  onValueChange={(value: 'paypal_checkout' | 'paypal_me' | 'bank' | 'sepa') => setPaymentMethod(value)}
+                  onValueChange={(value: 'paypal_checkout' | 'bank' | 'sepa') => setPaymentMethod(value)}
                   className="space-y-4"
                 >
                   {/* PayPal Checkout - Premium Option */}
@@ -629,10 +615,11 @@ export default function Checkout() {
                 onClick={handleOrderSubmit} 
                 disabled={loading} 
                 className={cn(
-                  "w-full py-6 text-lg font-bold rounded-xl transition-all duration-300",
+                  "w-full py-4 text-base font-bold rounded-xl transition-all duration-300",
                   "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary",
                   "shadow-lg hover:shadow-xl hover:shadow-primary/25",
                   "transform hover:scale-[1.02] active:scale-[0.98]",
+                  "flex flex-col items-center justify-center gap-1",
                   loading && "animate-pulse"
                 )}
                 size="lg"
@@ -642,20 +629,19 @@ export default function Checkout() {
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     <span>Bestellung wird erstellt...</span>
                   </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-3">
-                    <span>
-                       {paymentMethod === 'paypal_checkout' ? `🚀 Mit PayPal bezahlen (${checkoutData.finalAmount.toFixed(2)}€)` : 
-                        paymentMethod === 'sepa' ? `💳 SEPA Lastschrift (${checkoutData.finalAmount.toFixed(2)}€)` :
-                        paymentMethod === 'paypal_me' ? `💰 PayPal.me (${checkoutData.finalAmount.toFixed(2)}€)` : 
-                        `✨ Bestellung abschließen (${checkoutData.finalAmount.toFixed(2)}€)`
-                       }
-                    </span>
-                    <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-                      <span className="text-sm">→</span>
-                    </div>
-                  </div>
-                )}
+                 ) : (
+                   <>
+                     <span className="text-center leading-tight">
+                        {paymentMethod === 'paypal_checkout' ? `🚀 Mit PayPal bezahlen` : 
+                         paymentMethod === 'sepa' ? `💳 SEPA Lastschrift` :
+                         `✨ Bestellung abschließen`
+                        }
+                     </span>
+                     <span className="text-sm opacity-90 font-normal">
+                        {checkoutData.finalAmount.toFixed(2)}€
+                     </span>
+                   </>
+                 )}
               </Button>
               
               {/* Security Notice */}
