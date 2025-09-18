@@ -22,7 +22,13 @@ export function AnimatedLogo({ className = "" }: AnimatedLogoProps) {
             : 'opacity-100 rotate-0 scale-100'
         }`}
       >
-        <Sun className="w-full h-full text-orange-500 animate-spin" style={{ animationDuration: '8s' }} />
+        <div className={`relative w-full h-full rounded-full border-2 transition-all duration-1000 ease-in-out ${
+          theme === 'dark' 
+            ? 'border-transparent' 
+            : 'border-orange-400/60'
+        }`}>
+          <Sun className="w-full h-full text-orange-500 animate-spin" style={{ animationDuration: '8s' }} />
+        </div>
         {/* Sun rays */}
         {[...Array(8)].map((_, i) => (
           <div
@@ -47,7 +53,13 @@ export function AnimatedLogo({ className = "" }: AnimatedLogoProps) {
             : 'opacity-0 -rotate-180 scale-50'
         }`}
       >
-        <Moon className="w-full h-full text-blue-400" />
+        <div className={`relative w-full h-full rounded-full border-2 transition-all duration-1000 ease-in-out ${
+          theme === 'dark' 
+            ? 'border-blue-400/60' 
+            : 'border-transparent'
+        }`}>
+          <Moon className="w-full h-full text-blue-400" />
+        </div>
         {/* Stars */}
         {[...Array(6)].map((_, i) => (
           <div
