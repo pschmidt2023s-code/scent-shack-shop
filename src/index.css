@@ -415,5 +415,53 @@
       min-height: 44px;
       min-width: 44px;
     }
+
+    /* Mobile-specific improvements */
+    .mobile-padding {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    /* Mobile bottom navigation spacing */
+    .pb-mobile-nav {
+      padding-bottom: 5rem;
+    }
+
+    /* Safe area adjustments for notched devices */
+    .safe-top {
+      padding-top: env(safe-area-inset-top);
+    }
+
+    .safe-bottom {
+      padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
+    }
+
+    /* Mobile-specific hero adjustments */
+    .mobile-hero-text {
+      font-size: clamp(2rem, 8vw, 3rem);
+      line-height: 1.1;
+    }
+
+    /* Enhanced scroll behavior for mobile */
+    body {
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+    }
+  }
+
+  /* Ultra-wide mobile screens */
+  @media (max-width: 480px) {
+    .text-xs-mobile {
+      font-size: 0.75rem;
+    }
+    
+    .compact-spacing {
+      gap: 0.5rem;
+    }
+    
+    .btn-compact {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+    }
   }
 }
