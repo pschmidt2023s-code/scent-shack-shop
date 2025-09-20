@@ -1,4 +1,3 @@
-import { Moon, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
@@ -15,12 +14,23 @@ export function DarkModeToggle() {
 
   const handleToggle = () => {
     setIsTransitioning(true)
-    setTheme(theme === 'dark' ? 'light' : 'dark')
     
-    // Reset transition state after animation completes
+    // Add fade out effect to body
+    document.body.style.transition = 'opacity 0.3s ease-in-out'
+    document.body.style.opacity = '0.8'
+    
     setTimeout(() => {
-      setIsTransitioning(false)
-    }, 800)
+      setTheme(theme === 'dark' ? 'light' : 'dark')
+      
+      // Fade back in
+      setTimeout(() => {
+        document.body.style.opacity = '1'
+        setTimeout(() => {
+          document.body.style.transition = ''
+          setIsTransitioning(false)
+        }, 300)
+      }, 50)
+    }, 150)
   }
 
   if (!mounted) {
@@ -36,54 +46,29 @@ export function DarkModeToggle() {
       variant="ghost"
       size="icon"
       onClick={handleToggle}
-      className="relative w-10 h-10 sm:w-12 sm:h-12 overflow-hidden transition-all duration-500 hover:scale-110 hover:bg-accent/20 border border-transparent hover:border-accent/30 group"
+      className="relative w-10 h-10 sm:w-12 sm:h-12 overflow-hidden transition-all duration-300 hover:scale-105 hover:bg-accent/20 border border-transparent hover:border-accent/30 group"
       aria-label="Toggle theme"
     >
-      {/* Background glow effect */}
-      <div className={`absolute inset-0 rounded-full transition-all duration-1000 ${
+      {/* Background circle with gradient */}
+      <div className={`absolute inset-1 rounded-full transition-all duration-500 ${
         isTransitioning 
-          ? 'bg-gradient-to-br from-primary/40 to-accent/40 opacity-100 scale-110' 
-          : 'bg-gradient-to-br from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100'
+          ? 'bg-gradient-to-br from-primary/60 to-accent/60 opacity-100 scale-110' 
+          : theme === 'dark'
+            ? 'bg-gradient-to-br from-slate-700 to-slate-800 opacity-80 group-hover:opacity-100'
+            : 'bg-gradient-to-br from-orange-200 to-yellow-200 opacity-80 group-hover:opacity-100'
       }`} />
       
-      {/* Sun Icon */}
-      <Sun 
-        className={`absolute inset-0 w-4 h-4 sm:w-5 sm:h-5 m-auto transition-all duration-1000 ease-in-out text-orange-500 ${
-          theme === 'dark' 
-            ? 'opacity-0 rotate-180 scale-0 blur-sm' 
-            : 'opacity-100 rotate-0 scale-100 blur-0'
-        } ${isTransitioning ? 'animate-pulse' : ''}`} 
-      />
+      {/* Simple indicator dot */}
+      <div className={`absolute w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-500 ${
+        theme === 'dark' 
+          ? 'bg-slate-300 top-2 left-2 sm:top-2.5 sm:left-2.5' 
+          : 'bg-orange-400 bottom-2 right-2 sm:bottom-2.5 sm:right-2.5'
+      } ${isTransitioning ? 'animate-pulse scale-150' : ''}`} />
       
-      {/* Moon Icon */}
-      <Moon 
-        className={`absolute inset-0 w-4 h-4 sm:w-5 sm:h-5 m-auto transition-all duration-1000 ease-in-out text-blue-400 ${
-          theme === 'dark' 
-            ? 'opacity-100 rotate-0 scale-100 blur-0' 
-            : 'opacity-0 -rotate-180 scale-0 blur-sm'
-        } ${isTransitioning ? 'animate-pulse' : ''}`} 
-      />
-      
-      {/* Animated particles effect */}
-      <div className="absolute inset-0 pointer-events-none">
-        {[...Array(6)].map((_, i) => (
-          <div
-            key={i}
-            className={`absolute w-0.5 h-0.5 sm:w-1 sm:h-1 rounded-full transition-all duration-1000 ${
-              theme === 'dark' ? 'bg-blue-300' : 'bg-yellow-300'
-            } ${
-              theme === 'dark' 
-                ? 'opacity-60 animate-pulse' 
-                : 'opacity-30 animate-bounce'
-            } ${isTransitioning ? 'opacity-100 scale-150' : ''}`}
-            style={{
-              left: `${20 + i * 10}%`,
-              top: `${15 + (i % 3) * 20}%`,
-              animationDelay: `${i * 0.2}s`,
-            }}
-          />
-        ))}
-      </div>
+      {/* Ripple effect on transition */}
+      {isTransitioning && (
+        <div className="absolute inset-0 rounded-full bg-accent/30 animate-ping" />
+      )}
     </Button>
   )
 }
