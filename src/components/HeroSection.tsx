@@ -38,7 +38,7 @@ export function HeroSection() {
           className="text-4xl sm:text-5xl lg:text-7xl font-bold mb-4 sm:mb-6 leading-tight animate-fade-in-up px-2"
           aria-label="Willkommen bei ALDENAIR - Premium Parfüms"
         >
-          <span className="inline-block opacity-0 animate-slide-in-left" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+          <span className="inline-block opacity-0 animate-slide-in-left text-primary-foreground dark:text-white" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
             Willkommen bei
           </span>
           <span 
