@@ -50,7 +50,7 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
 
   return (
     <>
-      <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
+      <Card className="group hover:shadow-md transition-shadow duration-200 overflow-hidden">
         <CardContent className="p-0">
           <div className="relative">
             <Link 
@@ -61,14 +61,14 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
               <img
                 src={perfume.image}
                 alt={`${currentVariant.name} - ${perfume.category} Parfüm`}
-                className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                className="w-full h-48 object-cover transition-transform duration-200 group-hover:scale-[1.01]"
                 loading="lazy"
                 decoding="async"
                 role="img"
                 aria-describedby={`product-${perfume.id}-description`}
                 style={{ 
-                  contentVisibility: 'auto',
-                  containIntrinsicSize: '0 192px'
+                  backfaceVisibility: 'hidden',
+                  transform: 'translateZ(0)'
                 }}
               />
             </Link>
