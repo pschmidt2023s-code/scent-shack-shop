@@ -311,21 +311,6 @@
   }
 
   /* Additional animations */
-  @keyframes fadeInOut {
-    0% { 
-      border-color: transparent; 
-      opacity: 0; 
-    }
-    50% { 
-      border-color: hsl(var(--accent)); 
-      opacity: 1; 
-    }
-    100% { 
-      border-color: transparent; 
-      opacity: 0; 
-    }
-  }
-
   @keyframes fade-in-up {
     from {
       opacity: 0;

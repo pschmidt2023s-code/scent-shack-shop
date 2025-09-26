@@ -15,9 +15,9 @@ export function DarkModeToggle() {
   const handleToggle = () => {
     setIsTransitioning(true)
     
-    // Add fade out effect to body
-    document.body.style.transition = 'opacity 0.3s ease-in-out'
-    document.body.style.opacity = '0.8'
+    // Add smooth fade transition to body
+    document.body.style.transition = 'opacity 0.4s ease-in-out'
+    document.body.style.opacity = '0.7'
     
     setTimeout(() => {
       setTheme(theme === 'dark' ? 'light' : 'dark')
@@ -28,9 +28,9 @@ export function DarkModeToggle() {
         setTimeout(() => {
           document.body.style.transition = ''
           setIsTransitioning(false)
-        }, 500)
-      }, 50)
-    }, 150)
+        }, 400)
+      }, 100)
+    }, 200)
   }
 
   if (!mounted) {
@@ -46,11 +46,7 @@ export function DarkModeToggle() {
       variant="ghost"
       size="icon"
       onClick={handleToggle}
-      className={`relative w-10 h-10 sm:w-12 sm:h-12 overflow-hidden transition-all duration-300 hover:scale-105 hover:bg-accent/20 group ${
-        isTransitioning 
-          ? 'border-2 border-accent animate-[fadeInOut_0.8s_ease-in-out]' 
-          : 'border border-transparent hover:border-accent/30'
-      }`}
+      className="relative w-10 h-10 sm:w-12 sm:h-12 overflow-hidden transition-all duration-300 hover:scale-105 hover:bg-accent/20 group"
       aria-label="Toggle theme"
     >
       {/* Background circle with gradient */}
