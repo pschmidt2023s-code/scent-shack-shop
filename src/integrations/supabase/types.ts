@@ -749,6 +749,30 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_events: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       returns: {
         Row: {
           admin_notes: string | null
@@ -881,6 +905,39 @@ export type Database = {
           },
         ]
       }
+      security_events: {
+        Row: {
+          created_at: string | null
+          details: Json | null
+          event_type: string
+          id: string
+          ip_address: unknown | null
+          severity: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          details?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: unknown | null
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          details?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: unknown | null
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -911,6 +968,10 @@ export type Database = {
         Args: { user_id_param: string; variant_id_param: string }
         Returns: boolean
       }
+      cleanup_old_security_logs: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       generate_order_number: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -939,6 +1000,10 @@ export type Database = {
       is_admin: {
         Args: { user_id: string }
         Returns: boolean
+      }
+      log_security_event: {
+        Args: { p_details?: Json; p_event_type: string; p_severity?: string }
+        Returns: undefined
       }
     }
     Enums: {
