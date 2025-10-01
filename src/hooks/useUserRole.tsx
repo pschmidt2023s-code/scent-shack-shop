@@ -23,17 +23,23 @@ export function useUserRole() {
       }
 
       try {
-        // Debug logs for troubleshooting
-        console.log('useUserRole: Fetching user role for user:', user?.id);
+        // Only proceed with database queries if user is authenticated
+        if (!user.email) {
+          console.warn('useUserRole: User email not available');
+          setRole('user');
+          setIsNewsletterSubscriber(false);
+          setLoading(false);
+          return;
+        }
 
         // Check user role from user_roles table
         const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
-        if (roleError && roleError.code !== 'PGRST116') { // PGRST116 is "not found"
+        if (roleError) {
           console.error('Error fetching user role:', roleError);
         }
 
@@ -41,16 +47,15 @@ export function useUserRole() {
         // In a real implementation, you'd have proper role assignment logic
         let userRole: UserRole = 'user';
         
-        // Check newsletter subscription
+        // Check newsletter subscription - only if authenticated
         const { data: newsletterData, error: newsletterError } = await supabase
           .from('newsletter_subscriptions')
           .select('id')
           .eq('email', user.email)
           .eq('is_active', true)
-          .single();
+          .maybeSingle();
 
         const isSubscriber = !newsletterError && !!newsletterData;
-        console.log('useUserRole: Newsletter subscriber?', isSubscriber);
         setIsNewsletterSubscriber(isSubscriber);
 
         // Role assignment based on database data
@@ -68,7 +73,6 @@ export function useUserRole() {
           // Premium status would be assigned through admin or based on purchase history
         }
         
-        console.log('useUserRole: Final role assigned:', userRole);
         setRole(userRole);
       } catch (error) {
         console.error('Error in useUserRole:', error);
