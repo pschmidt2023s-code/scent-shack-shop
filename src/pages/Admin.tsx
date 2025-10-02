@@ -19,6 +19,7 @@ const PartnerManagement = lazy(() => import('@/components/admin/PartnerManagemen
 const NewsletterManagement = lazy(() => import('@/components/admin/NewsletterManagement'));
 const PaybackManagement = lazy(() => import('@/components/admin/PaybackManagement'));
 const AdminChatInterface = lazy(() => import('@/components/admin/AdminChatInterface'));
+const ContestManagement = lazy(() => import('@/components/admin/ContestManagement').then(module => ({ default: module.ContestManagement })));
 import { getPerfumeNameById } from '@/lib/perfume-utils';
 
 interface Order {
@@ -209,7 +210,7 @@ export default function Admin() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-8 w-full max-w-6xl animate-slide-in-right backdrop-blur-sm bg-card/80 border">
+          <TabsList className="grid grid-cols-9 w-full max-w-6xl animate-slide-in-right backdrop-blur-sm bg-card/80 border">
             <TabsTrigger value="orders" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
               <Package className="w-4 h-4 transition-transform duration-200" />
               Bestellungen
@@ -237,6 +238,10 @@ export default function Admin() {
             <TabsTrigger value="newsletter" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
               <Users className="w-4 h-4 transition-transform duration-200" />
               Newsletter
+            </TabsTrigger>
+            <TabsTrigger value="contest" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
+              <Package className="w-4 h-4 transition-transform duration-200" />
+              Gewinnspiel
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
               <Users className="w-4 h-4 transition-transform duration-200" />
@@ -441,6 +446,12 @@ export default function Admin() {
           <TabsContent value="newsletter" className="space-y-6 animate-fade-in duration-500">
             <Suspense fallback={<TabContentLoader />}>
               <NewsletterManagement />
+            </Suspense>
+          </TabsContent>
+
+          <TabsContent value="contest" className="space-y-6 animate-fade-in duration-500">
+            <Suspense fallback={<TabContentLoader />}>
+              <ContestManagement />
             </Suspense>
           </TabsContent>
 

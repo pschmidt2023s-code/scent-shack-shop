@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/form';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const contestSchema = z.object({
   firstName: z.string().min(2, 'Vorname muss mindestens 2 Zeichen lang sein').max(50),
@@ -42,6 +43,7 @@ const contestSchema = z.object({
 type ContestFormValues = z.infer<typeof contestSchema>;
 
 export default function Contest() {
+  const { user } = useAuth();
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -89,15 +91,55 @@ export default function Contest() {
   };
 
   const onSubmit = async (data: ContestFormValues) => {
+    if (!user) {
+      toast.error('Bitte melde dich an, um am Gewinnspiel teilzunehmen.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      // Here you would typically:
-      // 1. Upload images to storage
-      // 2. Save contest entry to database
-      // 3. Send confirmation email
+      // Upload images to storage
+      const imageUrls: string[] = [];
       
-      console.log('Contest submission:', data);
-      console.log('Uploaded images:', uploadedImages);
+      for (const file of uploadedImages) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('contest-images')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          console.error('Error uploading image:', uploadError);
+          throw uploadError;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('contest-images')
+          .getPublicUrl(filePath);
+        
+        imageUrls.push(publicUrl);
+      }
+
+      // Save contest entry to database
+      const { error: insertError } = await supabase
+        .from('contest_entries')
+        .insert({
+          user_id: user.id,
+          first_name: data.firstName,
+          last_name: data.lastName,
+          email: data.email,
+          phone: data.phone || null,
+          birth_date: data.birthDate,
+          message: data.message,
+          images: imageUrls,
+        });
+
+      if (insertError) {
+        console.error('Error saving contest entry:', insertError);
+        throw insertError;
+      }
 
       toast.success('Vielen Dank für deine Teilnahme! Wir melden uns bei dir.');
       form.reset();

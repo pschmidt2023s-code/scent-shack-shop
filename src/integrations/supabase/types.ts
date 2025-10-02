@@ -167,6 +167,54 @@ export type Database = {
         }
         Relationships: []
       }
+      contest_entries: {
+        Row: {
+          birth_date: string
+          created_at: string | null
+          email: string
+          first_name: string
+          id: string
+          images: string[] | null
+          is_winner: boolean | null
+          last_name: string
+          message: string
+          phone: string | null
+          updated_at: string | null
+          user_id: string | null
+          winner_position: number | null
+        }
+        Insert: {
+          birth_date: string
+          created_at?: string | null
+          email: string
+          first_name: string
+          id?: string
+          images?: string[] | null
+          is_winner?: boolean | null
+          last_name: string
+          message: string
+          phone?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          winner_position?: number | null
+        }
+        Update: {
+          birth_date?: string
+          created_at?: string | null
+          email?: string
+          first_name?: string
+          id?: string
+          images?: string[] | null
+          is_winner?: boolean | null
+          last_name?: string
+          message?: string
+          phone?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          winner_position?: number | null
+        }
+        Relationships: []
+      }
       coupons: {
         Row: {
           active: boolean | null
