@@ -69,6 +69,7 @@ const CheckoutBank = React.lazy(() => import('@/pages/CheckoutBank'));
 const CheckoutSuccess = React.lazy(() => import('@/pages/CheckoutSuccess'));
 const CheckoutCancel = React.lazy(() => import('@/pages/CheckoutCancel'));
 const PayPalTest = React.lazy(() => import('@/pages/PayPalTest'));
+const Contest = React.lazy(() => import('@/pages/Contest'));
 const NotFound = React.lazy(() => import('@/pages/NotFound'));
 
 // Create QueryClient instance
@@ -239,6 +240,13 @@ function AnimatedRoutes() {
         <Suspense fallback={<LoadingSpinner />}>
           <PageTransition>
             <PayPalTest />
+          </PageTransition>
+        </Suspense>
+      } />
+      <Route path="/contest" element={
+        <Suspense fallback={<LoadingSpinner />}>
+          <PageTransition>
+            <Contest />
           </PageTransition>
         </Suspense>
       } />

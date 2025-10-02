@@ -33,6 +33,9 @@ export function Footer() {
               <Link to="/partner" className="block text-muted-foreground hover:text-luxury-gold transition-colors">
                 Partner werden
               </Link>
+              <Link to="/contest" className="block text-muted-foreground hover:text-luxury-gold transition-colors">
+                Gewinnspiel
+              </Link>
             </div>
           </div>
 
