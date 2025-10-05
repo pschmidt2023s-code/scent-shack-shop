@@ -37,3 +37,12 @@ verify_jwt = false
 
 [functions.send-newsletter]
 verify_jwt = false
+
+[functions.verify-age-with-ai]
+verify_jwt = true
+
+[functions.chat-ai-support]
+verify_jwt = true
+
+[functions.send-contest-confirmation]
+verify_jwt = false
