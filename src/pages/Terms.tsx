@@ -40,6 +40,45 @@ export default function Terms() {
               <p className="text-luxury-gray">
                 Diese Allgemeinen Geschäftsbedingungen (AGB) gelten für alle Bestellungen und Verträge zwischen ALDENAIR und dem Kunden über den Online-Shop. Abweichende Bedingungen des Kunden werden nicht anerkannt, es sei denn, wir haben ihrer Geltung ausdrücklich schriftlich zugestimmt.
               </p>
+
+              <h3 className="text-xl font-semibold text-luxury-black mt-6">Gewinnspiel-Teilnahmebedingungen</h3>
+              
+              <h4 className="text-lg font-semibold text-luxury-black mt-4">§12 Teilnahmeberechtigung</h4>
+              <p className="text-luxury-gray">
+                Teilnahmeberechtigt am Gewinnspiel sind ausschließlich Personen, die das 18. Lebensjahr vollendet haben und einen Wohnsitz in Deutschland haben. Die Teilnahme ist nur mit einem registrierten Benutzerkonto möglich. Jede Person darf nur einmal am Gewinnspiel teilnehmen.
+              </p>
+
+              <h4 className="text-lg font-semibold text-luxury-black mt-4">§13 Altersverifikation</h4>
+              <p className="text-luxury-gray">
+                Zur Teilnahme am Gewinnspiel ist eine Altersverifikation mittels KI-gestütztem Ausweischeck erforderlich. Teilnehmer müssen ein gültiges Ausweisdokument (Personalausweis, Reisepass oder Führerschein) hochladen. Die hochgeladenen Dokumente werden ausschließlich zur Altersverifikation verwendet und nicht dauerhaft gespeichert. Die Verarbeitung erfolgt gemäß DSGVO.
+              </p>
+
+              <h4 className="text-lg font-semibold text-luxury-black mt-4">§14 Teilnahmeablauf</h4>
+              <p className="text-luxury-gray">
+                Die Teilnahme erfolgt durch vollständiges Ausfüllen des Gewinnspiel-Formulars, einschließlich persönlicher Daten, Hochladen des Ausweisdokuments zur Altersverifikation und optional bis zu 3 Bildern. Nach erfolgreicher Übermittlung erhält der Teilnehmer eine Bestätigungs-E-Mail. Unvollständige oder mehrfache Teilnahmen werden nicht berücksichtigt.
+              </p>
+
+              <h4 className="text-lg font-semibold text-luxury-black mt-4">§15 Gewinnermittlung</h4>
+              <p className="text-luxury-gray">
+                Die Gewinner werden nach Ende des Gewinnspiels per Zufallsgenerator aus allen gültigen Teilnahmen ermittelt. Die Gewinnbenachrichtigung erfolgt per E-Mail an die angegebene E-Mail-Adresse innerhalb von 7 Tagen nach Gewinnermittlung. Der Gewinner muss sich innerhalb von 14 Tagen nach Benachrichtigung zurückmelden, andernfalls verfällt der Gewinnanspruch.
+              </p>
+
+              <h4 className="text-lg font-semibold text-luxury-black mt-4">§16 Gewinne und Auszahlung</h4>
+              <p className="text-luxury-gray">
+                Die konkreten Gewinne werden auf der Gewinnspiel-Seite bekannt gegeben. Eine Barauszahlung des Gewinns ist nicht möglich. Der Rechtsweg ist ausgeschlossen. ALDENAIR behält sich das Recht vor, das Gewinnspiel jederzeit ohne Angabe von Gründen abzubrechen oder zu beenden.
+              </p>
+
+              <h4 className="text-lg font-semibold text-luxury-black mt-4">§17 Datenschutz beim Gewinnspiel</h4>
+              <p className="text-luxury-gray">
+                Alle im Rahmen des Gewinnspiels erhobenen personenbezogenen Daten werden ausschließlich zur Durchführung des Gewinnspiels verwendet. Die Ausweisdokumente zur Altersverifikation werden nicht gespeichert und nach der Verifikation automatisch gelöscht. Nach Abschluss des Gewinnspiels werden alle Teilnehmerdaten gemäß unserer Datenschutzrichtlinie behandelt und nach den gesetzlichen Aufbewahrungsfristen gelöscht.
+              </p>
+
+              <h4 className="text-lg font-semibold text-luxury-black mt-4">§18 Haftungsausschluss</h4>
+              <p className="text-luxury-gray">
+                ALDENAIR haftet nicht für technische Störungen, die außerhalb unseres Einflussbereichs liegen. Bei Verdacht auf Manipulation, Betrug oder Verstoß gegen die Teilnahmebedingungen behalten wir uns vor, Teilnehmer vom Gewinnspiel auszuschließen.
+              </p>
+              
+              <h3 className="text-xl font-semibold text-luxury-black mt-6">Allgemeine Geschäftsbedingungen</h3>
               
               <h3 className="text-xl font-semibold text-luxury-black">§2 Vertragsschluss</h3>
               <p className="text-luxury-gray">

@@ -145,21 +145,82 @@ export function LiveChat({ className }: LiveChatProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const generateBotResponse = (userMessage: string): string => {
-    const message = userMessage.toLowerCase()
-    
-    if (message.includes('versand') || message.includes('lieferung')) {
-      return BOT_RESPONSES.versand
-    } else if (message.includes('probe') || message.includes('test')) {
-      return BOT_RESPONSES.probe
-    } else if (message.includes('rückgabe') || message.includes('zurück')) {
-      return BOT_RESPONSES.rückgabe
-    } else if (message.includes('rabatt') || message.includes('angebot')) {
-      return BOT_RESPONSES.rabatt
-    } else {
-      return BOT_RESPONSES.default
+  const generateBotResponse = async (userMessage: string, conversationHistory: Message[]): Promise<string> => {
+    try {
+      // Prepare messages for AI
+      const messages = conversationHistory
+        .filter(m => m.sender !== 'bot' || conversationHistory.indexOf(m) > 0) // Skip initial bot greeting
+        .map(m => ({
+          role: m.sender === 'user' ? 'user' : 'assistant',
+          content: m.content
+        }));
+
+      messages.push({
+        role: 'user',
+        content: userMessage
+      });
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-ai-support`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ messages }),
+      });
+
+      if (!response.ok) {
+        throw new Error('AI response failed');
+      }
+
+      // Handle streaming response
+      if (!response.body) {
+        throw new Error('No response body');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullResponse = '';
+      let textBuffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '') continue;
+          if (!line.startsWith('data: ')) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') break;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              fullResponse += content;
+            }
+          } catch {
+            // Incomplete JSON, buffer it
+            textBuffer = line + '\n' + textBuffer;
+            break;
+          }
+        }
+      }
+
+      return fullResponse || 'Entschuldigung, ich konnte keine Antwort generieren. Ein Mitarbeiter wird sich bei Ihnen melden.';
+    } catch (error) {
+      console.error('Error generating AI response:', error);
+      return 'Entschuldigung, ich bin momentan nicht erreichbar. Ein Mitarbeiter wird sich in Kürze bei Ihnen melden. Unsere Servicezeiten sind Mo-Fr 9:00-18:00 Uhr.';
     }
-  }
+  };
 
   const initializeSession = async () => {
     if (!user) return;
@@ -245,12 +306,12 @@ export function LiveChat({ className }: LiveChatProps) {
         })
         .eq('id', sessionId);
 
-      // Auto-respond with bot if no admin is available
+      // Auto-respond with AI bot if no admin is available
       if (!supportOnline) {
         setIsTyping(true);
         
         setTimeout(async () => {
-          const botResponse = generateBotResponse(messageContent);
+          const botResponse = await generateBotResponse(messageContent, messages);
           
           await supabase
             .from('chat_messages')
@@ -262,7 +323,7 @@ export function LiveChat({ className }: LiveChatProps) {
             }]);
 
           setIsTyping(false);
-        }, 1000 + Math.random() * 2000);
+        }, 1000);
       }
     } catch (error) {
       console.error('Error sending message:', error);

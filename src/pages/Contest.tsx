@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Upload, Gift, Calendar } from 'lucide-react';
+import { Upload, Gift, Calendar, Shield, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 import {
   Form,
   FormControl,
@@ -45,7 +46,10 @@ type ContestFormValues = z.infer<typeof contestSchema>;
 export default function Contest() {
   const { user } = useAuth();
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
+  const [idDocument, setIdDocument] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [ageVerified, setAgeVerified] = useState(false);
 
   const form = useForm<ContestFormValues>({
     resolver: zodResolver(contestSchema),
@@ -90,9 +94,86 @@ export default function Contest() {
     setUploadedImages(uploadedImages.filter((_, i) => i !== index));
   };
 
+  const handleIdUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isImage = file.type.startsWith('image/');
+    const isUnder10MB = file.size <= 10 * 1024 * 1024;
+
+    if (!isImage) {
+      toast.error('Bitte lade ein Bild deines Ausweises hoch');
+      return;
+    }
+    if (!isUnder10MB) {
+      toast.error('Die Datei ist zu groß (max. 10MB)');
+      return;
+    }
+
+    setIdDocument(file);
+    await verifyAge(file);
+  };
+
+  const verifyAge = async (file: File) => {
+    const birthDate = form.getValues('birthDate');
+    if (!birthDate) {
+      toast.error('Bitte gib zuerst dein Geburtsdatum ein');
+      return;
+    }
+
+    setIsVerifying(true);
+    try {
+      // Convert image to base64
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      
+      const base64Image = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          // Remove data:image/...;base64, prefix
+          const base64 = result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+      });
+
+      // Call AI verification
+      const { data, error } = await supabase.functions.invoke('verify-age-with-ai', {
+        body: {
+          imageBase64: base64Image,
+          birthDate,
+        },
+      });
+
+      if (error) {
+        console.error('Age verification error:', error);
+        throw error;
+      }
+
+      if (data.verified) {
+        setAgeVerified(true);
+        toast.success('✓ Alter erfolgreich verifiziert!');
+      } else {
+        toast.error(`Altersverifikation fehlgeschlagen: ${data.reason}`);
+        setIdDocument(null);
+      }
+    } catch (error) {
+      console.error('Error verifying age:', error);
+      toast.error('Fehler bei der Altersverifikation. Bitte versuche es erneut.');
+      setIdDocument(null);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   const onSubmit = async (data: ContestFormValues) => {
     if (!user) {
       toast.error('Bitte melde dich an, um am Gewinnspiel teilzunehmen.');
+      return;
+    }
+
+    if (!ageVerified) {
+      toast.error('Bitte lade deinen Ausweis hoch und lass dein Alter verifizieren.');
       return;
     }
 
@@ -174,6 +255,8 @@ export default function Contest() {
       toast.success('Vielen Dank für deine Teilnahme! Eine Bestätigungs-E-Mail wurde versendet.');
       form.reset();
       setUploadedImages([]);
+      setIdDocument(null);
+      setAgeVerified(false);
     } catch (error) {
       console.error('Error submitting contest entry:', error);
       toast.error('Ein Fehler ist aufgetreten. Bitte versuche es erneut.');
@@ -312,6 +395,70 @@ export default function Contest() {
                     </FormItem>
                   )}
                 />
+              </div>
+
+              {/* ID Document Upload for AI Verification */}
+              <div className="space-y-4 pt-6 border-t">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <Shield className="w-5 h-5" />
+                  KI-gestützte Altersverifikation
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Bitte lade ein Foto deines Ausweises hoch. Unsere KI verifiziert automatisch dein Alter. Deine Daten werden sicher behandelt und nicht gespeichert.
+                </p>
+
+                <div className="space-y-4">
+                  {!idDocument ? (
+                    <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleIdUpload}
+                        className="hidden"
+                        id="id-upload"
+                      />
+                      <label htmlFor="id-upload" className="cursor-pointer">
+                        <Shield className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Klicke hier, um deinen Ausweis hochzuladen
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Personalausweis, Reisepass oder Führerschein (max. 10MB)
+                        </p>
+                      </label>
+                    </div>
+                  ) : (
+                    <div className={cn(
+                      "border-2 rounded-lg p-4",
+                      ageVerified ? "border-green-500 bg-green-50 dark:bg-green-950/20" : "border-border"
+                    )}>
+                      <div className="flex items-center gap-3">
+                        {ageVerified ? (
+                          <CheckCircle className="w-6 h-6 text-green-600" />
+                        ) : (
+                          <Shield className="w-6 h-6 text-muted-foreground animate-pulse" />
+                        )}
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">
+                            {ageVerified ? 'Alter erfolgreich verifiziert!' : 'Verifizierung läuft...'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{idDocument.name}</p>
+                        </div>
+                        {isVerifying && (
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {ageVerified && (
+                  <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                    <p className="text-sm text-green-800 dark:text-green-200">
+                      ✓ Dein Alter wurde erfolgreich durch unsere KI verifiziert. Du kannst jetzt am Gewinnspiel teilnehmen!
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Message */}
