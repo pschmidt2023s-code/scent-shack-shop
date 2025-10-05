@@ -98,6 +98,22 @@ export default function Contest() {
 
     setIsSubmitting(true);
     try {
+      // Check for duplicate entries by email
+      const { data: existingEntries, error: checkError } = await supabase
+        .from('contest_entries')
+        .select('id')
+        .eq('email', data.email);
+
+      if (checkError) {
+        throw checkError;
+      }
+
+      if (existingEntries && existingEntries.length > 0) {
+        toast.error('Mit dieser E-Mail-Adresse wurde bereits teilgenommen.');
+        setIsSubmitting(false);
+        return;
+      }
+
       // Upload images to storage
       const imageUrls: string[] = [];
       
@@ -141,7 +157,21 @@ export default function Contest() {
         throw insertError;
       }
 
-      toast.success('Vielen Dank für deine Teilnahme! Wir melden uns bei dir.');
+      // Send confirmation email
+      const { error: emailError } = await supabase.functions.invoke('send-contest-confirmation', {
+        body: {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+        },
+      });
+
+      if (emailError) {
+        console.error('Error sending confirmation email:', emailError);
+        // Don't fail the entire submission if email fails
+      }
+
+      toast.success('Vielen Dank für deine Teilnahme! Eine Bestätigungs-E-Mail wurde versendet.');
       form.reset();
       setUploadedImages([]);
     } catch (error) {
