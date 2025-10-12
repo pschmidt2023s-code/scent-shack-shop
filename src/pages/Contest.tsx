@@ -172,6 +172,11 @@ export default function Contest() {
       return;
     }
 
+    if (!ageVerified) {
+      toast.error('Bitte lade deinen Ausweis hoch, um dein Alter zu verifizieren.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // Check for duplicate entries by email
@@ -396,14 +401,14 @@ export default function Contest() {
                 />
               </div>
 
-              {/* ID Document Upload for AI Verification (Optional) */}
+              {/* ID Document Upload for AI Verification */}
               <div className="space-y-4 pt-6 border-t">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <Shield className="w-5 h-5" />
-                  KI-gestützte Altersverifikation (Optional)
+                  KI-gestützte Altersverifikation *
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Optional: Lade ein Foto deines Ausweises hoch. Unsere KI verifiziert automatisch dein Alter. Deine Daten werden sicher behandelt und nicht gespeichert.
+                  Bitte lade ein Foto deines Ausweises hoch. Unsere KI verifiziert automatisch dein Alter. Deine Daten werden sicher behandelt und nicht gespeichert.
                 </p>
 
                 <div className="space-y-4">
@@ -419,7 +424,7 @@ export default function Contest() {
                       <label htmlFor="id-upload" className="cursor-pointer">
                         <Shield className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground mb-2">
-                          Klicke hier, um deinen Ausweis hochzuladen (optional)
+                          Klicke hier, um deinen Ausweis hochzuladen *
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Personalausweis, Reisepass oder Führerschein (max. 10MB)
