@@ -13,7 +13,6 @@ export function PageTransition({ children }: PageTransitionProps) {
   useEffect(() => {
     setIsLoading(true);
     
-    // Start exit animation
     const timer = setTimeout(() => {
       setDisplayChildren(children);
       setIsLoading(false);
