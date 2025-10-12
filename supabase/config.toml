@@ -39,10 +39,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.verify-age-with-ai]
-verify_jwt = true
+verify_jwt = false
 
 [functions.chat-ai-support]
-verify_jwt = true
+verify_jwt = false
 
 [functions.send-contest-confirmation]
 verify_jwt = false
