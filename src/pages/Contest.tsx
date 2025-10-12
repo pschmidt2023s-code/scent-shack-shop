@@ -172,11 +172,6 @@ export default function Contest() {
       return;
     }
 
-    if (!ageVerified) {
-      toast.error('Bitte lade deinen Ausweis hoch und lass dein Alter verifizieren.');
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       // Check for duplicate entries by email
@@ -239,16 +234,20 @@ export default function Contest() {
       }
 
       // Send confirmation email
-      const { error: emailError } = await supabase.functions.invoke('send-contest-confirmation', {
-        body: {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-        },
-      });
+      try {
+        const { error: emailError } = await supabase.functions.invoke('send-contest-confirmation', {
+          body: {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+          },
+        });
 
-      if (emailError) {
-        console.error('Error sending confirmation email:', emailError);
+        if (emailError) {
+          console.error('Error sending confirmation email:', emailError);
+        }
+      } catch (emailError) {
+        console.error('Error calling email function:', emailError);
         // Don't fail the entire submission if email fails
       }
 
@@ -397,14 +396,14 @@ export default function Contest() {
                 />
               </div>
 
-              {/* ID Document Upload for AI Verification */}
+              {/* ID Document Upload for AI Verification (Optional) */}
               <div className="space-y-4 pt-6 border-t">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <Shield className="w-5 h-5" />
-                  KI-gestützte Altersverifikation
+                  KI-gestützte Altersverifikation (Optional)
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Bitte lade ein Foto deines Ausweises hoch. Unsere KI verifiziert automatisch dein Alter. Deine Daten werden sicher behandelt und nicht gespeichert.
+                  Optional: Lade ein Foto deines Ausweises hoch. Unsere KI verifiziert automatisch dein Alter. Deine Daten werden sicher behandelt und nicht gespeichert.
                 </p>
 
                 <div className="space-y-4">
@@ -420,7 +419,7 @@ export default function Contest() {
                       <label htmlFor="id-upload" className="cursor-pointer">
                         <Shield className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground mb-2">
-                          Klicke hier, um deinen Ausweis hochzuladen
+                          Klicke hier, um deinen Ausweis hochzuladen (optional)
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Personalausweis, Reisepass oder Führerschein (max. 10MB)
@@ -455,7 +454,7 @@ export default function Contest() {
                 {ageVerified && (
                   <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                     <p className="text-sm text-green-800 dark:text-green-200">
-                      ✓ Dein Alter wurde erfolgreich durch unsere KI verifiziert. Du kannst jetzt am Gewinnspiel teilnehmen!
+                      ✓ Dein Alter wurde erfolgreich durch unsere KI verifiziert!
                     </p>
                   </div>
                 )}
