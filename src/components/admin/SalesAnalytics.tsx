@@ -3,6 +3,8 @@ import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users, Package } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { OrderDetailsModal } from './OrderDetailsModal';
+import { Button } from '@/components/ui/button';
 
 interface AnalyticsData {
   totalRevenue: number;
@@ -12,12 +14,14 @@ interface AnalyticsData {
   revenueGrowth: number;
   ordersGrowth: number;
   topProducts: Array<{ name: string; sales: number; revenue: number }>;
-  recentOrders: Array<{ id: string; total: number; date: string; status: string }>;
+  recentOrders: Array<{ id: string; orderId: string; total: number; date: string; status: string }>;
 }
 
 export function SalesAnalytics() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<AnalyticsData | null>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
 
   useEffect(() => {
     fetchAnalytics();
@@ -55,6 +59,7 @@ export function SalesAnalytics() {
       // Get recent orders
       const recentOrders = orders?.slice(0, 5).map(order => ({
         id: order.order_number || order.id,
+        orderId: order.id,
         total: order.total_amount,
         date: new Date(order.created_at).toLocaleDateString('de-DE'),
         status: order.status,
@@ -160,7 +165,14 @@ export function SalesAnalytics() {
         <h3 className="text-lg font-semibold mb-4">Letzte Bestellungen</h3>
         <div className="space-y-3">
           {data.recentOrders.map((order) => (
-            <div key={order.id} className="flex items-center justify-between py-2 border-b last:border-0">
+            <div 
+              key={order.id} 
+              className="flex items-center justify-between py-2 border-b last:border-0 cursor-pointer hover:bg-muted/50 px-2 rounded transition-colors"
+              onClick={() => {
+                setSelectedOrderId(order.orderId);
+                setShowOrderModal(true);
+              }}
+            >
               <div>
                 <p className="font-medium">#{order.id}</p>
                 <p className="text-sm text-muted-foreground">{order.date}</p>
@@ -173,6 +185,13 @@ export function SalesAnalytics() {
           ))}
         </div>
       </Card>
+
+      <OrderDetailsModal
+        orderId={selectedOrderId}
+        open={showOrderModal}
+        onOpenChange={setShowOrderModal}
+        onOrderUpdated={fetchAnalytics}
+      />
     </div>
   );
 }
