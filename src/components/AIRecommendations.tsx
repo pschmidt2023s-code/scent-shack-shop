@@ -30,11 +30,16 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
   const [aiReason, setAiReason] = useState('');
 
   useEffect(() => {
-    if (user) {
-      fetchRecommendations();
-    } else {
-      setLoading(false);
-    }
+    // Debounce recommendations to avoid excessive API calls
+    const timer = setTimeout(() => {
+      if (user) {
+        fetchRecommendations();
+      } else {
+        setLoading(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, [user, currentProductId]);
 
   const fetchRecommendations = async () => {

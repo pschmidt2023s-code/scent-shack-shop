@@ -1,13 +1,12 @@
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { PerfumeCard } from './PerfumeCard';
 import { perfumes } from '@/data/perfumes';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { usePerfumeRatings } from '@/hooks/usePerfumeRatings';
 import { Package } from 'lucide-react';
 
-export function PerfumeGrid() {
+export const PerfumeGrid = memo(function PerfumeGrid() {
   const [filter, setFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
 
@@ -80,11 +79,10 @@ export function PerfumeGrid() {
 
         {/* Product Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {sortedPerfumes.map((perfume, index) => (
+          {sortedPerfumes.map((perfume) => (
             <div 
               key={perfume.id} 
-              className="stagger-item hover-lift hover-glow group"
-              style={{ animationDelay: `${index * 0.15}s` }}
+              className="group"
             >
               <PerfumeCard 
                 perfume={perfume} 
@@ -104,4 +102,4 @@ export function PerfumeGrid() {
       </div>
     </section>
   );
-}
+});
