@@ -9,6 +9,7 @@ import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { PerformanceOptimizer } from '@/components/PerformanceOptimizer';
 import { AccessibilityEnhancer } from '@/components/AccessibilityEnhancer';
+import { ScrollToTop } from '@/components/ScrollToTop';
 
 const Index = () => {
   return (
@@ -29,6 +30,7 @@ const Index = () => {
       
       <Footer />
       <MobileBottomNav />
+      <ScrollToTop />
     </div>
   );
 };
