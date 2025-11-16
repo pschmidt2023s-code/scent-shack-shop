@@ -126,26 +126,19 @@ export default function Checkout() {
   };
 
   const handleOrderSubmit = async () => {
-    alert('BUTTON WURDE GEKLICKT!'); // SUPER OFFENSICHTLICHER TEST
-    console.log('🔥🔥🔥 BUTTON CLICKED 🔥🔥🔥');
-    console.log('Payment Method:', paymentMethod);
-    console.log('Customer Data:', customerData);
-    console.log('Guest Email:', guestEmail);
-    console.log('User:', user);
+    console.log('🚀 STARTING ORDER SUBMISSION');
     
     if (!validateForm()) {
       console.log('❌ Form validation failed');
-      alert('FORM VALIDATION FAILED!');
       return;
     }
 
-    alert('FORM VALIDATION PASSED!');
     console.log('✅ Form validation passed');
     setLoading(true);
 
     try {
       const orderNumber = 'ADN' + Date.now().toString() + Math.random().toString(36).substr(2, 3).toUpperCase();
-      console.log('Order number:', orderNumber);
+      console.log('📝 Order Number:', orderNumber);
       
       const orderData = {
         order_number: orderNumber,
@@ -461,11 +454,7 @@ export default function Checkout() {
                 </div>
 
                 <Button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    console.log('🎯 DIRECT CLICK EVENT');
-                    handleOrderSubmit();
-                  }}
+                  onClick={handleOrderSubmit}
                   disabled={loading}
                   className="w-full mt-4"
                   size="lg"
