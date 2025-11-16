@@ -37,7 +37,7 @@ export default function Checkout() {
   const { user } = useAuth();
   
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'paypal_checkout' | 'bank'>('paypal_checkout');
+  const [paymentMethod, setPaymentMethod] = useState<'paypal_checkout' | 'bank' | 'stripe'>('stripe');
   const [guestEmail, setGuestEmail] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [customerData, setCustomerData] = useState({
@@ -151,7 +151,35 @@ export default function Checkout() {
 
       console.log("Order created successfully, payment method:", paymentMethod);
 
-      if (paymentMethod === 'paypal_checkout') {
+      if (paymentMethod === 'stripe') {
+        // Create Stripe Checkout Session via edge function
+        const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-stripe-payment', {
+          body: {
+            items: checkoutData.items.map(item => ({
+              name: item.variant?.name || item.name,
+              description: item.variant?.description || item.description,
+              price: item.variant?.price || item.price,
+              quantity: item.quantity,
+              image: item.perfume?.image || item.image
+            })),
+            customerEmail: user?.email || guestEmail,
+            customerData: customerData,
+            metadata: {
+              order_number: newOrderNumber,
+              referral_code: referralCode || '',
+            }
+          }
+        });
+
+        if (stripeError) {
+          console.error('Stripe Error:', stripeError);
+          throw new Error(`Stripe-Zahlung fehlgeschlagen: ${stripeError.message}`);
+        }
+
+        // Redirect to Stripe Checkout
+        window.location.href = stripeData.url;
+        
+      } else if (paymentMethod === 'paypal_checkout') {
         // Create PayPal order via edge function
         const { data: paypalData, error: paypalError } = await supabase.functions.invoke('create-paypal-payment', {
           body: {
@@ -375,28 +403,51 @@ export default function Checkout() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {/* Premium Payment Options Coming Soon */}
-                <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4 mb-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                    <h3 className="font-semibold text-primary">🚀 Mehr Zahlungsoptionen bald verfügbar</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Wir arbeiten an der Integration von Kreditkarten, Klarna, Apple Pay und mehr!
-                  </p>
-                  <p className="text-xs text-primary/80">
-                    Für Express-Bestellung mit Kreditkarte: 
-                    <a href="mailto:support@aldenairperfumes.de" className="font-medium underline ml-1 hover:text-primary">
-                      support@aldenairperfumes.de
-                    </a>
-                  </p>
-                </div>
-
                 <RadioGroup 
                   value={paymentMethod} 
-                  onValueChange={(value: 'paypal_checkout' | 'bank') => setPaymentMethod(value)}
+                  onValueChange={(value: 'paypal_checkout' | 'bank' | 'stripe') => setPaymentMethod(value)}
                   className="space-y-4"
                 >
+                  {/* Stripe Checkout - Premium Option */}
+                  <div className={`group relative overflow-hidden rounded-xl border-2 transition-all duration-300 hover:shadow-lg ${
+                    paymentMethod === 'stripe' 
+                      ? 'border-primary bg-primary/5 shadow-md' 
+                      : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                  }`}>
+                    <div className="flex items-center space-x-3 p-4">
+                      <RadioGroupItem value="stripe" id="stripe" />
+                      <Label htmlFor="stripe" className="flex items-center gap-3 cursor-pointer flex-1">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center">
+                          <CreditCard className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="font-semibold text-base">Kreditkarte / Stripe</div>
+                            <Badge variant="default" className="text-xs bg-green-500 hover:bg-green-600">
+                              Empfohlen
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            Sofortige Zahlung • Kreditkarte, Google Pay, Apple Pay
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-green-600 font-medium">✓ Sofort</div>
+                        </div>
+                      </Label>
+                    </div>
+                    {paymentMethod === 'stripe' && (
+                      <div className="px-4 pb-4 pt-0">
+                        <div className="bg-green-50 dark:bg-green-950/50 rounded-lg p-3 text-sm">
+                          <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            Sichere Zahlung über Stripe • Automatische Auftragsverarbeitung
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* PayPal Checkout - Premium Option */}
                   <div className={`group relative overflow-hidden rounded-xl border-2 transition-all duration-300 hover:shadow-lg ${
                     paymentMethod === 'paypal_checkout' 
