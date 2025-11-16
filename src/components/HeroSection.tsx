@@ -33,12 +33,12 @@ export function HeroSection() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 text-center text-primary-foreground px-4 max-w-4xl mx-auto glass-card p-8 sm:p-12">
+      <div className="relative z-10 text-center text-primary-foreground px-4 max-w-4xl mx-auto">
         <h1 
           className="text-4xl sm:text-5xl lg:text-7xl font-bold mb-4 sm:mb-6 leading-tight animate-fade-in-up px-2"
           aria-label="Willkommen bei ALDENAIR - Premium Parfüms"
         >
-          <span className="inline-block opacity-0 animate-slide-in-left glass-text-dark" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+          <span className="inline-block opacity-0 animate-slide-in-left text-white" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
             Willkommen bei
           </span>
           <span 
@@ -51,7 +51,7 @@ export function HeroSection() {
           </span>
         </h1>
         
-        <p className="text-lg sm:text-xl lg:text-2xl mb-6 sm:mb-8 glass-text-dark max-w-2xl mx-auto leading-relaxed opacity-0 animate-fade-in-up px-4" style={{ animationDelay: '0.8s', animationFillMode: 'forwards' }}>
+        <p className="text-lg sm:text-xl lg:text-2xl mb-6 sm:mb-8 text-gray-200 max-w-2xl mx-auto leading-relaxed opacity-0 animate-fade-in-up px-4" style={{ animationDelay: '0.8s', animationFillMode: 'forwards' }}>
           Prestige Flakon - Exklusive Parfüms in höchster Qualität. 
           Entdecke unsere einzigartigen Duftkreationen für jeden Anlass.
         </p>
