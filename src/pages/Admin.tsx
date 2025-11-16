@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Package, Users, CreditCard, Eye, MapPin, User, Trash2 } from 'lucide-react';
+import { Loader2, Package, Users, CreditCard, Eye, MapPin, User, Trash2, CheckSquare, Square } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { AdminLoadingSkeleton, SmoothLoader, TabContentLoader } from '@/components/LoadingStates';
 
 // Lazy load admin components for better performance
@@ -57,6 +58,7 @@ export default function Admin() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [activeTab, setActiveTab] = useState('orders');
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -169,6 +171,49 @@ export default function Admin() {
     }
   }, [loadOrders, toast]);
 
+  const bulkDeleteOrders = useCallback(async () => {
+    if (selectedOrderIds.length === 0) return;
+    
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .in('id', selectedOrderIds);
+
+      if (error) throw error;
+
+      setSelectedOrderIds([]);
+      await loadOrders();
+      toast({
+        title: "Erfolg",
+        description: `${selectedOrderIds.length} Bestellung(en) erfolgreich gelöscht`,
+      });
+    } catch (error) {
+      console.error('Error bulk deleting orders:', error);
+      toast({
+        title: "Fehler",
+        description: "Bestellungen konnten nicht gelöscht werden",
+        variant: "destructive",
+      });
+    }
+  }, [selectedOrderIds, loadOrders, toast]);
+
+  const toggleOrderSelection = useCallback((orderId: string) => {
+    setSelectedOrderIds(prev => 
+      prev.includes(orderId) 
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
+    );
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    if (selectedOrderIds.length === orders.length) {
+      setSelectedOrderIds([]);
+    } else {
+      setSelectedOrderIds(orders.map(order => order.id));
+    }
+  }, [orders, selectedOrderIds.length]);
+
   // Memoized components for performance
   const memoizedOrders = useMemo(() => orders, [orders]);
   
@@ -269,21 +314,46 @@ export default function Admin() {
           <TabsContent value="orders" className="space-y-6 animate-fade-in duration-500">
             <Card className="backdrop-blur-sm bg-card/90 border shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  Aufgegebene Bestellungen ({memoizedOrders.length})
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Package className="w-5 h-5" />
+                    Aufgegebene Bestellungen ({memoizedOrders.length})
+                  </div>
+                  {selectedOrderIds.length > 0 && (
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={bulkDeleteOrders}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      {selectedOrderIds.length} Bestellung(en) löschen
+                    </Button>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                <div className="flex items-center gap-2 mb-4 p-2 bg-muted rounded-lg">
+                  <Checkbox 
+                    checked={selectedOrderIds.length === orders.length && orders.length > 0}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                  <span className="text-sm font-medium">Alle auswählen</span>
+                </div>
                 <div className="space-y-4">
                   {memoizedOrders.map((order, index) => (
                     <div key={order.id} className="border rounded-lg p-4 space-y-2">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold">#{order.order_number || order.id.slice(-8).toUpperCase()}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(order.created_at).toLocaleDateString('de-DE')}
-                          </p>
+                        <div className="flex items-center gap-3">
+                          <Checkbox 
+                            checked={selectedOrderIds.includes(order.id)}
+                            onCheckedChange={() => toggleOrderSelection(order.id)}
+                          />
+                          <div>
+                            <p className="font-semibold">#{order.order_number || order.id.slice(-8).toUpperCase()}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(order.created_at).toLocaleDateString('de-DE')}
+                            </p>
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="font-semibold">€{order.total_amount.toFixed(2)}</span>

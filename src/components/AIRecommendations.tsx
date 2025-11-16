@@ -100,7 +100,7 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
             <Sparkles className="w-5 h-5 text-primary animate-pulse" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold glass-text-dark">KI-Empfehlungen für dich</h2>
+            <h2 className="text-2xl font-bold glass-text-dark">Persönliche Empfehlungen</h2>
             <p className="text-sm glass-text-dark opacity-80">{aiReason}</p>
           </div>
         </div>
