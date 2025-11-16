@@ -116,7 +116,7 @@ export function MobileBottomNav() {
                   )}
                 >
                   <div className="relative">
-                    <Icon className="w-6 h-6" strokeWidth={2.5} />
+                    <Icon className="w-7 h-7" strokeWidth={2.5} />
                     
                     {item.showBadge && itemCount > 0 && (
                       <Badge 
@@ -151,7 +151,7 @@ export function MobileBottomNav() {
                 )}
               >
                 <div className="relative">
-                  <Icon className="w-6 h-6" strokeWidth={2.5} />
+                  <Icon className="w-7 h-7" strokeWidth={2.5} />
                   
                   {item.label === 'Favoriten' && favoritesCount > 0 && (
                     <Badge 
