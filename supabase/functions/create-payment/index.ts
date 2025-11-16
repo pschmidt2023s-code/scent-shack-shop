@@ -65,9 +65,8 @@ serve(async (req) => {
         currency: 'eur',
         product_data: {
           name: item.name,
-          description: item.variant || '',
         },
-        unit_amount: Math.round(item.price * 100), // Convert to cents
+        unit_amount: item.amount, // Already in cents from frontend
       },
       quantity: item.quantity,
     }));
