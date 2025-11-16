@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRole } from './useUserRole';
 import { toast } from 'sonner';
 
 interface LoyaltyData {
@@ -19,6 +20,7 @@ interface Transaction {
 
 export function useLoyaltyPoints() {
   const { user } = useAuth();
+  const { role, isNewsletterSubscriber } = useUserRole();
   const [loyalty, setLoyalty] = useState<LoyaltyData | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,24 +99,46 @@ export function useLoyaltyPoints() {
     if (!user) return;
 
     try {
+      // Berechne Bonus-Multiplikator basierend auf User-Role und Newsletter
+      let multiplier = 1.0;
+      
+      if (role === 'premium') {
+        multiplier = 1.5; // Premium-Kunden: 50% mehr Punkte
+      } else if (role === 'loyal') {
+        multiplier = 1.2; // Loyale Kunden: 20% mehr Punkte
+      }
+      
+      if (isNewsletterSubscriber) {
+        multiplier += 0.1; // Newsletter-Bonus: +10%
+      }
+
+      const bonusPoints = Math.round(points * multiplier);
+
       // Add transaction
       await supabase.from('loyalty_transactions').insert({
         user_id: user.id,
-        points,
+        points: bonusPoints,
         transaction_type: type,
-        description,
+        description: multiplier > 1 
+          ? `${description} (${Math.round((multiplier - 1) * 100)}% Bonus)`
+          : description,
       });
 
       // Update points
       const { error } = await supabase.rpc('add_loyalty_points', {
         p_user_id: user.id,
-        p_points: points,
+        p_points: bonusPoints,
       });
 
       if (error) throw error;
 
       await fetchLoyaltyData();
-      toast.success(`+${points} Treuepunkte erhalten!`);
+      
+      if (multiplier > 1) {
+        toast.success(`+${bonusPoints} Treuepunkte erhalten! (+${bonusPoints - points} Bonus)`);
+      } else {
+        toast.success(`+${bonusPoints} Treuepunkte erhalten!`);
+      }
     } catch (error) {
       console.error('Error adding points:', error);
     }
