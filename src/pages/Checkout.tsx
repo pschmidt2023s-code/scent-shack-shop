@@ -68,7 +68,13 @@ export default function Checkout() {
   };
 
   const validateForm = () => {
+    console.log('🔍 Validating form...');
+    console.log('User:', user);
+    console.log('Guest Email:', guestEmail);
+    console.log('Customer Data:', customerData);
+    
     if (!user && !guestEmail) {
+      console.log('❌ No email');
       toast.error('Bitte geben Sie eine E-Mail-Adresse an');
       return false;
     }
@@ -76,11 +82,20 @@ export default function Checkout() {
     const required = ['firstName', 'lastName', 'street', 'city', 'postalCode'];
     for (const field of required) {
       if (!customerData[field]) {
-        toast.error('Bitte füllen Sie alle Pflichtfelder aus');
+        console.log(`❌ Missing field: ${field}`);
+        const fieldNames = {
+          firstName: 'Vorname',
+          lastName: 'Nachname',
+          street: 'Straße',
+          city: 'Stadt',
+          postalCode: 'PLZ'
+        };
+        toast.error(`Bitte füllen Sie das Feld "${fieldNames[field]}" aus`);
         return false;
       }
     }
 
+    console.log('✅ Form validation passed');
     return true;
   };
 
