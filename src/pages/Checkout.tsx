@@ -86,7 +86,11 @@ export default function Checkout() {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Coupon validation error:', error);
+        toast.error('Fehler beim Validieren des Gutscheins');
+        return;
+      }
 
       if (data.valid) {
         setAppliedCoupon(data.coupon);
@@ -548,9 +552,9 @@ export default function Checkout() {
                   {appliedCoupon && (
                     <div className="flex justify-between text-green-600 dark:text-green-400 text-sm font-medium">
                       <span>Gutschein ({appliedCoupon.code})</span>
-                      <span>-{appliedCoupon.discount_type === 'percentage' 
-                        ? (checkoutData.totalAmount * appliedCoupon.discount_value / 100).toFixed(2)
-                        : appliedCoupon.discount_value.toFixed(2)}€
+                      <span>-{(appliedCoupon.discount_type === 'percentage' 
+                        ? (checkoutData.totalAmount * appliedCoupon.discount_value / 100)
+                        : appliedCoupon.discount_value).toFixed(2)}€
                       </span>
                     </div>
                   )}
