@@ -69,9 +69,6 @@ export default function Checkout() {
 
   const validateForm = () => {
     console.log('🔍 Validating form...');
-    console.log('User:', user);
-    console.log('Guest Email:', guestEmail);
-    console.log('Customer Data:', customerData);
     
     if (!user && !guestEmail) {
       console.log('❌ No email');
@@ -83,7 +80,7 @@ export default function Checkout() {
     for (const field of required) {
       if (!customerData[field]) {
         console.log(`❌ Missing field: ${field}`);
-        const fieldNames = {
+        const fieldNames: any = {
           firstName: 'Vorname',
           lastName: 'Nachname',
           street: 'Straße',
@@ -104,7 +101,6 @@ export default function Checkout() {
       console.log('🚀 STARTING STRIPE CHECKOUT');
       console.log('📧 Email:', user?.email || guestEmail);
       console.log('🔢 Order:', orderNumber);
-      console.log('🛍️ Items:', checkoutData.items.length);
       
       toast.info('Weiterleitung zu Stripe...');
       
@@ -141,24 +137,15 @@ export default function Checkout() {
   };
 
   const handleOrderSubmit = async () => {
-    console.log('🚀🚀🚀 BUTTON WURDE DEFINITIV GEKLICKT 🚀🚀🚀');
-    alert('FUNKTION WIRD AUSGEFÜHRT!');
+    console.log('🚀 STARTING ORDER SUBMISSION');
     
-    // TEMPORÄR: Validierung komplett deaktiviert für Test
-    // if (!validateForm()) {
-    //   console.log('❌ Form validation failed');
-    //   return;
-    // }
+    if (!validateForm()) {
+      console.log('❌ Form validation failed');
+      return;
+    }
 
-    console.log('✅ Skipping validation for test');
-    console.log('Payment Method:', paymentMethod);
-    console.log('User:', user?.email);
-    console.log('Guest Email:', guestEmail);
-    console.log('Customer Data:', customerData);
-    
+    console.log('✅ Form validation passed');
     setLoading(true);
-    
-    alert('LOADING GESETZT!');
 
     try {
       const orderNumber = 'ADN' + Date.now().toString() + Math.random().toString(36).substr(2, 3).toUpperCase();
@@ -176,7 +163,7 @@ export default function Checkout() {
         status: 'pending',
       };
 
-      console.log('Creating order in database...');
+      console.log('💾 Creating order in database...');
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert(orderData)
@@ -184,11 +171,12 @@ export default function Checkout() {
         .single();
 
       if (orderError) {
-        console.error('Order creation error:', orderError);
+        console.error('❌ Order creation error:', orderError);
+        toast.error(`Bestellung fehlgeschlagen: ${orderError.message}`);
         throw orderError;
       }
 
-      console.log('Order created:', order.id);
+      console.log('✅ Order created:', order.id);
 
       const orderItems = checkoutData.items.map(item => ({
         order_id: order.id,
@@ -199,27 +187,26 @@ export default function Checkout() {
         total_price: (item.variant?.price || item.price) * item.quantity,
       }));
 
-      console.log('Creating order items...');
+      console.log('📦 Creating order items...');
       const { error: itemsError } = await supabase
         .from('order_items')
         .insert(orderItems);
 
       if (itemsError) {
-        console.error('Order items error:', itemsError);
+        console.error('❌ Order items error:', itemsError);
+        toast.error(`Bestellpositionen fehlgeschlagen: ${itemsError.message}`);
         throw itemsError;
       }
 
-      console.log('Order items created successfully');
-      console.log('Payment method:', paymentMethod);
+      console.log('✅ Order items created successfully');
+      console.log('💳 Payment method:', paymentMethod);
 
       if (paymentMethod === 'stripe') {
-        console.log('Starting Stripe checkout...');
+        console.log('🔄 Starting Stripe checkout...');
         await handleStripeCheckout(orderNumber);
       } else if (paymentMethod === 'bank') {
-        console.log('Redirecting to bank transfer...');
+        console.log('🏦 Redirecting to bank transfer...');
         
-        // Send bank transfer email
-        console.log('Sending bank transfer email...');
         const bankDetails = {
           recipient: "ALDENAIR GmbH",
           iban: "DE89 3704 0044 0532 0130 00",
@@ -228,7 +215,7 @@ export default function Checkout() {
         };
         
         try {
-          const { error: emailError } = await supabase.functions.invoke('send-bank-transfer-email', {
+          await supabase.functions.invoke('send-bank-transfer-email', {
             body: {
               customerEmail: user?.email || guestEmail,
               customerName: `${customerData.firstName} ${customerData.lastName}`,
@@ -237,16 +224,8 @@ export default function Checkout() {
               bankDetails: bankDetails
             }
           });
-          
-          if (emailError) {
-            console.error('Email error:', emailError);
-            // Don't block the flow if email fails
-          } else {
-            console.log('Bank transfer email sent successfully');
-          }
         } catch (emailErr) {
           console.error('Email sending failed:', emailErr);
-          // Don't block the flow if email fails
         }
         
         navigate('/checkout-bank', { 
@@ -269,16 +248,9 @@ export default function Checkout() {
           }
         });
 
-        if (paypalError) {
-          console.error('PayPal error:', paypalError);
-          throw paypalError;
-        }
-        if (!paypalData.approvalUrl) {
-          console.error('No PayPal approval URL');
-          throw new Error('PayPal approval URL missing');
-        }
+        if (paypalError) throw paypalError;
+        if (!paypalData.approvalUrl) throw new Error('PayPal approval URL missing');
         
-        console.log('Redirecting to PayPal:', paypalData.approvalUrl);
         window.location.href = paypalData.approvalUrl;
       }
       
@@ -302,7 +274,6 @@ export default function Checkout() {
         </Button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-32 lg:pb-8">
-          {/* Left Column - Customer Data */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -420,11 +391,11 @@ export default function Checkout() {
                 </RadioGroup>
                 
                 {paymentMethod === 'bank' && (
-                  <div className="mt-4 p-4 bg-muted/50 rounded-lg border border-border">
-                    <p className="text-sm text-muted-foreground">
-                      <strong className="text-foreground">Wichtig:</strong> Bitte geben Sie bei der Überweisung unbedingt die <strong className="text-foreground">Auftragsnummer als Verwendungszweck</strong> an, damit wir Ihre Zahlung korrekt zuordnen können.
+                  <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <p className="text-sm text-amber-900 dark:text-amber-100 font-medium">
+                      ⚠️ Wichtig: Bitte geben Sie bei der Überweisung unbedingt die Auftragsnummer als Verwendungszweck an!
                     </p>
-                    <p className="text-sm text-muted-foreground mt-2">
+                    <p className="text-sm text-amber-800 dark:text-amber-200 mt-2">
                       Sie erhalten nach der Bestellung eine E-Mail mit allen Überweisungsdetails.
                     </p>
                   </div>
@@ -433,7 +404,6 @@ export default function Checkout() {
             </Card>
           </div>
 
-          {/* Right Column - Order Summary */}
           <div>
             <Card className="lg:sticky lg:top-8">
               <CardHeader>
@@ -490,7 +460,6 @@ export default function Checkout() {
             </Card>
           </div>
         </div>
-        
       </div>
     </div>
   );
