@@ -5,18 +5,12 @@ import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { Loader2, CreditCard } from "lucide-react";
 
-interface CheckoutModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
-export default function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
+export default function CheckoutModal({ open, onOpenChange }) {
   const { items, total } = useCart();
   const [loading, setLoading] = useState(false);
 
   const handleCheckout = async () => {
     setLoading(true);
-
     try {
       const response = await fetch("/api/create-checkout-session", {
         method: "POST",
@@ -24,19 +18,17 @@ export default function CheckoutModal({ open, onOpenChange }: CheckoutModalProps
         body: JSON.stringify({
           items: items.map((item) => ({
             name: item.name,
-            amount: Math.round(item.price * 100), // Betrag in Cent
+            amount: Math.round(item.price * 100),
             quantity: item.quantity,
           })),
         }),
       });
-
       const { sessionId } = await response.json();
-
-      const stripe = window.Stripe(window.STRIPE_PK);
+      const stripe = window.Stripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
       await stripe.redirectToCheckout({ sessionId });
     } catch (error) {
       console.error(error);
-      toast.error("Fehler beim Starten des Checkouts");
+      toast.error("Fehler beim Checkout");
     } finally {
       setLoading(false);
     }
@@ -48,7 +40,6 @@ export default function CheckoutModal({ open, onOpenChange }: CheckoutModalProps
         <DialogHeader>
           <DialogTitle>Zahlung</DialogTitle>
         </DialogHeader>
-
         <div className="space-y-4">
           <div className="bg-muted p-4 rounded-lg">
             <div className="flex justify-between font-bold">
@@ -56,10 +47,8 @@ export default function CheckoutModal({ open, onOpenChange }: CheckoutModalProps
               <span>{total.toFixed(2)} €</span>
             </div>
           </div>
-
           <Button className="w-full" onClick={handleCheckout} disabled={loading || items.length === 0}>
-            {loading ? <Loader2 className="animate-spin" /> : <CreditCard className="mr-2" />}
-            Jetzt bezahlen
+            {loading ? <Loader2 className="animate-spin" /> : <CreditCard className="mr-2" />} Jetzt bezahlen
           </Button>
         </div>
       </DialogContent>
