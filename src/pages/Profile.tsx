@@ -7,6 +7,7 @@ import { ProfileForm } from '@/components/profile/ProfileForm';
 import AddressManager from '@/components/profile/AddressManager';
 import { OrderHistory } from '@/components/profile/OrderHistory';
 import { PaybackSystem } from '@/components/PaybackSystem';
+import { BiometricAuth } from '@/components/BiometricAuth';
 import { ArrowLeft, User, MapPin, ShoppingBag, Euro } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -118,7 +119,7 @@ export default function Profile() {
             </div>
 
             <Tabs defaultValue="profile" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="profile" className="flex items-center gap-2">
                   <User className="w-4 h-4" />
                   Profil
@@ -134,6 +135,9 @@ export default function Profile() {
                 <TabsTrigger value="payback" className="flex items-center gap-2">
                   <Euro className="w-4 h-4" />
                   Payback
+                </TabsTrigger>
+                <TabsTrigger value="security" className="flex items-center gap-2">
+                  🔒 Sicherheit
                 </TabsTrigger>
               </TabsList>
 
@@ -151,6 +155,10 @@ export default function Profile() {
 
               <TabsContent value="payback">
                 <PaybackSystem />
+              </TabsContent>
+
+              <TabsContent value="security">
+                <BiometricAuth />
               </TabsContent>
             </Tabs>
           </div>
