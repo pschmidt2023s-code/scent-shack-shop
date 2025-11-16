@@ -12,35 +12,22 @@ serve(async (req) => {
   }
 
   try {
-    console.log("=== CREATE STRIPE PAYMENT ===");
-    
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) {
-      throw new Error("STRIPE_SECRET_KEY not configured");
-    }
+    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY not configured");
 
     const { items, customerEmail, customerData, metadata } = await req.json();
-    console.log("Request data:", { itemCount: items?.length, customerEmail });
 
-    if (!items || items.length === 0) {
-      throw new Error("No items provided");
-    }
-    if (!customerEmail) {
-      throw new Error("Customer email is required");
-    }
+    if (!items || items.length === 0) throw new Error("No items provided");
+    if (!customerEmail) throw new Error("Customer email is required");
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
     // Check for existing customer
-    const customers = await stripe.customers.list({ 
-      email: customerEmail, 
-      limit: 1 
-    });
+    const customers = await stripe.customers.list({ email: customerEmail, limit: 1 });
     
     let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
-      console.log("Found existing customer:", customerId);
     } else {
       const newCustomer = await stripe.customers.create({
         email: customerEmail,
@@ -49,24 +36,19 @@ serve(async (req) => {
           : undefined,
       });
       customerId = newCustomer.id;
-      console.log("Created new customer:", customerId);
     }
 
     // Build line items
     const lineItems = items.map((item: any) => ({
       price_data: {
         currency: 'eur',
-        product_data: {
-          name: item.name || 'Produkt',
-        },
+        product_data: { name: item.name || 'Produkt' },
         unit_amount: Math.round((item.price || 0) * 100),
       },
       quantity: item.quantity || 1,
     }));
 
-    console.log("Line items created:", lineItems.length);
-
-    // Create session
+    // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: lineItems,
@@ -80,9 +62,14 @@ serve(async (req) => {
       },
     });
 
-    console.log("SUCCESS - Session created:", session.id);
+    console.log("✓ Session created successfully");
+    console.log("Session ID:", session.id);
     console.log("Session URL:", session.url);
-    console.log("Session status:", session.status);
+    console.log("URL length:", session.url?.length);
+
+    if (!session.url) {
+      throw new Error("No checkout URL returned from Stripe");
+    }
 
     return new Response(
       JSON.stringify({ 
@@ -95,8 +82,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error("ERROR:", error.message);
-    console.error("Full error:", JSON.stringify(error, null, 2));
+    console.error("✗ ERROR:", error.message);
     return new Response(
       JSON.stringify({ error: error.message }), 
       {
