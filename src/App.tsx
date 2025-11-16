@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { LiveChat } from '@/components/LiveChat';
 import { PageTransition } from '@/components/PageTransition';
 import { AnimatedLogo } from '@/components/AnimatedLogo';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -104,12 +105,14 @@ const LoadingSpinner = () => (
 
 function AnimatedRoutes() {
   return (
-    <Routes>
-      <Route path="/" element={
-        <PageTransition>
-          <Index />
-        </PageTransition>
-      } />
+    <>
+      <Breadcrumbs />
+      <Routes>
+        <Route path="/" element={
+          <PageTransition>
+            <Index />
+          </PageTransition>
+        } />
       <Route path="/products" element={
         <Suspense fallback={<LoadingSpinner />}>
           <PageTransition>
@@ -258,6 +261,7 @@ function AnimatedRoutes() {
         </Suspense>
       } />
     </Routes>
+    </>
   );
 }
 
