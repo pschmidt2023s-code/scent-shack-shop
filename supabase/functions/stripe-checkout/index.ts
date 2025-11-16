@@ -65,7 +65,7 @@ serve(async (req) => {
 
     console.log("Line items created:", lineItems.length);
 
-    const origin = req.headers.get("origin") || "https://tqswuibgnkdvrfocwjou.supabase.co";
+    const origin = req.headers.get("origin") || "https://autoparfuem-de.lovable.app";
     console.log("Origin:", origin);
 
     const sessionData = {
@@ -75,6 +75,8 @@ serve(async (req) => {
       cancel_url: `${origin}/checkout`,
       customer_email: customerEmail,
       client_reference_id: orderNumber,
+      payment_method_types: ["card"],
+      billing_address_collection: "auto",
     };
 
     console.log("Creating Stripe session...");
