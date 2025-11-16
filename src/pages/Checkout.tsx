@@ -134,9 +134,11 @@ export default function Checkout() {
       console.log('✅ SESSION ID:', data.sessionId);
       toast.success('Weiterleitung zu Stripe...');
       
-      // Stripe SDK Weiterleitung
-      const stripe = getStripe();
-      await stripe.redirectToCheckout({ sessionId: data.sessionId });
+      // Öffne Stripe Checkout in neuem Tab (verhindert iframe-Probleme)
+      if (data.url) {
+        window.open(data.url, '_blank');
+        toast.info('Stripe Checkout wurde in neuem Tab geöffnet');
+      }
       
     } catch (error: any) {
       console.error('KRITISCHER FEHLER:', error);

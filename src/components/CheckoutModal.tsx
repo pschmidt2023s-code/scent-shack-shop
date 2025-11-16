@@ -50,15 +50,15 @@ export default function CheckoutModal({ open, onOpenChange }) {
         throw new Error(`Edge Function Fehler ${response.status}: ${errorText}`);
       }
       
-      const { sessionId } = await response.json();
+      const { url, sessionId } = await response.json();
       
-      if (!sessionId) throw new Error('Keine Session-ID erhalten');
+      if (!url) throw new Error('Keine Checkout-URL erhalten');
       
-      const stripe = (window as any).Stripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-      if (!stripe) throw new Error('Stripe.js nicht geladen');
-      
-      const { error } = await stripe.redirectToCheckout({ sessionId });
-      if (error) throw error;
+      // Öffne Stripe Checkout in neuem Tab (verhindert iframe-Probleme)
+      window.open(url, '_blank');
+      toast.success('Stripe Checkout wurde in neuem Tab geöffnet');
+      onOpenChange(false);
+
 
     } catch (error) {
       console.error('Fehler:', error);
