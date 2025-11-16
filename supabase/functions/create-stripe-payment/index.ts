@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,9 +29,7 @@ serve(async (req) => {
       throw new Error("Customer email is required");
     }
 
-    const stripe = new Stripe(stripeKey, { 
-      apiVersion: "2023-10-16",
-    });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
     // Check for existing customer
     const customers = await stripe.customers.list({ 
@@ -50,13 +47,6 @@ serve(async (req) => {
         name: customerData?.firstName && customerData?.lastName 
           ? `${customerData.firstName} ${customerData.lastName}` 
           : undefined,
-        phone: customerData?.phone || undefined,
-        address: customerData?.street ? {
-          line1: customerData.street,
-          city: customerData.city,
-          postal_code: customerData.postalCode,
-          country: 'DE',
-        } : undefined,
       });
       customerId = newCustomer.id;
       console.log("Created new customer:", customerId);
@@ -68,8 +58,6 @@ serve(async (req) => {
         currency: 'eur',
         product_data: {
           name: item.name || 'Produkt',
-          description: item.description || undefined,
-          images: item.image ? [item.image] : undefined,
         },
         unit_amount: Math.round((item.price || 0) * 100),
       },
@@ -78,18 +66,13 @@ serve(async (req) => {
 
     console.log("Line items created:", lineItems.length);
 
-    // Get origin from request headers
-    const origin = req.headers.get("origin") || "https://8e9b04f2-784a-4e4d-aa8a-9a93b82040fa.lovableproject.com";
-    console.log("Using origin:", origin);
-
-    // Create checkout session with payment_method_types
+    // Create session using the EXACT method from create-stripe-checkout
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
       customer: customerId,
       line_items: lineItems,
       mode: "payment",
-      success_url: origin + "/checkout-success?session_id={CHECKOUT_SESSION_ID}",
-      cancel_url: origin + "/checkout-cancel",
+      success_url: `${req.headers.get("origin")}/checkout-success`,
+      cancel_url: `${req.headers.get("origin")}/checkout-cancel`,
       metadata: {
         customer_email: customerEmail,
         order_number: metadata?.order_number || '',
@@ -98,7 +81,6 @@ serve(async (req) => {
     });
 
     console.log("SUCCESS - Session created:", session.id);
-    console.log("Session URL:", session.url);
 
     return new Response(
       JSON.stringify({ 
@@ -112,7 +94,6 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("ERROR:", error.message);
-    console.error("Full error:", error);
     return new Response(
       JSON.stringify({ error: error.message }), 
       {
