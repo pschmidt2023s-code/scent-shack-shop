@@ -313,7 +313,7 @@
   }
 
   .animate-shimmer {
-    animation: shimmer 2s linear infinite;
+    animation: shimmer 3s ease-in-out infinite;
   }
 
   /* Page transition - Simplified */
@@ -429,10 +429,13 @@
 
   @keyframes shimmer {
     0% {
-      background-position: -200px 0;
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
     }
     100% {
-      background-position: calc(200px + 100%) 0;
+      background-position: 0% 50%;
     }
   }
 
