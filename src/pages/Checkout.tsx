@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ArrowLeft, CreditCard, Building2, Banknote } from 'lucide-react';
+import { getStripe } from '../stripeLoader';
 
 interface CheckoutData {
   items: any[];
@@ -130,11 +131,12 @@ export default function Checkout() {
         return;
       }
 
-      console.log('✅ WEITERLEITUNG ZU:', data.url);
+      console.log('✅ SESSION ID:', data.sessionId);
       toast.success('Weiterleitung zu Stripe...');
       
-      // Sofortige Weiterleitung
-      window.location.href = data.url;
+      // Stripe SDK Weiterleitung
+      const stripe = getStripe();
+      await stripe.redirectToCheckout({ sessionId: data.sessionId });
       
     } catch (error: any) {
       console.error('KRITISCHER FEHLER:', error);
