@@ -53,19 +53,16 @@ export function AdminMobileNav({ activeTab, onTabChange, onMenuClick }: AdminMob
   };
 
   return (
-    <>
-      {/* Spacer to prevent content from being hidden behind the nav */}
-      <div className="h-20 lg:hidden" aria-hidden="true" />
-      
+    <>      
       <nav 
-        className="fixed bottom-0 left-0 right-0 z-[99999] lg:hidden rounded-t-[2rem] glass-nav border-t border-border/20"
+        className="fixed bottom-0 left-0 right-0 z-[100000] lg:hidden rounded-t-[2rem] glass-nav border-t-2 border-primary/30 shadow-2xl"
         style={{ 
-          paddingBottom: 'max(env(safe-area-inset-bottom), 8px)',
-          paddingTop: '8px',
+          paddingBottom: 'max(env(safe-area-inset-bottom), 12px)',
+          paddingTop: '12px',
           pointerEvents: 'auto'
         }}
       >
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
         <div className="grid grid-cols-5 h-16 px-2">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
