@@ -17,25 +17,16 @@ export function ARProductViewer({ perfume }: ARProductViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    // Check if WebXR is supported
-    if ('xr' in navigator) {
-      (navigator as any).xr?.isSessionSupported('immersive-ar').then((supported: boolean) => {
-        setIsARSupported(supported);
-      });
+    // Simplified AR support check - allow almost all devices with camera
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      setIsARSupported(true);
+    } else {
+      setIsARSupported(false);
     }
   }, []);
 
   const startARSession = async () => {
     try {
-      if (!('xr' in navigator)) {
-        toast({
-          title: "AR nicht verfügbar",
-          description: "Ihr Gerät unterstützt kein WebXR. Verwenden Sie ein kompatibles Smartphone.",
-          variant: "destructive",
-        });
-        return;
-      }
-
       // Request camera access for AR
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' }
@@ -190,17 +181,14 @@ export function ARProductViewer({ perfume }: ARProductViewerProps) {
             <Button
               onClick={startARSession}
               className="w-full"
-              disabled={!isARSupported && !navigator.mediaDevices}
             >
               <Smartphone className="h-4 w-4 mr-2" />
               AR-Ansicht starten
             </Button>
 
-            {!isARSupported && (
-              <p className="text-xs text-muted-foreground text-center">
-                💡 Für beste Ergebnisse verwenden Sie ein AR-fähiges Smartphone
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground text-center">
+              💡 Funktioniert auf den meisten Smartphones mit Kamera
+            </p>
           </div>
         )}
 

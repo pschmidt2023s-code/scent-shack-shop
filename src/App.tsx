@@ -37,6 +37,7 @@ const Referral = React.lazy(() => import('@/pages/Referral'));
 const ComparisonPage = React.lazy(() => import('@/pages/ComparisonPage'));
 const PerfumeFinder = React.lazy(() => import('@/pages/PerfumeFinder'));
 const MobileGesturesDemoPage = React.lazy(() => import('@/pages/MobileGesturesDemo'));
+const LiveSupport = React.lazy(() => import('@/pages/LiveSupport'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -88,6 +89,7 @@ function App() {
                   <Route path="/comparison" element={<Suspense fallback={<LoadingSpinner />}><ComparisonPage /></Suspense>} />
                   <Route path="/parfum-finder" element={<Suspense fallback={<LoadingSpinner />}><PerfumeFinder /></Suspense>} />
                   <Route path="/mobile-gestures-demo" element={<Suspense fallback={<LoadingSpinner />}><MobileGesturesDemoPage /></Suspense>} />
+                  <Route path="/live-support" element={<Suspense fallback={<LoadingSpinner />}><LiveSupport /></Suspense>} />
                   <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><NotFound /></Suspense>} />
                 </Routes>
                   </div>
