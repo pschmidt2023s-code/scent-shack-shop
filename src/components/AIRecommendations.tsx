@@ -57,7 +57,7 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
         });
       }
 
-      // Get AI recommendations with proper data
+      // Get AI recommendations with proper data and consistent ordering
       const { data: products, error } = await supabase
         .from('products')
         .select(`
@@ -65,9 +65,11 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
           name,
           brand,
           image,
+          category,
           product_variants(id, name, price, in_stock, original_price)
         `)
         .neq('id', currentProductId || '')
+        .order('created_at', { ascending: true })
         .limit(limit);
 
       if (error) {
@@ -75,7 +77,16 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
         return;
       }
 
-      if (products) {
+      if (products && products.length > 0) {
+        console.log('Loaded products:', products.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          category: p.category,
+          image: p.image,
+          variantCount: p.product_variants?.length || 0,
+          firstVariantPrice: p.product_variants?.[0]?.price
+        })));
+
         const mapped: RecommendedProduct[] = products
           .filter((p: any) => p.product_variants && p.product_variants.length > 0)
           .map((p: any) => {
@@ -93,6 +104,7 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
             };
           });
 
+        console.log('Mapped recommendations:', mapped);
         setRecommendations(mapped);
         setAiReason('Diese Produkte könnten dir auch gefallen');
       }
