@@ -34,7 +34,7 @@ export default function Products() {
   console.log('Selected collection:', selectedCollection);
 
   return (
-    <div className="min-h-screen glass pb-20 md:pb-0">
+    <div className="min-h-screen pb-20 md:pb-0">
       <Navigation />
       
       <main>
@@ -151,9 +151,8 @@ export default function Products() {
           </div>
         </section>
       </main>
-
+      
       <Footer />
-      <MobileBottomNav />
     </div>
   );
 }
