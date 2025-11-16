@@ -2,30 +2,47 @@ import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, CreditCard } from "lucide-react";
 
 export default function CheckoutModal({ open, onOpenChange }) {
-  const { items, total } = useCart();
+  const { items, total, clearCart } = useCart();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const handleCheckout = async () => {
+    if (!user) {
+      toast.error("Bitte melden Sie sich an");
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+        body: {
           items: items.map((item) => ({
-            name: item.name,
-            amount: Math.round(item.price * 100),
-            quantity: item.quantity,
+            perfume: { name: item.perfume.name },
+            variant: { 
+              name: item.variant.name,
+              price: item.variant.price 
+            },
+            quantity: item.quantity
           })),
-        }),
+          customerEmail: user.email,
+          orderNumber: `ORD-${Date.now()}`
+        }
       });
-      const { sessionId } = await response.json();
-      const stripe = window.Stripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-      await stripe.redirectToCheckout({ sessionId });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+        onOpenChange(false);
+      } else {
+        throw new Error("Keine Checkout-URL erhalten");
+      }
     } catch (error) {
       console.error(error);
       toast.error("Fehler beim Checkout");
