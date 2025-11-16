@@ -105,9 +105,7 @@ const LoadingSpinner = () => (
 
 function AnimatedRoutes() {
   return (
-    <>
-      <Breadcrumbs />
-      <Routes>
+    <Routes>
         <Route path="/" element={
           <PageTransition>
             <Index />
@@ -261,7 +259,6 @@ function AnimatedRoutes() {
         </Suspense>
       } />
     </Routes>
-    </>
   );
 }
 
@@ -274,6 +271,7 @@ function App() {
             <CartProvider>
               <Router>
                 <div className="min-h-screen bg-background transition-all duration-300">
+                  <Breadcrumbs />
                   <AnimatedRoutes />
                   <Toaster />
                   <LiveChat />
