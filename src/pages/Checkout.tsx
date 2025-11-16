@@ -410,7 +410,7 @@ export default function Checkout() {
               <CardHeader>
                 <CardTitle>Bestellübersicht</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 pb-24 lg:pb-4">
+              <CardContent className="space-y-4">
                 {checkoutData.items.map((item, index) => (
                   <div key={index} className="flex justify-between">
                     <div className="flex-1 pr-4">
@@ -447,13 +447,22 @@ export default function Checkout() {
                     <span>{checkoutData.finalAmount.toFixed(2)}€</span>
                   </div>
                 </div>
+
+                <Button
+                  onClick={handleOrderSubmit}
+                  disabled={loading}
+                  className="w-full hidden lg:block"
+                  size="lg"
+                >
+                  {loading ? 'Verarbeitung...' : 'Kostenpflichtig bestellen'}
+                </Button>
               </CardContent>
             </Card>
           </div>
         </div>
         
         {/* Sticky Bottom Button for Mobile */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t lg:hidden z-50">
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t lg:hidden z-50 shadow-lg">
           <div className="container mx-auto max-w-6xl">
             <Button
               onClick={handleOrderSubmit}
@@ -462,20 +471,6 @@ export default function Checkout() {
               size="lg"
             >
               {loading ? 'Lädt...' : `Jetzt bestellen (${checkoutData.finalAmount.toFixed(2)}€)`}
-            </Button>
-          </div>
-        </div>
-        
-        {/* Desktop Button */}
-        <div className="hidden lg:block mt-8">
-          <div className="max-w-3xl mx-auto">
-            <Button
-              onClick={handleOrderSubmit}
-              disabled={loading}
-              className="w-full"
-              size="lg"
-            >
-              {loading ? 'Verarbeitung...' : 'Kostenpflichtig bestellen'}
             </Button>
           </div>
         </div>
