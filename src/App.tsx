@@ -6,6 +6,8 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { Toaster } from "@/components/ui/toaster";
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ProductComparison } from '@/components/ProductComparison';
 
 const ProductDetail = React.lazy(() => import('@/pages/ProductDetail'));
 const Products = React.lazy(() => import('@/pages/Products'));
@@ -47,9 +49,11 @@ function App() {
       <ThemeProvider>
         <AuthProvider>
           <CartProvider>
-            <Router>
-              <div className="min-h-screen bg-background">
-                <Routes>
+            <ErrorBoundary>
+              <Router>
+                <ProductComparison />
+                <div className="min-h-screen bg-background">
+                  <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/products" element={<Suspense fallback={<LoadingSpinner />}><Products /></Suspense>} />
                   <Route path="/product/:id" element={<Suspense fallback={<LoadingSpinner />}><ProductDetail /></Suspense>} />
@@ -73,14 +77,15 @@ function App() {
                   <Route path="/contest" element={<Suspense fallback={<LoadingSpinner />}><Contest /></Suspense>} />
                   <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><NotFound /></Suspense>} />
                 </Routes>
-                <Toaster />
               </div>
+              <Toaster />
             </Router>
-          </CartProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
-  );
+          </ErrorBoundary>
+        </CartProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  </QueryClientProvider>
+);
 }
 
 export default App;

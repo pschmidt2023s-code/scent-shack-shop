@@ -1,44 +1,72 @@
 {
-  "name": "ALDENAIR - Premium Parfüms",
   "short_name": "ALDENAIR",
-  "description": "Entdecken Sie exklusive Parfüms und Düfte von ALDENAIR. Premium 50ml Flakons und praktische 5ml Proben.",
-  "theme_color": "#DAA520",
-  "background_color": "#ffffff",
-  "display": "standalone",
-  "orientation": "portrait",
-  "scope": "/",
+  "name": "ALDENAIR Perfumes",
+  "description": "Premium Parfüms und exklusive Duftkreationen - Jetzt auch als App installierbar",
   "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#D4AF37",
+  "background_color": "#ffffff",
   "categories": ["shopping", "lifestyle"],
-  "lang": "de",
+  "lang": "de-DE",
+  "dir": "ltr",
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/lovable-uploads/f39391b1-7ea2-4b3f-9f06-15ca980668cb.png",
+      "src": "/lovable-uploads/6b3ca60c-7598-4385-8d87-42839dc00836.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/lovable-uploads/f39391b1-7ea2-4b3f-9f06-15ca980668cb.png",
+      "src": "/lovable-uploads/6b3ca60c-7598-4385-8d87-42839dc00836.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
-  "shortcuts": [
+  "screenshots": [
     {
-      "name": "Alle Parfüms",
-      "short_name": "Parfüms",
-      "description": "Entdecken Sie alle verfügbaren Parfüms",
-      "url": "/products",
-      "icons": []
-    },
-    {
-      "name": "Warenkorb",
-      "short_name": "Warenkorb",
-      "description": "Ihre ausgewählten Produkte",
-      "url": "/cart",
-      "icons": []
+      "src": "/lovable-uploads/f39391b1-7ea2-4b3f-9f06-15ca980668cb.png",
+      "sizes": "540x720",
+      "type": "image/png"
     }
   ],
-  "prefer_related_applications": false
+  "shortcuts": [
+    {
+      "name": "Produkte",
+      "short_name": "Shop",
+      "description": "Alle Parfüms ansehen",
+      "url": "/products",
+      "icons": [
+        {
+          "src": "/lovable-uploads/6b3ca60c-7598-4385-8d87-42839dc00836.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Favoriten",
+      "short_name": "Favoriten",
+      "description": "Meine Favoriten",
+      "url": "/favorites",
+      "icons": [
+        {
+          "src": "/lovable-uploads/6b3ca60c-7598-4385-8d87-42839dc00836.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "/",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
 }
