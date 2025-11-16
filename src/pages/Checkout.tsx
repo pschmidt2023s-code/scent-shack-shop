@@ -86,10 +86,12 @@ export default function Checkout() {
 
   const handleStripeCheckout = async (orderNumber: string) => {
     try {
-      console.log('=== STRIPE CHECKOUT START ===');
-      console.log('Order number:', orderNumber);
-      console.log('Customer email:', user?.email || guestEmail);
-      console.log('Items:', checkoutData.items);
+      console.log('🚀 STARTING STRIPE CHECKOUT');
+      console.log('📧 Email:', user?.email || guestEmail);
+      console.log('🔢 Order:', orderNumber);
+      console.log('🛍️ Items:', checkoutData.items.length);
+      
+      toast.info('Weiterleitung zu Stripe...');
       
       const { data, error } = await supabase.functions.invoke('stripe-checkout', {
         body: {
@@ -99,23 +101,26 @@ export default function Checkout() {
         }
       });
 
-      console.log('Supabase response:', { data, error });
+      console.log('📥 Response:', { data, error });
 
       if (error) {
-        console.error('Supabase error:', error);
-        throw error;
+        console.error('❌ Supabase Error:', error);
+        toast.error('Fehler bei der Stripe-Verbindung');
+        throw new Error(error.message || 'Stripe-Verbindung fehlgeschlagen');
       }
 
       if (!data?.url) {
-        console.error('No URL in response:', data);
+        console.error('❌ No URL:', data);
+        toast.error('Keine Zahlungs-URL erhalten');
         throw new Error('Keine Stripe-URL erhalten');
       }
 
-      console.log('Redirecting to:', data.url);
+      console.log('✅ Redirecting to Stripe:', data.url);
       window.location.href = data.url;
       
     } catch (error: any) {
-      console.error('=== STRIPE ERROR ===', error);
+      console.error('❌ STRIPE ERROR:', error);
+      toast.error(error.message || 'Stripe-Checkout fehlgeschlagen');
       throw error;
     }
   };
