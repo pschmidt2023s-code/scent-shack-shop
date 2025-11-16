@@ -47,34 +47,27 @@
     --gradient-dark: linear-gradient(135deg, hsl(220 15% 8%), hsl(220 12% 12%));
     --gradient-hero: linear-gradient(135deg, hsl(220 15% 8%) 0%, hsl(220 12% 12%) 50%, hsl(45 95% 65%) 100%);
     
-    --shadow-luxury: 0 10px 40px -10px hsl(220 15% 8% / 0.2);
-    --shadow-gold: 0 5px 25px -5px hsl(45 95% 65% / 0.3);
-    --shadow-elegant: 0 10px 30px -10px hsl(45 95% 65% / 0.3);
-    --shadow-glow: 0 0 40px hsl(45 95% 65% / 0.4);
+    --shadow-luxury: 0 2px 8px -2px hsl(220 15% 8% / 0.15);
+    --shadow-gold: 0 2px 8px -2px hsl(45 95% 65% / 0.2);
+    --shadow-elegant: 0 4px 12px -4px hsl(45 95% 65% / 0.2);
+    --shadow-glow: 0 0 20px hsl(45 95% 65% / 0.25);
     
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.2s ease;
 
     --radius: 1rem;
     
-    /* Glassmorphism variables - Strong iOS-Style Glass Effect */
-    --glass-bg: 255 255 255 / 0.5;
-    --glass-border: 255 255 255 / 0.25;
-    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1), inset 0 1px 0 0 rgba(255, 255, 255, 0.4);
+    /* Simplified glassmorphism - Better performance */
+    --glass-bg: 255 255 255 / 0.9;
+    --glass-border: 255 255 255 / 0.3;
+    --glass-shadow: 0 2px 8px 0 rgba(31, 38, 135, 0.08);
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -82,10 +75,10 @@
     --background: 222 15% 6%;
     --foreground: 0 0% 98%;
     
-    /* Dark mode glassmorphism - Strong iOS-Style Glass Effect */
-    --glass-bg: 17 24 39 / 0.4;
-    --glass-border: 255 255 255 / 0.12;
-    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+    /* Dark mode simplified glass */
+    --glass-bg: 17 24 39 / 0.85;
+    --glass-border: 255 255 255 / 0.15;
+    --glass-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.2);
 
     --card: 222 12% 8%;
     --card-foreground: 0 0% 95%;
@@ -173,9 +166,9 @@
     transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
   }
   
-  /* Smooth theme transition for all elements */
+  /* Smooth theme transition - Disabled for performance */
   * {
-    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out, border-color 0.3s ease-in-out;
+    /* Transitions disabled during scrolling */
   }
 }
 
@@ -239,60 +232,40 @@
   }
 
   .backdrop-luxury {
-    @apply backdrop-blur-xl bg-white/10 border border-white/20;
+    @apply bg-white/90 border border-white/20;
   }
   
-  /* Glassmorphism utilities - Ultra Strong iOS-Style Liquid Glass Effect */
+  /* Simplified glassmorphism - Optimized for performance */
   .glass {
-    background: rgba(255, 255, 255, 0.6) !important;
-    backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
-    -webkit-backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
+    background: rgba(255, 255, 255, 0.92) !important;
     border: 1px solid rgba(255, 255, 255, 0.35) !important;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18), 
-                0 4px 16px 0 rgba(31, 38, 135, 0.12),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.7) !important;
+    box-shadow: 0 2px 8px 0 rgba(31, 38, 135, 0.08) !important;
   }
 
   .dark .glass {
-    background: rgba(17, 24, 39, 0.5) !important;
-    backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
-    -webkit-backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
+    background: rgba(17, 24, 39, 0.92) !important;
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), 
-                0 4px 16px 0 rgba(0, 0, 0, 0.3),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.2) !important;
   }
   
   .glass-card {
-    background: rgba(255, 255, 255, 0.95) !important;
-    backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
-    -webkit-backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
     border: 1px solid rgba(255, 255, 255, 0.6) !important;
-    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.25), 
-                0 6px 20px 0 rgba(31, 38, 135, 0.18),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 4px 12px 0 rgba(31, 38, 135, 0.1) !important;
     border-radius: 1rem !important;
   }
 
   .dark .glass-card {
-    background: rgba(17, 24, 39, 0.95) !important;
-    backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
-    -webkit-backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6), 
-                0 6px 20px 0 rgba(0, 0, 0, 0.45),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.2) !important;
+    background: rgba(17, 24, 39, 0.98) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.3) !important;
   }
   
   .glass-nav {
-    background: rgba(255, 255, 255, 0.75) !important;
-    backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
-    -webkit-backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
     border-top: 1px solid rgba(255, 255, 255, 0.4) !important;
     border-radius: 0 !important;
-    box-shadow: 0 -8px 32px 0 rgba(31, 38, 135, 0.18), 
-                0 -4px 16px 0 rgba(31, 38, 135, 0.1),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.8) !important;
+    box-shadow: 0 -2px 8px 0 rgba(31, 38, 135, 0.08) !important;
     position: fixed !important;
     bottom: 0 !important;
     left: 0 !important;
@@ -315,53 +288,43 @@
   
   /* Simplified stagger animations */
   .stagger-item {
-    opacity: 0;
-    animation: simple-fade 0.4s ease-out forwards;
+    opacity: 1;
   }
-  
-  .stagger-item:nth-child(1) { animation-delay: 0.1s; }
-  .stagger-item:nth-child(2) { animation-delay: 0.15s; }
-  .stagger-item:nth-child(3) { animation-delay: 0.2s; }
-  .stagger-item:nth-child(4) { animation-delay: 0.25s; }
-  .stagger-item:nth-child(5) { animation-delay: 0.3s; }
-  .stagger-item:nth-child(6) { animation-delay: 0.35s; }
 
-  /* Enhanced page transitions */
+  /* Enhanced page transitions - Simplified */
   .animate-fade-in-up {
-    animation: fade-in-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: fade-in-up 0.3s ease-out forwards;
   }
 
   .animate-slide-in-right {
-    animation: slide-in-right 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: slide-in-right 0.3s ease-out forwards;
   }
 
   .animate-scale-in {
-    animation: scale-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: scale-in 0.3s ease-out forwards;
   }
 
   .animate-slide-in-left {
-    animation: slide-in-left 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: slide-in-left 0.3s ease-out forwards;
   }
 
   .animate-slide-up {
-    animation: slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: slide-up 0.3s ease-out forwards;
   }
 
   .animate-shimmer {
     animation: shimmer 2s linear infinite;
   }
 
-  /* Page transition enhancements - GPU accelerated */
+  /* Page transition - Simplified */
   .page-enter {
-    animation: page-enter 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    will-change: opacity, transform;
+    animation: page-enter 0.3s ease-out forwards;
   }
 
-  /* Smooth navigation link transitions - GPU optimized */
+  /* Smooth navigation link transitions */
   .nav-link {
     position: relative;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    will-change: transform;
+    transition: all 0.2s ease;
   }
 
   .nav-link::after {
@@ -372,8 +335,7 @@
     width: 0;
     height: 2px;
     background: hsl(var(--primary));
-    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    will-change: width;
+    transition: width 0.2s ease;
   }
 
   .nav-link:hover::after {
