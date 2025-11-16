@@ -1,18 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Pencil, Trash2, Plus, Package } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Trash2, Upload, Image as ImageIcon, Save, X } from "lucide-react";
+import { useDropzone } from "react-dropzone";
 
 interface Product {
   id: string;
@@ -41,16 +36,13 @@ interface ProductVariant {
   review_count: number;
 }
 
-const categories = ["Herren", "Damen", "Unisex", "Limited Edition"];
-
 export default function ProductManagement() {
   const [products, setProducts] = useState<Product[]>([]);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
-  const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
-  const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
+  const [editingPriceValue, setEditingPriceValue] = useState<string>("");
+  const [uploadingImageFor, setUploadingImageFor] = useState<string | null>(null);
 
   useEffect(() => {
     loadProducts();
@@ -85,109 +77,128 @@ export default function ProductManagement() {
     setLoading(false);
   };
 
-  const handleSaveProduct = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
-    const productData = {
-      name: formData.get("name") as string,
-      brand: formData.get("brand") as string,
-      category: formData.get("category") as string,
-      size: formData.get("size") as string,
-      image: formData.get("image") as string || null,
-    };
+  const uploadImage = async (file: File, productId: string) => {
+    try {
+      setUploadingImageFor(productId);
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${productId}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
 
-    if (editingProduct) {
-      const { error } = await supabase
-        .from("products")
-        .update(productData)
-        .eq("id", editingProduct.id);
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
 
-      if (error) {
-        toast.error("Fehler beim Aktualisieren des Produkts");
-        console.error(error);
-      } else {
-        toast.success("Produkt aktualisiert");
-        setIsProductDialogOpen(false);
-        setEditingProduct(null);
-        loadProducts();
-      }
-    } else {
-      // Generate a unique ID for new products
-      const productId = `${productData.category.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
-      const { error } = await supabase
-        .from("products")
-        .insert([{ ...productData, id: productId }]);
+      if (uploadError) throw uploadError;
 
-      if (error) {
-        toast.error("Fehler beim Erstellen des Produkts");
-        console.error(error);
-      } else {
-        toast.success("Produkt erstellt");
-        setIsProductDialogOpen(false);
-        loadProducts();
-      }
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({ image: publicUrl })
+        .eq('id', productId);
+
+      if (updateError) throw updateError;
+
+      toast.success("Bild erfolgreich hochgeladen!");
+      loadProducts();
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error("Fehler beim Hochladen des Bildes");
+    } finally {
+      setUploadingImageFor(null);
     }
   };
 
-  const handleSaveVariant = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
-    const variantData = {
-      product_id: formData.get("product_id") as string,
-      variant_number: formData.get("variant_number") as string,
-      name: formData.get("name") as string,
-      description: formData.get("description") as string || null,
-      price: parseFloat(formData.get("price") as string),
-      original_price: formData.get("original_price") ? parseFloat(formData.get("original_price") as string) : null,
-      stock_quantity: parseInt(formData.get("stock_quantity") as string),
-      in_stock: formData.get("in_stock") === "on",
-      preorder: formData.get("preorder") === "on",
-      release_date: formData.get("release_date") as string || null,
-    };
-
-    if (editingVariant) {
-      const { error } = await supabase
-        .from("product_variants")
-        .update(variantData)
-        .eq("id", editingVariant.id);
-
-      if (error) {
-        toast.error("Fehler beim Aktualisieren der Variante");
-        console.error(error);
-      } else {
-        toast.success("Variante aktualisiert");
-        setIsVariantDialogOpen(false);
-        setEditingVariant(null);
-        loadProducts();
+  const ImageDropzone = ({ productId, currentImage }: { productId: string; currentImage: string | null }) => {
+    const onDrop = useCallback((acceptedFiles: File[]) => {
+      if (acceptedFiles.length > 0) {
+        uploadImage(acceptedFiles[0], productId);
       }
+    }, [productId]);
+
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+      onDrop,
+      accept: {
+        'image/*': ['.png', '.jpg', '.jpeg', '.webp']
+      },
+      maxFiles: 1,
+      disabled: uploadingImageFor === productId
+    });
+
+    return (
+      <div
+        {...getRootProps()}
+        className={`relative w-24 h-24 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer transition-all ${
+          isDragActive ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
+        } ${uploadingImageFor === productId ? 'opacity-50 cursor-not-allowed' : ''}`}
+      >
+        <input {...getInputProps()} />
+        {currentImage ? (
+          <img src={currentImage} alt="Product" className="w-full h-full object-cover rounded-lg" />
+        ) : (
+          <ImageIcon className="w-8 h-8 text-muted-foreground" />
+        )}
+        {uploadingImageFor === productId && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-lg">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          </div>
+        )}
+        {!uploadingImageFor && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity rounded-lg">
+            <Upload className="w-6 h-6 text-white" />
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const startEditingPrice = (variantId: string, currentPrice: number) => {
+    setEditingPriceId(variantId);
+    setEditingPriceValue(currentPrice.toString());
+  };
+
+  const savePrice = async (variantId: string) => {
+    const newPrice = parseFloat(editingPriceValue);
+    if (isNaN(newPrice) || newPrice < 0) {
+      toast.error("Ungültiger Preis");
+      return;
+    }
+
+    const { error } = await supabase
+      .from('product_variants')
+      .update({ price: newPrice })
+      .eq('id', variantId);
+
+    if (error) {
+      toast.error("Fehler beim Aktualisieren des Preises");
+      console.error(error);
     } else {
-      // Generate a unique ID for new variants
-      const variantId = `${variantData.variant_number}-${Date.now()}`;
-      const { error } = await supabase
-        .from("product_variants")
-        .insert([{ ...variantData, id: variantId }]);
-
-      if (error) {
-        toast.error("Fehler beim Erstellen der Variante");
-        console.error(error);
-      } else {
-        toast.success("Variante erstellt");
-        setIsVariantDialogOpen(false);
-        loadProducts();
-      }
+      toast.success("Preis aktualisiert!");
+      setEditingPriceId(null);
+      loadProducts();
     }
   };
 
-  const handleDeleteProduct = async (id: string) => {
-    if (!confirm("Möchten Sie dieses Produkt wirklich löschen? Alle zugehörigen Varianten werden ebenfalls gelöscht.")) return;
+  const cancelEditingPrice = () => {
+    setEditingPriceId(null);
+    setEditingPriceValue("");
+  };
 
-    // First delete all variants
+  const deleteProduct = async (productId: string) => {
+    if (!confirm("Möchten Sie dieses Produkt wirklich löschen? Alle zugehörigen Varianten werden ebenfalls gelöscht.")) {
+      return;
+    }
+
     const { error: variantsError } = await supabase
-      .from("product_variants")
+      .from('product_variants')
       .delete()
-      .eq("product_id", id);
+      .eq('product_id', productId);
 
     if (variantsError) {
       toast.error("Fehler beim Löschen der Varianten");
@@ -195,291 +206,218 @@ export default function ProductManagement() {
       return;
     }
 
-    // Then delete the product
-    const { error } = await supabase
-      .from("products")
+    const { error: productError } = await supabase
+      .from('products')
       .delete()
-      .eq("id", id);
+      .eq('id', productId);
 
-    if (error) {
+    if (productError) {
       toast.error("Fehler beim Löschen des Produkts");
-      console.error(error);
+      console.error(productError);
     } else {
-      toast.success("Produkt und alle Varianten gelöscht");
+      toast.success("Produkt gelöscht!");
       loadProducts();
     }
   };
 
-  const handleDeleteVariant = async (id: string) => {
-    if (!confirm("Möchten Sie diese Variante wirklich löschen?")) return;
+  const deleteVariant = async (variantId: string) => {
+    if (!confirm("Möchten Sie diese Variante wirklich löschen?")) {
+      return;
+    }
 
     const { error } = await supabase
-      .from("product_variants")
+      .from('product_variants')
       .delete()
-      .eq("id", id);
+      .eq('id', variantId);
 
     if (error) {
       toast.error("Fehler beim Löschen der Variante");
       console.error(error);
     } else {
-      toast.success("Variante gelöscht");
+      toast.success("Variante gelöscht!");
       loadProducts();
     }
   };
 
+  const getVariantsForProduct = (productId: string) => {
+    return variants.filter(v => v.product_id === productId);
+  };
+
   if (loading) {
-    return <div className="p-6">Laden...</div>;
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Produktverwaltung</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold">Produktverwaltung</h2>
-      </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Produktverwaltung</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Klicken oder ziehen Sie Bilder auf die Bildfelder. Klicken Sie auf Preise zum Bearbeiten.
+        </p>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="products" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="products">Produkte</TabsTrigger>
+            <TabsTrigger value="variants">Varianten & Preise</TabsTrigger>
+          </TabsList>
 
-      <Tabs defaultValue="products" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="products">Produkte</TabsTrigger>
-          <TabsTrigger value="variants">Varianten</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="products" className="space-y-4">
-          <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => setEditingProduct(null)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Neues Produkt
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>{editingProduct ? "Produkt bearbeiten" : "Neues Produkt"}</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSaveProduct} className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Produktname</Label>
-                  <Input id="name" name="name" defaultValue={editingProduct?.name} required />
-                </div>
-                <div>
-                  <Label htmlFor="brand">Marke</Label>
-                  <Input id="brand" name="brand" defaultValue={editingProduct?.brand} required />
-                </div>
-                <div>
-                  <Label htmlFor="category">Kategorie</Label>
-                  <Select name="category" defaultValue={editingProduct?.category}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Kategorie auswählen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="size">Größe</Label>
-                  <Input id="size" name="size" defaultValue={editingProduct?.size} placeholder="z.B. 100ml" required />
-                </div>
-                <div>
-                  <Label htmlFor="image">Bild URL</Label>
-                  <Input id="image" name="image" defaultValue={editingProduct?.image || ""} placeholder="https://..." />
-                </div>
-                <Button type="submit" className="w-full">Speichern</Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Alle Produkte</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[600px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Marke</TableHead>
-                      <TableHead>Kategorie</TableHead>
-                      <TableHead>Größe</TableHead>
-                      <TableHead>Aktionen</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {products.map((product) => (
+          <TabsContent value="products" className="space-y-4">
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Bild</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Marke</TableHead>
+                    <TableHead>Kategorie</TableHead>
+                    <TableHead>Größe</TableHead>
+                    <TableHead>Varianten</TableHead>
+                    <TableHead className="text-right">Aktionen</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {products.map((product) => {
+                    const productVariants = getVariantsForProduct(product.id);
+                    return (
                       <TableRow key={product.id}>
-                        <TableCell>{product.name}</TableCell>
+                        <TableCell>
+                          <ImageDropzone 
+                            productId={product.id} 
+                            currentImage={product.image}
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium">{product.name}</TableCell>
                         <TableCell>{product.brand}</TableCell>
                         <TableCell>{product.category}</TableCell>
                         <TableCell>{product.size}</TableCell>
                         <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setEditingProduct(product);
-                                setIsProductDialogOpen(true);
-                              }}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleDeleteProduct(product.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          <span className="text-sm text-muted-foreground">
+                            {productVariants.length} Variante(n)
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteProduct(product.id)}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </Button>
                         </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
 
-        <TabsContent value="variants" className="space-y-4">
-          <Dialog open={isVariantDialogOpen} onOpenChange={setIsVariantDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => setEditingVariant(null)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Neue Variante
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{editingVariant ? "Variante bearbeiten" : "Neue Variante"}</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSaveVariant} className="space-y-4">
-                <div>
-                  <Label htmlFor="product_id">Produkt</Label>
-                  <Select name="product_id" defaultValue={editingVariant?.product_id} required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Produkt auswählen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {products.map((product) => (
-                        <SelectItem key={product.id} value={product.id}>
-                          {product.brand} - {product.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="variant_number">Varianten-Nummer</Label>
-                  <Input id="variant_number" name="variant_number" defaultValue={editingVariant?.variant_number} required />
-                </div>
-                <div>
-                  <Label htmlFor="name">Name</Label>
-                  <Input id="name" name="name" defaultValue={editingVariant?.name} required />
-                </div>
-                <div>
-                  <Label htmlFor="description">Beschreibung</Label>
-                  <Textarea id="description" name="description" defaultValue={editingVariant?.description || ""} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="price">Preis (€)</Label>
-                    <Input id="price" name="price" type="number" step="0.01" defaultValue={editingVariant?.price} required />
-                  </div>
-                  <div>
-                    <Label htmlFor="original_price">Original Preis (€)</Label>
-                    <Input id="original_price" name="original_price" type="number" step="0.01" defaultValue={editingVariant?.original_price || ""} />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="stock_quantity">Lagerbestand</Label>
-                  <Input id="stock_quantity" name="stock_quantity" type="number" defaultValue={editingVariant?.stock_quantity || 0} required />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch id="in_stock" name="in_stock" defaultChecked={editingVariant?.in_stock ?? true} />
-                  <Label htmlFor="in_stock">Auf Lager</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch id="preorder" name="preorder" defaultChecked={editingVariant?.preorder || false} />
-                  <Label htmlFor="preorder">Vorbestellung</Label>
-                </div>
-                <div>
-                  <Label htmlFor="release_date">Verfügbar ab</Label>
-                  <Input id="release_date" name="release_date" type="date" defaultValue={editingVariant?.release_date?.split('T')[0] || ""} />
-                </div>
-                <Button type="submit" className="w-full">Speichern</Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Alle Varianten</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[600px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Produkt</TableHead>
-                      <TableHead>Variante</TableHead>
-                      <TableHead>Preis</TableHead>
-                      <TableHead>Lager</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Aktionen</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {variants.map((variant) => {
-                      const product = products.find(p => p.id === variant.product_id);
-                      return (
-                        <TableRow key={variant.id}>
-                          <TableCell>{product?.brand} - {product?.name}</TableCell>
-                          <TableCell>{variant.name}</TableCell>
-                          <TableCell>€{variant.price.toFixed(2)}</TableCell>
-                          <TableCell>{variant.stock_quantity}</TableCell>
-                          <TableCell>
-                            {variant.preorder ? (
-                              <span className="text-blue-600">Vorbestellung</span>
-                            ) : variant.in_stock ? (
-                              <span className="text-green-600">Verfügbar</span>
-                            ) : (
-                              <span className="text-red-600">Nicht verfügbar</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
+          <TabsContent value="variants" className="space-y-4">
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Produkt</TableHead>
+                    <TableHead>Variante</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Preis (klicken zum bearbeiten)</TableHead>
+                    <TableHead>Lager</TableHead>
+                    <TableHead>Auf Lager</TableHead>
+                    <TableHead className="text-right">Aktionen</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {variants.map((variant) => {
+                    const product = products.find(p => p.id === variant.product_id);
+                    const isEditingPrice = editingPriceId === variant.id;
+                    
+                    return (
+                      <TableRow key={variant.id}>
+                        <TableCell className="font-medium">
+                          {product?.name || 'Unbekannt'}
+                        </TableCell>
+                        <TableCell>{variant.variant_number}</TableCell>
+                        <TableCell>{variant.name}</TableCell>
+                        <TableCell>
+                          {isEditingPrice ? (
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={editingPriceValue}
+                                onChange={(e) => setEditingPriceValue(e.target.value)}
+                                className="w-24"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') savePrice(variant.id);
+                                  if (e.key === 'Escape') cancelEditingPrice();
+                                }}
+                              />
                               <Button
                                 size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setEditingVariant(variant);
-                                  setIsVariantDialogOpen(true);
-                                }}
+                                variant="ghost"
+                                onClick={() => savePrice(variant.id)}
                               >
-                                <Pencil className="h-4 w-4" />
+                                <Save className="w-4 h-4 text-green-600" />
                               </Button>
                               <Button
                                 size="sm"
-                                variant="destructive"
-                                onClick={() => handleDeleteVariant(variant.id)}
+                                variant="ghost"
+                                onClick={cancelEditingPrice}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <X className="w-4 h-4 text-red-600" />
                               </Button>
                             </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+                          ) : (
+                            <button
+                              onClick={() => startEditingPrice(variant.id, variant.price)}
+                              className="flex items-center gap-2 px-3 py-1 hover:bg-accent rounded-md transition-colors"
+                            >
+                              <span className="font-semibold">€{variant.price.toFixed(2)}</span>
+                              <span className="text-xs text-muted-foreground">(klicken)</span>
+                            </button>
+                          )}
+                        </TableCell>
+                        <TableCell>{variant.stock_quantity}</TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            variant.in_stock 
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                          }`}>
+                            {variant.in_stock ? 'Ja' : 'Nein'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteVariant(variant.id)}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 }
