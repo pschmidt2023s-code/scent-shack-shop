@@ -17,7 +17,10 @@ export function HomeReviewsSection() {
   const [reviews, setReviews] = useState<Review[]>([]);
 
   useEffect(() => {
-    fetchTopReviews();
+    const timer = setTimeout(() => {
+      fetchTopReviews();
+    }, 100);
+    return () => clearTimeout(timer);
   }, []);
 
   const fetchTopReviews = async () => {
