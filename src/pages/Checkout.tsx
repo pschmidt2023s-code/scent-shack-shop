@@ -292,11 +292,9 @@ export default function Checkout() {
         try {
           await supabase.functions.invoke('send-order-confirmation', {
             body: {
+              orderId: order.id,
               customerEmail: user?.email || guestEmail,
               customerName: `${customerData.firstName} ${customerData.lastName}`,
-              orderNumber: orderNumber,
-              items: checkoutData.items,
-              totalAmount: 0,
             }
           });
         } catch (emailErr) {

@@ -32,24 +32,18 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
   useEffect(() => {
     // Debounce recommendations to avoid excessive API calls
     const timer = setTimeout(() => {
-      if (user) {
-        fetchRecommendations();
-      } else {
-        setLoading(false);
-      }
+      fetchRecommendations();
     }, 500);
 
     return () => clearTimeout(timer);
   }, [user, currentProductId]);
 
   const fetchRecommendations = async () => {
-    if (!user) return;
-
     try {
       setLoading(true);
 
-      // Track current product view
-      if (currentProductId) {
+      // Track current product view (only if user is logged in)
+      if (user && currentProductId) {
         await supabase.from('product_views').insert({
           user_id: user.id,
           product_id: currentProductId,
@@ -57,7 +51,7 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
         });
       }
 
-      // Get AI recommendations with proper data and consistent ordering
+      // Get different products (not just variants of the same product)
       const { data: products, error } = await supabase
         .from('products')
         .select(`
@@ -69,7 +63,6 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
           product_variants(id, name, price, in_stock, original_price)
         `)
         .neq('id', currentProductId || '')
-        .order('created_at', { ascending: true })
         .limit(limit);
 
       if (error) {
@@ -78,15 +71,6 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
       }
 
       if (products && products.length > 0) {
-        console.log('Loaded products:', products.map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          category: p.category,
-          image: p.image,
-          variantCount: p.product_variants?.length || 0,
-          firstVariantPrice: p.product_variants?.[0]?.price
-        })));
-
         const mapped: RecommendedProduct[] = products
           .filter((p: any) => p.product_variants && p.product_variants.length > 0)
           .map((p: any) => {
@@ -104,7 +88,6 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
             };
           });
 
-        console.log('Mapped recommendations:', mapped);
         setRecommendations(mapped);
         setAiReason('Diese Produkte könnten dir auch gefallen');
       }
@@ -115,18 +98,18 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
     }
   };
 
-  if (!user || recommendations.length === 0) return null;
+  if (recommendations.length === 0 && !loading) return null;
 
   return (
-    <section className="py-12 glass">
+    <section className="py-8 md:py-12 glass">
       <div className="container mx-auto px-4">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center glass-card">
-            <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+        <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
+          <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary/10 flex items-center justify-center glass-card">
+            <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-primary animate-pulse" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold glass-text-dark">Persönliche Empfehlungen</h2>
-            <p className="text-sm glass-text-dark opacity-80">{aiReason}</p>
+            <h2 className="text-xl md:text-2xl font-bold glass-text-dark">Persönliche Empfehlungen</h2>
+            <p className="text-xs md:text-sm glass-text-dark opacity-80">{aiReason}</p>
           </div>
         </div>
 
@@ -137,7 +120,7 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {recommendations.map((product) => (
               <Card
                 key={product.id}
