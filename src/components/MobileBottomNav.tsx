@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useFavorites } from '@/hooks/useFavorites'
 import { cn } from '@/lib/utils'
 import { CartSidebar } from './CartSidebar'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 const NAV_ITEMS = [
   {
@@ -58,7 +58,6 @@ export function MobileBottomNav() {
   }
 
   const handleWishlistClick = () => {
-    // Navigate to favorites page
     window.location.href = '/favorites';
   }
 
@@ -75,12 +74,12 @@ export function MobileBottomNav() {
   return (
     <>
       {/* Spacer to prevent content from being hidden behind the nav */}
-      <div className="h-20 md:hidden" />
+      <div className="h-16 md:hidden" />
       
-      {/* Bottom Navigation with Enhanced Design */}
-      <nav className="fixed bottom-0 left-0 right-0 z-[9999] bg-background/95 backdrop-blur-lg border-t border-border/50 md:hidden shadow-2xl pb-[env(safe-area-inset-bottom)]">
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
-        <div className="grid grid-cols-5 h-20 px-2">
+      {/* Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 z-[100] bg-background/98 backdrop-blur-lg border-t border-border/40 md:hidden shadow-lg pb-[env(safe-area-inset-bottom)]">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+        <div className="grid grid-cols-5 h-16 px-1">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon
             const isActive = location.pathname === item.activeHref || 
@@ -103,129 +102,73 @@ export function MobileBottomNav() {
                   variant="ghost"
                   onClick={() => handleItemClick(item)}
                   className={cn(
-                    "group relative flex flex-col items-center justify-center px-3 py-3 transition-all duration-300 h-20 rounded-2xl mx-1 my-2",
-                    "hover:bg-gradient-to-t hover:from-primary/10 hover:to-primary/5 active:scale-95",
-                    "hover:shadow-lg hover:shadow-primary/20",
+                    "group relative flex flex-col items-center justify-center gap-1 px-2 py-2 transition-all duration-200 h-full rounded-lg",
+                    "hover:bg-primary/10 active:scale-95",
                     isActive 
-                      ? "text-primary bg-gradient-to-t from-primary/15 to-primary/5 shadow-md shadow-primary/30" 
-                      : "text-muted-foreground hover:text-primary"
+                      ? "text-primary" 
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  {/* Glow effect for active state */}
-                  {isActive && (
-                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-primary/20 to-primary/10 opacity-50 blur-sm"></div>
-                  )}
-                  
-                  <div className="relative z-10">
-                    <div className="relative mb-1">
-                      <Icon 
-                        className={cn(
-                          "w-6 h-6 transition-all duration-300",
-                          isActive && "scale-110 drop-shadow-sm",
-                          "group-hover:scale-105 group-active:scale-95"
-                        )} 
-                      />
-                      
-                      {/* Enhanced Cart badge */}
-                      {item.showBadge && itemCount > 0 && (
-                        <Badge 
-                          variant="destructive" 
-                          className={cn(
-                            "absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs font-bold",
-                            "shadow-lg border-2 border-background",
-                            "animate-pulse hover:animate-bounce transition-all duration-300"
-                          )}
-                        >
-                          {itemCount > 99 ? '99+' : itemCount}
-                        </Badge>
-                      )}
-                      
-                      {/* Active indicator dot */}
-                      {isActive && (
-                        <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full animate-pulse"></div>
-                      )}
-                    </div>
+                  <div className="relative">
+                    <Icon className="w-5 h-5" strokeWidth={2} />
                     
-                    <span 
-                      className={cn(
-                        "text-xs transition-all duration-300",
-                        isActive ? "font-semibold" : "font-medium",
-                        "group-hover:font-semibold"
-                      )}
-                    >
-                      {item.label}
-                    </span>
+                    {item.showBadge && itemCount > 0 && (
+                      <Badge 
+                        variant="destructive" 
+                        className="absolute -top-1 -right-1 h-4 min-w-[16px] flex items-center justify-center px-1 text-[9px] font-semibold"
+                      >
+                        {itemCount}
+                      </Badge>
+                    )}
                   </div>
+                  
+                  <span className={cn(
+                    "text-[11px] font-medium transition-colors",
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  )}>
+                    {item.label}
+                  </span>
                 </Button>
               )
             }
 
-            // Regular link items
             return (
               <Link
                 key={item.href}
                 to={item.href}
                 className={cn(
-                  "group relative flex flex-col items-center justify-center px-3 py-3 transition-all duration-300 h-20 rounded-2xl mx-1 my-2",
-                  "hover:bg-gradient-to-t hover:from-primary/10 hover:to-primary/5 active:scale-95",
-                  "hover:shadow-lg hover:shadow-primary/20",
+                  "group relative flex flex-col items-center justify-center gap-1 px-2 py-2 transition-all duration-200 h-full rounded-lg",
+                  "hover:bg-primary/10 active:scale-95",
                   isActive 
-                    ? "text-primary bg-gradient-to-t from-primary/15 to-primary/5 shadow-md shadow-primary/30" 
-                    : "text-muted-foreground hover:text-primary"
+                    ? "text-primary" 
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                {/* Glow effect for active state */}
-                {isActive && (
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-primary/20 to-primary/10 opacity-50 blur-sm"></div>
-                )}
-                
-                <div className="relative z-10">
-                  <div className="relative mb-1">
-                    <Icon 
-                      className={cn(
-                        "w-6 h-6 transition-all duration-300",
-                        isActive && "scale-110 drop-shadow-sm",
-                        "group-hover:scale-105 group-active:scale-95"
-                      )} 
-                    />
-                    
-                    {/* Enhanced Favorites badge */}
-                    {item.label === 'Favoriten' && favoritesCount > 0 && (
-                      <Badge 
-                        variant="destructive" 
-                        className={cn(
-                          "absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs font-bold",
-                          "shadow-lg border-2 border-background",
-                          "animate-pulse hover:animate-bounce transition-all duration-300"
-                        )}
-                      >
-                        {favoritesCount > 99 ? '99+' : favoritesCount}
-                      </Badge>
-                    )}
-                    
-                    {/* Active indicator dot */}
-                    {isActive && (
-                      <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full animate-pulse"></div>
-                    )}
-                  </div>
+                <div className="relative">
+                  <Icon className="w-5 h-5" strokeWidth={2} />
                   
-                  <span 
-                    className={cn(
-                      "text-xs transition-all duration-300",
-                      isActive ? "font-semibold" : "font-medium",
-                      "group-hover:font-semibold"
-                    )}
-                  >
-                    {item.label}
-                  </span>
+                  {item.label === 'Favoriten' && favoritesCount > 0 && (
+                    <Badge 
+                      variant="secondary" 
+                      className="absolute -top-1 -right-1 h-4 min-w-[16px] flex items-center justify-center px-1 text-[9px] font-semibold"
+                    >
+                      {favoritesCount}
+                    </Badge>
+                  )}
                 </div>
+                
+                <span className={cn(
+                  "text-[11px] font-medium transition-colors",
+                  isActive ? "text-primary" : "text-muted-foreground"
+                )}>
+                  {item.label}
+                </span>
               </Link>
             )
           })}
         </div>
       </nav>
 
-      {/* Cart Sidebar */}
       <CartSidebar open={showCart} onOpenChange={setShowCart} />
     </>
   )
