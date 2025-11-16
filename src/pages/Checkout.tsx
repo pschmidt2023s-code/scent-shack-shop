@@ -177,8 +177,9 @@ export default function Checkout() {
           throw new Error(`Stripe-Zahlung fehlgeschlagen: ${stripeError.message}`);
         }
 
-        console.log('Stripe response:', stripeData);
-        console.log('Stripe checkout URL:', stripeData?.url);
+        console.log('=== STRIPE REDIRECT ===');
+        console.log('Full Stripe response:', JSON.stringify(stripeData));
+        console.log('URL:', stripeData?.url);
         console.log('Session ID:', stripeData?.sessionId);
 
         if (!stripeData || !stripeData.url) {
@@ -195,10 +196,18 @@ export default function Checkout() {
           console.error('Error updating order:', updateError);
         }
 
-        console.log('Redirecting to Stripe...');
+        console.log('Opening Stripe URL:', stripeData.url);
+        console.log('URL type:', typeof stripeData.url);
+        console.log('URL is valid:', stripeData.url.startsWith('https://'));
         
-        // Redirect to Stripe Checkout
-        window.location.href = stripeData.url;
+        // Force open in new tab AND redirect current window as fallback
+        const newWindow = window.open(stripeData.url, '_blank');
+        if (!newWindow) {
+          console.log('Popup blocked, redirecting in same window...');
+          window.location.href = stripeData.url;
+        } else {
+          console.log('Opened in new tab');
+        }
         
       } else if (paymentMethod === 'paypal_checkout') {
         // Create PayPal order via edge function
