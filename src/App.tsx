@@ -26,7 +26,6 @@ const Partner = React.lazy(() => import('@/pages/Partner'));
 const Admin = React.lazy(() => import('@/pages/Admin'));
 const AdminNew = React.lazy(() => import('@/pages/AdminNew'));
 const Auth = React.lazy(() => import('@/pages/Auth'));
-const Checkout = React.lazy(() => import('@/pages/Checkout'));
 const CheckoutBank = React.lazy(() => import('@/pages/CheckoutBank'));
 const CheckoutSuccess = React.lazy(() => import('@/pages/CheckoutSuccess'));
 const CheckoutCancel = React.lazy(() => import('@/pages/CheckoutCancel'));
@@ -75,7 +74,6 @@ function App() {
                   <Route path="/admin" element={<Suspense fallback={<LoadingSpinner />}><AdminNew /></Suspense>} />
                   <Route path="/admin-old" element={<Suspense fallback={<LoadingSpinner />}><Admin /></Suspense>} />
                   <Route path="/auth" element={<Suspense fallback={<LoadingSpinner />}><Auth /></Suspense>} />
-                  <Route path="/checkout" element={<Suspense fallback={<LoadingSpinner />}><Checkout /></Suspense>} />
                   <Route path="/checkout-bank" element={<Suspense fallback={<LoadingSpinner />}><CheckoutBank /></Suspense>} />
                   <Route path="/checkout-success" element={<Suspense fallback={<LoadingSpinner />}><CheckoutSuccess /></Suspense>} />
                   <Route path="/checkout-cancel" element={<Suspense fallback={<LoadingSpinner />}><CheckoutCancel /></Suspense>} />
