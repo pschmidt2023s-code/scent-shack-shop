@@ -46,7 +46,7 @@ export function DarkModeToggle() {
       variant="ghost"
       size="icon"
       onClick={handleToggle}
-      className="relative w-10 h-10 overflow-hidden transition-all duration-300 hover:scale-110 hover:bg-accent/20 group"
+      className="relative w-10 h-10 overflow-hidden transition-all duration-300 hover:scale-110 hover:bg-accent/20 group focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
       aria-label={isDark ? 'Zu hellem Modus wechseln' : 'Zu dunklem Modus wechseln'}
     >
       {/* Icon with rotation animation */}

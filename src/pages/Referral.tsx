@@ -5,7 +5,7 @@ import { ReferralProgram } from '@/components/ReferralProgram';
 
 const Referral = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen glass">
       <Navigation />
       <main className="container mx-auto px-4 py-8 pb-mobile-nav">
         <div className="max-w-4xl mx-auto">

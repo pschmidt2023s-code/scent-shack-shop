@@ -35,7 +35,7 @@ const ProductDetail = () => {
 
   if (!perfume) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen glass">
         <Navigation />
         <div className="container mx-auto px-4 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">Produkt nicht gefunden</h1>

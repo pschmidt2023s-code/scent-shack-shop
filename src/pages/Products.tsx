@@ -34,7 +34,7 @@ export default function Products() {
   console.log('Selected collection:', selectedCollection);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen glass">
       <Navigation />
       
       <main>
