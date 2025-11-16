@@ -12,24 +12,28 @@ export function ExitIntentPopup() {
   const [hasShown, setHasShown] = useState(false);
 
   useEffect(() => {
-    // Check if popup was already shown in this session
-    const shown = sessionStorage.getItem('exitIntentShown');
-    if (shown) {
-      setHasShown(true);
-      return;
-    }
-
-    const handleMouseLeave = (e: MouseEvent) => {
-      // Only trigger if mouse is leaving from top of page
-      if (e.clientY <= 0 && !hasShown && !isOpen) {
-        setIsOpen(true);
+    const timer = setTimeout(() => {
+      // Check if popup was already shown in this session
+      const shown = sessionStorage.getItem('exitIntentShown');
+      if (shown) {
         setHasShown(true);
-        sessionStorage.setItem('exitIntentShown', 'true');
+        return;
       }
-    };
 
-    document.addEventListener('mouseleave', handleMouseLeave);
-    return () => document.removeEventListener('mouseleave', handleMouseLeave);
+      const handleMouseLeave = (e: MouseEvent) => {
+        // Only trigger if mouse is leaving from top of page
+        if (e.clientY <= 0 && !hasShown && !isOpen) {
+          setIsOpen(true);
+          setHasShown(true);
+          sessionStorage.setItem('exitIntentShown', 'true');
+        }
+      };
+
+      document.addEventListener('mouseleave', handleMouseLeave);
+      return () => document.removeEventListener('mouseleave', handleMouseLeave);
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, [hasShown, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
