@@ -55,6 +55,11 @@
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     --radius: 0.75rem;
+    
+    /* Glassmorphism variables */
+    --glass-bg: 0 0% 100% / 0.7;
+    --glass-border: 220 13% 88% / 0.3;
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
 
     --sidebar-background: 0 0% 98%;
 
@@ -76,6 +81,11 @@
   .dark {
     --background: 222 15% 6%;
     --foreground: 0 0% 98%;
+    
+    /* Dark mode glassmorphism */
+    --glass-bg: 222 12% 8% / 0.7;
+    --glass-border: 222 8% 15% / 0.3;
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 
     --card: 222 12% 8%;
     --card-foreground: 0 0% 95%;
@@ -230,6 +240,28 @@
 
   .backdrop-luxury {
     @apply backdrop-blur-xl bg-white/10 border border-white/20;
+  }
+  
+  /* Glassmorphism utilities */
+  .glass {
+    background: hsla(var(--glass-bg));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsla(var(--glass-border));
+    box-shadow: var(--glass-shadow);
+  }
+  
+  .glass-card {
+    @apply glass rounded-xl;
+  }
+  
+  .glass-nav {
+    @apply glass;
+    border-bottom: 1px solid hsla(var(--glass-border));
+  }
+  
+  .glass-text-dark {
+    @apply text-foreground font-medium;
   }
   
   /* Simplified stagger animations */
