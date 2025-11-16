@@ -19,7 +19,7 @@ export function CartSidebar({ open, onOpenChange }: CartSidebarProps) {
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         
-        <SheetContent className="w-full sm:max-w-md z-[90]">
+        <SheetContent className="w-full sm:max-w-md z-[150]">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               <ShoppingBag className="w-5 h-5" />
