@@ -54,7 +54,7 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
 
   return (
     <>
-      <Card className="group hover:shadow-md transition-shadow duration-200 overflow-hidden">
+      <Card className="group glass-card hover:shadow-elegant transition-all duration-200 overflow-hidden">
         <CardContent className="p-0">
           <div className="relative">
             <Link 
