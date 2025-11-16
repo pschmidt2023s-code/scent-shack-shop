@@ -12,6 +12,7 @@ import { Pencil, Trash2, Plus, Package } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Product {
   id: string;
@@ -180,8 +181,21 @@ export default function ProductManagement() {
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (!confirm("Möchten Sie dieses Produkt wirklich löschen?")) return;
+    if (!confirm("Möchten Sie dieses Produkt wirklich löschen? Alle zugehörigen Varianten werden ebenfalls gelöscht.")) return;
 
+    // First delete all variants
+    const { error: variantsError } = await supabase
+      .from("product_variants")
+      .delete()
+      .eq("product_id", id);
+
+    if (variantsError) {
+      toast.error("Fehler beim Löschen der Varianten");
+      console.error(variantsError);
+      return;
+    }
+
+    // Then delete the product
     const { error } = await supabase
       .from("products")
       .delete()
@@ -191,7 +205,7 @@ export default function ProductManagement() {
       toast.error("Fehler beim Löschen des Produkts");
       console.error(error);
     } else {
-      toast.success("Produkt gelöscht");
+      toast.success("Produkt und alle Varianten gelöscht");
       loadProducts();
     }
   };
@@ -281,48 +295,50 @@ export default function ProductManagement() {
               <CardTitle>Alle Produkte</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Marke</TableHead>
-                    <TableHead>Kategorie</TableHead>
-                    <TableHead>Größe</TableHead>
-                    <TableHead>Aktionen</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {products.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell>{product.name}</TableCell>
-                      <TableCell>{product.brand}</TableCell>
-                      <TableCell>{product.category}</TableCell>
-                      <TableCell>{product.size}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setEditingProduct(product);
-                              setIsProductDialogOpen(true);
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeleteProduct(product.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              <ScrollArea className="h-[600px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Marke</TableHead>
+                      <TableHead>Kategorie</TableHead>
+                      <TableHead>Größe</TableHead>
+                      <TableHead>Aktionen</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {products.map((product) => (
+                      <TableRow key={product.id}>
+                        <TableCell>{product.name}</TableCell>
+                        <TableCell>{product.brand}</TableCell>
+                        <TableCell>{product.category}</TableCell>
+                        <TableCell>{product.size}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingProduct(product);
+                                setIsProductDialogOpen(true);
+                              }}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteProduct(product.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
             </CardContent>
           </Card>
         </TabsContent>
@@ -403,61 +419,63 @@ export default function ProductManagement() {
               <CardTitle>Alle Varianten</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Produkt</TableHead>
-                    <TableHead>Variante</TableHead>
-                    <TableHead>Preis</TableHead>
-                    <TableHead>Lager</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Aktionen</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {variants.map((variant) => {
-                    const product = products.find(p => p.id === variant.product_id);
-                    return (
-                      <TableRow key={variant.id}>
-                        <TableCell>{product?.brand} - {product?.name}</TableCell>
-                        <TableCell>{variant.name}</TableCell>
-                        <TableCell>€{variant.price.toFixed(2)}</TableCell>
-                        <TableCell>{variant.stock_quantity}</TableCell>
-                        <TableCell>
-                          {variant.preorder ? (
-                            <span className="text-blue-600">Vorbestellung</span>
-                          ) : variant.in_stock ? (
-                            <span className="text-green-600">Verfügbar</span>
-                          ) : (
-                            <span className="text-red-600">Nicht verfügbar</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setEditingVariant(variant);
-                                setIsVariantDialogOpen(true);
-                              }}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleDeleteVariant(variant.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+              <ScrollArea className="h-[600px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Produkt</TableHead>
+                      <TableHead>Variante</TableHead>
+                      <TableHead>Preis</TableHead>
+                      <TableHead>Lager</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Aktionen</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {variants.map((variant) => {
+                      const product = products.find(p => p.id === variant.product_id);
+                      return (
+                        <TableRow key={variant.id}>
+                          <TableCell>{product?.brand} - {product?.name}</TableCell>
+                          <TableCell>{variant.name}</TableCell>
+                          <TableCell>€{variant.price.toFixed(2)}</TableCell>
+                          <TableCell>{variant.stock_quantity}</TableCell>
+                          <TableCell>
+                            {variant.preorder ? (
+                              <span className="text-blue-600">Vorbestellung</span>
+                            ) : variant.in_stock ? (
+                              <span className="text-green-600">Verfügbar</span>
+                            ) : (
+                              <span className="text-red-600">Nicht verfügbar</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingVariant(variant);
+                                  setIsVariantDialogOpen(true);
+                                }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDeleteVariant(variant.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
             </CardContent>
           </Card>
         </TabsContent>
