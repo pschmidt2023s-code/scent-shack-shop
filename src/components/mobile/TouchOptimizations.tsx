@@ -16,27 +16,40 @@ export function TouchOptimizations() {
     style.textContent = `
       button, a, [role="button"], input, textarea, select {
         touch-action: manipulation;
-        -webkit-tap-highlight-color: transparent;
+        -webkit-tap-highlight-color: transparent !important;
         user-select: none;
         -webkit-user-select: none;
       }
       
-      /* Fast tap response */
+      /* Remove all tap highlights and visual feedback */
       * {
-        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
+        -webkit-touch-callout: none;
+      }
+      
+      /* Prevent scale/zoom effects on tap */
+      button, a, [role="button"] {
+        transform: scale(1) !important;
+        transition: none !important;
+      }
+      
+      /* Remove active/focus visual states on mobile */
+      @media (hover: none) and (pointer: coarse) {
+        button:active, a:active, [role="button"]:active {
+          transform: none !important;
+          opacity: 1 !important;
+          background-color: inherit !important;
+        }
+        
+        button, a, [role="button"] {
+          min-height: 44px;
+          min-width: 44px;
+        }
       }
       
       /* Smooth scrolling */
       html {
         -webkit-overflow-scrolling: touch;
-      }
-      
-      /* Optimize touch targets */
-      @media (hover: none) and (pointer: coarse) {
-        button, a, [role="button"] {
-          min-height: 44px;
-          min-width: 44px;
-        }
       }
     `;
     document.head.appendChild(style);
