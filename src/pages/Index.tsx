@@ -14,7 +14,7 @@ const Index = () => {
   usePerformanceMonitor();
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="min-h-screen glass overflow-x-hidden">
       <OrganizationSchema />
       <WebsiteSchema />
       <Navigation />

@@ -12,7 +12,7 @@ export default function Newsletter() {
   return (
     <>
       <Navigation />
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen glass">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
             <Button 

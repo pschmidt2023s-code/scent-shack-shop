@@ -21,7 +21,7 @@ export default function Profile() {
     return (
       <>
         <Navigation />
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen glass">
           <div className="container mx-auto px-4 py-8">
             <div className="max-w-md mx-auto text-center">
               <h1 className="text-2xl font-bold mb-4">Anmeldung erforderlich</h1>
@@ -43,7 +43,7 @@ export default function Profile() {
   return (
     <>
       <Navigation />
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen glass">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-6xl mx-auto">
             <Button 

@@ -21,7 +21,7 @@ export default function CheckoutBank() {
 
   if (!orderNumber) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen glass flex items-center justify-center p-4">
         <Card className="w-full max-w-md text-center">
           <CardContent className="pt-6">
             <p>Keine Bestelldaten gefunden.</p>
@@ -35,7 +35,7 @@ export default function CheckoutBank() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen glass">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <Button
