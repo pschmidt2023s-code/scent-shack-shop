@@ -5,6 +5,7 @@ import Index from '@/pages/Index';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 import { Toaster } from "@/components/ui/toaster";
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ProductComparison } from '@/components/ProductComparison';
@@ -49,13 +50,14 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AuthProvider>
-          <CartProvider>
-            <ErrorBoundary>
-              <Router>
-                <ProductComparison />
-                <div className="min-h-screen bg-background">
-                  <Routes>
+        <LanguageProvider>
+          <AuthProvider>
+            <CartProvider>
+              <ErrorBoundary>
+                <Router>
+                  <ProductComparison />
+                  <div className="min-h-screen bg-background">
+                    <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/products" element={<Suspense fallback={<LoadingSpinner />}><Products /></Suspense>} />
                   <Route path="/product/:id" element={<Suspense fallback={<LoadingSpinner />}><ProductDetail /></Suspense>} />
@@ -80,13 +82,14 @@ function App() {
                   <Route path="/contest" element={<Suspense fallback={<LoadingSpinner />}><Contest /></Suspense>} />
                   <Route path="/referral" element={<Suspense fallback={<LoadingSpinner />}><Referral /></Suspense>} />
                   <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><NotFound /></Suspense>} />
-                </Routes>
-              </div>
-              <Toaster />
-            </Router>
-          </ErrorBoundary>
-        </CartProvider>
-      </AuthProvider>
+                  </Routes>
+                </div>
+                <Toaster />
+              </Router>
+            </ErrorBoundary>
+          </CartProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

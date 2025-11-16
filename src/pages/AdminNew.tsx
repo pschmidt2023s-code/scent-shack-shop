@@ -9,6 +9,8 @@ import { BundleManagement } from '@/components/admin/BundleManagement';
 import { AutoReorderManagement } from '@/components/admin/AutoReorderManagement';
 import { StockNotificationManagement } from '@/components/admin/StockNotificationManagement';
 import { PerformanceMetrics } from '@/components/admin/PerformanceMetrics';
+import { ReferralManagement } from '@/components/admin/ReferralManagement';
+import { VideoManagement } from '@/components/admin/VideoManagement';
 import { lazy, Suspense } from 'react';
 import { TabContentLoader } from '@/components/LoadingStates';
 
@@ -80,9 +82,7 @@ export default function AdminNew() {
 
         {/* Referral */}
         <TabsContent value="referral" className="space-y-6">
-          <Suspense fallback={<TabContentLoader />}>
-            <PartnerManagement />
-          </Suspense>
+          <ReferralManagement />
         </TabsContent>
 
         {/* Newsletter */}
@@ -144,10 +144,7 @@ export default function AdminNew() {
 
         {/* Settings */}
         <TabsContent value="settings" className="space-y-6">
-          <div className="text-center p-8">
-            <h3 className="text-xl font-semibold mb-2">System-Einstellungen</h3>
-            <p className="text-muted-foreground">Weitere Einstellungen werden hier angezeigt</p>
-          </div>
+          <VideoManagement />
         </TabsContent>
       </Tabs>
     </AdminDashboardLayout>

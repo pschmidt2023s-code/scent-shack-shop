@@ -7,6 +7,8 @@ import { Footer } from '@/components/Footer';
 import { OrganizationSchema, WebsiteSchema } from '@/components/StructuredData';
 import { TrustBadges } from '@/components/TrustBadges';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
+import { AIRecommendations } from '@/components/AIRecommendations';
+import { PushNotificationPrompt } from '@/components/PushNotificationPrompt';
 
 const Index = () => {
   usePerformanceMonitor();
@@ -21,11 +23,13 @@ const Index = () => {
         <HeroSection />
         <TrustBadges />
         <PerfumeGrid />
+        <AIRecommendations />
         <RecentlyViewed />
       </main>
       
       <Footer />
       <MobileBottomNav />
+      <PushNotificationPrompt />
     </div>
   );
 };
