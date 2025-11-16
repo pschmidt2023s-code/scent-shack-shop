@@ -87,13 +87,7 @@ const Navigation = () => {
                   </button>
 
                   {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-56 rounded-2xl py-2 z-[100]" style={{
-                      background: 'rgba(255, 255, 255, 0.95)',
-                      backdropFilter: 'blur(40px) saturate(180%)',
-                      WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-                      border: '1px solid rgba(255, 255, 255, 0.3)',
-                      boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15), inset 0 1px 0 0 rgba(255, 255, 255, 0.6)'
-                    }}>
+                    <div className="absolute right-0 mt-2 w-56 rounded-2xl py-2 z-[100] glass-card border border-border/20">
                       <Link
                         to="/profile"
                         className="flex items-center px-4 py-3 text-sm text-foreground hover:bg-primary/10 transition-colors rounded-lg mx-2"
