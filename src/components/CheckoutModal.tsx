@@ -2,52 +2,65 @@ import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, CreditCard } from "lucide-react";
 
 export default function CheckoutModal({ open, onOpenChange }) {
-  const { items, total, clearCart } = useCart();
-  const { user } = useAuth();
+  const { items, total } = useCart();
   const [loading, setLoading] = useState(false);
 
   const handleCheckout = async () => {
-    if (!user) {
-      toast.error("Bitte melden Sie sich an");
-      return;
-    }
-
     if (items.length === 0) {
-      toast.error("Ihr Warenkorb ist leer");
+      toast.error("Warenkorb ist leer");
       return;
     }
 
     setLoading(true);
+
     try {
-      // Call Stripe payment edge function
-      const { data, error } = await supabase.functions.invoke('create-payment', {
-        body: {
-          items: items.map(item => ({
-            name: `${item.perfume.brand} ${item.perfume.name}`,
-            variant: item.variant.name,
-            price: item.variant.price,
-            quantity: item.quantity
-          }))
-        }
+      // DEBUG: Zeige Keys in Console
+      console.log("STRIPE_PK:", import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+      console.log("Cart Items:", items);
+
+      // API aufrufen
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((item) => ({
+            name: item.name,
+            amount: Math.round(item.price * 100),
+            quantity: item.quantity,
+          })),
+        }),
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API-Fehler ${response.status}: ${errorText}`);
+      }
 
-      if (data?.url) {
-        // Redirect to Stripe Checkout
-        window.location.href = data.url;
-      } else {
-        throw new Error("Keine Checkout-URL erhalten");
+      const { sessionId } = await response.json();
+
+      if (!sessionId) {
+        throw new Error("Keine Session-ID erhalten");
+      }
+
+      // Stripe initialisieren
+      const stripe = window.Stripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+      if (!stripe) {
+        throw new Error("Stripe.js nicht geladen");
+      }
+
+      // Weiterleiten
+      const { error } = await stripe.redirectToCheckout({ sessionId });
+
+      if (error) {
+        throw error;
       }
     } catch (error) {
-      console.error(error);
-      toast.error("Fehler beim Checkout");
+      console.error("Stripe-Fehler:", error);
+      toast.error(error.message || "Fehler beim Bezahlvorgang");
     } finally {
       setLoading(false);
     }
@@ -67,7 +80,8 @@ export default function CheckoutModal({ open, onOpenChange }) {
             </div>
           </div>
           <Button className="w-full" onClick={handleCheckout} disabled={loading || items.length === 0}>
-            {loading ? <Loader2 className="animate-spin" /> : <CreditCard className="mr-2" />} Jetzt bezahlen
+            {loading ? <Loader2 className="animate-spin" /> : <CreditCard className="mr-2" />}
+            Jetzt bezahlen
           </Button>
         </div>
       </DialogContent>
