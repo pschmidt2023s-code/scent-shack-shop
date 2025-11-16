@@ -72,13 +72,13 @@ Deno.serve(async (req) => {
       { id: '527-sample', product_id: 'proben', variant_number: '527', name: 'ALDENAIR 527 Probe', description: 'Orientalischer süßer Luxusduft mit edlen Inhaltsstoffen. Rose und Oud treffen auf weiches Leder, kostbaren Safran und frische Bergamotte.', price: 6.95, in_stock: true, stock_quantity: 200, rating: 4.9, review_count: 201 },
       { id: '695-sample', product_id: 'proben', variant_number: '695', name: 'ALDENAIR 695 Probe', description: 'Aromatisch-fruchtiger Duft mit komplexer Komposition. Zitrusfrüchte wie Orange und Zitrone verschmelzen mit Minze und schwarzer Johannisbeere.', price: 6.95, in_stock: true, stock_quantity: 200, rating: 4.7, review_count: 189 },
       
-      -- Autoparfüm variants
+      // Autoparfüm variants
       { id: 'auto-399', product_id: 'autoparfum', variant_number: '399', name: 'ALDENAIR Autoparfüm 399', description: 'Luxuriöser orientalischer Duft für Ihr Auto. Langanhaltender Duft, der Ihr Fahrzeug in eine Oase der Eleganz verwandelt.', price: 14.99, in_stock: true, stock_quantity: 150, rating: 4.6, review_count: 92 },
       { id: 'auto-978', product_id: 'autoparfum', variant_number: '978', name: 'ALDENAIR Autoparfüm 978', description: 'Süß-würziger Duft für unterwegs. Perfekt für lange Fahrten und ein angenehmes Ambiente im Auto.', price: 14.99, in_stock: true, stock_quantity: 150, rating: 4.7, review_count: 103 },
       { id: 'auto-999', product_id: 'autoparfum', variant_number: '999', name: 'ALDENAIR Autoparfüm 999', description: 'Holzig-blumiger Autoduft mit zeitlosem Charakter. Verwandelt jede Fahrt in ein Dufterlebnis.', price: 14.99, in_stock: true, stock_quantity: 150, rating: 4.5, review_count: 87 },
       { id: 'auto-189', product_id: 'autoparfum', variant_number: '189', name: 'ALDENAIR Autoparfüm 189', description: 'Süßer Gourmand-Duft mit Kaffee-Noten für Ihr Auto. Ideal für Kaffeeliebhaber.', price: 14.99, in_stock: true, stock_quantity: 150, rating: 4.6, review_count: 95 },
       
-      -- 3D Collection variants
+      // 3D Collection variants
       { id: '3d-001', product_id: '3d-collection', variant_number: '001', name: 'ALDENAIR 3D 001', description: 'Premium 3D Duft-Erlebnis mit innovativer Technologie. 100ml für langanhaltenden Luxus.', price: 79.99, in_stock: true, stock_quantity: 50, preorder: false, rating: 4.9, review_count: 78 }
     ];
 
