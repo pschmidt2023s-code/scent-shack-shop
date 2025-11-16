@@ -78,7 +78,7 @@ export function MobileBottomNav() {
       <div className="h-20 md:hidden" />
       
       {/* Bottom Navigation with Enhanced Design */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border/50 md:hidden shadow-2xl">
+      <nav className="fixed bottom-0 left-0 right-0 z-[9999] bg-background/95 backdrop-blur-lg border-t border-border/50 md:hidden shadow-2xl pb-[env(safe-area-inset-bottom)]">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
         <div className="grid grid-cols-5 h-20 px-2">
           {NAV_ITEMS.map((item) => {
