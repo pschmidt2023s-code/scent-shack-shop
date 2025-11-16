@@ -22,13 +22,26 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // Get all available products with their details
+    const { data: allProducts } = await supabaseAdmin
+      .from("products")
+      .select(`
+        id,
+        name,
+        brand,
+        category,
+        size,
+        image,
+        product_variants(id, name, price, in_stock)
+      `);
+
     // Get user's browsing history
     const { data: views } = await supabaseAdmin
       .from("product_views")
-      .select("product_id, variant_id")
+      .select("product_id")
       .eq("user_id", userId)
       .order("viewed_at", { ascending: false })
-      .limit(10);
+      .limit(20);
 
     // Get user's favorites
     const { data: favorites } = await supabaseAdmin
@@ -36,56 +49,121 @@ serve(async (req) => {
       .select("perfume_id")
       .eq("user_id", userId);
 
-    // Get user's purchase history
+    // Get user's purchase history with details
     const { data: orders } = await supabaseAdmin
       .from("orders")
-      .select("order_items(perfume_id)")
+      .select(`
+        order_items(perfume_id, quantity)
+      `)
       .eq("user_id", userId)
       .eq("status", "paid");
 
-    // Prepare context for AI
-    const context = {
-      viewedProducts: views?.map(v => v.product_id) || [],
-      favoriteProducts: favorites?.map(f => f.perfume_id) || [],
-      purchasedProducts: orders?.flatMap(o => o.order_items?.map((i: any) => i.perfume_id)) || [],
-      currentProduct: currentProductId,
-    };
+    const viewedIds = views?.map(v => v.product_id) || [];
+    const favoriteIds = favorites?.map(f => f.perfume_id) || [];
+    const purchasedIds = orders?.flatMap(o => o.order_items?.map((i: any) => i.perfume_id)) || [];
 
-    // Call OpenAI for recommendations
-    const openAIKey = Deno.env.get("OPENAI_API_KEY");
-    if (!openAIKey) throw new Error("OPENAI_API_KEY not configured");
+    // Get details of viewed/purchased/favorited products
+    const relevantProducts = allProducts?.filter(p => 
+      viewedIds.includes(p.id) || favoriteIds.includes(p.id) || purchasedIds.includes(p.id)
+    ) || [];
 
-    const aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+    const productSummary = relevantProducts.map(p => 
+      `${p.name} (${p.brand}, ${p.category}, ${p.size})`
+    ).join(", ");
+
+    // Call Lovable AI for intelligent recommendations
+    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+    if (!lovableKey) throw new Error("LOVABLE_API_KEY not configured");
+
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${openAIKey}`,
+        "Authorization": `Bearer ${lovableKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "google/gemini-2.5-flash",
         messages: [
           {
             role: "system",
-            content: `Du bist ein Parfüm-Empfehlungsexperte. Basierend auf dem Kaufverhalten und den Vorlieben des Kunden, empfiehl passende Produkte.`
+            content: `Du bist ein intelligenter Parfüm- und Duft-Empfehlungsassistent. Analysiere das Kaufverhalten des Kunden und empfehle passende Produkte. 
+            
+            WICHTIG: Wenn ein Kunde z.B. 50ml Parfümflaschen kauft, könnte er auch an Autodüften interessiert sein. Wenn er frische Düfte mag, empfehle ähnliche Kategorien. Lerne aus den Mustern.
+            
+            Verfügbare Produktkategorien: Parfum, Autoduft, Raumduft, Duftkerze
+            Verfügbare Größen: 3ml (Probe), 50ml, 100ml, 200ml, 400ml`
           },
           {
             role: "user",
-            content: `Kunde hat angesehen: ${context.viewedProducts.join(", ")}. Favoriten: ${context.favoriteProducts.join(", ")}. Gekauft: ${context.purchasedProducts.join(", ")}. Aktuelles Produkt: ${context.currentProduct}. Empfehle ${limit} passende Produkte mit kurzer Begründung.`
+            content: `Kundenverhalten:
+            - Angesehene/Gekaufte Produkte: ${productSummary || "Noch keine"}
+            - Anzahl Käufe: ${purchasedIds.length}
+            - Favoriten: ${favoriteIds.length}
+            
+            Aktuell betrachtet: ${currentProductId ? allProducts?.find(p => p.id === currentProductId)?.name : "Startseite"}
+            
+            Empfehle ${limit} passende Produkt-IDs aus dieser Liste und erkläre warum. Berücksichtige Cross-Selling (z.B. wer Parfüm kauft könnte Autoduft wollen).
+            
+            Verfügbare Produkte: ${allProducts?.map(p => `ID: ${p.id}, Name: ${p.name}, Marke: ${p.brand}, Kategorie: ${p.category}, Größe: ${p.size}`).join(" | ")}
+            
+            Antworte im JSON-Format: {"productIds": ["id1", "id2"], "reason": "kurze Erklärung"}`
           }
         ],
-        max_tokens: 500,
+        max_tokens: 800,
       }),
     });
 
-    const aiData = await aiResponse.json();
-    const recommendation = aiData.choices[0].message.content;
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error("Lovable AI error:", aiResponse.status, errorText);
+      throw new Error(`Lovable AI error: ${aiResponse.status}`);
+    }
 
-    console.log("AI Recommendation:", recommendation);
+    const aiData = await aiResponse.json();
+    const content = aiData.choices?.[0]?.message?.content;
+
+    console.log("AI Response:", content);
+
+    // Parse AI response
+    let productIds: string[] = [];
+    let reason = "KI-basierte Empfehlungen für dich";
+
+    try {
+      const parsed = JSON.parse(content);
+      productIds = parsed.productIds || [];
+      reason = parsed.reason || reason;
+    } catch (e) {
+      console.error("Failed to parse AI response:", e);
+      // Fallback: recommend random products
+      productIds = allProducts
+        ?.filter(p => p.id !== currentProductId)
+        ?.slice(0, limit)
+        ?.map(p => p.id) || [];
+    }
+
+    // Build recommendation response
+    const recommendations = productIds
+      .map(id => {
+        const product = allProducts?.find(p => p.id === id);
+        if (!product || !product.product_variants?.length) return null;
+        
+        const variant = product.product_variants.find((v: any) => v.in_stock) || product.product_variants[0];
+        
+        return {
+          id: product.id,
+          name: product.name,
+          brand: product.brand,
+          image: product.image || '/placeholder.svg',
+          price: variant.price,
+          reason: `${product.category} - ${product.size}`,
+        };
+      })
+      .filter(Boolean);
 
     return new Response(
       JSON.stringify({ 
-        recommendation,
-        context,
+        recommendations,
+        reason,
         success: true 
       }),
       {
