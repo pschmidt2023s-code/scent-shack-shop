@@ -188,12 +188,45 @@ export default function Checkout() {
         await handleStripeCheckout(orderNumber);
       } else if (paymentMethod === 'bank') {
         console.log('Redirecting to bank transfer...');
+        
+        // Send bank transfer email
+        console.log('Sending bank transfer email...');
+        const bankDetails = {
+          recipient: "ALDENAIR GmbH",
+          iban: "DE89 3704 0044 0532 0130 00",
+          bic: "COBADEFFXXX",
+          bank: "Commerzbank"
+        };
+        
+        try {
+          const { error: emailError } = await supabase.functions.invoke('send-bank-transfer-email', {
+            body: {
+              customerEmail: user?.email || guestEmail,
+              customerName: `${customerData.firstName} ${customerData.lastName}`,
+              orderNumber: orderNumber,
+              totalAmount: checkoutData.finalAmount,
+              bankDetails: bankDetails
+            }
+          });
+          
+          if (emailError) {
+            console.error('Email error:', emailError);
+            // Don't block the flow if email fails
+          } else {
+            console.log('Bank transfer email sent successfully');
+          }
+        } catch (emailErr) {
+          console.error('Email sending failed:', emailErr);
+          // Don't block the flow if email fails
+        }
+        
         navigate('/checkout-bank', { 
           state: { 
             orderNumber,
             orderId: order.id,
             totalAmount: checkoutData.finalAmount,
-            customerEmail: user?.email || guestEmail
+            customerEmail: user?.email || guestEmail,
+            bankDetails: bankDetails
           } 
         });
       } else if (paymentMethod === 'paypal_checkout') {
@@ -356,6 +389,17 @@ export default function Checkout() {
                     </Label>
                   </div>
                 </RadioGroup>
+                
+                {paymentMethod === 'bank' && (
+                  <div className="mt-4 p-4 bg-muted/50 rounded-lg border border-border">
+                    <p className="text-sm text-muted-foreground">
+                      <strong className="text-foreground">Wichtig:</strong> Bitte geben Sie bei der Überweisung unbedingt die <strong className="text-foreground">Auftragsnummer als Verwendungszweck</strong> an, damit wir Ihre Zahlung korrekt zuordnen können.
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Sie erhalten nach der Bestellung eine E-Mail mit allen Überweisungsdetails.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

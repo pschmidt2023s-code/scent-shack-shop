@@ -70,6 +70,13 @@ export default function CheckoutBank() {
               <div className="bg-muted/50 p-6 rounded-lg">
                 <h3 className="text-lg font-semibold mb-4">Überweisungsdaten</h3>
                 
+                <div className="mb-4 p-4 bg-amber-50 border-l-4 border-amber-500 rounded">
+                  <p className="text-sm font-semibold text-amber-900 mb-1">⚠️ Wichtig für die Überweisung:</p>
+                  <p className="text-sm text-amber-800">
+                    Bitte geben Sie unbedingt die <strong>Bestellnummer {orderNumber}</strong> als <strong>Verwendungszweck</strong> an, damit wir Ihre Zahlung korrekt zuordnen können.
+                  </p>
+                </div>
+                
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Empfänger:</span>
