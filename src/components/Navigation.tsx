@@ -1,6 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { User, ChevronDown, LogOut } from "lucide-react";
+          <Link to="/partner" className="text-sm font-medium hover:text-primary transition-colors">
+            Partner
+          </Link>
+          <Link 
+            to="/parfum-finder" 
+            className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-2"
+          >
+            <Sparkles className="w-4 h-4" />
+            Parfüm Finder
+          </Link>
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { Badge } from '@/components/ui/badge';

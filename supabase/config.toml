@@ -55,3 +55,6 @@ verify_jwt = false
 
 [functions.ai-product-recommendations]
 verify_jwt = false
+
+[functions.perfume-matcher-ai]
+verify_jwt = false
