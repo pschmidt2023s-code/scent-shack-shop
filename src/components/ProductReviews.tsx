@@ -67,7 +67,7 @@ export function ProductReviews({ perfumeId, variantId, perfumeName }: ProductRev
         .rpc('get_public_reviews', {
           p_perfume_id: perfumeId,
           p_variant_id: variantId
-        });
+        } as any);
 
       if (error) {
         console.error('Error fetching reviews:', error);
@@ -78,8 +78,10 @@ export function ProductReviews({ perfumeId, variantId, perfumeName }: ProductRev
         });
       } else {
         // The secure function already returns anonymized data
-        const processedReviews = (data || []).map((review) => ({
+        const processedReviews = (data || []).map((review: any) => ({
           ...review,
+          images: review.images || [],
+          is_verified: review.is_verified || false,
           user_id: undefined, // Already hidden by secure function
           profiles: { full_name: review.reviewer_name } // Use provided anonymous name
         }));
@@ -101,7 +103,7 @@ export function ProductReviews({ perfumeId, variantId, perfumeName }: ProductRev
         .rpc('check_verified_purchase', {
           user_id_param: user.id,
           variant_id_param: variantId
-        });
+        } as any);
 
       if (!error) {
         setHasVerifiedPurchase(data || false);
@@ -138,16 +140,16 @@ export function ProductReviews({ perfumeId, variantId, perfumeName }: ProductRev
     try {
       const { error } = await supabase
         .from('reviews')
-        .insert({
+        .insert([{
           user_id: user.id,
           perfume_id: perfumeId,
           variant_id: variantId,
           rating,
           title: title || null,
           content: content || null,
-          images: uploadedImages,
+          images: uploadedImages || [],
           is_verified: hasVerifiedPurchase
-        });
+        }]);
 
       if (error) {
         toast({

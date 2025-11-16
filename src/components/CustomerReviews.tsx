@@ -90,8 +90,10 @@ export function CustomerReviews({ perfumeId, variantId, className }: CustomerRev
 
         const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || [])
         
-        reviewsWithProfiles = reviewsData.map(review => ({
+        reviewsWithProfiles = reviewsData.map((review: any) => ({
           ...review,
+          images: review.images || [],
+          is_verified: review.is_verified || false,
           profiles: profilesMap.get(review.user_id) || null
         }))
       }
@@ -151,11 +153,11 @@ export function CustomerReviews({ perfumeId, variantId, className }: CustomerRev
         // Insert or update vote
         await supabase
           .from('review_votes')
-          .upsert({
+          .upsert([{
             review_id: reviewId,
             user_id: user.id,
             is_helpful: isHelpful
-          })
+          }])
       }
 
       // Refresh reviews to update counts
