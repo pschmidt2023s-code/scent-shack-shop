@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@18.5.0";
+import Stripe from "https://esm.sh/stripe@17.6.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
@@ -41,8 +41,8 @@ serve(async (req) => {
       throw new Error("Customer email is required");
     }
 
-    // Initialize Stripe
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-11-20.acacia" });
+    // Initialize Stripe with older stable version
+    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" });
 
     // Check if customer exists
     const customers = await stripe.customers.list({ email: customerEmail, limit: 1 });
@@ -91,18 +91,17 @@ serve(async (req) => {
       throw new Error("Success URL and Cancel URL are required");
     }
 
-    // Remove the {CHECKOUT_SESSION_ID} placeholder if present, Stripe will add it automatically
-    const cleanSuccessUrl = successUrl.replace('?session_id={CHECKOUT_SESSION_ID}', '');
-    const finalSuccessUrl = `${cleanSuccessUrl}?session_id={CHECKOUT_SESSION_ID}`;
-
-    logStep("Creating Stripe Checkout Session", { successUrl: finalSuccessUrl, cancelUrl });
+    // Clean URLs - Stripe will append session_id automatically in newer API versions
+    const cleanSuccessUrl = successUrl.split('?')[0];
+    
+    logStep("Creating Stripe Checkout Session", { successUrl: cleanSuccessUrl, cancelUrl });
 
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: lineItems,
       mode: "payment",
-      success_url: finalSuccessUrl,
+      success_url: `${cleanSuccessUrl}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: cancelUrl,
       metadata: {
         ...metadata,
