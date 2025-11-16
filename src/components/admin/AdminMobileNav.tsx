@@ -58,16 +58,11 @@ export function AdminMobileNav({ activeTab, onTabChange, onMenuClick }: AdminMob
       <div className="h-20 lg:hidden" aria-hidden="true" />
       
       <nav 
-        className="fixed bottom-0 left-0 right-0 z-[99999] lg:hidden rounded-t-[2rem]"
+        className="fixed bottom-0 left-0 right-0 z-[99999] lg:hidden rounded-t-[2rem] glass-nav border-t border-border/20"
         style={{ 
           paddingBottom: 'max(env(safe-area-inset-bottom), 8px)',
           paddingTop: '8px',
-          pointerEvents: 'auto',
-          background: 'rgba(255, 255, 255, 0.85)',
-          backdropFilter: 'blur(120px) saturate(220%) contrast(120%)',
-          WebkitBackdropFilter: 'blur(120px) saturate(220%) contrast(120%)',
-          borderTop: '1px solid rgba(255, 255, 255, 0.5)',
-          boxShadow: '0 -8px 32px 0 rgba(31, 38, 135, 0.2), 0 -4px 16px 0 rgba(31, 38, 135, 0.12), inset 0 1px 0 0 rgba(255, 255, 255, 0.9)'
+          pointerEvents: 'auto'
         }}
       >
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
