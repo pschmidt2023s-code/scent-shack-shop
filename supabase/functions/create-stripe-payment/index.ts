@@ -42,7 +42,7 @@ serve(async (req) => {
     }
 
     // Initialize Stripe
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2024-11-20.acacia" });
 
     // Check if customer exists
     const customers = await stripe.customers.list({ email: customerEmail, limit: 1 });
@@ -91,14 +91,18 @@ serve(async (req) => {
       throw new Error("Success URL and Cancel URL are required");
     }
 
-    logStep("Creating Stripe Checkout Session", { successUrl, cancelUrl });
+    // Remove the {CHECKOUT_SESSION_ID} placeholder if present, Stripe will add it automatically
+    const cleanSuccessUrl = successUrl.replace('?session_id={CHECKOUT_SESSION_ID}', '');
+    const finalSuccessUrl = `${cleanSuccessUrl}?session_id={CHECKOUT_SESSION_ID}`;
+
+    logStep("Creating Stripe Checkout Session", { successUrl: finalSuccessUrl, cancelUrl });
 
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: lineItems,
       mode: "payment",
-      success_url: successUrl,
+      success_url: finalSuccessUrl,
       cancel_url: cancelUrl,
       metadata: {
         ...metadata,
