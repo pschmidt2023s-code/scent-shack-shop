@@ -92,17 +92,18 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
   const location = useLocation();
 
   return (
-    <Sidebar className={cn("border-r glass-card", open ? "w-64" : "w-16")}>
-      <div className="p-4 border-b border-border/20 flex items-center justify-between glass">
-        {open && <h2 className="font-bold text-lg glass-text-dark">Admin</h2>}
-        <SidebarTrigger className={cn(!open && "mx-auto", "hidden lg:flex")} />
+    <Sidebar className={cn("border-r glass-card", open ? "w-64" : "w-0 lg:w-20 border-r-0 lg:border-r")}>
+      <div className={cn("p-4 border-b border-border/20 flex items-center justify-center glass", !open && "hidden lg:flex")}>
+        <h2 className="font-bold text-base glass-text-dark">
+          {open ? "Admin Dashboard" : "A"}
+        </h2>
       </div>
 
-      <SidebarContent>
+      <SidebarContent className={cn(!open && "hidden lg:block")}>
         {menuSections.map((section) => (
           <SidebarGroup key={section.category}>
             {open && (
-              <SidebarGroupLabel className="glass-text-dark">
+              <SidebarGroupLabel className="glass-text-dark px-2 text-xs">
                 {section.category}
               </SidebarGroupLabel>
             )}
@@ -117,12 +118,14 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
                       <SidebarMenuButton
                         onClick={() => onTabChange(item.value)}
                         className={cn(
-                          "cursor-pointer transition-colors glass-text-dark",
-                          isActive && "bg-primary/10 text-primary font-semibold"
+                          "cursor-pointer transition-colors glass-text-dark w-full",
+                          isActive && "bg-primary/10 text-primary font-semibold",
+                          open ? "flex items-center gap-3 px-3 py-2.5" : "flex items-center justify-center p-3"
                         )}
+                        title={item.label}
                       >
-                        <Icon className="w-4 h-4" />
-                        {open && <span>{item.label}</span>}
+                        <Icon className="w-5 h-5 flex-shrink-0" />
+                        {open && <span className="text-sm">{item.label}</span>}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
