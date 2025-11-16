@@ -3,7 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
-    <title>ALDENAIR - Premium Parfüms Online Kaufen</title>
+    <title>ALDENAIR - Premium Parfüms & Exklusive Duftkreationen Online Kaufen</title>
+    
+    <!-- Enhanced SEO Meta Tags -->
+    <meta name="description" content="Entdecken Sie exklusive Premium-Parfüms von ALDENAIR. Hochwertige Duftkreationen für jeden Anlass. ✓ Kostenloser Versand in DE ✓ 3-7 Tage Lieferung ✓ Proben verfügbar ✓ 30 Tage Rückgaberecht" />
+    <meta name="keywords" content="Parfüm kaufen, Premium Parfüm, Exklusive Düfte, Prestige Flakon, ALDENAIR, Duftproben, Parfum online" />
+    <meta name="author" content="ALDENAIR" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    
+    <!-- Preconnect to critical domains for faster loading -->
+    <link rel="preconnect" href="https://tqswuibgnkdvrfocwjou.supabase.co" crossorigin />
+    <link rel="dns-prefetch" href="https://tqswuibgnkdvrfocwjou.supabase.co" />
+    <link rel="preconnect" href="https://api.stripe.com" crossorigin />
+    <link rel="dns-prefetch" href="https://api.stripe.com" />
     
     <!-- Security Headers -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' data: https://js.stripe.com https://checkout.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://api.stripe.com https://tqswuibgnkdvrfocwjou.supabase.co wss://tqswuibgnkdvrfocwjou.supabase.co; frame-src 'self' https://js.stripe.com https://checkout.stripe.com; object-src 'none'; base-uri 'self'; form-action 'self'" />
@@ -12,8 +24,21 @@
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
     
     <link rel="icon" href="/lovable-uploads/6b3ca60c-7598-4385-8d87-42839dc00836.png" type="image/png">
-    <meta name="description" content="Entdecken Sie exklusive Parfüms und Düfte von den besten Parfümeuren der Welt. Premium Qualität, schneller Versand und 30 Tage Rückgaberecht." />
-    <meta name="author" content="ALDENAIR" />
+    
+    <!-- Enhanced Open Graph Meta Tags -->
+    <meta property="og:title" content="ALDENAIR - Premium Parfüms & Exklusive Duftkreationen" />
+    <meta property="og:description" content="Entdecken Sie exklusive Premium-Parfüms von ALDENAIR. Hochwertige Duftkreationen für jeden Anlass. ✓ Kostenloser Versand ✓ Schnelle Lieferung" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ALDENAIR" />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:locale" content="de_DE" />
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@aldenair_de" />
+    <meta name="twitter:title" content="ALDENAIR - Premium Parfüms" />
+    <meta name="twitter:description" content="Exklusive Duftkreationen für jeden Anlass" />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
@@ -37,6 +62,36 @@
      <!-- Resource hints to reduce network dependency chains -->
      <link rel="modulepreload" href="/src/main.tsx" />
      <link rel="preload" href="/src/index.css" as="style" />
+     
+     <!-- Structured Data for SEO -->
+     <script type="application/ld+json">
+     {
+       "@context": "https://schema.org",
+       "@type": "Store",
+       "name": "ALDENAIR",
+       "description": "Premium Parfüms und exklusive Duftkreationen",
+       "url": "https://scent-shack-shop.lovable.app",
+       "logo": "https://scent-shack-shop.lovable.app/lovable-uploads/6b3ca60c-7598-4385-8d87-42839dc00836.png",
+       "priceRange": "€€€",
+       "acceptsReservations": "False",
+       "paymentAccepted": ["Credit Card", "PayPal", "Bank Transfer"],
+       "areaServed": "DE",
+       "hasOfferCatalog": {
+         "@type": "OfferCatalog",
+         "name": "Parfüm Kollektion",
+         "itemListElement": [
+           {
+             "@type": "Offer",
+             "itemOffered": {
+               "@type": "Product",
+               "name": "Premium Parfüms",
+               "description": "Exklusive Duftkreationen in höchster Qualität"
+             }
+           }
+         ]
+       }
+     }
+     </script>
 
     <meta property="og:title" content="ALDENAIR - Premium Parfüms Online Kaufen" />
     <meta property="og:description" content="Entdecken Sie exklusive Parfüms und Düfte von den besten Parfümeuren der Welt." />
