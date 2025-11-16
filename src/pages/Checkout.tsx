@@ -177,20 +177,28 @@ export default function Checkout() {
           throw new Error(`Stripe-Zahlung fehlgeschlagen: ${stripeError.message}`);
         }
 
+        console.log('Stripe response:', stripeData);
+        console.log('Stripe checkout URL:', stripeData?.url);
+        console.log('Session ID:', stripeData?.sessionId);
+
+        if (!stripeData || !stripeData.url) {
+          throw new Error('Keine gültige Stripe-Antwort erhalten');
+        }
+
         // Update order with Stripe session ID
-        await supabase
+        const { error: updateError } = await supabase
           .from('orders')
           .update({ stripe_session_id: stripeData.sessionId })
           .eq('id', data.order_id);
 
-        console.log('Stripe checkout URL:', stripeData.url);
-
-        // Redirect to Stripe Checkout in same window
-        if (stripeData.url) {
-          window.location.href = stripeData.url;
-        } else {
-          throw new Error('Keine Stripe Checkout URL erhalten');
+        if (updateError) {
+          console.error('Error updating order:', updateError);
         }
+
+        console.log('Redirecting to Stripe...');
+        
+        // Redirect to Stripe Checkout
+        window.location.href = stripeData.url;
         
       } else if (paymentMethod === 'paypal_checkout') {
         // Create PayPal order via edge function
