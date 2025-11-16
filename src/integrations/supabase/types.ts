@@ -101,6 +101,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_recommendations_cache: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          product_id: string | null
+          recommendations: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          product_id?: string | null
+          recommendations: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          product_id?: string | null
+          recommendations?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       auto_reorder_subscriptions: {
         Row: {
           created_at: string
@@ -1074,6 +1101,56 @@ export type Database = {
           },
         ]
       }
+      product_videos: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_seconds: number | null
+          id: string
+          is_active: boolean
+          product_id: string
+          thumbnail_url: string | null
+          title: string | null
+          updated_at: string
+          video_url: string
+          view_count: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          is_active?: boolean
+          product_id: string
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string
+          video_url: string
+          view_count?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          is_active?: boolean
+          product_id?: string
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string
+          video_url?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_videos_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_views: {
         Row: {
           id: string
@@ -1242,6 +1319,30 @@ export type Database = {
           payback_balance?: number | null
           phone?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          created_at: string
+          id: string
+          subscription_data: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          subscription_data: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          subscription_data?: Json
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1576,6 +1677,7 @@ export type Database = {
         Args: { user_id_param: string; variant_id_param: string }
         Returns: boolean
       }
+      clean_expired_ai_cache: { Args: never; Returns: undefined }
       cleanup_old_security_logs: { Args: never; Returns: undefined }
       generate_order_number: { Args: never; Returns: string }
       generate_partner_code: { Args: never; Returns: string }
