@@ -74,16 +74,17 @@ export function MobileBottomNav() {
   return (
     <>
       {/* Spacer to prevent content from being hidden behind the nav */}
-      <div className="h-24 md:hidden" aria-hidden="true" />
+      <div className="h-20 md:hidden" aria-hidden="true" />
       
       <nav 
-        className="fixed bottom-0 left-0 right-0 z-[200] md:hidden glass-nav"
+        className="fixed bottom-0 left-0 right-0 z-[999] md:hidden glass-nav"
         style={{ 
-          paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)'
+          paddingBottom: 'max(env(safe-area-inset-bottom), 12px)',
+          paddingTop: '8px'
         }}
       >
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
-        <div className="grid grid-cols-5 h-16 px-1">
+        <div className="grid grid-cols-5 h-16 px-2">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon
             const isActive = location.pathname === item.activeHref || 
@@ -110,16 +111,16 @@ export function MobileBottomNav() {
                     "hover:bg-primary/10 active:scale-95",
                     isActive 
                       ? "text-primary font-semibold" 
-                      : "text-foreground/90 hover:text-primary dark:text-foreground/80 dark:hover:text-primary"
+                      : "text-foreground hover:text-primary"
                   )}
                 >
                   <div className="relative">
-                    <Icon className="w-5 h-5" strokeWidth={2} />
+                    <Icon className="w-6 h-6" strokeWidth={2.5} />
                     
                     {item.showBadge && itemCount > 0 && (
                       <Badge 
                         variant="destructive" 
-                        className="absolute -top-1 -right-1 h-4 min-w-[16px] flex items-center justify-center px-1 text-[9px] font-semibold"
+                        className="absolute -top-1 -right-1 h-5 min-w-[20px] flex items-center justify-center px-1.5 text-[10px] font-bold"
                       >
                         {itemCount}
                       </Badge>
@@ -127,8 +128,8 @@ export function MobileBottomNav() {
                   </div>
                   
                   <span className={cn(
-                    "text-[11px] font-medium transition-colors",
-                    isActive ? "text-primary" : "text-foreground/80 dark:text-foreground/70"
+                    "text-[10px] font-semibold transition-colors",
+                    isActive ? "text-primary" : "text-foreground"
                   )}>
                     {item.label}
                   </span>
@@ -145,16 +146,16 @@ export function MobileBottomNav() {
                   "hover:bg-primary/10 active:scale-95",
                   isActive 
                     ? "text-primary font-semibold" 
-                    : "text-foreground/90 hover:text-primary dark:text-foreground/80 dark:hover:text-primary"
+                    : "text-foreground hover:text-primary"
                 )}
               >
                 <div className="relative">
-                  <Icon className="w-5 h-5" strokeWidth={2} />
+                  <Icon className="w-6 h-6" strokeWidth={2.5} />
                   
                   {item.label === 'Favoriten' && favoritesCount > 0 && (
                     <Badge 
                       variant="secondary" 
-                      className="absolute -top-1 -right-1 h-4 min-w-[16px] flex items-center justify-center px-1 text-[9px] font-semibold"
+                      className="absolute -top-1 -right-1 h-5 min-w-[20px] flex items-center justify-center px-1.5 text-[10px] font-bold"
                     >
                       {favoritesCount}
                     </Badge>
@@ -162,8 +163,8 @@ export function MobileBottomNav() {
                 </div>
                 
                 <span className={cn(
-                  "text-[11px] font-medium transition-colors",
-                  isActive ? "text-primary" : "text-foreground/80 dark:text-foreground/70"
+                  "text-[10px] font-semibold transition-colors",
+                  isActive ? "text-primary" : "text-foreground"
                 )}>
                   {item.label}
                 </span>
