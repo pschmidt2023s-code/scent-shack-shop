@@ -30,6 +30,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializingRef.current = true;
 
     let mounted = true;
+    
+    // Set loading to false after max 2 seconds regardless
+    const maxLoadingTimeout = setTimeout(() => {
+      if (mounted) {
+        console.log('Force loading complete after timeout');
+        setLoading(false);
+      }
+    }, 2000);
 
     // Set up auth state listener FIRST to prevent missing events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -59,13 +67,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    // THEN check for existing session
+    // THEN check for existing session with timeout
     const checkConnection = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        // Set a timeout to prevent hanging
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Connection timeout')), 3000)
+        );
+        
+        const sessionPromise = supabase.auth.getSession();
+        
+        const { data, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as any;
+        
         console.log('Supabase connection check:', { data, error });
         setSupabaseConnected(!error);
-        if (mounted && data.session) {
+        if (mounted && data?.session) {
           setSession(data.session);
           setUser(data.session.user);
           
@@ -76,16 +95,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('Supabase connection error:', error);
-        if (mounted) setSupabaseConnected(false);
+        if (mounted) {
+          setSupabaseConnected(false);
+          // Allow app to load even if Supabase fails
+        }
       } finally {
         if (mounted) setLoading(false);
       }
     };
 
+    // Start connection check but don't block rendering
     checkConnection();
 
     return () => {
       mounted = false;
+      clearTimeout(maxLoadingTimeout);
       subscription.unsubscribe();
       sessionMonitor.stop();
     };
