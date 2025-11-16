@@ -22,6 +22,7 @@ const Terms = React.lazy(() => import('@/pages/Terms'));
 const Imprint = React.lazy(() => import('@/pages/Imprint'));
 const Partner = React.lazy(() => import('@/pages/Partner'));
 const Admin = React.lazy(() => import('@/pages/Admin'));
+const AdminNew = React.lazy(() => import('@/pages/AdminNew'));
 const Auth = React.lazy(() => import('@/pages/Auth'));
 const Checkout = React.lazy(() => import('@/pages/Checkout'));
 const CheckoutBank = React.lazy(() => import('@/pages/CheckoutBank'));
@@ -68,7 +69,8 @@ function App() {
                   <Route path="/terms" element={<Suspense fallback={<LoadingSpinner />}><Terms /></Suspense>} />
                   <Route path="/imprint" element={<Suspense fallback={<LoadingSpinner />}><Imprint /></Suspense>} />
                   <Route path="/partner" element={<Suspense fallback={<LoadingSpinner />}><Partner /></Suspense>} />
-                  <Route path="/admin" element={<Suspense fallback={<LoadingSpinner />}><Admin /></Suspense>} />
+                  <Route path="/admin" element={<Suspense fallback={<LoadingSpinner />}><AdminNew /></Suspense>} />
+                  <Route path="/admin-old" element={<Suspense fallback={<LoadingSpinner />}><Admin /></Suspense>} />
                   <Route path="/auth" element={<Suspense fallback={<LoadingSpinner />}><Auth /></Suspense>} />
                   <Route path="/checkout" element={<Suspense fallback={<LoadingSpinner />}><Checkout /></Suspense>} />
                   <Route path="/checkout-bank" element={<Suspense fallback={<LoadingSpinner />}><CheckoutBank /></Suspense>} />
