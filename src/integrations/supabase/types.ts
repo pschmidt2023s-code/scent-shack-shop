@@ -287,6 +287,74 @@ export type Database = {
         }
         Relationships: []
       }
+      loyalty_points: {
+        Row: {
+          created_at: string
+          id: string
+          lifetime_points: number
+          points: number
+          tier: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lifetime_points?: number
+          points?: number
+          tier?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lifetime_points?: number
+          points?: number
+          tier?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      loyalty_transactions: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          order_id: string | null
+          points: number
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          points: number
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          points?: number
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       newsletter_subscriptions: {
         Row: {
           email: string
@@ -1081,6 +1149,51 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_notifications: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          notified: boolean
+          product_id: string
+          user_id: string | null
+          variant_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          notified?: boolean
+          product_id: string
+          user_id?: string | null
+          variant_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          notified?: boolean
+          product_id?: string
+          user_id?: string | null
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_notifications_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_notifications_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1102,11 +1215,48 @@ export type Database = {
         }
         Relationships: []
       }
+      wishlist_shares: {
+        Row: {
+          created_at: string
+          description: string | null
+          expires_at: string | null
+          id: string
+          is_public: boolean
+          share_code: string
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_public?: boolean
+          share_code: string
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_public?: boolean
+          share_code?: string
+          title?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      add_loyalty_points: {
+        Args: { p_points: number; p_user_id: string }
+        Returns: undefined
+      }
       check_verified_purchase: {
         Args: { user_id_param: string; variant_id_param: string }
         Returns: boolean
