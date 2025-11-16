@@ -92,10 +92,10 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
   const location = useLocation();
 
   return (
-    <Sidebar className={cn("border-r", open ? "w-64" : "w-16")}>
-      <div className="p-4 border-b flex items-center justify-between">
-        {open && <h2 className="font-bold text-lg">Admin</h2>}
-        <SidebarTrigger className={cn(!open && "mx-auto")} />
+    <Sidebar className={cn("border-r glass-card", open ? "w-64" : "w-16")}>
+      <div className="p-4 border-b border-border/20 flex items-center justify-between glass">
+        {open && <h2 className="font-bold text-lg glass-text-dark">Admin</h2>}
+        <SidebarTrigger className={cn(!open && "mx-auto", "hidden lg:flex")} />
       </div>
 
       <SidebarContent>

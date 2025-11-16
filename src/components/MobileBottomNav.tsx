@@ -74,9 +74,15 @@ export function MobileBottomNav() {
   return (
     <>
       {/* Spacer to prevent content from being hidden behind the nav */}
-      <div className="h-16 md:hidden" />
+      <div className="h-20 md:hidden" />
       
-      <nav className="fixed bottom-0 left-0 right-0 z-[200] md:hidden shadow-lg glass-nav" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.5rem)' }}>
+      <nav 
+        className="fixed left-0 right-0 z-[200] md:hidden shadow-lg glass-nav"
+        style={{ 
+          bottom: 0,
+          paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.5rem)'
+        }}
+      >
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
         <div className="grid grid-cols-5 h-16 px-1">
           {NAV_ITEMS.map((item) => {
