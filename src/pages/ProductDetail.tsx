@@ -20,6 +20,8 @@ import { useToast } from '@/hooks/use-toast';
 import { usePerfumeRatings } from '@/hooks/usePerfumeRatings';
 import { ProductReviews } from '@/components/ProductReviews';
 import { PerfumeVariant } from '@/types/perfume';
+import { WhatsAppCommerce } from '@/components/WhatsAppCommerce';
+import { ARProductViewer } from '@/components/ARProductViewer';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -299,6 +301,17 @@ const ProductDetail = () => {
           variantId={selectedVariant?.id}
           className="mb-12"
         />
+
+        {/* New Features Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+          {/* WhatsApp Commerce */}
+          {selectedVariant && (
+            <WhatsAppCommerce perfume={perfume} variant={selectedVariant} />
+          )}
+          
+          {/* AR Product Viewer */}
+          <ARProductViewer perfume={perfume} />
+        </div>
       </main>
       
       <Footer />
