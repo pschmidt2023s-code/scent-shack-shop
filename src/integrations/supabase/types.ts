@@ -10,54 +10,93 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "13.0.4"
   }
   public: {
     Tables: {
+      address_access_log: {
+        Row: {
+          accessed_address_id: string
+          accessed_at: string
+          action: string
+          admin_user_id: string
+          customer_user_id: string
+          id: string
+          ip_address: unknown
+          new_data: Json | null
+          old_data: Json | null
+          reason: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          accessed_address_id: string
+          accessed_at?: string
+          action: string
+          admin_user_id: string
+          customer_user_id: string
+          id?: string
+          ip_address?: unknown
+          new_data?: Json | null
+          old_data?: Json | null
+          reason?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          accessed_address_id?: string
+          accessed_at?: string
+          action?: string
+          admin_user_id?: string
+          customer_user_id?: string
+          id?: string
+          ip_address?: unknown
+          new_data?: Json | null
+          old_data?: Json | null
+          reason?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       addresses: {
         Row: {
           city: string
           country: string
-          created_at: string | null
+          created_at: string
           first_name: string
-          house_number: string
           id: string
           is_default: boolean | null
           last_name: string
           postal_code: string
           street: string
           type: string
-          updated_at: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
           city: string
           country?: string
-          created_at?: string | null
+          created_at?: string
           first_name: string
-          house_number: string
           id?: string
           is_default?: boolean | null
           last_name: string
           postal_code: string
           street: string
           type: string
-          updated_at?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
           city?: string
           country?: string
-          created_at?: string | null
+          created_at?: string
           first_name?: string
-          house_number?: string
           id?: string
           is_default?: boolean | null
           last_name?: string
           postal_code?: string
           street?: string
           type?: string
-          updated_at?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -65,122 +104,114 @@ export type Database = {
       chat_messages: {
         Row: {
           content: string
-          created_at: string | null
+          created_at: string
           id: string
           sender_type: string
           session_id: string
           status: string | null
+          updated_at: string
           user_id: string | null
+          user_info: Json | null
         }
         Insert: {
           content: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           sender_type: string
           session_id: string
           status?: string | null
+          updated_at?: string
           user_id?: string | null
+          user_info?: Json | null
         }
         Update: {
           content?: string
-          created_at?: string | null
+          created_at?: string
           id?: string
           sender_type?: string
           session_id?: string
           status?: string | null
+          updated_at?: string
           user_id?: string | null
+          user_info?: Json | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "chat_messages_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "chat_sessions"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       chat_sessions: {
         Row: {
-          created_at: string | null
+          created_at: string
           id: string
           last_message_at: string | null
           status: string | null
-          user_id: string
+          updated_at: string
+          user_id: string | null
+          user_info: Json | null
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           id?: string
           last_message_at?: string | null
           status?: string | null
-          user_id: string
+          updated_at?: string
+          user_id?: string | null
+          user_info?: Json | null
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           id?: string
           last_message_at?: string | null
           status?: string | null
-          user_id?: string
+          updated_at?: string
+          user_id?: string | null
+          user_info?: Json | null
         }
         Relationships: []
       }
       contest_entries: {
         Row: {
-          age_verified: boolean | null
-          agreed_marketing: boolean | null
-          agreed_terms: boolean | null
           birth_date: string
-          city: string
-          country: string | null
           created_at: string | null
           email: string
-          first_name: string | null
-          full_name: string
-          house_number: string
+          first_name: string
           id: string
+          images: string[] | null
           is_winner: boolean | null
-          last_name: string | null
-          phone: string
-          postal_code: string
-          street: string
+          last_name: string
+          message: string
+          phone: string | null
+          updated_at: string | null
+          user_id: string | null
+          winner_position: number | null
         }
         Insert: {
-          age_verified?: boolean | null
-          agreed_marketing?: boolean | null
-          agreed_terms?: boolean | null
           birth_date: string
-          city: string
-          country?: string | null
           created_at?: string | null
           email: string
-          first_name?: string | null
-          full_name: string
-          house_number: string
+          first_name: string
           id?: string
+          images?: string[] | null
           is_winner?: boolean | null
-          last_name?: string | null
-          phone: string
-          postal_code: string
-          street: string
+          last_name: string
+          message: string
+          phone?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          winner_position?: number | null
         }
         Update: {
-          age_verified?: boolean | null
-          agreed_marketing?: boolean | null
-          agreed_terms?: boolean | null
           birth_date?: string
-          city?: string
-          country?: string | null
           created_at?: string | null
           email?: string
-          first_name?: string | null
-          full_name?: string
-          house_number?: string
+          first_name?: string
           id?: string
+          images?: string[] | null
           is_winner?: boolean | null
-          last_name?: string | null
-          phone?: string
-          postal_code?: string
-          street?: string
+          last_name?: string
+          message?: string
+          phone?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          winner_position?: number | null
         }
         Relationships: []
       }
@@ -188,161 +219,397 @@ export type Database = {
         Row: {
           active: boolean | null
           code: string
-          created_at: string | null
+          created_at: string
           current_uses: number | null
           discount_type: string
           discount_value: number
           id: string
-          is_active: boolean | null
           max_uses: number | null
           min_order_amount: number | null
-          min_purchase_amount: number | null
-          used_count: number | null
+          updated_at: string
           valid_from: string | null
           valid_until: string | null
         }
         Insert: {
           active?: boolean | null
           code: string
-          created_at?: string | null
+          created_at?: string
           current_uses?: number | null
           discount_type: string
           discount_value: number
           id?: string
-          is_active?: boolean | null
           max_uses?: number | null
           min_order_amount?: number | null
-          min_purchase_amount?: number | null
-          used_count?: number | null
+          updated_at?: string
           valid_from?: string | null
           valid_until?: string | null
         }
         Update: {
           active?: boolean | null
           code?: string
-          created_at?: string | null
+          created_at?: string
           current_uses?: number | null
           discount_type?: string
           discount_value?: number
           id?: string
-          is_active?: boolean | null
           max_uses?: number | null
           min_order_amount?: number | null
-          min_purchase_amount?: number | null
-          used_count?: number | null
+          updated_at?: string
           valid_from?: string | null
           valid_until?: string | null
         }
         Relationships: []
       }
-      newsletter_subscriptions: {
+      favorites: {
         Row: {
-          created_at: string | null
-          email: string
+          created_at: string
           id: string
-          preferences: Json | null
-          status: string | null
-          updated_at: string | null
+          perfume_id: string
+          updated_at: string
+          user_id: string
+          variant_id: string
         }
         Insert: {
-          created_at?: string | null
-          email: string
+          created_at?: string
           id?: string
-          preferences?: Json | null
-          status?: string | null
-          updated_at?: string | null
+          perfume_id: string
+          updated_at?: string
+          user_id: string
+          variant_id: string
         }
         Update: {
-          created_at?: string | null
-          email?: string
+          created_at?: string
           id?: string
-          preferences?: Json | null
-          status?: string | null
-          updated_at?: string | null
+          perfume_id?: string
+          updated_at?: string
+          user_id?: string
+          variant_id?: string
         }
         Relationships: []
+      }
+      newsletter_subscriptions: {
+        Row: {
+          email: string
+          id: string
+          is_active: boolean | null
+          preferences: Json | null
+          subscribed_at: string
+        }
+        Insert: {
+          email: string
+          id?: string
+          is_active?: boolean | null
+          preferences?: Json | null
+          subscribed_at?: string
+        }
+        Update: {
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          preferences?: Json | null
+          subscribed_at?: string
+        }
+        Relationships: []
+      }
+      newsletters: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          sent_at: string | null
+          sent_to_count: number
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          sent_at?: string | null
+          sent_to_count?: number
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          sent_at?: string | null
+          sent_to_count?: number
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          perfume_id: string
+          quantity: number
+          total_price: number
+          unit_price: number
+          variant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          perfume_id: string
+          quantity?: number
+          total_price: number
+          unit_price: number
+          variant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          perfume_id?: string
+          quantity?: number
+          total_price?: number
+          unit_price?: number
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orders: {
         Row: {
-          billing_address: Json | null
-          created_at: string | null
+          admin_notes: string | null
+          billing_address_data: Json | null
+          billing_address_id: string | null
+          created_at: string
+          currency: string | null
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
           id: string
-          items: Json
-          order_number: string
-          payment_method: string | null
-          payment_status: string | null
-          shipping_address: Json | null
+          notes: string | null
+          order_number: string | null
+          partner_id: string | null
+          shipping_address_data: Json | null
+          shipping_address_id: string | null
           status: string
+          stripe_session_id: string | null
           total_amount: number
-          tracking_number: string | null
-          updated_at: string | null
-          user_id: string
+          updated_at: string
+          user_id: string | null
         }
         Insert: {
-          billing_address?: Json | null
-          created_at?: string | null
+          admin_notes?: string | null
+          billing_address_data?: Json | null
+          billing_address_id?: string | null
+          created_at?: string
+          currency?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           id?: string
-          items: Json
-          order_number: string
-          payment_method?: string | null
-          payment_status?: string | null
-          shipping_address?: Json | null
+          notes?: string | null
+          order_number?: string | null
+          partner_id?: string | null
+          shipping_address_data?: Json | null
+          shipping_address_id?: string | null
           status?: string
+          stripe_session_id?: string | null
           total_amount: number
-          tracking_number?: string | null
-          updated_at?: string | null
-          user_id: string
+          updated_at?: string
+          user_id?: string | null
         }
         Update: {
-          billing_address?: Json | null
-          created_at?: string | null
+          admin_notes?: string | null
+          billing_address_data?: Json | null
+          billing_address_id?: string | null
+          created_at?: string
+          currency?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           id?: string
-          items?: Json
-          order_number?: string
-          payment_method?: string | null
-          payment_status?: string | null
-          shipping_address?: Json | null
+          notes?: string | null
+          order_number?: string | null
+          partner_id?: string | null
+          shipping_address_data?: Json | null
+          shipping_address_id?: string | null
           status?: string
+          stripe_session_id?: string | null
           total_amount?: number
-          tracking_number?: string | null
-          updated_at?: string | null
-          user_id?: string
+          updated_at?: string
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_billing_address_id_fkey"
+            columns: ["billing_address_id"]
+            isOneToOne: false
+            referencedRelation: "addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_shipping_address_id_fkey"
+            columns: ["shipping_address_id"]
+            isOneToOne: false
+            referencedRelation: "addresses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_payouts: {
+        Row: {
+          amount: number
+          bank_details: Json
+          id: string
+          notes: string | null
+          partner_id: string
+          processed_at: string | null
+          processed_by: string | null
+          requested_at: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          bank_details: Json
+          id?: string
+          notes?: string | null
+          partner_id: string
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_at?: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          bank_details?: Json
+          id?: string
+          notes?: string | null
+          partner_id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_payouts_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_sales: {
+        Row: {
+          commission_amount: number
+          created_at: string
+          id: string
+          order_id: string
+          partner_id: string
+          status: string
+        }
+        Insert: {
+          commission_amount: number
+          created_at?: string
+          id?: string
+          order_id: string
+          partner_id: string
+          status?: string
+        }
+        Update: {
+          commission_amount?: number
+          created_at?: string
+          id?: string
+          order_id?: string
+          partner_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_sales_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_sales_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       partners: {
         Row: {
-          company_name: string
-          contact_person: string
-          created_at: string | null
-          email: string
+          application_data: Json | null
+          approved_at: string | null
+          approved_by: string | null
+          bank_details: Json | null
+          commission_rate: number
+          created_at: string
           id: string
-          message: string | null
-          phone: string
-          status: string | null
-          website: string | null
+          partner_code: string
+          status: Database["public"]["Enums"]["partner_status"]
+          total_commission: number
+          total_paid_out: number
+          total_sales: number
+          updated_at: string
+          user_id: string
         }
         Insert: {
-          company_name: string
-          contact_person: string
-          created_at?: string | null
-          email: string
+          application_data?: Json | null
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_details?: Json | null
+          commission_rate?: number
+          created_at?: string
           id?: string
-          message?: string | null
-          phone: string
-          status?: string | null
-          website?: string | null
+          partner_code: string
+          status?: Database["public"]["Enums"]["partner_status"]
+          total_commission?: number
+          total_paid_out?: number
+          total_sales?: number
+          updated_at?: string
+          user_id: string
         }
         Update: {
-          company_name?: string
-          contact_person?: string
-          created_at?: string | null
-          email?: string
+          application_data?: Json | null
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_details?: Json | null
+          commission_rate?: number
+          created_at?: string
           id?: string
-          message?: string | null
-          phone?: string
-          status?: string | null
-          website?: string | null
+          partner_code?: string
+          status?: Database["public"]["Enums"]["partner_status"]
+          total_commission?: number
+          total_paid_out?: number
+          total_sales?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -351,163 +618,337 @@ export type Database = {
           amount: number
           approved_at: string | null
           approved_by: string | null
-          created_at: string | null
-          description: string | null
-          earned_at: string | null
+          earned_at: string
+          guest_email: string | null
           id: string
           order_id: string | null
-          percentage: number | null
-          status: string | null
-          type: string
+          percentage: number
+          status: string
           user_id: string
         }
         Insert: {
-          amount: number
+          amount?: number
           approved_at?: string | null
           approved_by?: string | null
-          created_at?: string | null
-          description?: string | null
-          earned_at?: string | null
+          earned_at?: string
+          guest_email?: string | null
           id?: string
           order_id?: string | null
-          percentage?: number | null
-          status?: string | null
-          type: string
+          percentage?: number
+          status?: string
           user_id: string
         }
         Update: {
           amount?: number
           approved_at?: string | null
           approved_by?: string | null
-          created_at?: string | null
-          description?: string | null
-          earned_at?: string | null
+          earned_at?: string
+          guest_email?: string | null
           id?: string
           order_id?: string | null
-          percentage?: number | null
-          status?: string | null
-          type?: string
+          percentage?: number
+          status?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_payback_earnings_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payback_payouts: {
         Row: {
-          account_holder: string
           amount: number
-          created_at: string | null
-          iban: string
+          approved_at: string | null
+          approved_by: string | null
+          bank_details: Json | null
           id: string
-          processed_at: string | null
-          processed_by: string | null
-          requested_at: string | null
-          status: string | null
+          notes: string | null
+          requested_at: string
+          status: string
           user_id: string
         }
         Insert: {
-          account_holder: string
           amount: number
-          created_at?: string | null
-          iban: string
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_details?: Json | null
           id?: string
-          processed_at?: string | null
-          processed_by?: string | null
-          requested_at?: string | null
-          status?: string | null
+          notes?: string | null
+          requested_at?: string
+          status?: string
           user_id: string
         }
         Update: {
-          account_holder?: string
           amount?: number
-          created_at?: string | null
-          iban?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          bank_details?: Json | null
           id?: string
-          processed_at?: string | null
-          processed_by?: string | null
-          requested_at?: string | null
-          status?: string | null
+          notes?: string | null
+          requested_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_payback_payouts_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_variants: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          in_stock: boolean
+          name: string
+          original_price: number | null
+          preorder: boolean | null
+          price: number
+          product_id: string
+          rating: number | null
+          release_date: string | null
+          review_count: number | null
+          stock_quantity: number
+          updated_at: string
+          variant_number: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          in_stock?: boolean
+          name: string
+          original_price?: number | null
+          preorder?: boolean | null
+          price: number
+          product_id: string
+          rating?: number | null
+          release_date?: string | null
+          review_count?: number | null
+          stock_quantity?: number
+          updated_at?: string
+          variant_number: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          in_stock?: boolean
+          name?: string
+          original_price?: number | null
+          preorder?: boolean | null
+          price?: number
+          product_id?: string
+          rating?: number | null
+          release_date?: string | null
+          review_count?: number | null
+          stock_quantity?: number
+          updated_at?: string
+          variant_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          brand: string
+          category: string
+          created_at: string
+          id: string
+          image: string | null
+          name: string
+          size: string
+          updated_at: string
+        }
+        Insert: {
+          brand: string
+          category: string
+          created_at?: string
+          id?: string
+          image?: string | null
+          name: string
+          size: string
+          updated_at?: string
+        }
+        Update: {
+          brand?: string
+          category?: string
+          created_at?: string
+          id?: string
+          image?: string | null
+          name?: string
+          size?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profile_access_log: {
+        Row: {
+          accessed_at: string
+          accessed_profile_id: string
+          action: string
+          admin_justification: string | null
+          admin_user_id: string
+          id: string
+          ip_address: unknown
+          user_agent: string | null
+        }
+        Insert: {
+          accessed_at?: string
+          accessed_profile_id: string
+          action: string
+          admin_justification?: string | null
+          admin_user_id: string
+          id?: string
+          ip_address?: unknown
+          user_agent?: string | null
+        }
+        Update: {
+          accessed_at?: string
+          accessed_profile_id?: string
+          action?: string
+          admin_justification?: string | null
+          admin_user_id?: string
+          id?: string
+          ip_address?: unknown
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      profile_audit_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          ip_address: unknown
+          new_data: Json | null
+          old_data: Json | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown
+          new_data?: Json | null
+          old_data?: Json | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown
+          new_data?: Json | null
+          old_data?: Json | null
+          user_agent?: string | null
           user_id?: string
         }
         Relationships: []
       }
       profiles: {
         Row: {
-          created_at: string | null
-          email: string | null
+          created_at: string
           full_name: string | null
           id: string
           payback_balance: number | null
           phone: string | null
-          referral_code: string | null
-          referred_by: string | null
-          two_factor_enabled: boolean | null
-          two_factor_secret: string | null
-          updated_at: string | null
-          user_id: string
+          updated_at: string
         }
         Insert: {
-          created_at?: string | null
-          email?: string | null
+          created_at?: string
           full_name?: string | null
-          id?: string
+          id: string
           payback_balance?: number | null
           phone?: string | null
-          referral_code?: string | null
-          referred_by?: string | null
-          two_factor_enabled?: boolean | null
-          two_factor_secret?: string | null
-          updated_at?: string | null
-          user_id: string
+          updated_at?: string
         }
         Update: {
-          created_at?: string | null
-          email?: string | null
+          created_at?: string
           full_name?: string | null
           id?: string
           payback_balance?: number | null
           phone?: string | null
-          referral_code?: string | null
-          referred_by?: string | null
-          two_factor_enabled?: boolean | null
-          two_factor_secret?: string | null
-          updated_at?: string | null
-          user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rate_limit_events: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          id: string
+          ip_address: unknown
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown
+          user_id?: string | null
         }
         Relationships: []
       }
       returns: {
         Row: {
-          created_at: string | null
+          admin_notes: string | null
+          created_at: string
           id: string
-          items: Json
+          images: string[] | null
           order_id: string | null
-          processed_at: string | null
           reason: string
-          refund_amount: number | null
-          status: string | null
-          user_id: string
+          status: string
+          updated_at: string
+          user_id: string | null
         }
         Insert: {
-          created_at?: string | null
+          admin_notes?: string | null
+          created_at?: string
           id?: string
-          items: Json
+          images?: string[] | null
           order_id?: string | null
-          processed_at?: string | null
           reason: string
-          refund_amount?: number | null
-          status?: string | null
-          user_id: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
         }
         Update: {
-          created_at?: string | null
+          admin_notes?: string | null
+          created_at?: string
           id?: string
-          items?: Json
+          images?: string[] | null
           order_id?: string | null
-          processed_at?: string | null
           reason?: string
-          refund_amount?: number | null
-          status?: string | null
-          user_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -521,25 +962,25 @@ export type Database = {
       }
       review_votes: {
         Row: {
-          created_at: string | null
+          created_at: string
           id: string
           is_helpful: boolean
-          review_id: string
-          user_id: string
+          review_id: string | null
+          user_id: string | null
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           id?: string
           is_helpful: boolean
-          review_id: string
-          user_id: string
+          review_id?: string | null
+          user_id?: string | null
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           id?: string
           is_helpful?: boolean
-          review_id?: string
-          user_id?: string
+          review_id?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -553,55 +994,111 @@ export type Database = {
       }
       reviews: {
         Row: {
-          comment: string | null
           content: string | null
-          created_at: string | null
+          created_at: string
           helpful_count: number | null
           id: string
           images: string[] | null
-          is_verified_purchase: boolean | null
-          perfume_id: string | null
-          product_id: string
+          is_verified: boolean | null
+          order_id: string | null
+          perfume_id: string
           rating: number
-          status: string | null
           title: string | null
-          updated_at: string | null
+          updated_at: string
           user_id: string
-          variant_id: string | null
+          variant_id: string
         }
         Insert: {
-          comment?: string | null
           content?: string | null
-          created_at?: string | null
+          created_at?: string
           helpful_count?: number | null
           id?: string
           images?: string[] | null
-          is_verified_purchase?: boolean | null
-          perfume_id?: string | null
-          product_id: string
+          is_verified?: boolean | null
+          order_id?: string | null
+          perfume_id: string
           rating: number
-          status?: string | null
           title?: string | null
-          updated_at?: string | null
+          updated_at?: string
           user_id: string
-          variant_id?: string | null
+          variant_id: string
         }
         Update: {
-          comment?: string | null
           content?: string | null
-          created_at?: string | null
+          created_at?: string
           helpful_count?: number | null
           id?: string
           images?: string[] | null
-          is_verified_purchase?: boolean | null
-          perfume_id?: string | null
-          product_id?: string
+          is_verified?: boolean | null
+          order_id?: string | null
+          perfume_id?: string
           rating?: number
-          status?: string | null
           title?: string | null
-          updated_at?: string | null
+          updated_at?: string
           user_id?: string
-          variant_id?: string | null
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      security_events: {
+        Row: {
+          created_at: string | null
+          details: Json | null
+          event_type: string
+          id: string
+          ip_address: unknown
+          severity: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          details?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: unknown
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          details?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: unknown
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
         }
         Relationships: []
       }
@@ -611,29 +1108,38 @@ export type Database = {
     }
     Functions: {
       check_verified_purchase: {
-        Args: { p_product_id: string; p_user_id: string }
+        Args: { user_id_param: string; variant_id_param: string }
         Returns: boolean
       }
+      cleanup_old_security_logs: { Args: never; Returns: undefined }
+      generate_order_number: { Args: never; Returns: string }
+      generate_partner_code: { Args: never; Returns: string }
       get_public_reviews: {
-        Args: { p_product_id: string }
+        Args: { p_perfume_id: string; p_variant_id: string }
         Returns: {
-          comment: string
           content: string
           created_at: string
-          helpful_count: number
           id: string
-          is_verified_purchase: boolean
-          perfume_id: string
-          product_id: string
+          images: string[]
+          is_verified: boolean
           rating: number
+          reviewer_name: string
           title: string
-          user_id: string
-          user_name: string
         }[]
+      }
+      get_user_role: {
+        Args: { user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      is_admin: { Args: { user_id: string }; Returns: boolean }
+      log_security_event: {
+        Args: { p_details?: Json; p_event_type: string; p_severity?: string }
+        Returns: undefined
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      partner_status: "pending" | "approved" | "rejected" | "suspended"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -760,6 +1266,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      partner_status: ["pending", "approved", "rejected", "suspended"],
+    },
   },
 } as const
