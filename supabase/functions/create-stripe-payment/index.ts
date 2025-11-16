@@ -86,16 +86,24 @@ serve(async (req) => {
 
     logStep("Line items prepared", { lineItemsCount: lineItems.length });
 
+    // Validate URLs
+    if (!successUrl || !cancelUrl) {
+      throw new Error("Success URL and Cancel URL are required");
+    }
+
+    logStep("Creating Stripe Checkout Session", { successUrl, cancelUrl });
+
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: lineItems,
       mode: "payment",
-      success_url: successUrl || `${req.headers.get("origin")}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: cancelUrl || `${req.headers.get("origin")}/checkout-cancel`,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
       metadata: {
         ...metadata,
         customer_email: customerEmail,
+        order_number: metadata?.order_number || '',
       },
       shipping_address_collection: {
         allowed_countries: ['DE', 'AT', 'CH'],

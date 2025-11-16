@@ -179,57 +179,10 @@ serve(async (req) => {
       // Don't fail the order for payback issues
     }
 
-    // Send order confirmation email
-    try {
-      console.log("Sending order confirmation email...");
-      const { data: emailData, error: emailError } = await supabaseService.functions.invoke(
-        'send-order-confirmation',
-        {
-          body: {
-            orderId: order.id,
-            customerEmail: orderData.customer_data.email,
-            customerName: `${orderData.customer_data.firstName} ${orderData.customer_data.lastName}`
-          }
-        }
-      );
-
-      if (emailError) {
-        console.error("Order confirmation email error:", emailError);
-      } else {
-        console.log("Order confirmation email sent successfully:", emailData);
-      }
-    } catch (emailError) {
-      console.error("Order confirmation email failed:", emailError);
-      // Don't fail the order for email issues
-    }
-
-    // Send admin notification email
-    try {
-      console.log("Sending admin notification email...");
-      const { data: adminEmailData, error: adminEmailError } = await supabaseService.functions.invoke(
-        'send-admin-notification',
-        {
-          body: {
-            orderId: order.id,
-            orderNumber: orderData.order_number,
-            customerName: `${orderData.customer_data.firstName} ${orderData.customer_data.lastName}`,
-            customerEmail: orderData.customer_data.email,
-            totalAmount: orderData.total_amount * 100, // Convert to cents
-            currency: orderData.currency,
-            paymentMethod: orderData.payment_method
-          }
-        }
-      );
-
-      if (adminEmailError) {
-        console.error("Admin notification email error:", adminEmailError);
-      } else {
-        console.log("Admin notification email sent successfully:", adminEmailData);
-      }
-    } catch (adminEmailError) {
-      console.error("Admin notification email failed:", adminEmailError);
-      // Don't fail the order for email issues
-    }
+    // NOTE: E-Mails werden erst nach erfolgreicher Zahlung versendet
+    // Für Stripe/PayPal: E-Mails werden auf der Success-Seite versendet
+    // Für Vorkasse: E-Mails werden versendet wenn Admin den Status ändert
+    console.log("Order created successfully. Emails will be sent after payment confirmation.");
 
     // Handle PayPal payment
     if (orderData.payment_method === 'paypal') {

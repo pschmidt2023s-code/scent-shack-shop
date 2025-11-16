@@ -22,12 +22,16 @@ export default function CheckoutSuccess() {
 
     if (stateData) {
       setOrderDetails(stateData);
+      // Send emails for successful payment
+      sendOrderEmails(stateData.orderNumber, stateData.customerEmail, stateData.customerName);
     } else if (paypalSuccess && orderFromUrl) {
       setOrderDetails({
         orderNumber: orderFromUrl,
         paymentMethod: 'paypal',
-        totalAmount: 0 // Will be fetched from order if needed
+        totalAmount: 0
       });
+      // Send emails for PayPal payment
+      fetchOrderAndSendEmails(orderFromUrl);
     } else if (sessionId) {
       // Handle Stripe success
       setOrderDetails({
@@ -36,8 +40,76 @@ export default function CheckoutSuccess() {
         totalAmount: 0
       });
       generateInvoice(sessionId);
+      // Send emails for Stripe payment
+      fetchOrderAndSendEmailsBySessionId(sessionId);
     }
   }, [location.state, searchParams]);
+
+  const fetchOrderAndSendEmails = async (orderNumber: string) => {
+    try {
+      const { data: order, error } = await supabase
+        .from('orders')
+        .select('id, customer_email, customer_name')
+        .eq('order_number', orderNumber)
+        .single();
+
+      if (error) throw error;
+      if (order) {
+        sendOrderEmails(order.id, order.customer_email, order.customer_name);
+      }
+    } catch (error) {
+      console.error('Error fetching order:', error);
+    }
+  };
+
+  const fetchOrderAndSendEmailsBySessionId = async (sessionId: string) => {
+    try {
+      const { data: order, error } = await supabase
+        .from('orders')
+        .select('id, customer_email, customer_name, order_number')
+        .eq('stripe_session_id', sessionId)
+        .single();
+
+      if (error) throw error;
+      if (order) {
+        sendOrderEmails(order.id, order.customer_email, order.customer_name);
+        setOrderDetails(prev => ({
+          ...prev,
+          orderNumber: order.order_number
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching order:', error);
+    }
+  };
+
+  const sendOrderEmails = async (orderId: string, customerEmail: string, customerName: string) => {
+    try {
+      // Send order confirmation email
+      await supabase.functions.invoke('send-order-confirmation', {
+        body: {
+          orderId,
+          customerEmail,
+          customerName
+        }
+      });
+
+      // Send admin notification email
+      await supabase.functions.invoke('send-admin-notification', {
+        body: {
+          orderId,
+          orderNumber: orderId,
+          customerName,
+          customerEmail,
+          totalAmount: 0,
+          currency: 'eur',
+          paymentMethod: 'stripe'
+        }
+      });
+    } catch (error) {
+      console.error('Error sending emails:', error);
+    }
+  };
 
   const generateInvoice = async (sessionId: string) => {
     try {
