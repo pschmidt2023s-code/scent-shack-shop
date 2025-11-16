@@ -17,7 +17,7 @@ interface PerfumeCardProps {
 export function PerfumeCard({ perfume }: PerfumeCardProps) {
   const [selectedVariant, setSelectedVariant] = useState(0);
   const { addToCart } = useCart();
-  const { isFavorite, toggleFavorite } = useFavorites();
+  const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
   const { discount, roleLabel, loading, isNewsletterSubscriber } = useUserRole();
   // Disable ratings to debug the issue
   // const { getRatingForPerfume } = usePerfumeRatings([perfume.id]);
@@ -40,7 +40,11 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
   };
 
   const handleWishlistToggle = async () => {
-    await toggleFavorite(perfume.id, currentVariant.id);
+    if (isInFavorites) {
+      await removeFromFavorites(perfume.id, currentVariant.id);
+    } else {
+      await addToFavorites(perfume.id, currentVariant.id);
+    }
   };
 
   const handleProductClick = () => {
