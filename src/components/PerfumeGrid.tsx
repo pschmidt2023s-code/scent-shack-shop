@@ -34,7 +34,7 @@ export function PerfumeGrid() {
   });
 
   return (
-    <section className="py-16 glass">
+    <section className="py-16 glass rounded-3xl mx-4 my-8">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12 animate-fade-in-up">
           <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-foreground via-luxury-gold to-foreground bg-clip-text text-transparent animate-shimmer">

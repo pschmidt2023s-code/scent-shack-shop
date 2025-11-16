@@ -77,10 +77,10 @@ export function MobileBottomNav() {
       <div className="h-20 md:hidden" aria-hidden="true" />
       
       <nav 
-        className="fixed bottom-0 left-0 right-0 z-[999] md:hidden glass-nav"
+        className="fixed bottom-0 left-0 right-0 z-[999] md:hidden glass-nav rounded-t-3xl"
         style={{ 
           paddingBottom: 'max(env(safe-area-inset-bottom), 12px)',
-          paddingTop: '8px'
+          paddingTop: '12px'
         }}
       >
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
