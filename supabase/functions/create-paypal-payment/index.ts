@@ -25,6 +25,16 @@ serve(async (req) => {
     const requestBody: PayPalOrderRequest = await req.json();
     console.log("Request received:", requestBody);
     
+    // Bei 100% Rabatt: Fehler vermeiden
+    if (requestBody.amount <= 0) {
+      console.log("⚠️ Amount is 0 or negative - cannot create PayPal order");
+      const errorMsg = "Der Bestellbetrag ist 0. Bitte verwenden Sie eine andere Zahlungsmethode oder kontaktieren Sie uns.";
+      return new Response(JSON.stringify({ error: errorMsg }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+    
     // Check environment variables
     const PAYPAL_CLIENT_ID = Deno.env.get("PAYPAL_CLIENT_ID");
     const PAYPAL_SECRET = Deno.env.get("PAYPAL_SECRET_KEY");
