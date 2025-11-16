@@ -10,7 +10,6 @@ import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 import { AIRecommendations } from '@/components/AIRecommendations';
 import { PushNotificationPrompt } from '@/components/PushNotificationPrompt';
 import { ProductComparison } from '@/components/ProductComparison';
-import { LiveActivityIndicator } from '@/components/LiveActivityIndicator';
 import { TouchOptimizations } from '@/components/mobile/TouchOptimizations';
 import { KeyboardShortcuts } from '@/components/desktop/KeyboardShortcuts';
 
@@ -36,7 +35,6 @@ const Index = () => {
       <Footer />
       <PushNotificationPrompt />
       <ProductComparison />
-      <LiveActivityIndicator />
     </div>
   );
 };

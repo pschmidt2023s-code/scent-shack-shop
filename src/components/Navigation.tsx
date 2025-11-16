@@ -10,6 +10,7 @@ import { AdvancedSearch } from './AdvancedSearch';
 import { DarkModeToggle } from './DarkModeToggle';
 import { MegaMenu } from './desktop/MegaMenu';
 import { NotificationCenter } from './notifications/NotificationCenter';
+import { HamburgerMenu } from './mobile/HamburgerMenu';
 
 
 const Navigation = () => {
@@ -36,7 +37,8 @@ const Navigation = () => {
       <nav className="glass sticky top-0 z-50 border-b border-border/10 rounded-b-3xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-14 sm:h-16">
-            <div className="flex items-center">
+            <div className="flex items-center gap-3">
+              <HamburgerMenu />
               <Link to="/" className="flex items-center space-x-3 nav-link group">
                 <span className="text-2xl md:text-3xl font-bold text-foreground group-hover:text-primary transition-colors duration-300">
                   ALDENAIR
