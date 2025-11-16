@@ -31,7 +31,7 @@ const Navigation = () => {
 
   return (
     <>
-      <nav className="glass sticky top-0 z-50 shadow-sm border-b border-border/20">
+      <nav className="glass sticky top-0 z-50 border-b border-border/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-14 sm:h-16">
             <div className="flex items-center">
