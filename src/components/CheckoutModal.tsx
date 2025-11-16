@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, CreditCard } from "lucide-react";
 
@@ -18,46 +19,33 @@ export default function CheckoutModal({ open, onOpenChange }) {
     setLoading(true);
 
     try {
-      // DEBUG: Zeige Keys in Console
-      console.log("STRIPE_PK:", import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
       console.log("Cart Items:", items);
 
-      // API aufrufen
-      const response = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      // Supabase Edge Function aufrufen
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: {
           items: items.map((item) => ({
-            name: item.name,
-            amount: Math.round(item.price * 100),
+            name: `${item.perfume.name} - ${item.variant.name}`,
+            variant: item.variant.name,
+            price: item.variant.price,
             quantity: item.quantity,
           })),
-        }),
+        },
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API-Fehler ${response.status}: ${errorText}`);
-      }
-
-      const { sessionId } = await response.json();
-
-      if (!sessionId) {
-        throw new Error("Keine Session-ID erhalten");
-      }
-
-      // Stripe initialisieren
-      const stripe = window.Stripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-      if (!stripe) {
-        throw new Error("Stripe.js nicht geladen");
-      }
-
-      // Weiterleiten
-      const { error } = await stripe.redirectToCheckout({ sessionId });
-
       if (error) {
-        throw error;
+        console.error("Edge Function Error:", error);
+        throw new Error(error.message || "Fehler beim Erstellen der Zahlung");
       }
+
+      if (!data?.url) {
+        throw new Error("Keine Checkout-URL erhalten");
+      }
+
+      // Weiterleiten zu Stripe Checkout (neuer Tab)
+      window.open(data.url, '_blank');
+      toast.success("Checkout-Seite geöffnet");
+      onOpenChange(false);
     } catch (error) {
       console.error("Stripe-Fehler:", error);
       toast.error(error.message || "Fehler beim Bezahlvorgang");
