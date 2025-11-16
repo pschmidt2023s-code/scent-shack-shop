@@ -11,15 +11,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ArrowLeft, CreditCard, Building2, Banknote, Copy, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
-
-// Declare Stripe types for window
-declare global {
-  interface Window {
-    Stripe: any;
-  }
-}
+import { ArrowLeft, CreditCard, Building2, Banknote } from 'lucide-react';
 
 interface CheckoutData {
   items: any[];
@@ -33,11 +25,11 @@ export default function Checkout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { items, total, clearCart } = useCart();
+  const { items, total } = useCart();
   const { user } = useAuth();
   
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'paypal_checkout' | 'bank' | 'stripe'>('stripe');
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'bank' | 'paypal_checkout'>('stripe');
   const [guestEmail, setGuestEmail] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [customerData, setCustomerData] = useState({
@@ -50,10 +42,7 @@ export default function Checkout() {
     postalCode: '',
     country: 'Deutschland'
   });
-  const [orderNumber, setOrderNumber] = useState('');
-  const [copied, setCopied] = useState(false);
 
-  // Get checkout data from location state or calculate from cart
   const checkoutData: CheckoutData = location.state?.checkoutData || {
     items: items,
     totalAmount: total,
@@ -68,23 +57,14 @@ export default function Checkout() {
       return;
     }
 
-    // Check for referral code in URL
     const refCode = searchParams.get('ref');
     if (refCode) {
       setReferralCode(refCode);
-      console.log('Referral code detected:', refCode);
     }
   }, [checkoutData.items, navigate, searchParams]);
 
   const handleInputChange = (field: string, value: string) => {
     setCustomerData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    toast.success('In Zwischenablage kopiert');
-    setTimeout(() => setCopied(false), 2000);
   };
 
   const validateForm = () => {
@@ -96,12 +76,41 @@ export default function Checkout() {
     const required = ['firstName', 'lastName', 'street', 'city', 'postalCode'];
     for (const field of required) {
       if (!customerData[field]) {
-        toast.error(`Bitte füllen Sie alle Pflichtfelder aus`);
+        toast.error('Bitte füllen Sie alle Pflichtfelder aus');
         return false;
       }
     }
 
     return true;
+  };
+
+  const handleStripeCheckout = async (orderNumber: string) => {
+    try {
+      console.log('Starting Stripe checkout...');
+      
+      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+        body: {
+          items: checkoutData.items,
+          customerEmail: user?.email || guestEmail,
+          orderNumber: orderNumber,
+        }
+      });
+
+      if (error) throw error;
+
+      console.log('Stripe response:', data);
+
+      if (!data.url) {
+        throw new Error('No checkout URL received from Stripe');
+      }
+
+      // Redirect to Stripe Checkout
+      window.location.href = data.url;
+      
+    } catch (error: any) {
+      console.error('Stripe checkout error:', error);
+      throw new Error(`Stripe-Zahlung fehlgeschlagen: ${error.message}`);
+    }
   };
 
   const handleOrderSubmit = async () => {
@@ -110,238 +119,93 @@ export default function Checkout() {
     setLoading(true);
 
     try {
-      // Generate new order number for each submission to avoid duplicates
-      const newOrderNumber = 'ADN' + Date.now().toString() + Math.random().toString(36).substr(2, 3).toUpperCase();
-      console.log('Generated new order number:', newOrderNumber);
+      const orderNumber = 'ADN' + Date.now().toString() + Math.random().toString(36).substr(2, 3).toUpperCase();
+      console.log('Order number:', orderNumber);
       
       const orderData = {
-        order_number: newOrderNumber,
+        order_number: orderNumber,
         user_id: user?.id || null,
-        guest_email: !user ? guestEmail : null,
-        total_amount: Math.round(checkoutData.finalAmount * 100) / 100, // Ensure proper decimal precision
-        currency: 'eur',
-        payment_method: paymentMethod,
-        referral_code: referralCode || null,
-        customer_data: {
-          ...customerData,
-          email: user?.email || guestEmail || customerData.email
-        },
-        items: checkoutData.items.map(item => ({
-           perfume_id: item.perfume?.id || item.id,
-           variant_id: item.variant?.id || item.selectedVariant,
-           quantity: item.quantity,
-           unit_price: Math.round((item.variant?.price || item.price || 0) * 100) / 100,
-           total_price: Math.round((item.variant?.price || item.price || 0) * item.quantity * 100) / 100
-        })),
-         coupon_data: checkoutData.appliedCoupon ? {
-           code: checkoutData.appliedCoupon.code,
-           discount_amount: Math.round(checkoutData.discountAmount * 100) / 100
-         } : null
+        customer_email: user?.email || guestEmail,
+        customer_name: `${customerData.firstName} ${customerData.lastName}`,
+        customer_phone: customerData.phone,
+        shipping_address_data: customerData,
+        billing_address_data: customerData,
+        total_amount: checkoutData.finalAmount,
+        status: 'pending',
       };
 
-      console.log("=== ORDER DEBUG ===");
-      console.log("Cart items structure:", checkoutData.items);
-      console.log("Order data being sent:", orderData);
-      
-      const { data, error } = await supabase.functions.invoke('create-custom-order', {
-        body: orderData
-      });
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert(orderData)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (orderError) throw orderError;
 
-      console.log("Order created successfully, payment method:", paymentMethod);
+      const orderItems = checkoutData.items.map(item => ({
+        order_id: order.id,
+        perfume_id: item.perfume?.id || item.id,
+        variant_id: item.variant?.id || item.selectedVariant,
+        quantity: item.quantity,
+        unit_price: item.variant?.price || item.price,
+        total_price: (item.variant?.price || item.price) * item.quantity,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
 
       if (paymentMethod === 'stripe') {
-        // Create Stripe Checkout Session via edge function
-        const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-stripe-payment', {
-          body: {
-            items: checkoutData.items.map(item => ({
-              name: item.variant?.name || item.name,
-              description: item.variant?.description || item.description,
-              price: item.variant?.price || item.price,
-              quantity: item.quantity,
-              image: item.perfume?.image || item.image
-            })),
-            customerEmail: user?.email || guestEmail,
-            customerData: customerData,
-            metadata: {
-              order_number: newOrderNumber,
-              order_id: data.order_id,
-              referral_code: referralCode || '',
-            }
-          }
-        });
-
-        if (stripeError) {
-          console.error('Stripe Error:', stripeError);
-          throw new Error(`Stripe-Zahlung fehlgeschlagen: ${stripeError.message}`);
-        }
-
-        console.log('=== STRIPE REDIRECT ===');
-        console.log('Full Stripe response:', JSON.stringify(stripeData));
-        console.log('URL:', stripeData?.url);
-        console.log('Session ID:', stripeData?.sessionId);
-
-        if (!stripeData || !stripeData.url) {
-          throw new Error('Keine gültige Stripe-Antwort erhalten');
-        }
-
-        // Update order with Stripe session ID
-        const { error: updateError } = await supabase
-          .from('orders')
-          .update({ stripe_session_id: stripeData.sessionId })
-          .eq('id', data.order_id);
-
-        if (updateError) {
-          console.error('Error updating order:', updateError);
-        }
-
-        console.log('Opening Stripe URL:', stripeData.url);
-        console.log('URL type:', typeof stripeData.url);
-        console.log('URL is valid:', stripeData.url.startsWith('https://'));
-        
-        // Force open in new tab AND redirect current window as fallback
-        const newWindow = window.open(stripeData.url, '_blank');
-        if (!newWindow) {
-          console.log('Popup blocked, redirecting in same window...');
-          window.location.href = stripeData.url;
-        } else {
-          console.log('Opened in new tab');
-        }
-        
-      } else if (paymentMethod === 'paypal_checkout') {
-        // Create PayPal order via edge function
-        const { data: paypalData, error: paypalError } = await supabase.functions.invoke('create-paypal-payment', {
-          body: {
-            order_id: newOrderNumber,
-            amount: checkoutData.finalAmount,
-            currency: 'EUR',
-            order_number: newOrderNumber,
-            customer_email: user?.email || guestEmail
-          }
-        });
-
-        if (paypalError) {
-          console.error('PayPal Error:', paypalError);
-          throw new Error(`PayPal-Zahlung fehlgeschlagen: ${paypalError.message}`);
-        }
-
-        // Redirect to PayPal approval URL
-        window.location.href = paypalData.approval_url;
-        
+        await handleStripeCheckout(orderNumber);
       } else if (paymentMethod === 'bank') {
-        // Show bank transfer details
         navigate('/checkout-bank', { 
           state: { 
-            orderNumber: newOrderNumber,
+            orderNumber,
+            orderId: order.id,
             totalAmount: checkoutData.finalAmount,
-            bankDetails: {
-              recipient: 'Patric-Maurice Schmidt',
-              iban: 'DE77100123450827173501',
-              bic: 'TRBKDEBBXXX',
-              purpose: newOrderNumber
-            }
+            customerEmail: user?.email || guestEmail
+          } 
+        });
+      } else if (paymentMethod === 'paypal_checkout') {
+        const { data: paypalData, error: paypalError } = await supabase.functions.invoke('create-paypal-payment', {
+          body: {
+            items: checkoutData.items,
+            orderId: order.id,
+            orderNumber: orderNumber,
+            customerEmail: user?.email || guestEmail,
           }
         });
-      }
 
+        if (paypalError) throw paypalError;
+        if (!paypalData.approvalUrl) throw new Error('PayPal approval URL missing');
+        
+        window.location.href = paypalData.approvalUrl;
+      }
+      
     } catch (error: any) {
-      console.error('Order creation error:', error);
-      toast.error('Bestellung konnte nicht erstellt werden: ' + error.message);
-    } finally {
+      console.error('Order error:', error);
+      toast.error(error.message || 'Bestellung fehlgeschlagen');
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen glass">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate(-1)}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Zurück
-          </Button>
-          <h1 className="text-3xl font-bold">Kasse</h1>
-        </div>
+    <div className="min-h-screen bg-background py-8">
+      <div className="container mx-auto px-4 max-w-6xl">
+        <Button
+          variant="ghost"
+          onClick={() => navigate(-1)}
+          className="mb-6"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Zurück
+        </Button>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Order Summary */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Bestellübersicht</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {checkoutData.items.map((item: any) => (
-                 <div key={`${item.perfume?.id || item.id}-${item.variant?.id || item.selectedVariant}`} className="flex justify-between items-start">
-                   <div className="flex-1">
-                     <h4 className="font-medium">{item.perfume?.name || item.name}</h4>
-                     <p className="text-sm text-muted-foreground">{item.perfume?.brand || item.brand}</p>
-                     <p className="text-sm text-muted-foreground">Größe: {item.variant?.name || item.selectedVariant}</p>
-                     <p className="text-sm text-muted-foreground">Menge: {item.quantity}</p>
-                   </div>
-                   <p className="font-medium">{((item.variant?.price || item.price) * item.quantity).toFixed(2)}€</p>
-                 </div>
-               ))}
-
-              <Separator />
-
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>Zwischensumme</span>
-                  <span>{checkoutData.totalAmount.toFixed(2)}€</span>
-                </div>
-
-                {checkoutData.appliedCoupon && (
-                  <div className="flex justify-between text-green-600">
-                    <span>
-                      Rabatt ({checkoutData.appliedCoupon.code})
-                       <Badge variant="secondary" className="ml-2">
-                         {checkoutData.appliedCoupon.discount_type === 'percentage' 
-                           ? `${checkoutData.appliedCoupon.discount_value}%`
-                           : `${checkoutData.appliedCoupon.discount_value.toFixed(2)}€`}
-                       </Badge>
-                    </span>
-                    <span>-{checkoutData.discountAmount.toFixed(2)}€</span>
-                  </div>
-                )}
-
-                <Separator />
-
-                <div className="flex justify-between text-lg font-bold">
-                  <span>Gesamt</span>
-                  <span>{checkoutData.finalAmount.toFixed(2)}€</span>
-                </div>
-              </div>
-
-              {/* Cashback Info */}
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-4 rounded-lg border border-primary/20">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-primary">💰 Cashback erhalten</span>
-                  <span className="text-lg font-bold text-primary">
-                    {(checkoutData.finalAmount * 0.05).toFixed(2)}€
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Sie erhalten 5% Cashback auf diese Bestellung. {!user && "Melden Sie sich nach der Bestellung mit Ihrer E-Mail an, um den Cashback zu erhalten."}
-                </p>
-              </div>
-
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <p className="text-sm font-medium mb-2">Ihre Bestellnummer wird nach dem Absenden generiert</p>
-                <p className="text-xs text-muted-foreground">
-                  Diese wird für Ihre Überweisung und Nachverfolgung verwendet.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Checkout Form */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Customer Data */}
           <div className="space-y-6">
-            {/* Customer Information */}
             <Card>
               <CardHeader>
                 <CardTitle>Kundendaten</CardTitle>
@@ -349,7 +213,7 @@ export default function Checkout() {
               <CardContent className="space-y-4">
                 {!user && (
                   <div>
-                    <Label htmlFor="guestEmail">E-Mail-Adresse *</Label>
+                    <Label htmlFor="guestEmail">E-Mail*</Label>
                     <Input
                       id="guestEmail"
                       type="email"
@@ -363,7 +227,7 @@ export default function Checkout() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="firstName">Vorname *</Label>
+                    <Label htmlFor="firstName">Vorname*</Label>
                     <Input
                       id="firstName"
                       value={customerData.firstName}
@@ -372,7 +236,7 @@ export default function Checkout() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="lastName">Nachname *</Label>
+                    <Label htmlFor="lastName">Nachname*</Label>
                     <Input
                       id="lastName"
                       value={customerData.lastName}
@@ -383,7 +247,7 @@ export default function Checkout() {
                 </div>
 
                 <div>
-                  <Label htmlFor="street">Straße und Hausnummer *</Label>
+                  <Label htmlFor="street">Straße & Hausnummer*</Label>
                   <Input
                     id="street"
                     value={customerData.street}
@@ -394,7 +258,7 @@ export default function Checkout() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="postalCode">PLZ *</Label>
+                    <Label htmlFor="postalCode">PLZ*</Label>
                     <Input
                       id="postalCode"
                       value={customerData.postalCode}
@@ -403,7 +267,7 @@ export default function Checkout() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="city">Stadt *</Label>
+                    <Label htmlFor="city">Stadt*</Label>
                     <Input
                       id="city"
                       value={customerData.city}
@@ -414,9 +278,10 @@ export default function Checkout() {
                 </div>
 
                 <div>
-                  <Label htmlFor="phone">Telefon (optional)</Label>
+                  <Label htmlFor="phone">Telefon</Label>
                   <Input
                     id="phone"
+                    type="tel"
                     value={customerData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                   />
@@ -424,217 +289,95 @@ export default function Checkout() {
               </CardContent>
             </Card>
 
-            {/* Payment Method */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="w-5 h-5" />
-                  Zahlungsart
-                </CardTitle>
+                <CardTitle>Zahlungsmethode</CardTitle>
               </CardHeader>
               <CardContent>
-                <RadioGroup 
-                  value={paymentMethod} 
-                  onValueChange={(value: 'paypal_checkout' | 'bank' | 'stripe') => setPaymentMethod(value)}
-                  className="space-y-4"
-                >
-                  {/* Stripe Checkout - Premium Option */}
-                  <div className={`group relative overflow-hidden rounded-xl border-2 transition-all duration-300 hover:shadow-lg ${
-                    paymentMethod === 'stripe' 
-                      ? 'border-primary bg-primary/5 shadow-md' 
-                      : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                  }`}>
-                    <div className="flex items-center space-x-3 p-4">
-                      <RadioGroupItem value="stripe" id="stripe" />
-                      <Label htmlFor="stripe" className="flex items-center gap-3 cursor-pointer flex-1">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center">
-                          <CreditCard className="w-6 h-6 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <div className="font-semibold text-base">Kreditkarte / Stripe</div>
-                            <Badge variant="default" className="text-xs bg-green-500 hover:bg-green-600">
-                              Empfohlen
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            Sofortige Zahlung • Kreditkarte, Google Pay, Apple Pay
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs text-green-600 font-medium">✓ Sofort</div>
-                        </div>
-                      </Label>
-                    </div>
-                    {paymentMethod === 'stripe' && (
-                      <div className="px-4 pb-4 pt-0">
-                        <div className="bg-green-50 dark:bg-green-950/50 rounded-lg p-3 text-sm">
-                          <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            Sichere Zahlung über Stripe • Automatische Auftragsverarbeitung
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                <RadioGroup value={paymentMethod} onValueChange={(value: any) => setPaymentMethod(value)}>
+                  <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-accent cursor-pointer">
+                    <RadioGroupItem value="stripe" id="stripe" />
+                    <Label htmlFor="stripe" className="flex items-center cursor-pointer w-full">
+                      <CreditCard className="mr-2 h-5 w-5" />
+                      <span>Kreditkarte</span>
+                      <Badge variant="secondary" className="ml-auto">Empfohlen</Badge>
+                    </Label>
                   </div>
 
-                  {/* PayPal Checkout - Premium Option */}
-                  <div className={`group relative overflow-hidden rounded-xl border-2 transition-all duration-300 hover:shadow-lg ${
-                    paymentMethod === 'paypal_checkout' 
-                      ? 'border-primary bg-primary/5 shadow-md' 
-                      : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                  }`}>
-                    <div className="flex items-center space-x-3 p-4">
-                      <RadioGroupItem value="paypal_checkout" id="paypal_checkout" />
-                      <Label htmlFor="paypal_checkout" className="flex items-center gap-3 cursor-pointer flex-1">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
-                          <span className="text-white font-bold text-sm">PP</span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <div className="font-semibold text-base">PayPal Checkout</div>
-                            <Badge variant="default" className="text-xs bg-green-500 hover:bg-green-600">
-                              Empfohlen
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            Vollautomatisch • PayPal, Kreditkarte, Lastschrift
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs text-green-600 font-medium">✓ Sofort</div>
-                        </div>
-                      </Label>
-                    </div>
-                    {paymentMethod === 'paypal_checkout' && (
-                      <div className="px-4 pb-4 pt-0">
-                        <div className="bg-green-50 dark:bg-green-950/50 rounded-lg p-3 text-sm">
-                          <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            Automatische Auftragsverarbeitung nach Zahlung
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                  <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-accent cursor-pointer">
+                    <RadioGroupItem value="bank" id="bank" />
+                    <Label htmlFor="bank" className="flex items-center cursor-pointer w-full">
+                      <Building2 className="mr-2 h-5 w-5" />
+                      <span>Banküberweisung</span>
+                    </Label>
                   </div>
 
-                  <div className={`group relative overflow-hidden rounded-xl border-2 transition-all duration-300 hover:shadow-lg ${
-                    paymentMethod === 'bank' 
-                      ? 'border-primary bg-primary/5 shadow-md' 
-                      : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                  }`}>
-                    <div className="flex items-center space-x-3 p-4">
-                      <RadioGroupItem value="bank" id="bank" />
-                      <Label htmlFor="bank" className="flex items-center gap-3 cursor-pointer flex-1">
-                        <div className="w-12 h-12 rounded-xl bg-slate-600 flex items-center justify-center">
-                          <Building2 className="w-6 h-6 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-semibold text-base">Banküberweisung</div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            Klassische SEPA-Überweisung • Kostenlos
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs text-orange-600 font-medium">1-2 Werktage</div>
-                        </div>
-                      </Label>
-                    </div>
-                    {paymentMethod === 'bank' && (
-                      <div className="px-4 pb-4 pt-0">
-                        <div className="bg-orange-50 dark:bg-orange-950/50 rounded-lg p-3 text-sm">
-                          <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
-                            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                            Bankdaten werden nach Bestellung angezeigt
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                  <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-accent cursor-pointer">
+                    <RadioGroupItem value="paypal_checkout" id="paypal_checkout" />
+                    <Label htmlFor="paypal_checkout" className="flex items-center cursor-pointer w-full">
+                      <Banknote className="mr-2 h-5 w-5" />
+                      <span>PayPal</span>
+                    </Label>
                   </div>
                 </RadioGroup>
-
-                {paymentMethod === 'bank' && (
-                  <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-                    <h4 className="font-medium mb-2">Bankverbindung</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Empfänger:</span>
-                        <span className="font-mono">Patric-Maurice Schmidt</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">IBAN:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono">DE77100123450827173501</span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => copyToClipboard('DE77100123450827173501')}
-                          >
-                            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">BIC:</span>
-                        <span className="font-mono">TRBKDEBBXXX</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Verwendungszweck:</span>
-                        <span className="text-sm text-muted-foreground">Wird nach Bestellung angezeigt</span>
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      * Bitte geben Sie unbedingt die Bestellnummer als Verwendungszweck an
-                    </p>
-                  </div>
-                )}
               </CardContent>
             </Card>
+          </div>
 
-            {/* Enhanced Submit Button */}
-            <div className="space-y-4">
-              <Button 
-                onClick={handleOrderSubmit} 
-                disabled={loading} 
-                className={cn(
-                  "w-full py-4 text-base font-bold rounded-xl transition-all duration-300",
-                  "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary",
-                  "shadow-lg hover:shadow-xl hover:shadow-primary/25",
-                  "transform hover:scale-[1.02] active:scale-[0.98]",
-                  "flex flex-col items-center justify-center gap-1",
-                  loading && "animate-pulse"
-                )}
-                size="lg"
-              >
-                {loading ? (
-                  <div className="flex items-center gap-3">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Bestellung wird erstellt...</span>
+          {/* Right Column - Order Summary */}
+          <div>
+            <Card className="sticky top-8">
+              <CardHeader>
+                <CardTitle>Bestellübersicht</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {checkoutData.items.map((item, index) => (
+                  <div key={index} className="flex justify-between">
+                    <div>
+                      <p className="font-medium">{item.perfume?.name || item.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {item.variant?.name || item.selectedVariant} × {item.quantity}
+                      </p>
+                    </div>
+                    <p className="font-medium">
+                      {((item.variant?.price || item.price) * item.quantity).toFixed(2)}€
+                    </p>
                   </div>
-                 ) : (
-                   <>
-                     <span className="text-center leading-tight">
-                        {paymentMethod === 'paypal_checkout' ? `🚀 Mit PayPal bezahlen` : 
-                         `✨ Bestellung abschließen`
-                        }
-                     </span>
-                     <span className="text-sm opacity-90 font-normal">
-                        {checkoutData.finalAmount.toFixed(2)}€
-                     </span>
-                   </>
-                 )}
-              </Button>
-              
-              {/* Security Notice */}
-              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                <div className="w-4 h-4 text-green-600">🔒</div>
-                <span>Sichere SSL-verschlüsselte Übertragung</span>
-              </div>
-              
-              <p className="text-xs text-muted-foreground text-center">
-                Mit dem Absenden bestätigen Sie unsere AGB und Datenschutzerklärung
-              </p>
-            </div>
+                ))}
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Zwischensumme</span>
+                    <span>{checkoutData.totalAmount.toFixed(2)}€</span>
+                  </div>
+                  
+                  {checkoutData.discountAmount > 0 && (
+                    <div className="flex justify-between text-primary">
+                      <span>Rabatt</span>
+                      <span>-{checkoutData.discountAmount.toFixed(2)}€</span>
+                    </div>
+                  )}
+
+                  <Separator />
+
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Gesamt</span>
+                    <span>{checkoutData.finalAmount.toFixed(2)}€</span>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleOrderSubmit}
+                  disabled={loading}
+                  className="w-full"
+                  size="lg"
+                >
+                  {loading ? 'Verarbeitung...' : 'Kostenpflichtig bestellen'}
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
