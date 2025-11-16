@@ -10,6 +10,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ProductComparison } from '@/components/ProductComparison';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
+import { GlobalGestures } from '@/components/GlobalGestures';
 
 const ProductDetail = React.lazy(() => import('@/pages/ProductDetail'));
 const Products = React.lazy(() => import('@/pages/Products'));
@@ -60,6 +61,7 @@ function App() {
             <CartProvider>
               <ErrorBoundary>
                 <Router>
+                  <GlobalGestures />
                   <ProductComparison />
                   <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
                     <Routes>
