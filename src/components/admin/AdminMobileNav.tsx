@@ -81,7 +81,7 @@ export function AdminMobileNav({ activeTab, onTabChange, onMenuClick }: AdminMob
                 )}
               >
                 <div className="relative">
-                  <Icon className="w-7 h-7" strokeWidth={2.5} />
+                  <Icon className="w-4 h-4" strokeWidth={2.5} />
                 </div>
                 
                 <span className={cn(
