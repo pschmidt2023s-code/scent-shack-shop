@@ -66,7 +66,7 @@ serve(async (req) => {
 
     console.log("Line items created:", lineItems.length);
 
-    // Create session using the EXACT method from create-stripe-checkout
+    // Create session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: lineItems,
@@ -81,6 +81,8 @@ serve(async (req) => {
     });
 
     console.log("SUCCESS - Session created:", session.id);
+    console.log("Session URL:", session.url);
+    console.log("Session status:", session.status);
 
     return new Response(
       JSON.stringify({ 
@@ -94,6 +96,7 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("ERROR:", error.message);
+    console.error("Full error:", JSON.stringify(error, null, 2));
     return new Response(
       JSON.stringify({ error: error.message }), 
       {
