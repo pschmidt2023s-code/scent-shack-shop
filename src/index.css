@@ -244,55 +244,55 @@
   
   /* Glassmorphism utilities - Ultra Strong iOS-Style Liquid Glass Effect */
   .glass {
-    background: rgba(255, 255, 255, 0.4) !important;
-    backdrop-filter: blur(100px) saturate(200%) !important;
-    -webkit-backdrop-filter: blur(100px) saturate(200%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.25) !important;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15), 
-                0 4px 16px 0 rgba(31, 38, 135, 0.1),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.6) !important;
+    background: rgba(255, 255, 255, 0.6) !important;
+    backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
+    -webkit-backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18), 
+                0 4px 16px 0 rgba(31, 38, 135, 0.12),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.7) !important;
   }
 
   .dark .glass {
-    background: rgba(17, 24, 39, 0.3) !important;
-    backdrop-filter: blur(100px) saturate(200%) !important;
-    -webkit-backdrop-filter: blur(100px) saturate(200%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35), 
-                0 4px 16px 0 rgba(0, 0, 0, 0.25),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.08) !important;
+    background: rgba(17, 24, 39, 0.5) !important;
+    backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
+    -webkit-backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), 
+                0 4px 16px 0 rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.12) !important;
   }
   
   .glass-card {
-    background: rgba(255, 255, 255, 0.5) !important;
-    backdrop-filter: blur(100px) saturate(200%) !important;
-    -webkit-backdrop-filter: blur(100px) saturate(200%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15), 
-                0 4px 16px 0 rgba(31, 38, 135, 0.1),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.6) !important;
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
+    -webkit-backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18), 
+                0 4px 16px 0 rgba(31, 38, 135, 0.12),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.7) !important;
     border-radius: 1rem !important;
   }
 
   .dark .glass-card {
-    background: rgba(17, 24, 39, 0.4) !important;
-    backdrop-filter: blur(100px) saturate(200%) !important;
-    -webkit-backdrop-filter: blur(100px) saturate(200%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), 
-                0 4px 16px 0 rgba(0, 0, 0, 0.3),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.1) !important;
+    background: rgba(17, 24, 39, 0.6) !important;
+    backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
+    -webkit-backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45), 
+                0 4px 16px 0 rgba(0, 0, 0, 0.35),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.15) !important;
   }
   
   .glass-nav {
-    background: rgba(255, 255, 255, 0.55) !important;
-    backdrop-filter: blur(100px) saturate(200%) !important;
-    -webkit-backdrop-filter: blur(100px) saturate(200%) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
+    background: rgba(255, 255, 255, 0.75) !important;
+    backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
+    -webkit-backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.4) !important;
     border-radius: 0 !important;
-    box-shadow: 0 -8px 32px 0 rgba(31, 38, 135, 0.15), 
-                0 -4px 16px 0 rgba(31, 38, 135, 0.08),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.7) !important;
+    box-shadow: 0 -8px 32px 0 rgba(31, 38, 135, 0.18), 
+                0 -4px 16px 0 rgba(31, 38, 135, 0.1),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.8) !important;
     position: fixed !important;
     bottom: 0 !important;
     left: 0 !important;
@@ -300,13 +300,13 @@
   }
   
   .dark .glass-nav {
-    background: rgba(17, 24, 39, 0.45) !important;
-    backdrop-filter: blur(100px) saturate(200%) !important;
-    -webkit-backdrop-filter: blur(100px) saturate(200%) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
-    box-shadow: 0 -8px 32px 0 rgba(0, 0, 0, 0.35), 
-                0 -4px 16px 0 rgba(0, 0, 0, 0.25),
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.08) !important;
+    background: rgba(17, 24, 39, 0.65) !important;
+    backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
+    -webkit-backdrop-filter: blur(120px) saturate(220%) contrast(120%) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.18) !important;
+    box-shadow: 0 -8px 32px 0 rgba(0, 0, 0, 0.4), 
+                0 -4px 16px 0 rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 0 rgba(255, 255, 255, 0.12) !important;
   }
   
   .glass-text-dark {
