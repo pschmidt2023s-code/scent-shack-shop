@@ -112,9 +112,11 @@ export default function ProductManagement() {
         loadProducts();
       }
     } else {
+      // Generate a unique ID for new products
+      const productId = `${productData.category.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
       const { error } = await supabase
         .from("products")
-        .insert([productData]);
+        .insert([{ ...productData, id: productId }]);
 
       if (error) {
         toast.error("Fehler beim Erstellen des Produkts");
@@ -160,9 +162,11 @@ export default function ProductManagement() {
         loadProducts();
       }
     } else {
+      // Generate a unique ID for new variants
+      const variantId = `${variantData.variant_number}-${Date.now()}`;
       const { error } = await supabase
         .from("product_variants")
-        .insert([variantData]);
+        .insert([{ ...variantData, id: variantId }]);
 
       if (error) {
         toast.error("Fehler beim Erstellen der Variante");

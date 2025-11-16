@@ -165,22 +165,7 @@ export type Database = {
           user_id?: string
           variant_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "auto_reorder_subscriptions_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "auto_reorder_subscriptions_variant_id_fkey"
-            columns: ["variant_id"]
-            isOneToOne: false
-            referencedRelation: "product_variants"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       bundle_analytics: {
         Row: {
@@ -251,20 +236,6 @@ export type Database = {
             columns: ["bundle_id"]
             isOneToOne: false
             referencedRelation: "bundle_products"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bundle_items_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bundle_items_variant_id_fkey"
-            columns: ["variant_id"]
-            isOneToOne: false
-            referencedRelation: "product_variants"
             referencedColumns: ["id"]
           },
         ]
@@ -1060,7 +1031,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
-          id?: string
+          id: string
           in_stock?: boolean
           name: string
           original_price?: number | null
@@ -1141,15 +1112,7 @@ export type Database = {
           video_url?: string
           view_count?: number
         }
-        Relationships: [
-          {
-            foreignKeyName: "product_videos_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       product_views: {
         Row: {
@@ -1179,22 +1142,7 @@ export type Database = {
           variant_id?: string
           viewed_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "product_views_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "product_views_variant_id_fkey"
-            columns: ["variant_id"]
-            isOneToOne: false
-            referencedRelation: "product_variants"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       products: {
         Row: {
@@ -1211,7 +1159,7 @@ export type Database = {
           brand: string
           category: string
           created_at?: string
-          id?: string
+          id: string
           image?: string | null
           name: string
           size: string
@@ -1563,22 +1511,7 @@ export type Database = {
           user_id?: string | null
           variant_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "stock_notifications_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "stock_notifications_variant_id_fkey"
-            columns: ["variant_id"]
-            isOneToOne: false
-            referencedRelation: "product_variants"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       system_settings: {
         Row: {
