@@ -165,6 +165,10 @@ export default function Checkout() {
           items: checkoutData.items,
           customerEmail: user?.email || guestEmail,
           orderNumber: orderNumber,
+          coupon: appliedCoupon,
+          discountAmount: appliedCoupon ? (appliedCoupon.discount_type === 'percentage' 
+            ? checkoutData.totalAmount * appliedCoupon.discount_value / 100 
+            : appliedCoupon.discount_value) : 0
         }
       });
 
@@ -216,6 +220,8 @@ export default function Checkout() {
       const orderNumber = 'ADN' + Date.now().toString() + Math.random().toString(36).substr(2, 3).toUpperCase();
       console.log('📝 Order Number:', orderNumber);
       
+      const finalAmount = calculateFinalAmount();
+      
       const orderData = {
         order_number: orderNumber,
         user_id: user?.id || null,
@@ -224,7 +230,7 @@ export default function Checkout() {
         customer_phone: customerData.phone,
         shipping_address_data: customerData,
         billing_address_data: customerData,
-        total_amount: checkoutData.finalAmount,
+        total_amount: finalAmount,
         status: 'pending',
       };
 
@@ -307,19 +313,22 @@ export default function Checkout() {
         });
       } else if (paymentMethod === 'paypal_checkout') {
         console.log('Starting PayPal checkout...');
+        const finalAmount = calculateFinalAmount();
+        
         const { data: paypalData, error: paypalError } = await supabase.functions.invoke('create-paypal-payment', {
           body: {
-            items: checkoutData.items,
-            orderId: order.id,
-            orderNumber: orderNumber,
-            customerEmail: user?.email || guestEmail,
+            order_id: order.id,
+            amount: finalAmount,
+            currency: 'EUR',
+            order_number: orderNumber,
+            customer_email: user?.email || guestEmail,
           }
         });
 
         if (paypalError) throw paypalError;
-        if (!paypalData.approvalUrl) throw new Error('PayPal approval URL missing');
+        if (!paypalData.approval_url) throw new Error('PayPal approval URL missing');
         
-        window.location.href = paypalData.approvalUrl;
+        window.location.href = paypalData.approval_url;
       }
       
     } catch (error: any) {

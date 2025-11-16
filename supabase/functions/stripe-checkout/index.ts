@@ -17,7 +17,7 @@ serve(async (req) => {
     const body = await req.json();
     console.log("Request body:", JSON.stringify(body));
     
-    const { items, customerEmail, orderNumber } = body;
+    const { items, customerEmail, orderNumber, coupon, discountAmount } = body;
     
     if (!items || !Array.isArray(items)) {
       throw new Error("Items fehlen oder sind ungültig");
@@ -62,6 +62,21 @@ serve(async (req) => {
         quantity: item.quantity || 1,
       };
     });
+
+    // Add discount as negative line item if coupon applied
+    if (coupon && discountAmount > 0) {
+      console.log("Adding discount:", discountAmount, "EUR");
+      lineItems.push({
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: `Rabatt: ${coupon.code}`,
+          },
+          unit_amount: -Math.round(discountAmount * 100),
+        },
+        quantity: 1,
+      });
+    }
 
     console.log("Line items created:", lineItems.length);
 
