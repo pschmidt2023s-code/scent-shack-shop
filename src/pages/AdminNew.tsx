@@ -124,6 +124,10 @@ export default function AdminNew() {
         <TabsContent value="videos" className="space-y-6">
           <VideoManagement />
         </TabsContent>
+        
+        <TabsContent value="notifications" className="space-y-6">
+          <StockNotificationManagement />
+        </TabsContent>
 
         <TabsContent value="settings" className="space-y-6">
           <LoyaltySettings />
