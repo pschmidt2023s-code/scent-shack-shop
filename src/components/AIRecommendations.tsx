@@ -57,25 +57,32 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
         });
       }
 
-      // Get AI recommendations (simplified version - in production use actual AI)
-      const { data: products } = await supabase
+      // Get AI recommendations with proper data
+      const { data: products, error } = await supabase
         .from('products')
         .select(`
           id,
           name,
           brand,
           image,
-          product_variants(id, name, price, in_stock)
+          product_variants(id, name, price, in_stock, original_price)
         `)
         .neq('id', currentProductId || '')
         .limit(limit);
+
+      if (error) {
+        console.error('Error fetching products:', error);
+        return;
+      }
 
       if (products) {
         const mapped: RecommendedProduct[] = products
           .filter((p: any) => p.product_variants && p.product_variants.length > 0)
           .map((p: any) => {
-            // Get first available variant
-            const variant = p.product_variants.find((v: any) => v.in_stock) || p.product_variants[0];
+            // Get first available variant or first variant
+            const variants = p.product_variants || [];
+            const variant = variants.find((v: any) => v.in_stock) || variants[0];
+            
             return {
               id: p.id,
               name: p.name,
