@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminMobileNav } from './AdminMobileNav';
+import { AdminMenuSheet } from './AdminMenuSheet';
 import { Card } from '@/components/ui/card';
 import { Menu } from 'lucide-react';
 
@@ -14,6 +15,7 @@ interface AdminDashboardLayoutProps {
 function AdminDashboardContent({ children, defaultTab = 'overview', onTabChange }: AdminDashboardLayoutProps) {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [systemStatus, setSystemStatus] = useState<'online' | 'offline' | 'pause'>('online');
+  const [showMenuSheet, setShowMenuSheet] = useState(false);
   const { setOpen } = useSidebar();
 
   const handleTabChange = (tab: string) => {
@@ -32,25 +34,25 @@ function AdminDashboardContent({ children, defaultTab = 'overview', onTabChange 
       <AdminSidebar activeTab={activeTab} onTabChange={handleTabChange} />
       
       <div className="flex-1 flex flex-col min-h-screen">
-          <div className="border-b border-border/10 glass-card sticky top-0 z-40 rounded-b-2xl">
-            <div className="container mx-auto px-4 py-3 md:py-4">
+          <div className="border-b border-border/10 glass-card sticky top-0 z-40">
+            <div className="container mx-auto px-3 py-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 md:gap-3">
-                  <SidebarTrigger className="hidden lg:flex p-2 hover:bg-primary/10 rounded-xl transition-colors">
-                    <Menu className="h-5 w-5 text-foreground" />
+                <div className="flex items-center gap-2">
+                  <SidebarTrigger className="hidden lg:flex p-1.5 hover:bg-primary/10 rounded-lg transition-colors">
+                    <Menu className="h-4 w-4 text-foreground" />
                   </SidebarTrigger>
                   <div>
-                    <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground">Admin Dashboard</h1>
-                    <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">Verwaltungssystem für ALDENAIR</p>
+                    <h1 className="text-lg md:text-xl font-bold text-foreground">Admin</h1>
+                    <p className="text-[10px] text-muted-foreground hidden sm:block">Verwaltung</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Card className="glass-card px-4 py-2 cursor-pointer hover:shadow-lg transition-all group">
-                    <div className="text-sm text-muted-foreground">Status</div>
+                  <Card className="glass-card px-3 py-1.5 cursor-pointer hover:shadow-lg transition-all">
+                    <div className="text-[10px] text-muted-foreground">Status</div>
                     <select
                       value={systemStatus}
                       onChange={(e) => setSystemStatus(e.target.value as 'online' | 'offline' | 'pause')}
-                      className="flex items-center gap-2 bg-transparent border-none font-semibold text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 rounded px-1"
+                      className="flex items-center gap-2 bg-transparent border-none text-xs font-semibold text-foreground cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 rounded px-1"
                     >
                       <option value="online">🟢 Online</option>
                       <option value="offline">🔴 Offline</option>
@@ -63,7 +65,7 @@ function AdminDashboardContent({ children, defaultTab = 'overview', onTabChange 
           </div>
 
           <div className="flex-1 overflow-auto pb-24 lg:pb-6">
-            <div className="container mx-auto px-4 py-6">
+            <div className="container mx-auto px-3 py-4">
               {children}
             </div>
           </div>
@@ -72,7 +74,14 @@ function AdminDashboardContent({ children, defaultTab = 'overview', onTabChange 
         <AdminMobileNav 
           activeTab={activeTab} 
           onTabChange={handleTabChange}
-          onMenuClick={() => setOpen(true)}
+          onMenuClick={() => setShowMenuSheet(true)}
+        />
+        
+        <AdminMenuSheet
+          open={showMenuSheet}
+          onOpenChange={setShowMenuSheet}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
         />
       </>
   );
