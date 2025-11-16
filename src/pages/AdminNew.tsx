@@ -28,22 +28,6 @@ const ContestManagement = lazy(() =>
   }))
 );
 
-const CustomerSegmentation = lazy(() =>
-  import('@/components/admin/CustomerSegmentation').then((module) => ({
-    default: module.CustomerSegmentation,
-  }))
-);
-const MarketingCampaigns = lazy(() =>
-  import('@/components/admin/MarketingCampaigns').then((module) => ({
-    default: module.MarketingCampaigns,
-  }))
-);
-const PredictiveInventory = lazy(() =>
-  import('@/components/admin/PredictiveInventory').then((module) => ({
-    default: module.PredictiveInventory,
-  }))
-);
-
 export default function AdminNew() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
@@ -53,135 +37,96 @@ export default function AdminNew() {
   }
 
   return (
-    <AdminDashboardLayout activeTab={activeTab} onTabChange={setActiveTab}>
+    <AdminDashboardLayout defaultTab={activeTab}>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        {/* Overview */}
         <TabsContent value="overview" className="space-y-6">
           <SalesAnalytics />
         </TabsContent>
 
-        {/* Analytics */}
         <TabsContent value="analytics" className="space-y-6">
           <PerformanceMetrics />
         </TabsContent>
 
-        {/* Products */}
         <TabsContent value="products" className="space-y-6">
           <Suspense fallback={<TabContentLoader />}>
             <ProductManagement />
           </Suspense>
         </TabsContent>
 
-        {/* Bundles */}
         <TabsContent value="bundles" className="space-y-6">
           <BundleManagement />
         </TabsContent>
 
-        {/* Coupons */}
         <TabsContent value="coupons" className="space-y-6">
           <Suspense fallback={<TabContentLoader />}>
             <CouponManagement />
           </Suspense>
         </TabsContent>
 
-        {/* Users */}
         <TabsContent value="users" className="space-y-6">
           <Suspense fallback={<TabContentLoader />}>
             <UserManagement />
           </Suspense>
         </TabsContent>
 
-        {/* Loyalty */}
         <TabsContent value="loyalty" className="space-y-6">
           <LoyaltySettings />
         </TabsContent>
 
-        {/* Referral */}
         <TabsContent value="referral" className="space-y-6">
           <ReferralManagement />
         </TabsContent>
 
-        {/* Newsletter */}
         <TabsContent value="newsletter" className="space-y-6">
           <Suspense fallback={<TabContentLoader />}>
             <NewsletterManagement />
           </Suspense>
         </TabsContent>
 
-        {/* Contest */}
         <TabsContent value="contest" className="space-y-6">
           <Suspense fallback={<TabContentLoader />}>
             <ContestManagement />
           </Suspense>
         </TabsContent>
 
-        {/* Chat */}
         <TabsContent value="chat" className="space-y-6">
           <Suspense fallback={<TabContentLoader />}>
             <AdminChatInterface />
           </Suspense>
         </TabsContent>
 
-        {/* Returns */}
         <TabsContent value="returns" className="space-y-6">
           <Suspense fallback={<TabContentLoader />}>
             <ReturnManagement />
           </Suspense>
         </TabsContent>
 
-        {/* Notifications */}
         <TabsContent value="notifications" className="space-y-6">
           <StockNotificationManagement />
         </TabsContent>
 
-        {/* Partners */}
         <TabsContent value="partners" className="space-y-6">
           <Suspense fallback={<TabContentLoader />}>
             <PartnerManagement />
           </Suspense>
         </TabsContent>
 
-        {/* Payback */}
         <TabsContent value="payback" className="space-y-6">
           <Suspense fallback={<TabContentLoader />}>
             <PaybackManagement />
           </Suspense>
         </TabsContent>
 
-        {/* Auto-Reorder */}
         <TabsContent value="auto-reorder" className="space-y-6">
           <AutoReorderManagement />
         </TabsContent>
 
-        {/* Orders (legacy) */}
-        <TabsContent value="orders" className="space-y-6">
-          <SalesAnalytics />
-        </TabsContent>
-
-        {/* Segmentation */}
-        <TabsContent value="segmentation" className="space-y-6">
-          <Suspense fallback={<TabContentLoader />}>
-            <CustomerSegmentation />
-          </Suspense>
-        </TabsContent>
-
-        {/* Campaigns */}
-        <TabsContent value="campaigns" className="space-y-6">
-          <Suspense fallback={<TabContentLoader />}>
-            <MarketingCampaigns />
-          </Suspense>
-        </TabsContent>
-
-        {/* Predictive Inventory */}
-        <TabsContent value="predictive" className="space-y-6">
-          <Suspense fallback={<TabContentLoader />}>
-            <PredictiveInventory />
-          </Suspense>
-        </TabsContent>
-
-        {/* Settings */}
-        <TabsContent value="settings" className="space-y-6">
+        <TabsContent value="videos" className="space-y-6">
           <VideoManagement />
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-6">
+          <LoyaltySettings />
         </TabsContent>
       </Tabs>
     </AdminDashboardLayout>
