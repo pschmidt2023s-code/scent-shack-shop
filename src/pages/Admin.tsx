@@ -20,6 +20,7 @@ const NewsletterManagement = lazy(() => import('@/components/admin/NewsletterMan
 const PaybackManagement = lazy(() => import('@/components/admin/PaybackManagement'));
 const AdminChatInterface = lazy(() => import('@/components/admin/AdminChatInterface'));
 const ContestManagement = lazy(() => import('@/components/admin/ContestManagement').then(module => ({ default: module.ContestManagement })));
+const ProductManagement = lazy(() => import('@/components/admin/ProductManagement'));
 import { getPerfumeNameById } from '@/lib/perfume-utils';
 
 interface Order {
@@ -210,7 +211,7 @@ export default function Admin() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-9 w-full max-w-6xl animate-slide-in-right backdrop-blur-sm bg-card/80 border">
+          <TabsList className="grid grid-cols-10 w-full max-w-6xl animate-slide-in-right backdrop-blur-sm bg-card/80 border">
             <TabsTrigger value="orders" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
               <Package className="w-4 h-4 transition-transform duration-200" />
               Bestellungen
@@ -246,6 +247,10 @@ export default function Admin() {
             <TabsTrigger value="users" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
               <Users className="w-4 h-4 transition-transform duration-200" />
               Benutzer
+            </TabsTrigger>
+            <TabsTrigger value="products" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
+              <Package className="w-4 h-4 transition-transform duration-200" />
+              Produkte
             </TabsTrigger>
           </TabsList>
 
@@ -458,6 +463,12 @@ export default function Admin() {
           <TabsContent value="users" className="animate-fade-in duration-500">
             <Suspense fallback={<TabContentLoader />}>
               <UserManagement />
+            </Suspense>
+          </TabsContent>
+
+          <TabsContent value="products" className="animate-fade-in duration-500">
+            <Suspense fallback={<TabContentLoader />}>
+              <ProductManagement />
             </Suspense>
           </TabsContent>
         </Tabs>
