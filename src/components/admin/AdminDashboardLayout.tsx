@@ -21,20 +21,20 @@ export function AdminDashboardLayout({ children, defaultTab = 'overview' }: Admi
 
   return (
     <SidebarProvider defaultOpen={false}>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-screen flex w-full glass">
         <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
         
-        <div className="flex-1 flex flex-col">
-          <div className="border-b glass sticky top-0 z-40">
-            <div className="container mx-auto px-4 py-4">
+        <div className="flex-1 flex flex-col pb-20 md:pb-0">
+          <div className="border-b glass-card sticky top-0 z-40 backdrop-blur-xl">
+            <div className="container mx-auto px-4 py-3 md:py-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <SidebarTrigger className="lg:hidden">
-                    <Menu className="h-5 w-5" />
+                <div className="flex items-center gap-2 md:gap-3">
+                  <SidebarTrigger className="lg:hidden p-2 hover:bg-primary/10 rounded-lg transition-colors">
+                    <Menu className="h-5 w-5 glass-text-dark" />
                   </SidebarTrigger>
                   <div>
-                    <h1 className="text-2xl lg:text-3xl font-bold glass-text-dark">Admin Dashboard</h1>
-                    <p className="text-sm text-muted-foreground glass-text-dark hidden sm:block">Verwaltungssystem für ALDENAIR</p>
+                    <h1 className="text-xl md:text-2xl lg:text-3xl font-bold glass-text-dark">Admin Dashboard</h1>
+                    <p className="text-xs md:text-sm text-muted-foreground glass-text-dark hidden sm:block">Verwaltungssystem für ALDENAIR</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
