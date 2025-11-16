@@ -18,19 +18,33 @@ export default function CheckoutModal({ open, onOpenChange }) {
       return;
     }
 
+    if (items.length === 0) {
+      toast.error("Ihr Warenkorb ist leer");
+      return;
+    }
+
     setLoading(true);
     try {
-      const { data, error } = await supabase.from('orders').insert({ 
-        user_id: user.id, 
-        total_amount: total,
-        status: 'pending'
-      }).select();
+      // Call Stripe payment edge function
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: {
+          items: items.map(item => ({
+            name: `${item.perfume.brand} ${item.perfume.name}`,
+            variant: item.variant.name,
+            price: item.variant.price,
+            quantity: item.quantity
+          }))
+        }
+      });
 
       if (error) throw error;
 
-      toast.success("Bestellung wurde erstellt");
-      clearCart();
-      onOpenChange(false);
+      if (data?.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = data.url;
+      } else {
+        throw new Error("Keine Checkout-URL erhalten");
+      }
     } catch (error) {
       console.error(error);
       toast.error("Fehler beim Checkout");
