@@ -6,11 +6,13 @@ import { toast } from 'sonner';
 import { PaybackManagement } from './PaybackManagement';
 import { ProductCashbackSettings } from './ProductCashbackSettings';
 import { LoyaltyRulesSettings } from './LoyaltyRulesSettings';
+import { CustomerTiersSettings } from './CustomerTiersSettings';
 import { 
   Wallet, 
   Percent, 
   Trophy,
-  TrendingUp
+  TrendingUp,
+  Crown
 } from 'lucide-react';
 
 export function LoyaltySettings() {
@@ -123,7 +125,7 @@ export function LoyaltySettings() {
       {/* Tabs für verschiedene Bereiche */}
       <Card className="p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="payback" className="flex items-center gap-2">
               <Wallet className="h-4 w-4" />
               Payback Verwaltung
@@ -131,6 +133,10 @@ export function LoyaltySettings() {
             <TabsTrigger value="cashback" className="flex items-center gap-2">
               <Percent className="h-4 w-4" />
               Produktspezifisches Cashback
+            </TabsTrigger>
+            <TabsTrigger value="tiers" className="flex items-center gap-2">
+              <Crown className="h-4 w-4" />
+              Kundenstufen & Boni
             </TabsTrigger>
             <TabsTrigger value="loyalty" className="flex items-center gap-2">
               <Trophy className="h-4 w-4" />
@@ -148,6 +154,10 @@ export function LoyaltySettings() {
 
           <TabsContent value="loyalty" className="mt-6">
             <LoyaltyRulesSettings onUpdate={fetchStats} />
+          </TabsContent>
+
+          <TabsContent value="tiers" className="mt-6">
+            <CustomerTiersSettings onUpdate={fetchStats} />
           </TabsContent>
         </Tabs>
       </Card>

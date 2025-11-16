@@ -273,6 +273,39 @@ export type Database = {
         }
         Relationships: []
       }
+      cashback_bonuses: {
+        Row: {
+          bonus_name: string
+          bonus_percentage: number
+          bonus_type: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          bonus_name: string
+          bonus_percentage: number
+          bonus_type: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          bonus_name?: string
+          bonus_percentage?: number
+          bonus_type?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string
@@ -429,6 +462,42 @@ export type Database = {
           updated_at?: string
           valid_from?: string | null
           valid_until?: string | null
+        }
+        Relationships: []
+      }
+      customer_tiers: {
+        Row: {
+          base_cashback_bonus: number
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          min_lifetime_purchases: number | null
+          priority: number
+          tier_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          base_cashback_bonus?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          min_lifetime_purchases?: number | null
+          priority?: number
+          tier_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          base_cashback_bonus?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          min_lifetime_purchases?: number | null
+          priority?: number
+          tier_name?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -1252,6 +1321,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          customer_tier_id: string | null
           full_name: string | null
           id: string
           payback_balance: number | null
@@ -1260,6 +1330,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          customer_tier_id?: string | null
           full_name?: string | null
           id: string
           payback_balance?: number | null
@@ -1268,13 +1339,22 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          customer_tier_id?: string | null
           full_name?: string | null
           id?: string
           payback_balance?: number | null
           phone?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_customer_tier_id_fkey"
+            columns: ["customer_tier_id"]
+            isOneToOne: false
+            referencedRelation: "customer_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       push_subscriptions: {
         Row: {
