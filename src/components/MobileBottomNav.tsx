@@ -76,8 +76,7 @@ export function MobileBottomNav() {
       {/* Spacer to prevent content from being hidden behind the nav */}
       <div className="h-16 md:hidden" />
       
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-[200] glass-nav md:hidden shadow-lg pb-[env(safe-area-inset-bottom)]">
+      <nav className="fixed bottom-0 left-0 right-0 z-[200] md:hidden shadow-lg pb-[env(safe-area-inset-bottom)] glass-nav">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
         <div className="grid grid-cols-5 h-16 px-1">
           {NAV_ITEMS.map((item) => {
@@ -102,11 +101,11 @@ export function MobileBottomNav() {
                   variant="ghost"
                   onClick={() => handleItemClick(item)}
                   className={cn(
-                    "group relative flex flex-col items-center justify-center gap-1 px-2 py-2 transition-all duration-200 h-full rounded-lg glass-text-dark",
+                    "group relative flex flex-col items-center justify-center gap-1 px-2 py-2 transition-all duration-200 h-full rounded-lg",
                     "hover:bg-primary/10 active:scale-95",
                     isActive 
                       ? "text-primary font-semibold" 
-                      : "hover:text-primary"
+                      : "text-foreground/90 hover:text-primary dark:text-foreground/80 dark:hover:text-primary"
                   )}
                 >
                   <div className="relative">
@@ -124,7 +123,7 @@ export function MobileBottomNav() {
                   
                   <span className={cn(
                     "text-[11px] font-medium transition-colors",
-                    isActive ? "text-primary" : "text-muted-foreground"
+                    isActive ? "text-primary" : "text-foreground/80 dark:text-foreground/70"
                   )}>
                     {item.label}
                   </span>
@@ -137,11 +136,11 @@ export function MobileBottomNav() {
                 key={item.href}
                 to={item.href}
                 className={cn(
-                  "group relative flex flex-col items-center justify-center gap-1 px-2 py-2 transition-all duration-200 h-full rounded-lg glass-text-dark",
+                  "group relative flex flex-col items-center justify-center gap-1 px-2 py-2 transition-all duration-200 h-full rounded-lg",
                   "hover:bg-primary/10 active:scale-95",
                   isActive 
                     ? "text-primary font-semibold" 
-                    : "hover:text-primary"
+                    : "text-foreground/90 hover:text-primary dark:text-foreground/80 dark:hover:text-primary"
                 )}
               >
                 <div className="relative">
@@ -159,7 +158,7 @@ export function MobileBottomNav() {
                 
                 <span className={cn(
                   "text-[11px] font-medium transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  isActive ? "text-primary" : "text-foreground/80 dark:text-foreground/70"
                 )}>
                   {item.label}
                 </span>
