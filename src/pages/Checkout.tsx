@@ -141,15 +141,24 @@ export default function Checkout() {
   };
 
   const handleOrderSubmit = async () => {
-    console.log('🚀 STARTING ORDER SUBMISSION');
+    console.log('🚀🚀🚀 BUTTON WURDE DEFINITIV GEKLICKT 🚀🚀🚀');
+    alert('FUNKTION WIRD AUSGEFÜHRT!');
     
-    if (!validateForm()) {
-      console.log('❌ Form validation failed');
-      return;
-    }
+    // TEMPORÄR: Validierung komplett deaktiviert für Test
+    // if (!validateForm()) {
+    //   console.log('❌ Form validation failed');
+    //   return;
+    // }
 
-    console.log('✅ Form validation passed');
+    console.log('✅ Skipping validation for test');
+    console.log('Payment Method:', paymentMethod);
+    console.log('User:', user?.email);
+    console.log('Guest Email:', guestEmail);
+    console.log('Customer Data:', customerData);
+    
     setLoading(true);
+    
+    alert('LOADING GESETZT!');
 
     try {
       const orderNumber = 'ADN' + Date.now().toString() + Math.random().toString(36).substr(2, 3).toUpperCase();
