@@ -87,32 +87,38 @@ const Navigation = () => {
                   </button>
 
                   {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-48 glass-card py-1 z-50">
+                    <div className="absolute right-0 mt-2 w-56 rounded-2xl py-2 z-[100]" style={{
+                      background: 'rgba(255, 255, 255, 0.95)',
+                      backdropFilter: 'blur(40px) saturate(180%)',
+                      WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15), inset 0 1px 0 0 rgba(255, 255, 255, 0.6)'
+                    }}>
                       <Link
                         to="/profile"
-                        className="block px-4 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                        className="flex items-center px-4 py-3 text-sm text-foreground hover:bg-primary/10 transition-colors rounded-lg mx-2"
                         onClick={() => setShowUserMenu(false)}
                       >
-                        <User className="w-4 h-4 inline-block mr-2" />
-                        Mein Profil
+                        <User className="w-5 h-5 mr-3" />
+                        <span className="font-medium">Mein Profil</span>
                       </Link>
                       <Link
                         to="/admin"
-                        className="block px-4 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                        className="flex items-center px-4 py-3 text-sm text-foreground hover:bg-primary/10 transition-colors rounded-lg mx-2"
                         onClick={() => setShowUserMenu(false)}
                       >
-                        <User className="w-4 h-4 inline-block mr-2" />
-                        Admin
+                        <User className="w-5 h-5 mr-3" />
+                        <span className="font-medium">Admin</span>
                       </Link>
                       <button
                         onClick={() => {
                           signOut();
                           setShowUserMenu(false);
                         }}
-                        className="block w-full text-left px-4 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                        className="flex items-center w-full text-left px-4 py-3 text-sm text-foreground hover:bg-primary/10 transition-colors rounded-lg mx-2"
                       >
-                        <LogOut className="w-4 h-4 inline-block mr-2" />
-                        Abmelden
+                        <LogOut className="w-5 h-5 mr-3" />
+                        <span className="font-medium">Abmelden</span>
                       </button>
                     </div>
                   )}
