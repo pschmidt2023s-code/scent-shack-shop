@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Share2, MessageCircle, ShoppingBag } from 'lucide-react';
+import { Share2, MessageCircle, ShoppingBag, Clock } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { useToast } from './ui/use-toast';
+import { useNavigate } from 'react-router-dom';
 import type { Perfume } from '@/types/perfume';
 
 interface WhatsAppCommerceProps {
@@ -12,6 +13,7 @@ interface WhatsAppCommerceProps {
 
 export function WhatsAppCommerce({ perfume, variant }: WhatsAppCommerceProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isSharing, setIsSharing] = useState(false);
 
   const shareToWhatsApp = () => {
@@ -57,7 +59,7 @@ export function WhatsAppCommerce({ perfume, variant }: WhatsAppCommerceProps) {
     <Card className="p-4 space-y-3">
       <div className="flex items-center gap-2 mb-2">
         <MessageCircle className="h-5 w-5 text-green-600" />
-        <h3 className="font-semibold">WhatsApp Commerce</h3>
+        <h3 className="font-semibold">WhatsApp Support</h3>
       </div>
       
       <div className="grid grid-cols-1 gap-2">
@@ -90,9 +92,14 @@ export function WhatsAppCommerce({ perfume, variant }: WhatsAppCommerceProps) {
         </Button>
       </div>
       
-      <p className="text-xs text-muted-foreground">
-        💬 Schnelle Antwortzeit: ~2 Min
-      </p>
+      <Button
+        variant="secondary"
+        onClick={() => navigate('/live-support')}
+        className="w-full justify-start gap-2 mt-2"
+      >
+        <Clock className="h-4 w-4" />
+        Live Warteschleife
+      </Button>
     </Card>
   );
 }
