@@ -5,8 +5,12 @@ import { MobileBottomNav } from '@/components/MobileBottomNav';
 import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { OrganizationSchema, WebsiteSchema } from '@/components/StructuredData';
+import { TrustBadges } from '@/components/TrustBadges';
+import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 
 const Index = () => {
+  usePerformanceMonitor();
+
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       <OrganizationSchema />
@@ -15,6 +19,7 @@ const Index = () => {
       
       <main id="main-content" role="main" aria-label="Hauptinhalt" className="pb-mobile-nav">
         <HeroSection />
+        <TrustBadges />
         <PerfumeGrid />
         <RecentlyViewed />
       </main>
