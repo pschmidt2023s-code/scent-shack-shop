@@ -30,7 +30,7 @@ serve(async (req) => {
     logStep("Stripe key verified");
 
     // Get request body
-    const { items, customerEmail, customerData, metadata } = await req.json();
+    const { items, customerEmail, customerData, metadata, successUrl, cancelUrl } = await req.json();
     logStep("Request data received", { itemsCount: items?.length, customerEmail });
 
     if (!items || items.length === 0) {
@@ -91,8 +91,8 @@ serve(async (req) => {
       customer: customerId,
       line_items: lineItems,
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/checkout-cancel`,
+      success_url: successUrl || `${req.headers.get("origin")}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: cancelUrl || `${req.headers.get("origin")}/checkout-cancel`,
       metadata: {
         ...metadata,
         customer_email: customerEmail,

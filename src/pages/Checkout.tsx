@@ -164,6 +164,8 @@ export default function Checkout() {
             })),
             customerEmail: user?.email || guestEmail,
             customerData: customerData,
+            successUrl: `${window.location.origin}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
+            cancelUrl: `${window.location.origin}/checkout-cancel`,
             metadata: {
               order_number: newOrderNumber,
               referral_code: referralCode || '',
