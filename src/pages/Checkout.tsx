@@ -183,8 +183,14 @@ export default function Checkout() {
           .update({ stripe_session_id: stripeData.sessionId })
           .eq('id', data.order_id);
 
-        // Redirect to Stripe Checkout
-        window.location.href = stripeData.url;
+        console.log('Stripe checkout URL:', stripeData.url);
+
+        // Redirect to Stripe Checkout in same window
+        if (stripeData.url) {
+          window.location.href = stripeData.url;
+        } else {
+          throw new Error('Keine Stripe Checkout URL erhalten');
+        }
         
       } else if (paymentMethod === 'paypal_checkout') {
         // Create PayPal order via edge function
