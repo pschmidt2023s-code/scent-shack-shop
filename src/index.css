@@ -281,7 +281,7 @@
   }
   
   .glass-text-dark {
-    @apply text-foreground font-medium;
+    @apply text-foreground;
   }
   
   /* Simplified stagger animations */

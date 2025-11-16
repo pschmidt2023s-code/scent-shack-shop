@@ -36,7 +36,7 @@ const Navigation = () => {
           <div className="flex justify-between items-center h-14 sm:h-16">
             <div className="flex items-center">
               <Link to="/" className="flex items-center space-x-3 nav-link group">
-                <span className="text-2xl md:text-3xl font-bold glass-text-dark group-hover:text-primary transition-colors duration-300">
+                <span className="text-2xl md:text-3xl font-bold text-foreground group-hover:text-primary transition-colors duration-300">
                   ALDENAIR
                 </span>
               </Link>
@@ -56,7 +56,7 @@ const Navigation = () => {
               {/* Cart */}
               <button
                 onClick={() => setShowCart(true)}
-                className="relative p-1.5 sm:p-2 glass-text-dark hover:text-primary transition-colors"
+                className="relative p-1.5 sm:p-2 text-foreground hover:text-primary transition-colors"
               >
                 <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 1.5M7 13l-1.5-1.5M16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM9 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
@@ -77,7 +77,7 @@ const Navigation = () => {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center space-x-1 sm:space-x-2 p-1.5 sm:p-2 glass-text-dark hover:text-primary transition-colors"
+                    className="flex items-center space-x-1 sm:space-x-2 p-1.5 sm:p-2 text-foreground hover:text-primary transition-colors"
                   >
                     <User className="w-5 h-5 sm:w-6 sm:h-6" />
                     <span className="hidden md:block text-sm truncate max-w-24">

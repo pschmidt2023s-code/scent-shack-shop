@@ -44,10 +44,10 @@ export function TrustBadges() {
               className="flex flex-col items-center text-center p-4 rounded-lg glass-card hover:shadow-lg group transition-all duration-300"
             >
               <badge.icon className="h-8 w-8 mb-2 text-luxury-gold group-hover:scale-110 transition-transform duration-300" />
-              <h3 className="text-xs sm:text-sm font-semibold mb-1 glass-text-dark">
+              <h3 className="text-xs sm:text-sm font-semibold mb-1 text-foreground">
                 {badge.title}
               </h3>
-              <p className="text-xs glass-text-dark opacity-80">
+              <p className="text-xs text-muted-foreground">
                 {badge.description}
               </p>
             </div>
