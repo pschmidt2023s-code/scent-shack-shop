@@ -115,7 +115,7 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
     <section className="py-16 glass rounded-3xl mx-4 my-8">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12 animate-fade-in-up">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-foreground via-luxury-gold to-foreground bg-[length:300%_100%] bg-clip-text text-transparent animate-shimmer">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-luxury-gold/20 via-luxury-gold to-luxury-gold/20 bg-[length:400%_100%] bg-clip-text text-transparent animate-shimmer">
             ALDENAIR Parfüm-Kollektion
           </h2>
           <p className="text-xl glass-text-dark opacity-80 max-w-2xl mx-auto leading-relaxed">
