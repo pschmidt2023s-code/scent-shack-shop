@@ -93,8 +93,8 @@ export function AdminMobileNav({ activeTab, onTabChange, onMenuClick }: AdminMob
                 </div>
                 
                 <span className={cn(
-                  "text-[11px] font-semibold transition-colors leading-tight",
-                  isActive ? "text-primary" : "text-foreground/90"
+                  "text-[11px] font-bold transition-colors leading-tight",
+                  isActive ? "text-primary" : "text-foreground"
                 )}>
                   {item.label}
                 </span>

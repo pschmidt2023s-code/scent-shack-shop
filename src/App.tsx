@@ -9,6 +9,7 @@ import { LanguageProvider } from '@/contexts/LanguageContext';
 import { Toaster } from "@/components/ui/toaster";
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ProductComparison } from '@/components/ProductComparison';
+import { MobileBottomNav } from '@/components/MobileBottomNav';
 
 const ProductDetail = React.lazy(() => import('@/pages/ProductDetail'));
 const Products = React.lazy(() => import('@/pages/Products'));
@@ -56,7 +57,7 @@ function App() {
               <ErrorBoundary>
                 <Router>
                   <ProductComparison />
-                  <div className="min-h-screen bg-background">
+                  <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
                     <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/products" element={<Suspense fallback={<LoadingSpinner />}><Products /></Suspense>} />
@@ -82,10 +83,11 @@ function App() {
                   <Route path="/contest" element={<Suspense fallback={<LoadingSpinner />}><Contest /></Suspense>} />
                   <Route path="/referral" element={<Suspense fallback={<LoadingSpinner />}><Referral /></Suspense>} />
                   <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><NotFound /></Suspense>} />
-                  </Routes>
-                </div>
-                <Toaster />
-              </Router>
+                </Routes>
+                  </div>
+                  <MobileBottomNav />
+                  <Toaster />
+                </Router>
             </ErrorBoundary>
           </CartProvider>
         </AuthProvider>
