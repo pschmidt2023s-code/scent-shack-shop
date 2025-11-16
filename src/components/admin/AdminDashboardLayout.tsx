@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { AdminSidebar } from './AdminSidebar';
+import { AdminMobileNav } from './AdminMobileNav';
 import { Card } from '@/components/ui/card';
 import { Menu } from 'lucide-react';
 
@@ -9,9 +10,10 @@ interface AdminDashboardLayoutProps {
   defaultTab?: string;
 }
 
-export function AdminDashboardLayout({ children, defaultTab = 'overview' }: AdminDashboardLayoutProps) {
+function AdminDashboardContent({ children, defaultTab = 'overview' }: AdminDashboardLayoutProps) {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [systemStatus, setSystemStatus] = useState<'online' | 'offline' | 'pause'>('online');
+  const { setOpen } = useSidebar();
 
   const statusConfig = {
     online: { color: 'bg-green-500', label: 'Online' },
@@ -20,16 +22,15 @@ export function AdminDashboardLayout({ children, defaultTab = 'overview' }: Admi
   };
 
   return (
-    <SidebarProvider defaultOpen={false}>
-      <div className="min-h-screen flex w-full glass">
-        <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-        
-        <div className="flex-1 flex flex-col pb-20 md:pb-0">
-          <div className="border-b border-border/10 glass-card sticky top-0 z-40">
+    <>
+      <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      
+      <div className="flex-1 flex flex-col pb-20 lg:pb-0">
+          <div className="border-b border-border/10 glass-card sticky top-0 z-40 rounded-b-2xl">
             <div className="container mx-auto px-4 py-3 md:py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 md:gap-3">
-                  <SidebarTrigger className="lg:hidden p-2 hover:bg-primary/10 rounded-lg transition-colors">
+                  <SidebarTrigger className="lg:hidden p-2 hover:bg-primary/10 rounded-xl transition-colors">
                     <Menu className="h-5 w-5 text-foreground" />
                   </SidebarTrigger>
                   <div>
@@ -61,6 +62,23 @@ export function AdminDashboardLayout({ children, defaultTab = 'overview' }: Admi
             </div>
           </div>
         </div>
+        
+        <AdminMobileNav 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab}
+          onMenuClick={() => setOpen(true)}
+        />
+      </>
+  );
+}
+
+export function AdminDashboardLayout({ children, defaultTab = 'overview' }: AdminDashboardLayoutProps) {
+  return (
+    <SidebarProvider defaultOpen={false}>
+      <div className="min-h-screen flex w-full glass">
+        <AdminDashboardContent defaultTab={defaultTab}>
+          {children}
+        </AdminDashboardContent>
       </div>
     </SidebarProvider>
   );
