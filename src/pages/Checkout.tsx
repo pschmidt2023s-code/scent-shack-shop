@@ -168,6 +168,7 @@ export default function Checkout() {
             cancelUrl: `${window.location.origin}/checkout-cancel`,
             metadata: {
               order_number: newOrderNumber,
+              order_id: data.order_id,
               referral_code: referralCode || '',
             }
           }
@@ -177,6 +178,12 @@ export default function Checkout() {
           console.error('Stripe Error:', stripeError);
           throw new Error(`Stripe-Zahlung fehlgeschlagen: ${stripeError.message}`);
         }
+
+        // Update order with Stripe session ID
+        await supabase
+          .from('orders')
+          .update({ stripe_session_id: stripeData.sessionId })
+          .eq('id', data.order_id);
 
         // Redirect to Stripe Checkout
         window.location.href = stripeData.url;

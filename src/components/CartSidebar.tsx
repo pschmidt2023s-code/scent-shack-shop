@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
-import CheckoutModal from './CheckoutModal';
+import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Minus, Plus, Trash2 } from 'lucide-react';
 
 interface CartSidebarProps {
@@ -13,7 +13,12 @@ interface CartSidebarProps {
 
 export function CartSidebar({ open, onOpenChange }: CartSidebarProps) {
   const { items, updateQuantity, removeFromCart, total, itemCount } = useCart();
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleCheckout = () => {
+    onOpenChange(false); // Close cart sidebar
+    navigate('/checkout'); // Navigate to checkout page
+  };
 
   return (
     <>
@@ -96,7 +101,7 @@ export function CartSidebar({ open, onOpenChange }: CartSidebarProps) {
                   <Button 
                     className="w-full" 
                     size="lg"
-                    onClick={() => setCheckoutOpen(true)}
+                    onClick={handleCheckout}
                   >
                     Zur Kasse gehen
                   </Button>
@@ -106,8 +111,6 @@ export function CartSidebar({ open, onOpenChange }: CartSidebarProps) {
           </div>
         </SheetContent>
       </Sheet>
-
-      <CheckoutModal open={checkoutOpen} onOpenChange={setCheckoutOpen} />
     </>
   );
 }
