@@ -92,14 +92,14 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
   const location = useLocation();
 
   return (
-    <Sidebar className={cn("border-r border-border/20 bg-background/95 backdrop-blur-xl", open ? "w-64" : "w-0 lg:w-20")}>
-      <div className={cn("p-4 border-b border-border/20 flex items-center justify-center bg-card/50", !open && "hidden lg:flex")}>
+    <Sidebar className={cn("hidden lg:flex border-r border-border/20 bg-background/95 backdrop-blur-xl", open ? "w-64" : "w-20")}>
+      <div className={cn("p-4 border-b border-border/20 flex items-center justify-center bg-card/50")}>
         <h2 className="font-bold text-base text-foreground">
           {open ? "Admin Dashboard" : "A"}
         </h2>
       </div>
 
-      <SidebarContent className={cn("bg-background/50", !open && "hidden lg:block")}>
+      <SidebarContent className="bg-background/50">
         {menuSections.map((section) => (
           <SidebarGroup key={section.category}>
             {open && (
