@@ -37,8 +37,8 @@ export default function AdminNew() {
   }
 
   return (
-    <AdminDashboardLayout defaultTab={activeTab}>
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+    <AdminDashboardLayout defaultTab={activeTab} onTabChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsContent value="overview" className="space-y-6">
           <SalesAnalytics />
         </TabsContent>

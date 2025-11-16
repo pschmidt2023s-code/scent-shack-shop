@@ -8,12 +8,18 @@ import { Menu } from 'lucide-react';
 interface AdminDashboardLayoutProps {
   children: React.ReactNode;
   defaultTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
-function AdminDashboardContent({ children, defaultTab = 'overview' }: AdminDashboardLayoutProps) {
+function AdminDashboardContent({ children, defaultTab = 'overview', onTabChange }: AdminDashboardLayoutProps) {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [systemStatus, setSystemStatus] = useState<'online' | 'offline' | 'pause'>('online');
   const { setOpen } = useSidebar();
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    onTabChange?.(tab);
+  };
 
   const statusConfig = {
     online: { color: 'bg-green-500', label: 'Online' },
@@ -23,7 +29,7 @@ function AdminDashboardContent({ children, defaultTab = 'overview' }: AdminDashb
 
   return (
     <>
-      <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <AdminSidebar activeTab={activeTab} onTabChange={handleTabChange} />
       
       <div className="flex-1 flex flex-col min-h-screen">
           <div className="border-b border-border/10 glass-card sticky top-0 z-40 rounded-b-2xl">
@@ -65,18 +71,18 @@ function AdminDashboardContent({ children, defaultTab = 'overview' }: AdminDashb
         
         <AdminMobileNav 
           activeTab={activeTab} 
-          onTabChange={setActiveTab}
+          onTabChange={handleTabChange}
           onMenuClick={() => setOpen(true)}
         />
       </>
   );
 }
 
-export function AdminDashboardLayout({ children, defaultTab = 'overview' }: AdminDashboardLayoutProps) {
+export function AdminDashboardLayout({ children, defaultTab = 'overview', onTabChange }: AdminDashboardLayoutProps) {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full">
-        <AdminDashboardContent defaultTab={defaultTab}>
+        <AdminDashboardContent defaultTab={defaultTab} onTabChange={onTabChange}>
           {children}
         </AdminDashboardContent>
       </div>
