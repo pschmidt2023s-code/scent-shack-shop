@@ -28,6 +28,22 @@ const ContestManagement = lazy(() =>
   }))
 );
 
+const CustomerSegmentation = lazy(() =>
+  import('@/components/admin/CustomerSegmentation').then((module) => ({
+    default: module.CustomerSegmentation,
+  }))
+);
+const MarketingCampaigns = lazy(() =>
+  import('@/components/admin/MarketingCampaigns').then((module) => ({
+    default: module.MarketingCampaigns,
+  }))
+);
+const PredictiveInventory = lazy(() =>
+  import('@/components/admin/PredictiveInventory').then((module) => ({
+    default: module.PredictiveInventory,
+  }))
+);
+
 export default function AdminNew() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
@@ -37,7 +53,7 @@ export default function AdminNew() {
   }
 
   return (
-    <AdminDashboardLayout defaultTab={activeTab}>
+    <AdminDashboardLayout activeTab={activeTab} onTabChange={setActiveTab}>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         {/* Overview */}
         <TabsContent value="overview" className="space-y-6">
@@ -140,6 +156,27 @@ export default function AdminNew() {
         {/* Orders (legacy) */}
         <TabsContent value="orders" className="space-y-6">
           <SalesAnalytics />
+        </TabsContent>
+
+        {/* Segmentation */}
+        <TabsContent value="segmentation" className="space-y-6">
+          <Suspense fallback={<TabContentLoader />}>
+            <CustomerSegmentation />
+          </Suspense>
+        </TabsContent>
+
+        {/* Campaigns */}
+        <TabsContent value="campaigns" className="space-y-6">
+          <Suspense fallback={<TabContentLoader />}>
+            <MarketingCampaigns />
+          </Suspense>
+        </TabsContent>
+
+        {/* Predictive Inventory */}
+        <TabsContent value="predictive" className="space-y-6">
+          <Suspense fallback={<TabContentLoader />}>
+            <PredictiveInventory />
+          </Suspense>
         </TabsContent>
 
         {/* Settings */}
