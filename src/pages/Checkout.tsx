@@ -343,7 +343,7 @@ export default function Checkout() {
       <div className="container mx-auto px-4 max-w-6xl">
         <Button
           variant="ghost"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/')}
           className="mb-6"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />

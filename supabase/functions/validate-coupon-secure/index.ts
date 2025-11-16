@@ -158,7 +158,8 @@ const corsHeaders = {
 };
 
 interface CouponValidationRequest {
-  code: string;
+  code?: string;
+  couponCode?: string;
   orderAmount: number;
 }
 
@@ -170,12 +171,14 @@ const handler = async (req: Request): Promise<Response> => {
 
   // Validate origin for CSRF protection
   const allowedOrigins = [
-    'https://scent-shack-shop.lovable.app',
+    'https://autoparfuem-de.lovable.app',
+    'https://8e9b04f2-784a-4e4d-aa8a-9a93b82040fa.lovableproject.com',
     'http://localhost:8080',
     'https://localhost:8080'
   ];
   
   if (!validateOrigin(req, allowedOrigins)) {
+    console.error('Invalid origin:', req.headers.get('origin'));
     return createSecurityResponse({ error: 'Invalid origin' }, 403);
   }
 
@@ -199,7 +202,9 @@ const handler = async (req: Request): Promise<Response> => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Parse and validate request body
-    const { code, orderAmount }: CouponValidationRequest = await req.json();
+    const body: CouponValidationRequest = await req.json();
+    const code = body.code || body.couponCode;
+    const orderAmount = body.orderAmount;
 
     // Enhanced input validation
     if (!code || typeof code !== 'string') {
@@ -263,9 +268,9 @@ const handler = async (req: Request): Promise<Response> => {
     // Check minimum order amount
     if (coupon.min_order_amount && orderAmount < coupon.min_order_amount) {
       return createSecurityResponse({ 
-        error: `Minimum order amount: €${(coupon.min_order_amount / 100).toFixed(2)}`,
+        error: `Minimum order amount: €${coupon.min_order_amount.toFixed(2)}`,
         valid: false,
-        minOrderAmount: coupon.min_order_amount / 100
+        minOrderAmount: coupon.min_order_amount
       }, 400);
     }
 
@@ -280,7 +285,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Calculate discount amount
     const discountAmount = coupon.discount_type === 'percentage' 
       ? Math.min(orderAmount * (coupon.discount_value / 100), orderAmount)
-      : Math.min(coupon.discount_value / 100, orderAmount); // Convert from cents
+      : Math.min(coupon.discount_value, orderAmount);
 
     // Log successful validation
     console.log('Coupon validated successfully:', sanitizeForLog({
@@ -298,7 +303,7 @@ const handler = async (req: Request): Promise<Response> => {
         code: coupon.code,
         discount_type: coupon.discount_type,
         discount_value: coupon.discount_value,
-        min_order_amount: coupon.min_order_amount / 100, // Convert to euros
+        min_order_amount: coupon.min_order_amount,
         description: coupon.description
       },
       discountAmount,

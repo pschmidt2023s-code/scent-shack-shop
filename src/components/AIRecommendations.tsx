@@ -65,20 +65,26 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
           name,
           brand,
           image,
-          product_variants!inner(price)
+          product_variants(id, name, price, in_stock)
         `)
         .neq('id', currentProductId || '')
         .limit(limit);
 
       if (products) {
-        const mapped: RecommendedProduct[] = products.map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          brand: p.brand,
-          image: p.image || '/placeholder.svg',
-          price: p.product_variants[0]?.price || 0,
-          reason: 'Basierend auf deinem Geschmack',
-        }));
+        const mapped: RecommendedProduct[] = products
+          .filter((p: any) => p.product_variants && p.product_variants.length > 0)
+          .map((p: any) => {
+            // Get first available variant
+            const variant = p.product_variants.find((v: any) => v.in_stock) || p.product_variants[0];
+            return {
+              id: p.id,
+              name: p.name,
+              brand: p.brand,
+              image: p.image || '/placeholder.svg',
+              price: variant?.price || 0,
+              reason: 'Basierend auf deinem Geschmack',
+            };
+          });
 
         setRecommendations(mapped);
         setAiReason('Diese Produkte könnten dir auch gefallen');
