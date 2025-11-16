@@ -451,7 +451,7 @@ export default function Checkout() {
                 <Button
                   onClick={handleOrderSubmit}
                   disabled={loading}
-                  className="w-full hidden lg:block"
+                  className="w-full mt-4"
                   size="lg"
                 >
                   {loading ? 'Verarbeitung...' : 'Kostenpflichtig bestellen'}
@@ -461,19 +461,6 @@ export default function Checkout() {
           </div>
         </div>
         
-        {/* Sticky Bottom Button for Mobile */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t lg:hidden z-50 shadow-lg">
-          <div className="container mx-auto max-w-6xl">
-            <Button
-              onClick={handleOrderSubmit}
-              disabled={loading}
-              className="w-full"
-              size="lg"
-            >
-              {loading ? 'Lädt...' : `Jetzt bestellen (${checkoutData.finalAmount.toFixed(2)}€)`}
-            </Button>
-          </div>
-        </div>
       </div>
     </div>
   );
