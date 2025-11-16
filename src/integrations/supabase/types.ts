@@ -1012,6 +1012,7 @@ export type Database = {
       }
       product_variants: {
         Row: {
+          cashback_percentage: number | null
           created_at: string
           description: string | null
           id: string
@@ -1029,6 +1030,7 @@ export type Database = {
           variant_number: string
         }
         Insert: {
+          cashback_percentage?: number | null
           created_at?: string
           description?: string | null
           id: string
@@ -1046,6 +1048,7 @@ export type Database = {
           variant_number: string
         }
         Update: {
+          cashback_percentage?: number | null
           created_at?: string
           description?: string | null
           id?: string
@@ -1149,6 +1152,7 @@ export type Database = {
           brand: string
           category: string
           created_at: string
+          default_cashback_percentage: number | null
           id: string
           image: string | null
           name: string
@@ -1159,6 +1163,7 @@ export type Database = {
           brand: string
           category: string
           created_at?: string
+          default_cashback_percentage?: number | null
           id: string
           image?: string | null
           name: string
@@ -1169,6 +1174,7 @@ export type Database = {
           brand?: string
           category?: string
           created_at?: string
+          default_cashback_percentage?: number | null
           id?: string
           image?: string | null
           name?: string

@@ -46,7 +46,11 @@ interface PaybackPayout {
   };
 }
 
-export function PaybackManagement() {
+interface PaybackManagementProps {
+  onUpdate?: () => void;
+}
+
+export function PaybackManagement({ onUpdate }: PaybackManagementProps = {}) {
   const [earnings, setEarnings] = useState<PaybackEarning[]>([]);
   const [payouts, setPayouts] = useState<PaybackPayout[]>([]);
   const [selectedPayout, setSelectedPayout] = useState<PaybackPayout | null>(null);
@@ -149,6 +153,7 @@ export function PaybackManagement() {
 
       toast.success(`Payback-Gutschrift ${status === 'approved' ? 'genehmigt' : 'abgelehnt'}`);
       loadData();
+      onUpdate?.();
     } catch (error) {
       console.error('Error updating earning status:', error);
       toast.error('Fehler beim Aktualisieren des Status');
@@ -193,6 +198,7 @@ export function PaybackManagement() {
       setSelectedPayout(null);
       setPayoutNotes('');
       loadData();
+      onUpdate?.();
     } catch (error) {
       console.error('Error updating payout status:', error);
       toast.error('Fehler beim Aktualisieren des Status');
