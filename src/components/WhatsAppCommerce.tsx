@@ -32,7 +32,7 @@ export function WhatsAppCommerce({ perfume, variant }: WhatsAppCommerceProps) {
   };
 
   const orderViaWhatsApp = () => {
-    const phoneNumber = '4915123456789'; // Replace with actual business number
+    const phoneNumber = '4915569057649';
     const productUrl = `${window.location.origin}/product/${perfume.id}`;
     const message = `Hallo! Ich möchte folgendes Produkt bestellen:\n\n🌟 ${perfume.name}\n💰 ${variant?.price || perfume.variants[0]?.price}€\n🔗 ${productUrl}`;
     
@@ -46,7 +46,7 @@ export function WhatsAppCommerce({ perfume, variant }: WhatsAppCommerceProps) {
   };
 
   const openWhatsAppSupport = () => {
-    const phoneNumber = '4915123456789'; // Replace with actual support number
+    const phoneNumber = '4915569057649';
     const message = `Hallo! Ich habe eine Frage zu: ${perfume.name}`;
     
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
