@@ -1,45 +1,67 @@
-const CACHE_NAME = 'aldenair-v1'
-const urlsToCache = [
+const CACHE_NAME = 'aldenair-v2'
+const STATIC_CACHE = 'aldenair-static-v2'
+const DYNAMIC_CACHE = 'aldenair-dynamic-v2'
+
+const staticAssets = [
   '/',
-  '/products',
   '/manifest.json',
-  // Add critical assets here
 ]
 
-// Install service worker
+// Install - cache static assets
 self.addEventListener('install', event => {
+  self.skipWaiting()
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache')
-        return cache.addAll(urlsToCache)
-      })
+    caches.open(STATIC_CACHE)
+      .then(cache => cache.addAll(staticAssets))
   )
 })
 
-// Fetch handler
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Return cached version or fetch from network
-        return response || fetch(event.request)
-      }
-    )
-  )
-})
-
-// Activate handler
+// Activate - clean old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName)
-          }
+    caches.keys().then(keys => 
+      Promise.all(
+        keys.filter(key => key !== STATIC_CACHE && key !== DYNAMIC_CACHE)
+          .map(key => caches.delete(key))
+      )
+    )
+  )
+  return self.clients.claim()
+})
+
+// Fetch - Network First for API, Cache First for assets
+self.addEventListener('fetch', event => {
+  const { request } = event
+  const url = new URL(request.url)
+
+  // Skip Supabase requests
+  if (url.hostname.includes('supabase.co')) {
+    return event.respondWith(fetch(request))
+  }
+
+  // Network first for HTML
+  if (request.headers.get('accept').includes('text/html')) {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          const clone = response.clone()
+          caches.open(DYNAMIC_CACHE).then(cache => cache.put(request, clone))
+          return response
+        })
+        .catch(() => caches.match(request))
+    )
+    return
+  }
+
+  // Cache first for assets
+  event.respondWith(
+    caches.match(request)
+      .then(cached => cached || fetch(request)
+        .then(response => {
+          const clone = response.clone()
+          caches.open(DYNAMIC_CACHE).then(cache => cache.put(request, clone))
+          return response
         })
       )
-    })
   )
 })
