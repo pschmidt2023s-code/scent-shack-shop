@@ -9,6 +9,10 @@ import { TrustBadges } from '@/components/TrustBadges';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 import { AIRecommendations } from '@/components/AIRecommendations';
 import { PushNotificationPrompt } from '@/components/PushNotificationPrompt';
+import { ProductComparison } from '@/components/ProductComparison';
+import { LiveActivityIndicator } from '@/components/LiveActivityIndicator';
+import { TouchOptimizations } from '@/components/mobile/TouchOptimizations';
+import { KeyboardShortcuts } from '@/components/desktop/KeyboardShortcuts';
 
 const Index = () => {
   usePerformanceMonitor();
@@ -17,6 +21,8 @@ const Index = () => {
     <div className="min-h-screen overflow-x-hidden">
       <OrganizationSchema />
       <WebsiteSchema />
+      <TouchOptimizations />
+      <KeyboardShortcuts />
       <Navigation />
       
       <main id="main-content" role="main" aria-label="Hauptinhalt" className="pb-24 md:pb-0">
@@ -29,6 +35,8 @@ const Index = () => {
       
       <Footer />
       <PushNotificationPrompt />
+      <ProductComparison />
+      <LiveActivityIndicator />
     </div>
   );
 };

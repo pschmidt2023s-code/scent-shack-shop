@@ -8,6 +8,8 @@ import { AuthModal } from './AuthModal';
 import { CartSidebar } from './CartSidebar';
 import { AdvancedSearch } from './AdvancedSearch';
 import { DarkModeToggle } from './DarkModeToggle';
+import { MegaMenu } from './desktop/MegaMenu';
+import { NotificationCenter } from './notifications/NotificationCenter';
 
 
 const Navigation = () => {
@@ -42,8 +44,9 @@ const Navigation = () => {
               </Link>
             </div>
 
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              {/* Removed customer reviews section */}
+            <div className="flex items-center space-x-2 sm:space-x-6">
+              {/* Mega Menu */}
+              <MegaMenu />
 
               {/* Advanced Search */}
               <div className="hidden lg:flex flex-1 max-w-md">
@@ -52,6 +55,9 @@ const Navigation = () => {
 
               {/* Dark Mode Toggle */}
               <DarkModeToggle />
+
+              {/* Notifications */}
+              {user && <NotificationCenter />}
 
               {/* Cart */}
               <button

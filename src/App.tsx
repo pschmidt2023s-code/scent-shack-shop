@@ -34,6 +34,7 @@ const PayPalTest = React.lazy(() => import('@/pages/PayPalTest'));
 const Contest = React.lazy(() => import('@/pages/Contest'));
 const NotFound = React.lazy(() => import('@/pages/NotFound'));
 const Referral = React.lazy(() => import('@/pages/Referral'));
+const ComparisonPage = React.lazy(() => import('@/pages/ComparisonPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -82,6 +83,7 @@ function App() {
                   <Route path="/paypal-test" element={<Suspense fallback={<LoadingSpinner />}><PayPalTest /></Suspense>} />
                   <Route path="/contest" element={<Suspense fallback={<LoadingSpinner />}><Contest /></Suspense>} />
                   <Route path="/referral" element={<Suspense fallback={<LoadingSpinner />}><Referral /></Suspense>} />
+                  <Route path="/comparison" element={<Suspense fallback={<LoadingSpinner />}><ComparisonPage /></Suspense>} />
                   <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><NotFound /></Suspense>} />
                 </Routes>
                   </div>
