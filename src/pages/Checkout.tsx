@@ -98,11 +98,12 @@ export default function Checkout() {
 
   const handleStripeCheckout = async (orderNumber: string) => {
     try {
-      console.log('🚀 STARTING STRIPE CHECKOUT');
-      console.log('📧 Email:', user?.email || guestEmail);
-      console.log('🔢 Order:', orderNumber);
+      console.log('🚀 STRIPE CHECKOUT GESTARTET');
+      console.log('Items:', checkoutData.items);
+      console.log('Email:', user?.email || guestEmail);
+      console.log('Order Number:', orderNumber);
       
-      toast.info('Weiterleitung zu Stripe...');
+      toast.loading('Stripe wird geladen...');
       
       const { data, error } = await supabase.functions.invoke('stripe-checkout', {
         body: {
@@ -112,27 +113,33 @@ export default function Checkout() {
         }
       });
 
-      console.log('📥 Response:', { data, error });
+      console.log('Stripe Response:', data);
+      console.log('Stripe Error:', error);
 
       if (error) {
-        console.error('❌ Supabase Error:', error);
-        toast.error('Fehler bei der Stripe-Verbindung');
-        throw new Error(error.message || 'Stripe-Verbindung fehlgeschlagen');
+        console.error('STRIPE FEHLER:', error);
+        toast.error(`Stripe Fehler: ${error.message}`);
+        setLoading(false);
+        return;
       }
 
-      if (!data?.url) {
-        console.error('❌ No URL:', data);
-        toast.error('Keine Zahlungs-URL erhalten');
-        throw new Error('Keine Stripe-URL erhalten');
+      if (!data || !data.url) {
+        console.error('KEINE URL:', data);
+        toast.error('Keine Stripe URL erhalten!');
+        setLoading(false);
+        return;
       }
 
-      console.log('✅ Redirecting to Stripe:', data.url);
+      console.log('✅ WEITERLEITUNG ZU:', data.url);
+      toast.success('Weiterleitung zu Stripe...');
+      
+      // Sofortige Weiterleitung
       window.location.href = data.url;
       
     } catch (error: any) {
-      console.error('❌ STRIPE ERROR:', error);
-      toast.error(error.message || 'Stripe-Checkout fehlgeschlagen');
-      throw error;
+      console.error('KRITISCHER FEHLER:', error);
+      toast.error(`Fehler: ${error.message}`);
+      setLoading(false);
     }
   };
 
@@ -201,9 +208,12 @@ export default function Checkout() {
       console.log('✅ Order items created successfully');
       console.log('💳 Payment method:', paymentMethod);
 
+      console.log('💳 Zahlungsmethode:', paymentMethod);
+
       if (paymentMethod === 'stripe') {
-        console.log('🔄 Starting Stripe checkout...');
+        console.log('🔄 STRIPE CHECKOUT WIRD AUFGERUFEN');
         await handleStripeCheckout(orderNumber);
+        return; // Wichtig: Nach Stripe-Aufruf nichts mehr machen
       } else if (paymentMethod === 'bank') {
         console.log('🏦 Redirecting to bank transfer...');
         
