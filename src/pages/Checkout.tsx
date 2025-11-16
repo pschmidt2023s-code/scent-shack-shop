@@ -121,8 +121,14 @@ export default function Checkout() {
   };
 
   const handleOrderSubmit = async () => {
-    if (!validateForm()) return;
+    console.log('=== BUTTON CLICKED ===');
+    
+    if (!validateForm()) {
+      console.log('Form validation failed');
+      return;
+    }
 
+    console.log('Form validation passed');
     setLoading(true);
 
     try {
@@ -141,13 +147,19 @@ export default function Checkout() {
         status: 'pending',
       };
 
+      console.log('Creating order in database...');
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert(orderData)
         .select()
         .single();
 
-      if (orderError) throw orderError;
+      if (orderError) {
+        console.error('Order creation error:', orderError);
+        throw orderError;
+      }
+
+      console.log('Order created:', order.id);
 
       const orderItems = checkoutData.items.map(item => ({
         order_id: order.id,
@@ -158,15 +170,24 @@ export default function Checkout() {
         total_price: (item.variant?.price || item.price) * item.quantity,
       }));
 
+      console.log('Creating order items...');
       const { error: itemsError } = await supabase
         .from('order_items')
         .insert(orderItems);
 
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error('Order items error:', itemsError);
+        throw itemsError;
+      }
+
+      console.log('Order items created successfully');
+      console.log('Payment method:', paymentMethod);
 
       if (paymentMethod === 'stripe') {
+        console.log('Starting Stripe checkout...');
         await handleStripeCheckout(orderNumber);
       } else if (paymentMethod === 'bank') {
+        console.log('Redirecting to bank transfer...');
         navigate('/checkout-bank', { 
           state: { 
             orderNumber,
@@ -176,6 +197,7 @@ export default function Checkout() {
           } 
         });
       } else if (paymentMethod === 'paypal_checkout') {
+        console.log('Starting PayPal checkout...');
         const { data: paypalData, error: paypalError } = await supabase.functions.invoke('create-paypal-payment', {
           body: {
             items: checkoutData.items,
@@ -185,14 +207,21 @@ export default function Checkout() {
           }
         });
 
-        if (paypalError) throw paypalError;
-        if (!paypalData.approvalUrl) throw new Error('PayPal approval URL missing');
+        if (paypalError) {
+          console.error('PayPal error:', paypalError);
+          throw paypalError;
+        }
+        if (!paypalData.approvalUrl) {
+          console.error('No PayPal approval URL');
+          throw new Error('PayPal approval URL missing');
+        }
         
+        console.log('Redirecting to PayPal:', paypalData.approvalUrl);
         window.location.href = paypalData.approvalUrl;
       }
       
     } catch (error: any) {
-      console.error('Order error:', error);
+      console.error('=== ORDER ERROR ===', error);
       toast.error(error.message || 'Bestellung fehlgeschlagen');
       setLoading(false);
     }
@@ -333,20 +362,20 @@ export default function Checkout() {
 
           {/* Right Column - Order Summary */}
           <div>
-            <Card className="sticky top-8">
+            <Card className="lg:sticky lg:top-8">
               <CardHeader>
                 <CardTitle>Bestellübersicht</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 pb-24 lg:pb-4">
                 {checkoutData.items.map((item, index) => (
                   <div key={index} className="flex justify-between">
-                    <div>
-                      <p className="font-medium">{item.perfume?.name || item.name}</p>
-                      <p className="text-sm text-muted-foreground">
+                    <div className="flex-1 pr-4">
+                      <p className="font-medium text-sm">{item.perfume?.name || item.name}</p>
+                      <p className="text-xs text-muted-foreground">
                         {item.variant?.name || item.selectedVariant} × {item.quantity}
                       </p>
                     </div>
-                    <p className="font-medium">
+                    <p className="font-medium text-sm whitespace-nowrap">
                       {((item.variant?.price || item.price) * item.quantity).toFixed(2)}€
                     </p>
                   </div>
@@ -355,13 +384,13 @@ export default function Checkout() {
                 <Separator />
 
                 <div className="space-y-2">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-sm">
                     <span>Zwischensumme</span>
                     <span>{checkoutData.totalAmount.toFixed(2)}€</span>
                   </div>
                   
                   {checkoutData.discountAmount > 0 && (
-                    <div className="flex justify-between text-primary">
+                    <div className="flex justify-between text-primary text-sm">
                       <span>Rabatt</span>
                       <span>-{checkoutData.discountAmount.toFixed(2)}€</span>
                     </div>
@@ -369,22 +398,41 @@ export default function Checkout() {
 
                   <Separator />
 
-                  <div className="flex justify-between text-lg font-bold">
+                  <div className="flex justify-between text-base font-bold">
                     <span>Gesamt</span>
                     <span>{checkoutData.finalAmount.toFixed(2)}€</span>
                   </div>
                 </div>
-
-                <Button
-                  onClick={handleOrderSubmit}
-                  disabled={loading}
-                  className="w-full"
-                  size="lg"
-                >
-                  {loading ? 'Verarbeitung...' : 'Kostenpflichtig bestellen'}
-                </Button>
               </CardContent>
             </Card>
+          </div>
+        </div>
+        
+        {/* Sticky Bottom Button for Mobile */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t lg:hidden z-50">
+          <div className="container mx-auto max-w-6xl">
+            <Button
+              onClick={handleOrderSubmit}
+              disabled={loading}
+              className="w-full"
+              size="lg"
+            >
+              {loading ? 'Lädt...' : `Jetzt bestellen (${checkoutData.finalAmount.toFixed(2)}€)`}
+            </Button>
+          </div>
+        </div>
+        
+        {/* Desktop Button */}
+        <div className="hidden lg:block mt-8">
+          <div className="max-w-3xl mx-auto">
+            <Button
+              onClick={handleOrderSubmit}
+              disabled={loading}
+              className="w-full"
+              size="lg"
+            >
+              {loading ? 'Verarbeitung...' : 'Kostenpflichtig bestellen'}
+            </Button>
           </div>
         </div>
       </div>
