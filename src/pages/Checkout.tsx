@@ -272,7 +272,7 @@ export default function Checkout() {
           Zurück
         </Button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-32 lg:pb-8">
           {/* Left Column - Customer Data */}
           <div className="space-y-6">
             <Card>

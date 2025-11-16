@@ -46,3 +46,9 @@ verify_jwt = false
 
 [functions.send-contest-confirmation]
 verify_jwt = false
+
+[functions.stripe-checkout]
+verify_jwt = false
+
+[functions.send-bank-transfer-email]
+verify_jwt = false
