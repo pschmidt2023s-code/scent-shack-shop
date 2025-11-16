@@ -35,19 +35,19 @@ export function TrustBadges() {
   ];
 
   return (
-    <section className="py-8 bg-muted/30">
+    <section className="py-8 glass">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {badges.map((badge) => (
             <div
               key={badge.title}
-              className="flex flex-col items-center text-center p-4 rounded-lg hover:bg-card transition-all duration-300 hover:shadow-lg group"
+              className="flex flex-col items-center text-center p-4 rounded-lg glass-card hover:shadow-lg group transition-all duration-300"
             >
               <badge.icon className="h-8 w-8 mb-2 text-luxury-gold group-hover:scale-110 transition-transform duration-300" />
-              <h3 className="text-xs sm:text-sm font-semibold mb-1 text-foreground">
+              <h3 className="text-xs sm:text-sm font-semibold mb-1 glass-text-dark">
                 {badge.title}
               </h3>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs glass-text-dark opacity-80">
                 {badge.description}
               </p>
             </div>

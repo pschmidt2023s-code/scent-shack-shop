@@ -54,13 +54,13 @@ export function HomeReviewsSection() {
   if (reviews.length === 0) return null;
 
   return (
-    <section className="py-16 bg-gradient-to-b from-background to-muted/30">
+    <section className="py-16 glass">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-gradient-luxury">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-gradient-luxury glass-text-dark">
             Was unsere Kunden sagen
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          <p className="glass-text-dark opacity-80 max-w-2xl mx-auto">
             Überzeugen Sie sich von der Qualität unserer Parfüms
           </p>
         </div>
@@ -76,7 +76,7 @@ export function HomeReviewsSection() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <p className="font-semibold text-sm">{review.reviewer_name}</p>
+                    <p className="font-semibold text-sm glass-text-dark">{review.reviewer_name}</p>
                     <div className="flex gap-0.5">
                       {Array.from({ length: 5 }).map((_, i) => (
                         <Star
@@ -89,13 +89,13 @@ export function HomeReviewsSection() {
                 </div>
                 
                 <div>
-                  <h3 className="font-semibold mb-2">{review.title}</h3>
-                  <p className="text-sm text-muted-foreground line-clamp-3">
+                  <h3 className="font-semibold mb-2 glass-text-dark">{review.title}</h3>
+                  <p className="text-sm glass-text-dark opacity-80 line-clamp-3">
                     {review.content}
                   </p>
                 </div>
 
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs glass-text-dark opacity-70">
                   {new Date(review.created_at).toLocaleDateString('de-DE', {
                     day: '2-digit',
                     month: 'long',
