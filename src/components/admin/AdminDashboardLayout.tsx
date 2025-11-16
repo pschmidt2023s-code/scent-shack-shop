@@ -25,7 +25,7 @@ function AdminDashboardContent({ children, defaultTab = 'overview' }: AdminDashb
     <>
       <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
       
-      <div className="flex-1 flex flex-col pb-20 lg:pb-0">
+      <div className="flex-1 flex flex-col min-h-screen">
           <div className="border-b border-border/10 glass-card sticky top-0 z-40 rounded-b-2xl">
             <div className="container mx-auto px-4 py-3 md:py-4">
               <div className="flex items-center justify-between">
@@ -56,7 +56,7 @@ function AdminDashboardContent({ children, defaultTab = 'overview' }: AdminDashb
             </div>
           </div>
 
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto pb-24 lg:pb-6">
             <div className="container mx-auto px-4 py-6">
               {children}
             </div>
