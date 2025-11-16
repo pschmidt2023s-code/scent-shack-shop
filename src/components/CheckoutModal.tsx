@@ -21,22 +21,16 @@ export default function CheckoutModal({ open, onOpenChange }) {
     setLoading(true);
     try {
       const { data, error } = await supabase.from('orders').insert({ 
-  
-  user_id: user?.id, 
-  total: finalAmount,
-  items: items,
-}).select();
-        }
-      });
+        user_id: user.id, 
+        total_amount: total,
+        status: 'pending'
+      }).select();
 
       if (error) throw error;
 
-      if (data?.url) {
-        window.open(data.url, '_blank');
-        onOpenChange(false);
-      } else {
-        throw new Error("Keine Checkout-URL erhalten");
-      }
+      toast.success("Bestellung wurde erstellt");
+      clearCart();
+      onOpenChange(false);
     } catch (error) {
       console.error(error);
       toast.error("Fehler beim Checkout");
