@@ -78,19 +78,19 @@ serve(async (req) => {
 
     console.log("Line items created:", lineItems.length);
 
-    // Get origin from request headers - EXACTLY like create-stripe-checkout
-    const origin = req.headers.get("origin");
-    console.log("Origin:", origin);
+    // Get origin from request headers
+    const origin = req.headers.get("origin") || "https://8e9b04f2-784a-4e4d-aa8a-9a93b82040fa.lovableproject.com";
+    console.log("Using origin:", origin);
 
-    // Create checkout session - NO PLACEHOLDER in URL
+    // Create checkout session with payment_method_types
     const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
       customer: customerId,
       line_items: lineItems,
       mode: "payment",
-      success_url: `${origin}/checkout-success`,
-      cancel_url: `${origin}/checkout-cancel`,
+      success_url: origin + "/checkout-success?session_id={CHECKOUT_SESSION_ID}",
+      cancel_url: origin + "/checkout-cancel",
       metadata: {
-        ...metadata,
         customer_email: customerEmail,
         order_number: metadata?.order_number || '',
         order_id: metadata?.order_id || '',
@@ -112,6 +112,7 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("ERROR:", error.message);
+    console.error("Full error:", error);
     return new Response(
       JSON.stringify({ error: error.message }), 
       {
