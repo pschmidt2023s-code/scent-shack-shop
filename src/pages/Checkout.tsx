@@ -86,7 +86,10 @@ export default function Checkout() {
 
   const handleStripeCheckout = async (orderNumber: string) => {
     try {
-      console.log('Starting Stripe checkout...');
+      console.log('=== STRIPE CHECKOUT START ===');
+      console.log('Order number:', orderNumber);
+      console.log('Customer email:', user?.email || guestEmail);
+      console.log('Items:', checkoutData.items);
       
       const { data, error } = await supabase.functions.invoke('stripe-checkout', {
         body: {
@@ -96,20 +99,24 @@ export default function Checkout() {
         }
       });
 
-      if (error) throw error;
+      console.log('Supabase response:', { data, error });
 
-      console.log('Stripe response:', data);
-
-      if (!data.url) {
-        throw new Error('No checkout URL received from Stripe');
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
       }
 
-      // Redirect to Stripe Checkout
+      if (!data?.url) {
+        console.error('No URL in response:', data);
+        throw new Error('Keine Stripe-URL erhalten');
+      }
+
+      console.log('Redirecting to:', data.url);
       window.location.href = data.url;
       
     } catch (error: any) {
-      console.error('Stripe checkout error:', error);
-      throw new Error(`Stripe-Zahlung fehlgeschlagen: ${error.message}`);
+      console.error('=== STRIPE ERROR ===', error);
+      throw error;
     }
   };
 
