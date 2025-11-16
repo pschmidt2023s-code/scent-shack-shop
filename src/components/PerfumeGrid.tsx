@@ -8,26 +8,14 @@ import { usePerfumeRatings } from '@/hooks/usePerfumeRatings';
 import { Package } from 'lucide-react';
 
 export function PerfumeGrid() {
-  console.log('PerfumeGrid: Component rendering');
-  
   const [filter, setFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
-  // Disable ratings temporarily to debug
-  // const { getRatingForPerfume, loading: ratingsLoading } = usePerfumeRatings(perfumes.map(p => p.id));
-
-  console.log('PerfumeGrid: Component rendering');
-  console.log('PerfumeGrid: Perfumes data:', perfumes);
-  console.log('PerfumeGrid: Total perfumes:', perfumes.length);
 
   const categories = ['all', '50ML Bottles', 'Proben', 'Autoparfüm'];
 
   const filteredPerfumes = perfumes.filter(perfume => 
     filter === 'all' || perfume.category === filter
   );
-
-  console.log('PerfumeGrid: Filter applied:', filter);
-  console.log('PerfumeGrid: Filtered perfumes:', filteredPerfumes);
-  console.log('PerfumeGrid: Filtered count:', filteredPerfumes.length);
 
   const sortedPerfumes = [...filteredPerfumes].sort((a, b) => {
     switch (sortBy) {
@@ -36,7 +24,6 @@ export function PerfumeGrid() {
       case 'price-high':
         return Math.max(...b.variants.map(v => v.price)) - Math.max(...a.variants.map(v => v.price));
       case 'rating':
-        // Use static ratings for now
         const avgRatingA = a.variants.reduce((sum, v) => sum + (v.rating || 0), 0) / a.variants.length;
         const avgRatingB = b.variants.reduce((sum, v) => sum + (v.rating || 0), 0) / b.variants.length;
         return avgRatingB - avgRatingA;
@@ -45,10 +32,6 @@ export function PerfumeGrid() {
         return a.name.localeCompare(b.name);
     }
   });
-
-  console.log('PerfumeGrid: Sorted perfumes:', sortedPerfumes);
-  console.log('PerfumeGrid: Sorted count:', sortedPerfumes.length);
-  console.log('PerfumeGrid: Sort by:', sortBy);
 
   return (
     <section className="py-16 bg-gradient-to-b from-background via-background to-muted/20">
