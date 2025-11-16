@@ -126,14 +126,21 @@ export default function Checkout() {
   };
 
   const handleOrderSubmit = async () => {
-    console.log('=== BUTTON CLICKED ===');
+    alert('BUTTON WURDE GEKLICKT!'); // SUPER OFFENSICHTLICHER TEST
+    console.log('🔥🔥🔥 BUTTON CLICKED 🔥🔥🔥');
+    console.log('Payment Method:', paymentMethod);
+    console.log('Customer Data:', customerData);
+    console.log('Guest Email:', guestEmail);
+    console.log('User:', user);
     
     if (!validateForm()) {
-      console.log('Form validation failed');
+      console.log('❌ Form validation failed');
+      alert('FORM VALIDATION FAILED!');
       return;
     }
 
-    console.log('Form validation passed');
+    alert('FORM VALIDATION PASSED!');
+    console.log('✅ Form validation passed');
     setLoading(true);
 
     try {
@@ -454,10 +461,15 @@ export default function Checkout() {
                 </div>
 
                 <Button
-                  onClick={handleOrderSubmit}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    console.log('🎯 DIRECT CLICK EVENT');
+                    handleOrderSubmit();
+                  }}
                   disabled={loading}
                   className="w-full mt-4"
                   size="lg"
+                  type="button"
                 >
                   {loading ? 'Verarbeitung...' : 'Kostenpflichtig bestellen'}
                 </Button>
