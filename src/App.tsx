@@ -9,7 +9,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { LiveChat } from '@/components/LiveChat';
 import { PageTransition } from '@/components/PageTransition';
 import { AnimatedLogo } from '@/components/AnimatedLogo';
-import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -271,7 +270,6 @@ function App() {
             <CartProvider>
               <Router>
                 <div className="min-h-screen bg-background transition-all duration-300">
-                  <Breadcrumbs />
                   <AnimatedRoutes />
                   <Toaster />
                   <LiveChat />
