@@ -20,18 +20,12 @@ export default function CheckoutModal({ open, onOpenChange }) {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
-        body: {
-          items: items.map((item) => ({
-            perfume: { name: item.perfume.name },
-            variant: { 
-              name: item.variant.name,
-              price: item.variant.price 
-            },
-            quantity: item.quantity
-          })),
-          customerEmail: user.email,
-          orderNumber: `ORD-${Date.now()}`
+      const { data, error } = await supabase.from('orders').insert({ 
+  
+  user_id: user?.id, 
+  total: finalAmount,
+  items: items,
+}).select();
         }
       });
 
