@@ -29,21 +29,27 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
   const [loading, setLoading] = useState(true);
   const [aiReason, setAiReason] = useState('');
 
+  // Don't show recommendations for guests
+  if (!user) {
+    return null;
+  }
+
   useEffect(() => {
-    // Debounce recommendations to avoid excessive API calls
     const timer = setTimeout(() => {
       fetchRecommendations();
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [user, currentProductId]);
+  }, [user?.id, currentProductId]);
 
   const fetchRecommendations = async () => {
+    if (!user) return;
+    
     try {
       setLoading(true);
 
-      // Track current product view (only if user is logged in)
-      if (user && currentProductId) {
+      // Track current product view
+      if (currentProductId) {
         await supabase.from('product_views').insert({
           user_id: user.id,
           product_id: currentProductId,
@@ -51,51 +57,75 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
         });
       }
 
-      // Get different products (not just variants of the same product)
-      const { data: products, error } = await supabase
-        .from('products')
-        .select(`
-          id,
-          name,
-          brand,
-          image,
-          category,
-          product_variants(id, name, price, in_stock, original_price)
-        `)
-        .neq('id', currentProductId || '')
-        .limit(limit);
+      // Call AI recommendation function
+      const { data: aiData, error: aiError } = await supabase.functions.invoke(
+        'ai-product-recommendations',
+        {
+          body: {
+            userId: user.id,
+            currentProductId: currentProductId || null,
+            limit,
+          },
+        }
+      );
 
-      if (error) {
-        console.error('Error fetching products:', error);
+      if (aiError) {
+        console.error('AI recommendation error:', aiError);
+        // Fallback to basic recommendations
+        await fetchBasicRecommendations();
         return;
       }
 
-      if (products && products.length > 0) {
-        const mapped: RecommendedProduct[] = products
-          .filter((p: any) => p.product_variants && p.product_variants.length > 0)
-          .map((p: any) => {
-            // Get first available variant or first variant
-            const variants = p.product_variants || [];
-            const variant = variants.find((v: any) => v.in_stock) || variants[0];
-            
-            return {
-              id: p.id,
-              name: p.name,
-              brand: p.brand,
-              image: p.image || '/placeholder.svg',
-              price: variant?.price || 0,
-              reason: 'Basierend auf deinem Geschmack',
-            };
-          });
-
-        setRecommendations(mapped);
-        setAiReason('Diese Produkte könnten dir auch gefallen');
+      if (aiData?.recommendations && aiData.recommendations.length > 0) {
+        setRecommendations(aiData.recommendations);
+        setAiReason(aiData.reason || 'KI-basierte Empfehlungen für dich');
+      } else {
+        await fetchBasicRecommendations();
       }
     } catch (error) {
-      console.error('Error fetching recommendations:', error);
+      console.error('Error fetching AI recommendations:', error);
+      await fetchBasicRecommendations();
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchBasicRecommendations = async () => {
+    // Fallback: Get products based on category/brand
+    const { data: products, error } = await supabase
+      .from('products')
+      .select(`
+        id,
+        name,
+        brand,
+        image,
+        category,
+        product_variants(id, name, price, in_stock)
+      `)
+      .neq('id', currentProductId || '')
+      .limit(limit);
+
+    if (error || !products) {
+      console.error('Error fetching basic recommendations:', error);
+      return;
+    }
+
+    const mapped: RecommendedProduct[] = products
+      .filter((p: any) => p.product_variants?.length > 0)
+      .map((p: any) => {
+        const variant = p.product_variants.find((v: any) => v.in_stock) || p.product_variants[0];
+        return {
+          id: p.id,
+          name: p.name,
+          brand: p.brand,
+          image: p.image || '/placeholder.svg',
+          price: variant?.price || 0,
+          reason: 'Könnte dir gefallen',
+        };
+      });
+
+    setRecommendations(mapped);
+    setAiReason('Empfehlungen basierend auf deinem Profil');
   };
 
   if (recommendations.length === 0 && !loading) return null;
