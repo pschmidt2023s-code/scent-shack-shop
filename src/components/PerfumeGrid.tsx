@@ -34,13 +34,13 @@ export function PerfumeGrid() {
   });
 
   return (
-    <section className="py-16 bg-gradient-to-b from-background via-background to-muted/20">
+    <section className="py-16 glass">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12 animate-fade-in-up">
           <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-foreground via-luxury-gold to-foreground bg-clip-text text-transparent animate-shimmer">
             ALDENAIR Parfüm-Kollektion
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xl glass-text-dark opacity-80 max-w-2xl mx-auto leading-relaxed">
             Entdecke exquisite Düfte der Marke ALDENAIR - Prestige Flakon für jeden Geschmack
           </p>
         </div>

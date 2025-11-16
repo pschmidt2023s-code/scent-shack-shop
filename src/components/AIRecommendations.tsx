@@ -88,15 +88,15 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
   if (!user || recommendations.length === 0) return null;
 
   return (
-    <section className="py-12 bg-gradient-to-b from-background to-muted/20">
+    <section className="py-12 glass">
       <div className="container mx-auto px-4">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center glass-card">
             <Sparkles className="w-5 h-5 text-primary animate-pulse" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold">KI-Empfehlungen für dich</h2>
-            <p className="text-sm text-muted-foreground">{aiReason}</p>
+            <h2 className="text-2xl font-bold glass-text-dark">KI-Empfehlungen für dich</h2>
+            <p className="text-sm glass-text-dark opacity-80">{aiReason}</p>
           </div>
         </div>
 

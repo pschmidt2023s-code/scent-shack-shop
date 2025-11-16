@@ -64,11 +64,11 @@ export function RecentlyViewed() {
   }
 
   return (
-    <section className="py-12 bg-muted/30">
+    <section className="py-12 glass">
       <div className="container mx-auto px-4">
         <div className="flex items-center gap-2 mb-6">
-          <Clock className="w-5 h-5 text-muted-foreground" />
-          <h2 className="text-2xl font-bold">Kürzlich angesehen</h2>
+          <Clock className="w-5 h-5 text-primary" />
+          <h2 className="text-2xl font-bold glass-text-dark">Kürzlich angesehen</h2>
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
