@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@17.6.0";
+import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
@@ -7,52 +7,44 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[CREATE-STRIPE-PAYMENT] ${step}${detailsStr}`);
-};
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-  );
-
   try {
-    logStep("Function started");
-
+    console.log("=== CREATE STRIPE PAYMENT ===");
+    
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
-    logStep("Stripe key verified");
+    if (!stripeKey) {
+      throw new Error("STRIPE_SECRET_KEY not configured");
+    }
 
-    // Get request body
-    const { items, customerEmail, customerData, metadata, successUrl, cancelUrl } = await req.json();
-    logStep("Request data received", { itemsCount: items?.length, customerEmail });
+    const { items, customerEmail, customerData, metadata } = await req.json();
+    console.log("Request data:", { itemCount: items?.length, customerEmail });
 
     if (!items || items.length === 0) {
       throw new Error("No items provided");
     }
-
     if (!customerEmail) {
       throw new Error("Customer email is required");
     }
 
-    // Initialize Stripe with older stable version
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" });
+    const stripe = new Stripe(stripeKey, { 
+      apiVersion: "2023-10-16",
+    });
 
-    // Check if customer exists
-    const customers = await stripe.customers.list({ email: customerEmail, limit: 1 });
-    let customerId;
+    // Check for existing customer
+    const customers = await stripe.customers.list({ 
+      email: customerEmail, 
+      limit: 1 
+    });
     
+    let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
-      logStep("Found existing customer", { customerId });
+      console.log("Found existing customer:", customerId);
     } else {
-      // Create new customer
       const newCustomer = await stripe.customers.create({
         email: customerEmail,
         name: customerData?.firstName && customerData?.lastName 
@@ -67,54 +59,50 @@ serve(async (req) => {
         } : undefined,
       });
       customerId = newCustomer.id;
-      logStep("Created new customer", { customerId });
+      console.log("Created new customer:", customerId);
     }
 
-    // Convert cart items to Stripe line items
+    // Build line items
     const lineItems = items.map((item: any) => ({
       price_data: {
         currency: 'eur',
         product_data: {
-          name: item.name || item.variant?.name || 'Produkt',
-          description: item.description || item.variant?.description || undefined,
+          name: item.name || 'Produkt',
+          description: item.description || undefined,
           images: item.image ? [item.image] : undefined,
         },
-        unit_amount: Math.round((item.price || item.variant?.price || 0) * 100), // Convert to cents
+        unit_amount: Math.round((item.price || 0) * 100),
       },
       quantity: item.quantity || 1,
     }));
 
-    logStep("Line items prepared", { lineItemsCount: lineItems.length });
+    console.log("Line items created:", lineItems.length);
 
-    // Validate URLs
-    if (!successUrl || !cancelUrl) {
-      throw new Error("Success URL and Cancel URL are required");
-    }
+    // Get origin from request headers
+    const origin = req.headers.get("origin") || "https://8e9b04f2-784a-4e4d-aa8a-9a93b82040fa.lovableproject.com";
+    console.log("Using origin:", origin);
 
-    // Clean URLs - Stripe will append session_id automatically in newer API versions
-    const cleanSuccessUrl = successUrl.split('?')[0];
-    
-    logStep("Creating Stripe Checkout Session", { successUrl: cleanSuccessUrl, cancelUrl });
-
-    // Create Stripe Checkout Session
+    // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: lineItems,
       mode: "payment",
-      success_url: `${cleanSuccessUrl}?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: cancelUrl,
+      success_url: `${origin}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/checkout-cancel`,
       metadata: {
         ...metadata,
         customer_email: customerEmail,
         order_number: metadata?.order_number || '',
       },
-      shipping_address_collection: {
-        allowed_countries: ['DE', 'AT', 'CH'],
+      payment_intent_data: {
+        metadata: {
+          order_id: metadata?.order_id || '',
+          order_number: metadata?.order_number || '',
+        },
       },
-      billing_address_collection: 'required',
     });
 
-    logStep("Checkout session created", { sessionId: session.id, url: session.url });
+    console.log("Session created:", session.id);
 
     return new Response(
       JSON.stringify({ 
@@ -127,10 +115,9 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR", { message: errorMessage });
+    console.error("ERROR:", error.message);
     return new Response(
-      JSON.stringify({ error: errorMessage }), 
+      JSON.stringify({ error: error.message }), 
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
