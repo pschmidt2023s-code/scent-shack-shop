@@ -74,17 +74,17 @@ export function MobileBottomNav() {
   return (
     <>
       {/* Spacer to prevent content from being hidden behind the nav */}
-      <div className="h-16 md:hidden" aria-hidden="true" />
+      <div className="h-18 md:hidden" aria-hidden="true" />
       
       <nav 
-        className="fixed bottom-0 left-0 right-0 z-[999] md:hidden glass-nav rounded-t-[2rem]"
+        className="fixed bottom-0 left-0 right-0 z-[9999] md:hidden glass-nav rounded-t-[2rem]"
         style={{ 
           paddingBottom: 'max(env(safe-area-inset-bottom), 8px)',
           paddingTop: '8px'
         }}
       >
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
-        <div className="grid grid-cols-5 h-14 px-2">
+        <div className="grid grid-cols-5 h-16 px-2">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon
             const isActive = location.pathname === item.activeHref || 
@@ -115,7 +115,7 @@ export function MobileBottomNav() {
                   )}
                 >
                   <div className="relative">
-                    <Icon className="w-5 h-5" strokeWidth={2.5} />
+                    <Icon className="w-6 h-6" strokeWidth={2.5} />
                     
                     {item.showBadge && itemCount > 0 && (
                       <Badge 
@@ -128,7 +128,7 @@ export function MobileBottomNav() {
                   </div>
                   
                   <span className={cn(
-                    "text-[9px] font-medium transition-colors leading-tight",
+                    "text-[10px] font-medium transition-colors leading-tight",
                     isActive ? "text-primary" : "text-foreground"
                   )}>
                     {item.label}
@@ -150,7 +150,7 @@ export function MobileBottomNav() {
                 )}
               >
                 <div className="relative">
-                  <Icon className="w-5 h-5" strokeWidth={2.5} />
+                  <Icon className="w-6 h-6" strokeWidth={2.5} />
                   
                   {item.label === 'Favoriten' && favoritesCount > 0 && (
                     <Badge 
@@ -163,7 +163,7 @@ export function MobileBottomNav() {
                 </div>
                 
                 <span className={cn(
-                  "text-[9px] font-medium transition-colors leading-tight",
+                  "text-[10px] font-medium transition-colors leading-tight",
                   isActive ? "text-primary" : "text-foreground"
                 )}>
                   {item.label}

@@ -43,7 +43,7 @@ export default function Profile() {
   return (
     <>
       <Navigation />
-      <div className="min-h-screen glass">
+      <div className="min-h-screen glass pb-20 md:pb-0">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-6xl mx-auto">
             <Button 

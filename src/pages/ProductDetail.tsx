@@ -90,7 +90,7 @@ const ProductDetail = () => {
   const variantRating = selectedVariant ? getRatingForVariant(perfume!.id, selectedVariant.id) : null;
 
   return (
-    <div className="min-h-screen glass">
+    <div className="min-h-screen glass pb-20 md:pb-0">
       <Navigation />
       
       <main className="container mx-auto px-4 py-8">

@@ -73,7 +73,7 @@ export default function Favorites() {
 
   if (loading) {
     return (
-    <div className="min-h-screen glass">
+    <div className="min-h-screen glass pb-20 md:pb-0">
         <Navigation />
         <div className="container mx-auto px-4 py-16">
           <LoadingSpinner />
@@ -85,7 +85,7 @@ export default function Favorites() {
   }
 
   return (
-    <div className="min-h-screen glass">
+    <div className="min-h-screen glass pb-20 md:pb-0">
       <Navigation />
       
       <main className="container mx-auto px-4 py-8">
