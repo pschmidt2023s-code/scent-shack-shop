@@ -46,7 +46,7 @@ export default function NewsletterManagement() {
         .order('subscribed_at', { ascending: false });
 
       if (!subscribersError) {
-        setSubscribers(subscribersData || []);
+        setSubscribers((subscribersData || []) as any);
       }
     } catch (error) {
       console.error('Error loading newsletter data:', error);

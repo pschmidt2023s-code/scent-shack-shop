@@ -108,12 +108,12 @@ export function PaybackSystem() {
     try {
       const { error } = await supabase
         .from('payback_payouts')
-        .insert({
-          user_id: user?.id,
+        .insert([{
+          user_id: user?.id || '',
           amount: parseFloat(payoutAmount),
           bank_details: bankDetails,
           status: 'requested'
-        });
+        }]);
 
       if (error) throw error;
 
