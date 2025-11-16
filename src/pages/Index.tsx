@@ -14,12 +14,12 @@ const Index = () => {
   usePerformanceMonitor();
 
   return (
-    <div className="min-h-screen glass overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-background via-background to-muted/20">
       <OrganizationSchema />
       <WebsiteSchema />
       <Navigation />
       
-      <main id="main-content" role="main" aria-label="Hauptinhalt" className="pb-mobile-nav">
+      <main id="main-content" role="main" aria-label="Hauptinhalt" className="pb-24 md:pb-0">
         <HeroSection />
         <TrustBadges />
         <PerfumeGrid />
