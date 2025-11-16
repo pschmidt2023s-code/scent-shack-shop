@@ -33,6 +33,9 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'bank' | 'paypal_checkout'>('stripe');
   const [guestEmail, setGuestEmail] = useState('');
   const [referralCode, setReferralCode] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
   const [customerData, setCustomerData] = useState({
     firstName: '',
     lastName: '',
@@ -66,6 +69,57 @@ export default function Checkout() {
 
   const handleInputChange = (field: string, value: string) => {
     setCustomerData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const validateCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast.error('Bitte geben Sie einen Gutscheincode ein');
+      return;
+    }
+
+    setCouponLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-coupon-secure', {
+        body: {
+          couponCode: couponCode.trim(),
+          orderAmount: checkoutData.totalAmount
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.valid) {
+        setAppliedCoupon(data.coupon);
+        toast.success(`Gutschein "${data.coupon.code}" angewendet! ${data.coupon.discount_type === 'percentage' ? data.coupon.discount_value + '%' : data.coupon.discount_value + '€'} Rabatt`);
+      } else {
+        toast.error(data.error || 'Ungültiger Gutscheincode');
+      }
+    } catch (error: any) {
+      console.error('Coupon validation error:', error);
+      toast.error('Fehler beim Validieren des Gutscheins');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    toast.info('Gutschein entfernt');
+  };
+
+  const calculateFinalAmount = () => {
+    let amount = checkoutData.finalAmount;
+    
+    if (appliedCoupon) {
+      if (appliedCoupon.discount_type === 'percentage') {
+        amount -= (checkoutData.totalAmount * appliedCoupon.discount_value / 100);
+      } else {
+        amount -= appliedCoupon.discount_value;
+      }
+    }
+    
+    return Math.max(0, amount);
   };
 
   const validateForm = () => {
@@ -440,6 +494,35 @@ export default function Checkout() {
 
                 <Separator />
 
+                <div className="space-y-3 mb-4">
+                  <Label htmlFor="couponCode" className="text-sm font-medium">Gutscheincode</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="couponCode"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      placeholder="GUTSCHEIN10"
+                      disabled={!!appliedCoupon}
+                      onKeyDown={(e) => e.key === 'Enter' && validateCoupon()}
+                    />
+                    {!appliedCoupon ? (
+                      <Button 
+                        onClick={validateCoupon} 
+                        disabled={couponLoading || !couponCode.trim()}
+                        variant="outline"
+                      >
+                        {couponLoading ? 'Prüfe...' : 'Anwenden'}
+                      </Button>
+                    ) : (
+                      <Button onClick={removeCoupon} variant="destructive">
+                        Entfernen
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <Separator />
+
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Zwischensumme</span>
@@ -448,8 +531,18 @@ export default function Checkout() {
                   
                   {checkoutData.discountAmount > 0 && (
                     <div className="flex justify-between text-primary text-sm">
-                      <span>Rabatt</span>
+                      <span>Rabatt (Mitglied)</span>
                       <span>-{checkoutData.discountAmount.toFixed(2)}€</span>
+                    </div>
+                  )}
+
+                  {appliedCoupon && (
+                    <div className="flex justify-between text-green-600 dark:text-green-400 text-sm font-medium">
+                      <span>Gutschein ({appliedCoupon.code})</span>
+                      <span>-{appliedCoupon.discount_type === 'percentage' 
+                        ? (checkoutData.totalAmount * appliedCoupon.discount_value / 100).toFixed(2)
+                        : appliedCoupon.discount_value.toFixed(2)}€
+                      </span>
                     </div>
                   )}
 
@@ -457,7 +550,7 @@ export default function Checkout() {
 
                   <div className="flex justify-between text-base font-bold">
                     <span>Gesamt</span>
-                    <span>{checkoutData.finalAmount.toFixed(2)}€</span>
+                    <span>{calculateFinalAmount().toFixed(2)}€</span>
                   </div>
                 </div>
 

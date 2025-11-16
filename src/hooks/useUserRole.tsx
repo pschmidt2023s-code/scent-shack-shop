@@ -43,8 +43,17 @@ export function useUserRole() {
           console.error('Error fetching user role:', roleError);
         }
 
-        // For now, we'll simulate role logic based on user metadata or order history
-        // In a real implementation, you'd have proper role assignment logic
+        // Check loyalty points for automatic tier upgrade
+        const { data: loyaltyData, error: loyaltyError } = await supabase
+          .from('loyalty_points')
+          .select('lifetime_points, tier')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (loyaltyError) {
+          console.error('Error fetching loyalty data:', loyaltyError);
+        }
+
         let userRole: UserRole = 'user';
         
         // Check newsletter subscription - only if authenticated
@@ -59,18 +68,23 @@ export function useUserRole() {
         setIsNewsletterSubscriber(isSubscriber);
 
         // Role assignment based on database data
-        // Check if user has admin role in database
+        // Admin role overrides everything
         if (roleData?.role === 'admin') {
           userRole = 'premium';
         } else {
-          // Check newsletter subscription for loyal status
-          if (isSubscriber) {
+          // Automatisches Tier-Upgrade basierend auf Loyalty Points
+          // Gold/Platinum Tier = Premium Kunde
+          if (loyaltyData && (loyaltyData.tier === 'gold' || loyaltyData.tier === 'platinum')) {
+            userRole = 'premium';
+          }
+          // Silver Tier oder Newsletter = Loyal Kunde
+          else if ((loyaltyData && loyaltyData.tier === 'silver') || isSubscriber) {
             userRole = 'loyal';
           }
-          
-          // TODO: Add logic for premium role based on order history, spending, etc.
-          // For now, users start as 'user' and can become 'loyal' through newsletter
-          // Premium status would be assigned through admin or based on purchase history
+          // Bronze Tier oder kein Tier = User
+          else {
+            userRole = 'user';
+          }
         }
         
         setRole(userRole);
