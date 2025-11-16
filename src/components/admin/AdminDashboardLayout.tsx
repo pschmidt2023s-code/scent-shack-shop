@@ -30,6 +30,9 @@ function AdminDashboardContent({ children, defaultTab = 'overview' }: AdminDashb
             <div className="container mx-auto px-4 py-3 md:py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 md:gap-3">
+                  <SidebarTrigger className="hidden lg:flex p-2 hover:bg-primary/10 rounded-xl transition-colors">
+                    <Menu className="h-5 w-5 text-foreground" />
+                  </SidebarTrigger>
                   <div>
                     <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground">Admin Dashboard</h1>
                     <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">Verwaltungssystem für ALDENAIR</p>
@@ -71,7 +74,7 @@ function AdminDashboardContent({ children, defaultTab = 'overview' }: AdminDashb
 
 export function AdminDashboardLayout({ children, defaultTab = 'overview' }: AdminDashboardLayoutProps) {
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full">
         <AdminDashboardContent defaultTab={defaultTab}>
           {children}

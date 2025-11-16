@@ -36,9 +36,9 @@ const NAV_ITEMS = [
     icon: BarChart3
   },
   {
-    value: 'menu',
-    label: 'Menü',
-    icon: Menu,
+    value: 'settings',
+    label: 'Mehr',
+    icon: Settings,
     isAction: true
   }
 ];
@@ -93,7 +93,7 @@ export function AdminMobileNav({ activeTab, onTabChange, onMenuClick }: AdminMob
                 </div>
                 
                 <span className={cn(
-                  "text-[11px] font-bold transition-colors leading-tight",
+                  "text-[11px] font-extrabold transition-colors leading-tight",
                   isActive ? "text-primary" : "text-foreground"
                 )}>
                   {item.label}

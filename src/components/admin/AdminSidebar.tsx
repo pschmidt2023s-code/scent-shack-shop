@@ -92,7 +92,7 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
   const location = useLocation();
 
   return (
-    <Sidebar className={cn("hidden lg:flex border-r border-border/20 bg-background/95 backdrop-blur-xl", open ? "w-64" : "w-20")}>
+    <Sidebar className={cn("hidden lg:flex border-r border-border/20 bg-background/95 backdrop-blur-xl", open ? "w-64" : "w-16")}>
       <div className={cn("p-4 border-b border-border/20 flex items-center justify-center bg-card/50")}>
         <h2 className="font-bold text-base text-foreground">
           {open ? "Admin Dashboard" : "A"}
