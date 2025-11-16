@@ -27,22 +27,20 @@ const QuickViewModal = ({ open, onClose, product }: QuickViewModalProps) => {
         size: product.size,
         variants: [{
           id: product.variant_id,
+          number: product.variant_id,
           name: product.name,
+          description: product.description || "",
           price: product.price,
           inStock: product.in_stock,
-          product_id: product.id,
-          variant_number: product.variant_id,
-          stock_quantity: 10,
         }],
       },
       {
         id: product.variant_id,
+        number: product.variant_id,
         name: product.name,
+        description: product.description || "",
         price: product.price,
         inStock: product.in_stock,
-        product_id: product.id,
-        variant_number: product.variant_id,
-        stock_quantity: 10,
       }
     );
     toast.success("Produkt zum Warenkorb hinzugefügt");

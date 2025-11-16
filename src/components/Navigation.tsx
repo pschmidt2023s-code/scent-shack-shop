@@ -1,13 +1,6 @@
-          <Link to="/partner" className="text-sm font-medium hover:text-primary transition-colors">
-            Partner
-          </Link>
-          <Link 
-            to="/parfum-finder" 
-            className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-2"
-          >
-            <Sparkles className="w-4 h-4" />
-            Parfüm Finder
-          </Link>
+import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import { User, ChevronDown, LogOut, Sparkles } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +11,6 @@ import { DarkModeToggle } from './DarkModeToggle';
 import { MegaMenu } from './desktop/MegaMenu';
 import { NotificationCenter } from './notifications/NotificationCenter';
 import { HamburgerMenu } from './mobile/HamburgerMenu';
-
 
 const Navigation = () => {
   const { user, signOut } = useAuth();
@@ -54,21 +46,16 @@ const Navigation = () => {
             </div>
 
             <div className="flex items-center space-x-2 sm:space-x-6">
-              {/* Mega Menu */}
               <MegaMenu />
 
-              {/* Advanced Search */}
               <div className="hidden lg:flex flex-1 max-w-md">
                 <AdvancedSearch className="w-full" />
               </div>
 
-              {/* Dark Mode Toggle */}
               <DarkModeToggle />
 
-              {/* Notifications */}
               {user && <NotificationCenter />}
 
-              {/* Cart */}
               <button
                 onClick={() => setShowCart(true)}
                 className="relative p-1.5 sm:p-2 text-foreground hover:text-primary transition-colors"
@@ -87,7 +74,6 @@ const Navigation = () => {
               </button>
               <CartSidebar open={showCart} onOpenChange={setShowCart} />
 
-              {/* User Authentication */}
               {user ? (
                 <div className="relative" ref={dropdownRef}>
                   <button
@@ -98,18 +84,17 @@ const Navigation = () => {
                     <span className="hidden md:block text-sm truncate max-w-24">
                       {user.user_metadata?.full_name || user.email?.split('@')[0]}
                     </span>
-                    <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <ChevronDown className="hidden md:block w-4 h-4" />
                   </button>
-
                   {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-56 rounded-2xl py-2 z-[100] glass-card border border-border/20">
+                    <div className="absolute right-0 mt-2 w-56 bg-background/95 backdrop-blur-sm border border-border rounded-xl shadow-2xl py-2 z-50">
                       <Link
                         to="/profile"
                         className="flex items-center px-4 py-3 text-sm text-foreground hover:bg-primary/10 transition-colors rounded-lg mx-2"
                         onClick={() => setShowUserMenu(false)}
                       >
                         <User className="w-5 h-5 mr-3" />
-                        <span className="font-medium">Mein Profil</span>
+                        <span className="font-medium">Profil</span>
                       </Link>
                       <Link
                         to="/admin"
@@ -145,6 +130,6 @@ const Navigation = () => {
       </nav>
     </>
   );
-}
+};
 
 export default Navigation;
