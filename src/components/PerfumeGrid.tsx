@@ -1,16 +1,95 @@
 
-import { useState, memo } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { PerfumeCard } from './PerfumeCard';
-import { perfumes } from '@/data/perfumes';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Package } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { Perfume } from '@/types/perfume';
 
 export const PerfumeGrid = memo(function PerfumeGrid() {
   const [filter, setFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
+  const [perfumes, setPerfumes] = useState<Perfume[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<string[]>(['all']);
 
-  const categories = ['all', '50ML Bottles', 'Proben', 'Autoparfüm'];
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      const { data: products, error } = await supabase
+        .from('products')
+        .select(`
+          id,
+          name,
+          brand,
+          category,
+          size,
+          image,
+          product_variants(
+            id,
+            variant_number,
+            name,
+            description,
+            price,
+            original_price,
+            in_stock,
+            preorder,
+            release_date,
+            rating,
+            review_count
+          )
+        `)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error loading products:', error);
+        return;
+      }
+
+      if (products) {
+        // Transform database products to Perfume format
+        const transformedPerfumes: Perfume[] = products
+          .filter((p: any) => p.product_variants && p.product_variants.length > 0)
+          .map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            brand: p.brand,
+            category: p.category,
+            size: p.size,
+            image: p.image || '/placeholder.svg',
+            variants: p.product_variants.map((v: any) => ({
+              id: v.id,
+              number: v.variant_number,
+              name: v.name,
+              description: v.description,
+              price: v.price,
+              originalPrice: v.original_price,
+              inStock: v.in_stock,
+              preorder: v.preorder,
+              releaseDate: v.release_date,
+              rating: v.rating,
+              reviewCount: v.review_count,
+            })),
+          }));
+
+        setPerfumes(transformedPerfumes);
+        
+        // Extract unique categories
+        const uniqueCategories = ['all', ...Array.from(new Set(transformedPerfumes.map(p => p.category)))];
+        setCategories(uniqueCategories);
+      }
+    } catch (error) {
+      console.error('Error loading products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredPerfumes = perfumes.filter(perfume => 
     filter === 'all' || perfume.category === filter
@@ -78,26 +157,36 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {sortedPerfumes.map((perfume) => (
-            <div 
-              key={perfume.id} 
-              className="group"
-            >
-              <PerfumeCard 
-                perfume={perfume} 
-              />
-            </div>
-          ))}
-        </div>
-
-        {sortedPerfumes.length === 0 && (
-          <div className="text-center py-12 animate-fade-in-up">
-            <Package className="w-16 h-16 mx-auto mb-4 text-muted-foreground animate-float" />
-            <p className="text-xl text-muted-foreground">
-              Keine Parfüms in dieser Kategorie gefunden.
-            </p>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <Skeleton key={i} className="h-96" />
+            ))}
           </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {sortedPerfumes.map((perfume) => (
+                <div 
+                  key={perfume.id} 
+                  className="group"
+                >
+                  <PerfumeCard 
+                    perfume={perfume} 
+                  />
+                </div>
+              ))}
+            </div>
+
+            {sortedPerfumes.length === 0 && !loading && (
+              <div className="text-center py-12 animate-fade-in-up">
+                <Package className="w-16 h-16 mx-auto mb-4 text-muted-foreground animate-float" />
+                <p className="text-xl text-muted-foreground">
+                  Keine Parfüms in dieser Kategorie gefunden.
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </section>

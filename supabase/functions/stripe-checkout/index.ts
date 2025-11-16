@@ -26,10 +26,28 @@ serve(async (req) => {
     if (!customerEmail) {
       throw new Error("Customer email fehlt");
     }
+
+    // Calculate total before discount
+    const subtotal = items.reduce((sum: number, item: any) => {
+      const price = item.variant?.price || item.price || 0;
+      const quantity = item.quantity || 1;
+      return sum + (price * quantity);
+    }, 0);
+
+    const finalAmount = subtotal - (discountAmount || 0);
+    
+    // Bei 100% Rabatt: Fehler vermeiden
+    if (finalAmount <= 0) {
+      console.log("⚠️ Amount is 0 or negative - cannot create Stripe session");
+      throw new Error("Der Bestellbetrag ist 0. Bitte verwenden Sie eine andere Zahlungsmethode oder kontaktieren Sie uns.");
+    }
     
     console.log("Items count:", items.length);
     console.log("Customer email:", customerEmail);
     console.log("Order number:", orderNumber);
+    console.log("Subtotal:", subtotal);
+    console.log("Discount:", discountAmount);
+    console.log("Final amount:", finalAmount);
     
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     console.log("Stripe key exists:", !!stripeKey);

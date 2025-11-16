@@ -278,6 +278,42 @@ export default function Checkout() {
 
       console.log('💳 Zahlungsmethode:', paymentMethod);
 
+      // Bei 100% Rabatt: Kostenlose Bestellung direkt erstellen
+      if (finalAmount === 0) {
+        console.log('💯 100% Rabatt - Kostenlose Bestellung wird erstellt');
+        
+        // Order status auf "paid" setzen
+        await supabase
+          .from('orders')
+          .update({ status: 'paid' })
+          .eq('id', order.id);
+
+        // Bestätigungs-E-Mail senden
+        try {
+          await supabase.functions.invoke('send-order-confirmation', {
+            body: {
+              customerEmail: user?.email || guestEmail,
+              customerName: `${customerData.firstName} ${customerData.lastName}`,
+              orderNumber: orderNumber,
+              items: checkoutData.items,
+              totalAmount: 0,
+            }
+          });
+        } catch (emailErr) {
+          console.error('Email sending failed:', emailErr);
+        }
+
+        toast.success('Kostenlose Bestellung erfolgreich erstellt!');
+        navigate('/checkout-success', { 
+          state: { 
+            orderNumber,
+            orderId: order.id,
+            isFree: true
+          } 
+        });
+        return;
+      }
+
       if (paymentMethod === 'stripe') {
         console.log('🔄 STRIPE CHECKOUT WIRD AUFGERUFEN');
         await handleStripeCheckout(orderNumber);
