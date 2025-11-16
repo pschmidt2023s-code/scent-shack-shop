@@ -155,6 +155,44 @@ export type Database = {
           },
         ]
       }
+      bundle_analytics: {
+        Row: {
+          bundle_id: string
+          created_at: string
+          date: string
+          id: string
+          purchases: number
+          revenue: number
+          views: number
+        }
+        Insert: {
+          bundle_id: string
+          created_at?: string
+          date?: string
+          id?: string
+          purchases?: number
+          revenue?: number
+          views?: number
+        }
+        Update: {
+          bundle_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          purchases?: number
+          revenue?: number
+          views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bundle_analytics_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "bundle_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bundle_items: {
         Row: {
           bundle_id: string
@@ -450,6 +488,42 @@ export type Database = {
           tier?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      loyalty_rules: {
+        Row: {
+          conditions: Json | null
+          created_at: string
+          id: string
+          is_active: boolean
+          points_earned: number
+          priority: number
+          rule_name: string
+          rule_type: string
+          updated_at: string
+        }
+        Insert: {
+          conditions?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          points_earned: number
+          priority?: number
+          rule_name: string
+          rule_type: string
+          updated_at?: string
+        }
+        Update: {
+          conditions?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          points_earned?: number
+          priority?: number
+          rule_name?: string
+          rule_type?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1404,6 +1478,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_settings: {
+        Row: {
+          category: string
+          description: string | null
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          category: string
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_value: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          category?: string
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
