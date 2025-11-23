@@ -102,24 +102,45 @@ export default function BundleConfigurator() {
       if (error) throw error;
 
       if (data) {
-        const transformedPerfumes: Perfume[] = data
-          .filter((p: any) => p.product_variants && p.product_variants.length > 0)
-          .map((p: any) => ({
+        // Create a Map to track unique variants by variant_number
+        const uniqueVariantsMap = new Map<string, any>();
+        
+        data.forEach((p: any) => {
+          if (p.product_variants && p.product_variants.length > 0) {
+            p.product_variants.forEach((v: any) => {
+              // Only add if this variant_number hasn't been seen yet
+              if (!uniqueVariantsMap.has(v.variant_number)) {
+                uniqueVariantsMap.set(v.variant_number, {
+                  productData: p,
+                  variantData: v
+                });
+              }
+            });
+          }
+        });
+
+        // Transform to Perfume format with unique variants
+        const transformedPerfumes: Perfume[] = Array.from(uniqueVariantsMap.values()).map((entry) => {
+          const p = entry.productData;
+          const v = entry.variantData;
+          
+          return {
             id: p.id,
             name: p.name,
             brand: p.brand,
             category: p.category,
             size: p.size,
             image: p.image || '/placeholder.svg',
-            variants: p.product_variants.map((v: any) => ({
+            variants: [{
               id: v.id,
               number: v.variant_number,
               name: v.name,
               description: v.description,
               price: v.price,
               inStock: v.in_stock,
-            })),
-          }));
+            }]
+          };
+        });
 
         setProducts(transformedPerfumes);
       }
