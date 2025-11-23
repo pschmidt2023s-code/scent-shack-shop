@@ -16,23 +16,31 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const products = [
-      {
-        id: '50ml-bottles',
-        name: 'ALDENAIR Prestige Collection',
-        brand: 'ALDENAIR',
-        category: '50ML Bottles',
-        size: '50ml',
-        image: '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png'
-      },
-      {
-        id: 'proben',
-        name: 'ALDENAIR Proben Collection',
-        brand: 'ALDENAIR',
-        category: 'Proben',
-        size: '5ml',
-        image: '/lovable-uploads/dc821e74-0a27-4a45-a347-45a4ae0d55ef.png'
-      },
+const products = [
+    {
+      id: '50ml-bottles',
+      name: 'ALDENAIR Prestige Collection',
+      brand: 'ALDENAIR',
+      category: '50ML Bottles',
+      size: '50ml',
+      image: '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png'
+    },
+    {
+      id: 'testerkits',
+      name: 'ALDENAIR Testerkits Collection',
+      brand: 'ALDENAIR',
+      category: 'Testerkits',
+      size: '5ml',
+      image: '/lovable-uploads/dc821e74-0a27-4a45-a347-45a4ae0d55ef.png'
+    },
+    {
+      id: 'sparkits',
+      name: 'ALDENAIR Sparkits Collection',
+      brand: 'ALDENAIR',
+      category: 'Sparkits',
+      size: 'Bundle',
+      image: '/lovable-uploads/dc821e74-0a27-4a45-a347-45a4ae0d55ef.png'
+    },
       {
         id: 'autoparfum',
         name: 'ALDENAIR Autoparfüm Collection',
@@ -62,15 +70,20 @@ Deno.serve(async (req) => {
       { id: '527', product_id: '50ml-bottles', variant_number: '527', name: 'ALDENAIR 527', description: 'Orientalischer süßer Luxusduft mit edlen Inhaltsstoffen. Rose und Oud treffen auf weiches Leder, kostbaren Safran und frische Bergamotte. Die süße Basis aus Tonkabohne, Rohrzucker und Amber wird von weißem Moschus und Eichenmoos abgerundet.', price: 49.99, in_stock: true, stock_quantity: 100, rating: 4.9, review_count: 201 },
       { id: '695', product_id: '50ml-bottles', variant_number: '695', name: 'ALDENAIR 695', description: 'Aromatisch-fruchtiger Duft mit komplexer Komposition. Zitrusfrüchte wie Orange und Zitrone verschmelzen mit Minze und schwarzer Johannisbeere. Die holzige Basis aus Zedernholz und Vetiver wird von süßer Vanille und Amber abgerundet.', price: 49.99, in_stock: true, stock_quantity: 100, rating: 4.7, review_count: 189 },
       
-      // Proben variants
-      { id: '399-sample', product_id: 'proben', variant_number: '399', name: 'ALDENAIR 399 Probe', description: 'Luxuriöser orientalischer Duft mit holzigen Akzenten. Die edle Komposition aus Bergamotte und Zedernholz in der Herznote verschmilzt mit dem kostbaren Oud in der Basis zu einem unverwechselbaren, maskulinen Parfüm. Perfekt zum Testen vor dem Kauf der Vollgröße.', price: 6.95, in_stock: true, stock_quantity: 200, rating: 4.8, review_count: 156 },
-      { id: '978-sample', product_id: 'proben', variant_number: '978', name: 'ALDENAIR 978 Probe', description: 'Verführerischer süß-würziger Duft mit orientalischen Noten. Lavendel, Bergamotte und Zitrone treffen auf exotischen Jasmin-Sambac und warmen Honig. Probieren Sie diesen sinnlichen Duft in der praktischen 5ml Größe.', price: 6.95, in_stock: true, stock_quantity: 200, rating: 4.9, review_count: 203 },
-      { id: '999-sample', product_id: 'proben', variant_number: '999', name: 'ALDENAIR 999 Probe', description: 'Harmonische Verbindung von holzigen und blumigen Elementen. Weißer Moschus und edles Sandelholz in der Herznote ergänzen sich perfekt mit der frischen Apfel-Note und dem mystischen Oud in der Basis.', price: 6.95, in_stock: true, stock_quantity: 200, rating: 4.7, review_count: 178 },
-      { id: '189-sample', product_id: 'proben', variant_number: '189', name: 'ALDENAIR 189 Probe', description: 'Süßer Gourmand-Duft mit verlockenden Kaffee-Noten. Blumige Akzente und edle Rose in der Herznote werden von einer reichen Basis aus Harzen, Holznoten und aromatischem Kaffee getragen.', price: 6.95, in_stock: true, stock_quantity: 200, rating: 4.6, review_count: 167 },
-      { id: '390-sample', product_id: 'proben', variant_number: '390', name: 'ALDENAIR 390 Probe', description: 'Cremig-holziger Duft mit süßen und rauchigen Facetten. Zimt und Vanille in der Herznote verschmelzen mit Safran und Rum zu einer warmen, einladenden Komposition.', price: 6.95, in_stock: true, stock_quantity: 200, rating: 4.8, review_count: 145 },
-      { id: '275-sample', product_id: 'proben', variant_number: '275', name: 'ALDENAIR 275 Probe', description: 'Süß-fruchtiger Duft mit exotischen Nuancen. Fruchtige Noten und Kardamom treffen auf cremige Tonkabohne und tropische Ananas. Perfekt für warme Tage.', price: 6.95, in_stock: true, stock_quantity: 200, rating: 4.5, review_count: 134 },
-      { id: '527-sample', product_id: 'proben', variant_number: '527', name: 'ALDENAIR 527 Probe', description: 'Orientalischer süßer Luxusduft mit edlen Inhaltsstoffen. Rose und Oud treffen auf weiches Leder, kostbaren Safran und frische Bergamotte.', price: 6.95, in_stock: true, stock_quantity: 200, rating: 4.9, review_count: 201 },
-      { id: '695-sample', product_id: 'proben', variant_number: '695', name: 'ALDENAIR 695 Probe', description: 'Aromatisch-fruchtiger Duft mit komplexer Komposition. Zitrusfrüchte wie Orange und Zitrone verschmelzen mit Minze und schwarzer Johannisbeere.', price: 6.95, in_stock: true, stock_quantity: 200, rating: 4.7, review_count: 189 },
+      // Testerkits variants
+      { id: '399-sample', product_id: 'testerkits', variant_number: '399', name: 'ALDENAIR 399 Testerkit', description: 'Luxuriöser orientalischer Duft mit holzigen Akzenten. Die edle Komposition aus Bergamotte und Zedernholz in der Herznote verschmilzt mit dem kostbaren Oud in der Basis zu einem unverwechselbaren, maskulinen Parfüm. Perfekt zum Testen vor dem Kauf der Vollgröße.', price: 6.95, in_stock: true, stock_quantity: 200, rating: 4.8, review_count: 156 },
+      { id: '978-sample', product_id: 'testerkits', variant_number: '978', name: 'ALDENAIR 978 Testerkit', description: 'Verführerischer süß-würziger Duft mit orientalischen Noten. Lavendel, Bergamotte und Zitrone treffen auf exotischen Jasmin-Sambac und warmen Honig. Probieren Sie diesen sinnlichen Duft in der praktischen 5ml Größe.', price: 6.95, in_stock: true, stock_quantity: 200, rating: 4.9, review_count: 203 },
+      { id: '999-sample', product_id: 'testerkits', variant_number: '999', name: 'ALDENAIR 999 Testerkit', description: 'Harmonische Verbindung von holzigen und blumigen Elementen. Weißer Moschus und edles Sandelholz in der Herznote ergänzen sich perfekt mit der frischen Apfel-Note und dem mystischen Oud in der Basis.', price: 6.95, in_stock: true, stock_quantity: 200, rating: 4.7, review_count: 178 },
+      { id: '189-sample', product_id: 'testerkits', variant_number: '189', name: 'ALDENAIR 189 Testerkit', description: 'Süßer Gourmand-Duft mit verlockenden Kaffee-Noten. Blumige Akzente und edle Rose in der Herznote werden von einer reichen Basis aus Harzen, Holznoten und aromatischem Kaffee getragen.', price: 6.95, in_stock: true, stock_quantity: 200, rating: 4.6, review_count: 167 },
+      { id: '390-sample', product_id: 'testerkits', variant_number: '390', name: 'ALDENAIR 390 Testerkit', description: 'Cremig-holziger Duft mit süßen und rauchigen Facetten. Zimt und Vanille in der Herznote verschmelzen mit Safran und Rum zu einer warmen, einladenden Komposition.', price: 6.95, in_stock: true, stock_quantity: 200, rating: 4.8, review_count: 145 },
+      { id: '275-sample', product_id: 'testerkits', variant_number: '275', name: 'ALDENAIR 275 Testerkit', description: 'Süß-fruchtiger Duft mit exotischen Nuancen. Fruchtige Noten und Kardamom treffen auf cremige Tonkabohne und tropische Ananas. Perfekt für warme Tage.', price: 6.95, in_stock: true, stock_quantity: 200, rating: 4.5, review_count: 134 },
+      { id: '527-sample', product_id: 'testerkits', variant_number: '527', name: 'ALDENAIR 527 Testerkit', description: 'Orientalischer süßer Luxusduft mit edlen Inhaltsstoffen. Rose und Oud treffen auf weiches Leder, kostbaren Safran und frische Bergamotte.', price: 6.95, in_stock: true, stock_quantity: 200, rating: 4.9, review_count: 201 },
+      { id: '695-sample', product_id: 'testerkits', variant_number: '695', name: 'ALDENAIR 695 Testerkit', description: 'Aromatisch-fruchtiger Duft mit komplexer Komposition. Zitrusfrüchte wie Orange und Zitrone verschmelzen mit Minze und schwarzer Johannisbeere.', price: 6.95, in_stock: true, stock_quantity: 200, rating: 4.7, review_count: 189 },
+      
+      // Sparkits variants
+      { id: 'sparkit-5-proben', product_id: 'sparkits', variant_number: 'SPAR5', name: 'Sparkit - 5x Proben', description: 'Stelle dir dein persönliches Sparkit zusammen! Wähle 5 beliebige Proben (5ml) aus unserem gesamten Sortiment und spare dabei. Perfekt, um verschiedene Düfte zu testen und deinen Favoriten zu finden.', price: 29.95, original_price: 34.75, in_stock: true, stock_quantity: 100, rating: 4.9, review_count: 87 },
+      { id: 'sparkit-3x50ml', product_id: 'sparkits', variant_number: 'SPAR3', name: 'Sparkit - 3x 50ml Flakons', description: 'Spare beim Kauf von 3 beliebigen 50ml Flakons! Wähle aus unserem kompletten Sortiment deine drei Lieblingsdüfte aus und profitiere von einem attraktiven Bundle-Preis.', price: 129.99, original_price: 149.97, in_stock: true, stock_quantity: 50, rating: 4.8, review_count: 124 },
+      { id: 'sparkit-5x50ml', product_id: 'sparkits', variant_number: 'SPAR5F', name: 'Sparkit - 5x 50ml Flakons', description: 'Unser beliebtestes Sparkit! Wähle 5 beliebige 50ml Flakons aus unserem gesamten Sortiment und spare dabei maximal. Ideal für Duftliebhaber, die ihre Sammlung erweitern möchten.', price: 199.99, original_price: 249.95, in_stock: true, stock_quantity: 30, rating: 5.0, review_count: 156 },
       
       // Autoparfüm variants
       { id: 'auto-399', product_id: 'autoparfum', variant_number: '399', name: 'ALDENAIR Autoparfüm 399', description: 'Luxuriöser orientalischer Duft für Ihr Auto. Langanhaltender Duft, der Ihr Fahrzeug in eine Oase der Eleganz verwandelt.', price: 14.99, in_stock: true, stock_quantity: 150, rating: 4.6, review_count: 92 },
@@ -106,6 +119,7 @@ Deno.serve(async (req) => {
         name: v.name,
         description: v.description,
         price: v.price,
+        original_price: v.original_price || null,
         in_stock: v.in_stock,
         stock_quantity: v.stock_quantity,
         preorder: v.preorder || false,
