@@ -248,6 +248,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          quantity_required: number
           total_price: number
           updated_at: string
         }
@@ -258,6 +259,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          quantity_required?: number
           total_price: number
           updated_at?: string
         }
@@ -268,6 +270,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          quantity_required?: number
           total_price?: number
           updated_at?: string
         }

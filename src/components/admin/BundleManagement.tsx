@@ -32,12 +32,21 @@ interface Bundle {
   total_price: number;
   discount_percentage: number;
   is_active: boolean;
+  quantity_required: number;
 }
 
 export function BundleManagement() {
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editBundle, setEditBundle] = useState<Bundle | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    total_price: 0,
+    discount_percentage: 0,
+    quantity_required: 3
+  });
 
   useEffect(() => {
     fetchBundles();
@@ -92,6 +101,44 @@ export function BundleManagement() {
     }
   };
 
+  const handleSaveBundle = async () => {
+    try {
+      if (editBundle) {
+        const { error } = await supabase
+          .from('bundle_products')
+          .update(formData)
+          .eq('id', editBundle.id);
+        if (error) throw error;
+        toast.success('Bundle aktualisiert');
+      } else {
+        const { error } = await supabase
+          .from('bundle_products')
+          .insert([formData]);
+        if (error) throw error;
+        toast.success('Bundle erstellt');
+      }
+      setCreateOpen(false);
+      setEditBundle(null);
+      setFormData({ name: '', description: '', total_price: 0, discount_percentage: 0, quantity_required: 3 });
+      fetchBundles();
+    } catch (error) {
+      console.error('Error saving bundle:', error);
+      toast.error('Fehler beim Speichern');
+    }
+  };
+
+  const handleEditBundle = (bundle: Bundle) => {
+    setEditBundle(bundle);
+    setFormData({
+      name: bundle.name,
+      description: bundle.description || '',
+      total_price: bundle.total_price,
+      discount_percentage: bundle.discount_percentage,
+      quantity_required: bundle.quantity_required || 3
+    });
+    setCreateOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -108,32 +155,61 @@ export function BundleManagement() {
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Neues Bundle erstellen</DialogTitle>
+              <DialogTitle>{editBundle ? 'Bundle bearbeiten' : 'Neues Bundle erstellen'}</DialogTitle>
               <DialogDescription>
-                Erstelle ein neues Produkt-Bundle mit Rabatt
+                {editBundle ? 'Bearbeite das Bundle' : 'Erstelle ein neues Produkt-Bundle mit Rabatt'}
               </DialogDescription>
             </DialogHeader>
-            {/* Bundle creation form would go here */}
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Bundle-Name</Label>
-                <Input placeholder="z.B. Sommerpaket" />
+                <Input 
+                  placeholder="z.B. Sparset 3x 50ml" 
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Beschreibung</Label>
-                <Textarea placeholder="Bundle-Beschreibung..." />
+                <Textarea 
+                  placeholder="Bundle-Beschreibung..." 
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Gesamtpreis (€)</Label>
-                  <Input type="number" step="0.01" placeholder="49.99" />
+                  <Input 
+                    type="number" 
+                    step="0.01" 
+                    placeholder="49.99" 
+                    value={formData.total_price || ''}
+                    onChange={(e) => setFormData({ ...formData, total_price: parseFloat(e.target.value) || 0 })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Rabatt (%)</Label>
-                  <Input type="number" placeholder="15" />
+                  <Input 
+                    type="number" 
+                    placeholder="15" 
+                    value={formData.discount_percentage || ''}
+                    onChange={(e) => setFormData({ ...formData, discount_percentage: parseFloat(e.target.value) || 0 })}
+                  />
                 </div>
               </div>
-              <Button className="w-full">Bundle erstellen</Button>
+              <div className="space-y-2">
+                <Label>Anzahl Produkte</Label>
+                <Input 
+                  type="number" 
+                  placeholder="3" 
+                  value={formData.quantity_required}
+                  onChange={(e) => setFormData({ ...formData, quantity_required: parseInt(e.target.value) || 3 })}
+                />
+              </div>
+              <Button className="w-full" onClick={handleSaveBundle}>
+                {editBundle ? 'Bundle speichern' : 'Bundle erstellen'}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -191,6 +267,7 @@ export function BundleManagement() {
             <TableRow>
               <TableHead>Bundle Name</TableHead>
               <TableHead>Beschreibung</TableHead>
+              <TableHead>Anzahl</TableHead>
               <TableHead>Preis</TableHead>
               <TableHead>Rabatt</TableHead>
               <TableHead>Status</TableHead>
@@ -202,6 +279,9 @@ export function BundleManagement() {
               <TableRow key={bundle.id}>
                 <TableCell className="font-medium">{bundle.name}</TableCell>
                 <TableCell className="max-w-xs truncate">{bundle.description}</TableCell>
+                <TableCell>
+                  <Badge variant="outline">{bundle.quantity_required}x</Badge>
+                </TableCell>
                 <TableCell>€{bundle.total_price.toFixed(2)}</TableCell>
                 <TableCell>
                   <Badge variant="secondary">-{bundle.discount_percentage}%</Badge>
@@ -222,7 +302,7 @@ export function BundleManagement() {
                     >
                       {bundle.is_active ? 'Deaktivieren' : 'Aktivieren'}
                     </Button>
-                    <Button size="sm" variant="ghost">
+                    <Button size="sm" variant="ghost" onClick={() => handleEditBundle(bundle)}>
                       <Edit className="w-4 h-4" />
                     </Button>
                     <Button

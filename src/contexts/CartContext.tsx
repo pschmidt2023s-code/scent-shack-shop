@@ -4,6 +4,7 @@ import { Perfume, PerfumeVariant, CartItem } from '@/types/perfume';
 interface CartState {
   items: CartItem[];
   total: number;
+  appliedBundle: { bundleId: string; discount: number } | null;
 }
 
 interface CartContextType extends CartState {
@@ -11,6 +12,8 @@ interface CartContextType extends CartState {
   removeFromCart: (perfumeId: string, variantId: string) => void;
   updateQuantity: (perfumeId: string, variantId: string, quantity: number) => void;
   clearCart: () => void;
+  applyBundle: (bundleId: string, discount: number) => void;
+  removeBundle: () => void;
   itemCount: number;
 }
 
@@ -18,6 +21,8 @@ type CartAction =
   | { type: 'ADD_TO_CART'; payload: { perfume: Perfume; variant: PerfumeVariant } }
   | { type: 'REMOVE_FROM_CART'; payload: { perfumeId: string; variantId: string } }
   | { type: 'UPDATE_QUANTITY'; payload: { perfumeId: string; variantId: string; quantity: number } }
+  | { type: 'APPLY_BUNDLE'; payload: { bundleId: string; discount: number } }
+  | { type: 'REMOVE_BUNDLE' }
   | { type: 'CLEAR_CART' };
 
 const calculateTotal = (items: CartItem[]): number => {
@@ -41,6 +46,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         return {
           items: updatedItems,
           total: calculateTotal(updatedItems),
+          appliedBundle: state.appliedBundle,
         };
       } else {
         const newItems = [...state.items, { 
@@ -51,6 +57,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         return {
           items: newItems,
           total: calculateTotal(newItems),
+          appliedBundle: state.appliedBundle,
         };
       }
     }
@@ -62,6 +69,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       return {
         items: filteredItems,
         total: calculateTotal(filteredItems),
+        appliedBundle: state.appliedBundle,
       };
     }
     
@@ -73,6 +81,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         return {
           items: filteredItems,
           total: calculateTotal(filteredItems),
+          appliedBundle: state.appliedBundle,
         };
       }
       
@@ -84,11 +93,26 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       return {
         items: updatedItems,
         total: calculateTotal(updatedItems),
+        appliedBundle: state.appliedBundle,
       };
     }
     
+    case 'APPLY_BUNDLE':
+      return {
+        ...state,
+        appliedBundle: { bundleId: action.payload.bundleId, discount: action.payload.discount },
+        total: state.total * (1 - action.payload.discount / 100),
+      };
+
+    case 'REMOVE_BUNDLE':
+      return {
+        ...state,
+        appliedBundle: null,
+        total: calculateTotal(state.items),
+      };
+
     case 'CLEAR_CART':
-      return { items: [], total: 0 };
+      return { items: [], total: 0, appliedBundle: null };
       
     default:
       return state;
@@ -98,7 +122,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(cartReducer, { items: [], total: 0 });
+  const [state, dispatch] = useReducer(cartReducer, { items: [], total: 0, appliedBundle: null });
 
   const addToCart = (perfume: Perfume, variant: PerfumeVariant) => {
     dispatch({ type: 'ADD_TO_CART', payload: { perfume, variant } });
@@ -110,6 +134,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateQuantity = (perfumeId: string, variantId: string, quantity: number) => {
     dispatch({ type: 'UPDATE_QUANTITY', payload: { perfumeId, variantId, quantity } });
+  };
+
+  const applyBundle = (bundleId: string, discount: number) => {
+    dispatch({ type: 'APPLY_BUNDLE', payload: { bundleId, discount } });
+  };
+
+  const removeBundle = () => {
+    dispatch({ type: 'REMOVE_BUNDLE' });
   };
 
   const clearCart = () => {
@@ -125,6 +157,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         addToCart,
         removeFromCart,
         updateQuantity,
+        applyBundle,
+        removeBundle,
         clearCart,
         itemCount,
       }}
