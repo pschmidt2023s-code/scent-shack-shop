@@ -12,6 +12,7 @@ import { PushNotificationPrompt } from '@/components/PushNotificationPrompt';
 import { ProductComparison } from '@/components/ProductComparison';
 import { TouchOptimizations } from '@/components/mobile/TouchOptimizations';
 import { KeyboardShortcuts } from '@/components/desktop/KeyboardShortcuts';
+import { BundleSection } from '@/components/BundleSection';
 
 const Index = () => {
   usePerformanceMonitor();
@@ -27,6 +28,7 @@ const Index = () => {
       <main id="main-content" role="main" aria-label="Hauptinhalt" className="pb-24 md:pb-0">
         <HeroSection />
         <TrustBadges />
+        <BundleSection />
         <PerfumeGrid />
         <AIRecommendations />
         <RecentlyViewed />
