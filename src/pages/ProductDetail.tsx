@@ -157,7 +157,7 @@ const ProductDetail = () => {
             {/* Variant Selection - Hidden for THREED collection */}
             {perfume.id !== "threed-collection" && (
               <div className="space-y-4">
-                <Label className="text-xl font-semibold">Duft-Variante wählen</Label>
+                <Label className="text-xl font-semibold">Riecht wie</Label>
                 <Select value={selectedVariant?.id} onValueChange={handleVariantChange}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Wählen Sie eine Variante" />
@@ -197,10 +197,18 @@ const ProductDetail = () => {
             {selectedVariant && (
               <Card className="bg-muted/50">
                 <CardContent className="p-4">
-                  <h3 className="font-semibold mb-2">Ausgewählte Variante: {selectedVariant.name}</h3>
+                  <h3 className="font-semibold mb-2">Riecht wie: {selectedVariant.name}</h3>
                   <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                     {selectedVariant.description}
                   </p>
+                  {selectedVariant.scentNotes && (
+                    <div className="mb-4 p-3 bg-primary/10 rounded-lg border border-primary/20">
+                      <p className="text-sm">
+                        <span className="font-semibold text-primary">Duftnoten: </span>
+                        <span className="text-muted-foreground">{selectedVariant.scentNotes}</span>
+                      </p>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">Nummer:</span>
@@ -282,9 +290,9 @@ const ProductDetail = () => {
               </div>
               {selectedVariant && (
                 <div>
-                  <h3 className="font-semibold mb-2">Ausgewählte Variante</h3>
+                  <h3 className="font-semibold mb-2">Riecht wie</h3>
                   <ul className="space-y-2 text-muted-foreground">
-                    <li><strong>Name:</strong> {selectedVariant.name}</li>
+                    <li><strong>Duft:</strong> {selectedVariant.name}</li>
                     <li><strong>Nummer:</strong> {selectedVariant.number}</li>
                     <li><strong>Bewertung:</strong> {variantRating && variantRating.count > 0 ? `${variantRating.rating.toFixed(1)}/5 Sterne` : 'Noch keine Bewertungen'}</li>
                     <li><strong>Anzahl Bewertungen:</strong> {variantRating?.count || 0}</li>
