@@ -34,6 +34,7 @@ interface ProductVariant {
   release_date: string | null;
   rating: number;
   review_count: number;
+  scent_notes: string | null;
 }
 
 export default function ProductManagement() {
@@ -43,6 +44,8 @@ export default function ProductManagement() {
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
   const [editingPriceValue, setEditingPriceValue] = useState<string>("");
   const [uploadingImageFor, setUploadingImageFor] = useState<string | null>(null);
+  const [editingScentNotesId, setEditingScentNotesId] = useState<string | null>(null);
+  const [editingScentNotesValue, setEditingScentNotesValue] = useState<string>("");
 
   useEffect(() => {
     loadProducts();
@@ -201,6 +204,43 @@ export default function ProductManagement() {
     setEditingPriceValue("");
   };
 
+  const startEditingScentNotes = (variantId: string, currentNotes: string | null) => {
+    setEditingScentNotesId(variantId);
+    setEditingScentNotesValue(currentNotes || "");
+  };
+
+  const saveScentNotes = async (variantId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('product_variants')
+        .update({ scent_notes: editingScentNotesValue || null })
+        .eq('id', variantId)
+        .select();
+
+      if (error) {
+        console.error('Update error:', error);
+        toast.error(`Fehler beim Aktualisieren: ${error.message}`);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        toast.success("Duftnoten erfolgreich aktualisiert!");
+        setEditingScentNotesId(null);
+        loadProducts();
+      } else {
+        toast.error("Variante nicht gefunden");
+      }
+    } catch (err) {
+      console.error('Exception:', err);
+      toast.error("Unerwarteter Fehler beim Aktualisieren");
+    }
+  };
+
+  const cancelEditingScentNotes = () => {
+    setEditingScentNotesId(null);
+    setEditingScentNotesValue("");
+  };
+
   const deleteProduct = async (productId: string) => {
     if (!confirm("Möchten Sie dieses Produkt wirklich löschen? Alle zugehörigen Varianten werden ebenfalls gelöscht.")) {
       return;
@@ -344,6 +384,7 @@ export default function ProductManagement() {
                     <TableHead>Variante</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Preis (klicken zum bearbeiten)</TableHead>
+                    <TableHead>Duftnoten (klicken zum bearbeiten)</TableHead>
                     <TableHead>Lager</TableHead>
                     <TableHead>Auf Lager</TableHead>
                     <TableHead className="text-right">Aktionen</TableHead>
@@ -353,6 +394,7 @@ export default function ProductManagement() {
                   {variants.map((variant) => {
                     const product = products.find(p => p.id === variant.product_id);
                     const isEditingPrice = editingPriceId === variant.id;
+                    const isEditingScentNotes = editingScentNotesId === variant.id;
                     
                     return (
                       <TableRow key={variant.id}>
@@ -406,6 +448,55 @@ export default function ProductManagement() {
                               className="flex items-center gap-2 hover:bg-accent"
                             >
                               <span className="font-semibold text-base">€{variant.price.toFixed(2)}</span>
+                              <span className="text-xs text-muted-foreground">(klicken)</span>
+                            </Button>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {isEditingScentNotes ? (
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="text"
+                                value={editingScentNotesValue}
+                                onChange={(e) => setEditingScentNotesValue(e.target.value)}
+                                placeholder="z.B. Bergamotte, Zedernholz, Oud"
+                                className="w-64"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    saveScentNotes(variant.id);
+                                  }
+                                  if (e.key === 'Escape') {
+                                    e.preventDefault();
+                                    cancelEditingScentNotes();
+                                  }
+                                }}
+                              />
+                              <Button
+                                size="sm"
+                                onClick={() => saveScentNotes(variant.id)}
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                              >
+                                <Save className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={cancelEditingScentNotes}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              onClick={() => startEditingScentNotes(variant.id, variant.scent_notes)}
+                              className="flex items-center gap-2 hover:bg-accent w-full justify-start"
+                            >
+                              <span className="text-sm truncate max-w-xs">
+                                {variant.scent_notes || 'Keine Duftnoten'}
+                              </span>
                               <span className="text-xs text-muted-foreground">(klicken)</span>
                             </Button>
                           )}

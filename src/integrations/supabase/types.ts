@@ -1097,6 +1097,7 @@ export type Database = {
           rating: number | null
           release_date: string | null
           review_count: number | null
+          scent_notes: string | null
           stock_quantity: number
           updated_at: string
           variant_number: string
@@ -1115,6 +1116,7 @@ export type Database = {
           rating?: number | null
           release_date?: string | null
           review_count?: number | null
+          scent_notes?: string | null
           stock_quantity?: number
           updated_at?: string
           variant_number: string
@@ -1133,6 +1135,7 @@ export type Database = {
           rating?: number | null
           release_date?: string | null
           review_count?: number | null
+          scent_notes?: string | null
           stock_quantity?: number
           updated_at?: string
           variant_number?: string
