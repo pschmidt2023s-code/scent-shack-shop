@@ -158,22 +158,16 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
                 key={product.id}
                 className="overflow-hidden hover:shadow-xl transition-shadow group"
               >
-                <Link to={`/product/${product.id}`}>
-                  <div className="relative">
-                    <OptimizedImage
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-48"
-                      width={300}
-                      height={300}
-                    />
-                    <div className="absolute top-2 right-2">
-                      <Badge className="bg-primary/90 backdrop-blur">
-                        <TrendingUp className="w-3 h-3 mr-1" />
-                        KI-Tipp
-                      </Badge>
+                  <Link to={`/product/${product.id}`}>
+                    <div className="relative">
+                      <OptimizedImage
+                        src={product.image}
+                        alt={product.name}
+                        className="w-full h-48"
+                        width={300}
+                        height={300}
+                      />
                     </div>
-                  </div>
                   <div className="p-4">
                     <p className="text-xs text-muted-foreground mb-1">{product.brand}</p>
                     <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
