@@ -103,27 +103,52 @@ export function BundleManagement() {
 
   const handleSaveBundle = async () => {
     try {
+      // Validate required fields
+      if (!formData.name || !formData.total_price || formData.discount_percentage === undefined) {
+        toast.error('Bitte fülle alle Pflichtfelder aus');
+        return;
+      }
+
       if (editBundle) {
         const { error } = await supabase
           .from('bundle_products')
-          .update(formData)
+          .update({
+            name: formData.name,
+            description: formData.description,
+            total_price: formData.total_price,
+            discount_percentage: formData.discount_percentage,
+            quantity_required: formData.quantity_required
+          })
           .eq('id', editBundle.id);
-        if (error) throw error;
+        if (error) {
+          console.error('Update error:', error);
+          throw error;
+        }
         toast.success('Bundle aktualisiert');
       } else {
         const { error } = await supabase
           .from('bundle_products')
-          .insert([formData]);
-        if (error) throw error;
+          .insert([{
+            name: formData.name,
+            description: formData.description,
+            total_price: formData.total_price,
+            discount_percentage: formData.discount_percentage,
+            quantity_required: formData.quantity_required,
+            is_active: true
+          }]);
+        if (error) {
+          console.error('Insert error:', error);
+          throw error;
+        }
         toast.success('Bundle erstellt');
       }
       setCreateOpen(false);
       setEditBundle(null);
       setFormData({ name: '', description: '', total_price: 0, discount_percentage: 0, quantity_required: 3 });
       fetchBundles();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving bundle:', error);
-      toast.error('Fehler beim Speichern');
+      toast.error(`Fehler beim Speichern: ${error.message || 'Unbekannter Fehler'}`);
     }
   };
 

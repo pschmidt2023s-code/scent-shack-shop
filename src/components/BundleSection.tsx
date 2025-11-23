@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Package, Sparkles, ArrowRight } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface BundleOption {
   id: string;
@@ -14,45 +16,116 @@ interface BundleOption {
   discount: number;
   image: string;
   link: string;
+  quantity_required: number;
 }
 
-const bundles: BundleOption[] = [
-  {
-    id: '5-proben',
-    title: 'Sparkit - 5x Proben',
-    description: 'Stelle dir dein persönliches Testerset zusammen',
-    items: '5x 5ml Proben deiner Wahl',
-    price: 29.95,
-    originalPrice: 34.75,
-    discount: 14,
-    image: '/lovable-uploads/dc821e74-0a27-4a45-a347-45a4ae0d55ef.png',
-    link: '/bundle-konfigurator?type=5-proben',
-  },
-  {
-    id: '3-flakons',
-    title: 'Sparkit - 3x 50ml Flakons',
-    description: 'Perfekt zum Kennenlernen verschiedener Düfte',
-    items: '3x 50ml Flakons deiner Wahl',
-    price: 129.99,
-    originalPrice: 149.97,
-    discount: 13,
-    image: '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png',
-    link: '/bundle-konfigurator?type=3-flakons',
-  },
-  {
-    id: '5-flakons',
-    title: 'Sparkit - 5x 50ml Flakons',
-    description: 'Unser beliebtestes Bundle mit maximaler Ersparnis',
-    items: '5x 50ml Flakons deiner Wahl',
-    price: 199.99,
-    originalPrice: 249.95,
-    discount: 20,
-    image: '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png',
-    link: '/bundle-konfigurator?type=5-flakons',
-  },
-];
-
 export function BundleSection() {
+  const [bundles, setBundles] = useState<BundleOption[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadBundles();
+  }, []);
+
+  const loadBundles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bundle_products')
+        .select('*')
+        .eq('is_active', true)
+        .order('quantity_required', { ascending: true });
+
+      if (error) throw error;
+
+      if (data) {
+        // Map database bundles to display format
+        const mappedBundles: BundleOption[] = data.map((bundle) => {
+          const isProben = bundle.name.toLowerCase().includes('probe');
+          const quantity = bundle.quantity_required;
+          
+          return {
+            id: bundle.id,
+            title: bundle.name,
+            description: bundle.description || 'Stelle dir dein persönliches Bundle zusammen',
+            items: isProben 
+              ? `${quantity}x 5ml Proben deiner Wahl`
+              : `${quantity}x 50ml Flakons deiner Wahl`,
+            price: bundle.total_price,
+            originalPrice: bundle.total_price / (1 - bundle.discount_percentage / 100),
+            discount: bundle.discount_percentage,
+            image: isProben
+              ? '/lovable-uploads/dc821e74-0a27-4a45-a347-45a4ae0d55ef.png'
+              : '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png',
+            link: isProben
+              ? `/bundle-konfigurator?type=5-proben`
+              : `/bundle-konfigurator?type=${quantity}-flakons`,
+            quantity_required: quantity
+          };
+        });
+
+        setBundles(mappedBundles);
+      }
+    } catch (error) {
+      console.error('Error loading bundles:', error);
+      // Fallback to hardcoded bundles on error
+      setBundles([
+        {
+          id: '5-proben',
+          title: 'Sparkit - 5x Proben',
+          description: 'Stelle dir dein persönliches Testerset zusammen',
+          items: '5x 5ml Proben deiner Wahl',
+          price: 29.95,
+          originalPrice: 34.75,
+          discount: 14,
+          image: '/lovable-uploads/dc821e74-0a27-4a45-a347-45a4ae0d55ef.png',
+          link: '/bundle-konfigurator?type=5-proben',
+          quantity_required: 5
+        },
+        {
+          id: '3-flakons',
+          title: 'Sparkit - 3x 50ml Flakons',
+          description: 'Perfekt zum Kennenlernen verschiedener Düfte',
+          items: '3x 50ml Flakons deiner Wahl',
+          price: 129.99,
+          originalPrice: 149.97,
+          discount: 13,
+          image: '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png',
+          link: '/bundle-konfigurator?type=3-flakons',
+          quantity_required: 3
+        },
+        {
+          id: '5-flakons',
+          title: 'Sparkit - 5x 50ml Flakons',
+          description: 'Unser beliebtestes Bundle mit maximaler Ersparnis',
+          items: '5x 50ml Flakons deiner Wahl',
+          price: 199.99,
+          originalPrice: 249.95,
+          discount: 20,
+          image: '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png',
+          link: '/bundle-konfigurator?type=5-flakons',
+          quantity_required: 5
+        }
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <section className="py-16 glass rounded-3xl mx-4 my-8">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <div className="w-12 h-12 mx-auto animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (bundles.length === 0) {
+    return null;
+  }
   return (
     <section className="py-16 glass rounded-3xl mx-4 my-8">
       <div className="container mx-auto px-4">
