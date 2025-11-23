@@ -54,8 +54,15 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
 
       if (products) {
         // Transform database products to Perfume format
+        // Filter out Testerkits and Sparkits
         const transformedPerfumes: Perfume[] = products
-          .filter((p: any) => p.product_variants && p.product_variants.length > 0)
+          .filter((p: any) => {
+            // Exclude Testerkits and Sparkits (5x Proben)
+            const isTestkit = p.category === 'Testerkits';
+            const isSparkit = p.name.toLowerCase().includes('sparkit') || 
+                            p.name.toLowerCase().includes('proben');
+            return p.product_variants && p.product_variants.length > 0 && !isTestkit && !isSparkit;
+          })
           .map((p: any) => ({
             id: p.id,
             name: p.name,
@@ -116,10 +123,10 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12 animate-fade-in-up">
           <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-luxury-gold/20 via-luxury-gold to-luxury-gold/20 bg-[length:400%_100%] bg-clip-text text-transparent animate-shimmer">
-            ALDENAIR Parfüm-Kollektion
+            ALDENAIR Kollektionen
           </h2>
           <p className="text-xl glass-text-dark opacity-80 max-w-2xl mx-auto leading-relaxed">
-            Entdecke exquisite Düfte der Marke ALDENAIR - Prestige Flakon für jeden Geschmack
+            Entdecke unsere exklusiven Duft-Kollektionen - Wähle deine Favoriten
           </p>
         </div>
 

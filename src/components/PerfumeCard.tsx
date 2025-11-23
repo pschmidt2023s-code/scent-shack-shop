@@ -1,222 +1,130 @@
-import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, Heart, Star, Eye } from 'lucide-react';
-import { useCart } from '@/contexts/CartContext';
+import { Heart } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Perfume } from '@/types/perfume';
 import { Link } from 'react-router-dom';
-import { toast } from '@/hooks/use-toast';
 
 interface PerfumeCardProps {
   perfume: Perfume;
 }
 
 export function PerfumeCard({ perfume }: PerfumeCardProps) {
-  const [selectedVariant, setSelectedVariant] = useState(0);
-  const { addToCart } = useCart();
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
   const { discount, roleLabel, loading, isNewsletterSubscriber } = useUserRole();
-  // Disable ratings to debug the issue
-  // const { getRatingForPerfume } = usePerfumeRatings([perfume.id]);
 
-  const currentVariant = perfume.variants[selectedVariant];
-  // Use static ratings for debugging
-  const averageRating = currentVariant.rating || 0;
-  const totalReviews = currentVariant.reviewCount || 0;
-  const isInFavorites = isFavorite(perfume.id, currentVariant.id);
+  // Use first variant for display
+  const displayVariant = perfume.variants[0];
+  const isInFavorites = isFavorite(perfume.id, displayVariant.id);
 
-  const originalPrice = currentVariant.price;
-  const discountedPrice = originalPrice * (1 - discount / 100);
+  // Calculate price range
+  const prices = perfume.variants.map(v => v.price);
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+  const priceRange = minPrice !== maxPrice ? `€${minPrice.toFixed(2)} - €${maxPrice.toFixed(2)}` : `€${minPrice.toFixed(2)}`;
 
-  const handleAddToCart = () => {
-    addToCart(perfume, currentVariant);
-    toast({
-      title: "Zum Warenkorb hinzugefügt",
-      description: `${currentVariant.name} wurde erfolgreich hinzugefügt.`,
-    });
-  };
-
-  const handleWishlistToggle = async () => {
+  const handleWishlistToggle = async (e: React.MouseEvent) => {
+    e.preventDefault();
     if (isInFavorites) {
-      await removeFromFavorites(perfume.id, currentVariant.id);
+      await removeFromFavorites(perfume.id, displayVariant.id);
     } else {
-      await addToFavorites(perfume.id, currentVariant.id);
+      await addToFavorites(perfume.id, displayVariant.id);
     }
   };
 
   const handleProductClick = () => {
-    // Simple tracking without complex operations
     console.log('Product clicked:', perfume.name);
   };
 
-  return (
-    <>
-      <Card className="group glass-card transition-shadow duration-200 overflow-hidden">
-        <CardContent className="p-0">
-          <div className="relative">
-            <Link 
-              to={`/product/${perfume.id}`} 
-              onClick={handleProductClick}
-              aria-label={`${currentVariant.name} Produktdetails ansehen`}
-            >
-              <img
-                src={perfume.image}
-                alt={`${currentVariant.name} - ${perfume.category} Parfüm`}
-                className="w-full h-48 object-cover"
-                loading="lazy"
-                decoding="async"
-                role="img"
-                aria-describedby={`product-${perfume.id}-description`}
-                style={{ 
-                  backfaceVisibility: 'hidden',
-                  transform: 'translateZ(0)'
-                }}
-              />
-            </Link>
-            
-            {/* Quick View & Wishlist */}
-            <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              <Button
-                size="sm"
-                variant="secondary"
-                className="h-8 w-8 p-0"
-                onClick={(e) => {
-                  e.preventDefault();
-                  console.log('Quick view:', currentVariant.name);
-                }}
-                aria-label={`Schnellansicht für ${currentVariant.name}`}
-                title="Schnellansicht öffnen"
-              >
-                <Eye className="w-4 h-4" aria-hidden="true" />
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                className="h-8 w-8 p-0"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleWishlistToggle();
-                }}
-                aria-label={isInFavorites ? `${currentVariant.name} von Favoriten entfernen` : `${currentVariant.name} zu Favoriten hinzufügen`}
-                title={isInFavorites ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
-              >
-                <Heart 
-                  className={`w-4 h-4 ${isInFavorites ? 'fill-red-500 text-red-500' : ''}`} 
-                  aria-hidden="true"
-                />
-              </Button>
-            </div>
+  // Display collection name based on category
+  const collectionName = perfume.category === 'Autoparfüm Collection' 
+    ? 'Autoparfüm Collection' 
+    : perfume.category === '50ML Bottles'
+    ? '50ML Flakons'
+    : perfume.category;
 
-            {/* Stock Badge */}
-            <div className="absolute top-2 left-2">
-              <Badge variant={currentVariant.preorder ? "default" : "secondary"} className="text-xs">
-                {currentVariant.preorder ? "Vorbestellung" : "Auf Lager"}
-              </Badge>
-            </div>
+  return (
+    <Card className="group glass-card transition-shadow duration-200 overflow-hidden hover:shadow-glow">
+      <CardContent className="p-0">
+        <div className="relative">
+          <Link 
+            to={`/product/${perfume.id}`} 
+            onClick={handleProductClick}
+            aria-label={`${collectionName} Kollektion ansehen`}
+          >
+            <img
+              src={perfume.image}
+              alt={`${collectionName} - ${perfume.brand} Parfüm Kollektion`}
+              className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+              loading="lazy"
+              decoding="async"
+              role="img"
+              style={{ 
+                backfaceVisibility: 'hidden',
+                transform: 'translateZ(0)'
+              }}
+            />
+          </Link>
+          
+          {/* Wishlist Button */}
+          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-8 w-8 p-0"
+              onClick={handleWishlistToggle}
+              aria-label={isInFavorites ? `${collectionName} von Favoriten entfernen` : `${collectionName} zu Favoriten hinzufügen`}
+              title={isInFavorites ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+            >
+              <Heart 
+                className={`w-4 h-4 ${isInFavorites ? 'fill-red-500 text-red-500' : ''}`} 
+                aria-hidden="true"
+              />
+            </Button>
           </div>
 
-          <div className="p-4">
-            <Link 
-              to={`/product/${perfume.id}`} 
-              onClick={handleProductClick}
-              aria-label={`${currentVariant.name} Produktdetails ansehen`}
-            >
-              <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
-                {currentVariant.name}
-              </h3>
-            </Link>
-            
-            <p 
-              className="text-sm text-muted-foreground mb-2"
-              id={`product-${perfume.id}-description`}
-            >
-              {currentVariant.number}
-            </p>
-            
-            {/* Rating */}
-            <div className="flex items-center gap-1 mb-2">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`w-4 h-4 ${
-                    i < Math.floor(averageRating) 
-                      ? 'fill-yellow-400 text-yellow-400' 
-                      : 'text-gray-300'
-                  }`}
-                />
-              ))}
-              <span className="text-sm text-muted-foreground ml-1">
-                ({totalReviews})
-              </span>
-            </div>
+          {/* Stock Badge */}
+          <div className="absolute top-2 left-2">
+            <Badge variant="secondary" className="text-xs">
+              Auf Lager
+            </Badge>
+          </div>
+        </div>
 
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex flex-col">
-                {discount > 0 && !loading ? (
-                  <>
-                    <span className="text-xl font-bold text-primary">€{discountedPrice.toFixed(2)}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm line-through text-muted-foreground">€{originalPrice.toFixed(2)}</span>
-                      <Badge variant="destructive" className="text-xs">-{discount.toFixed(1)}%</Badge>
-                    </div>
-                  </>
-                ) : (
-                  <span className="text-xl font-bold">€{originalPrice.toFixed(2)}</span>
-                )}
+        <div className="p-4">
+          <Link 
+            to={`/product/${perfume.id}`} 
+            onClick={handleProductClick}
+            className="block"
+            aria-label={`${collectionName} Kollektion ansehen`}
+          >
+            <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">
+              {collectionName}
+            </h3>
+            
+            <p className="text-sm text-muted-foreground mb-3">
+              {perfume.variants.length} {perfume.variants.length === 1 ? 'Duft' : 'Düfte'} verfügbar
+            </p>
+
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <span className="text-xl font-bold text-primary">{priceRange}</span>
               </div>
               <Badge variant="secondary">{perfume.category}</Badge>
             </div>
 
-            {/* Discount Information */}
-            {!loading && discount > 0 && (
-              <div className="mb-3 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <p className="text-xs text-green-700 dark:text-green-300">
-                  🎉 Ihr Rabatt: {discount.toFixed(1)}% ({roleLabel} + Newsletter)
-                </p>
-              </div>
-            )}
-
-            {/* Variant Selection */}
-            {perfume.variants.length > 1 && (
-              <div className="mb-3">
-                <div className="flex flex-wrap gap-1">
-                  {perfume.variants.map((variant, index) => (
-                    <button
-                      key={variant.id}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setSelectedVariant(index);
-                      }}
-                      className={`px-2 py-1 text-xs border rounded transition-colors ${
-                        selectedVariant === index
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-muted-foreground/20 hover:border-primary'
-                      }`}
-                    >
-                      {variant.name.split(' - ')[1] || variant.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
             <Button 
-              onClick={(e) => {
-                e.preventDefault();
-                handleAddToCart();
-              }}
-              className="w-full"
-              aria-label={`${currentVariant.name} ${currentVariant.preorder ? 'vorbestellen' : 'in den Warenkorb legen'} für €${discountedPrice.toFixed(2)}`}
+              className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+              variant="outline"
+              aria-label={`${collectionName} Kollektion durchstöbern`}
             >
-              <ShoppingCart className="w-4 h-4 mr-2" aria-hidden="true" />
-              {currentVariant.preorder ? "Vorbestellen" : "In den Warenkorb"}
+              Kollektion durchstöbern
             </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </>
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
