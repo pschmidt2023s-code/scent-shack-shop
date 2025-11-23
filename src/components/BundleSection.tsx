@@ -40,8 +40,19 @@ export function BundleSection() {
       if (data) {
         // Map database bundles to display format
         const mappedBundles: BundleOption[] = data.map((bundle) => {
-          const isProben = bundle.name.toLowerCase().includes('probe');
+          // Determine if it's a probe bundle
+          const isProben = bundle.name.toLowerCase().includes('probe') || bundle.quantity_required === 5 && bundle.total_price < 50;
           const quantity = bundle.quantity_required;
+          
+          // Determine the correct link type
+          let linkType = '';
+          if (isProben) {
+            linkType = '5-proben';
+          } else if (quantity === 3) {
+            linkType = '3-flakons';
+          } else if (quantity === 5) {
+            linkType = '5-flakons';
+          }
           
           return {
             id: bundle.id,
@@ -56,9 +67,7 @@ export function BundleSection() {
             image: isProben
               ? '/lovable-uploads/dc821e74-0a27-4a45-a347-45a4ae0d55ef.png'
               : '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png',
-            link: isProben
-              ? `/bundle-konfigurator?type=5-proben`
-              : `/bundle-konfigurator?type=${quantity}-flakons`,
+            link: `/bundle-konfigurator?type=${linkType}`,
             quantity_required: quantity
           };
         });
