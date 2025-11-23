@@ -123,24 +123,8 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
           </p>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8 justify-between items-center">
-          <div className="flex flex-wrap gap-2">
-            {categories.map((category, index) => (
-              <Button
-                key={category}
-                variant={filter === category ? "default" : "outline"}
-                onClick={() => setFilter(category)}
-                className="capitalize transition-all duration-300 hover:scale-105 hover:shadow-glow relative overflow-hidden group"
-              >
-                <span className="relative z-10">{category === 'all' ? 'Alle' : category}</span>
-                {filter === category && (
-                  <div className="absolute inset-0 bg-gradient-primary opacity-20"></div>
-                )}
-              </Button>
-            ))}
-          </div>
-
+        {/* Sort Options */}
+        <div className="flex justify-end mb-8">
           <div>
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-48 transition-all duration-300 hover:scale-105 hover:shadow-glow">
