@@ -40,6 +40,7 @@ const ComparisonPage = React.lazy(() => import('@/pages/ComparisonPage'));
 const PerfumeFinder = React.lazy(() => import('@/pages/PerfumeFinder'));
 const MobileGesturesDemoPage = React.lazy(() => import('@/pages/MobileGesturesDemo'));
 const LiveSupport = React.lazy(() => import('@/pages/LiveSupport'));
+const BundleConfigurator = React.lazy(() => import('@/pages/BundleConfigurator'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -94,6 +95,7 @@ function App() {
                   <Route path="/parfum-finder" element={<Suspense fallback={<LoadingSpinner />}><PerfumeFinder /></Suspense>} />
                   <Route path="/mobile-gestures-demo" element={<Suspense fallback={<LoadingSpinner />}><MobileGesturesDemoPage /></Suspense>} />
                   <Route path="/live-support" element={<Suspense fallback={<LoadingSpinner />}><LiveSupport /></Suspense>} />
+                  <Route path="/bundle-konfigurator" element={<Suspense fallback={<LoadingSpinner />}><BundleConfigurator /></Suspense>} />
                   <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><NotFound /></Suspense>} />
                 </Routes>
                   </div>
