@@ -170,18 +170,29 @@ export default function ProductManagement() {
       return;
     }
 
-    const { error } = await supabase
-      .from('product_variants')
-      .update({ price: newPrice })
-      .eq('id', variantId);
+    try {
+      const { data, error } = await supabase
+        .from('product_variants')
+        .update({ price: newPrice })
+        .eq('id', variantId)
+        .select();
 
-    if (error) {
-      toast.error("Fehler beim Aktualisieren des Preises");
-      console.error(error);
-    } else {
-      toast.success("Preis aktualisiert!");
-      setEditingPriceId(null);
-      loadProducts();
+      if (error) {
+        console.error('Update error:', error);
+        toast.error(`Fehler beim Aktualisieren: ${error.message}`);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        toast.success("Preis erfolgreich aktualisiert!");
+        setEditingPriceId(null);
+        loadProducts();
+      } else {
+        toast.error("Variante nicht gefunden");
+      }
+    } catch (err) {
+      console.error('Exception:', err);
+      toast.error("Unerwarteter Fehler beim Aktualisieren");
     }
   };
 
@@ -353,41 +364,50 @@ export default function ProductManagement() {
                         <TableCell>
                           {isEditingPrice ? (
                             <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">€</span>
                               <Input
                                 type="number"
                                 step="0.01"
+                                min="0"
                                 value={editingPriceValue}
                                 onChange={(e) => setEditingPriceValue(e.target.value)}
-                                className="w-24"
+                                className="w-28"
                                 autoFocus
                                 onKeyDown={(e) => {
-                                  if (e.key === 'Enter') savePrice(variant.id);
-                                  if (e.key === 'Escape') cancelEditingPrice();
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    savePrice(variant.id);
+                                  }
+                                  if (e.key === 'Escape') {
+                                    e.preventDefault();
+                                    cancelEditingPrice();
+                                  }
                                 }}
                               />
                               <Button
                                 size="sm"
-                                variant="ghost"
                                 onClick={() => savePrice(variant.id)}
+                                className="bg-green-600 hover:bg-green-700 text-white"
                               >
-                                <Save className="w-4 h-4 text-green-600" />
+                                <Save className="w-4 h-4" />
                               </Button>
                               <Button
                                 size="sm"
-                                variant="ghost"
+                                variant="outline"
                                 onClick={cancelEditingPrice}
                               >
-                                <X className="w-4 h-4 text-red-600" />
+                                <X className="w-4 h-4" />
                               </Button>
                             </div>
                           ) : (
-                            <button
+                            <Button
+                              variant="ghost"
                               onClick={() => startEditingPrice(variant.id, variant.price)}
-                              className="flex items-center gap-2 px-3 py-1 hover:bg-accent rounded-md transition-colors"
+                              className="flex items-center gap-2 hover:bg-accent"
                             >
-                              <span className="font-semibold">€{variant.price.toFixed(2)}</span>
+                              <span className="font-semibold text-base">€{variant.price.toFixed(2)}</span>
                               <span className="text-xs text-muted-foreground">(klicken)</span>
-                            </button>
+                            </Button>
                           )}
                         </TableCell>
                         <TableCell>{variant.stock_quantity}</TableCell>
