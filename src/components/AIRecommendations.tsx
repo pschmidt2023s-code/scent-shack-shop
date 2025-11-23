@@ -29,18 +29,20 @@ export function AIRecommendations({ currentProductId, limit = 4 }: AIRecommendat
   const [loading, setLoading] = useState(true);
   const [aiReason, setAiReason] = useState('');
 
-  // Don't show recommendations for guests
-  if (!user) {
-    return null;
-  }
-
   useEffect(() => {
+    if (!user) return;
+    
     const timer = setTimeout(() => {
       fetchRecommendations();
     }, 500);
 
     return () => clearTimeout(timer);
   }, [user?.id, currentProductId]);
+
+  // Don't show recommendations for guests
+  if (!user) {
+    return null;
+  }
 
   const fetchRecommendations = async () => {
     if (!user) return;
