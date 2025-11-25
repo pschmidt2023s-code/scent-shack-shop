@@ -98,7 +98,7 @@ export function WhatsAppCommerce({ perfume, variant }: WhatsAppCommerceProps) {
         className="w-full justify-start gap-2 mt-2"
       >
         <Clock className="h-4 w-4" />
-        Live Support
+        Live Warteschleife
       </Button>
     </Card>
   );
