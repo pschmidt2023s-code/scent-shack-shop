@@ -201,6 +201,12 @@ const ProductDetail = () => {
                   <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                     {selectedVariant.description}
                   </p>
+                  {selectedVariant.inspiredBy && (
+                    <div className="mb-4 p-3 bg-primary/10 rounded-lg border border-primary/20">
+                      <span className="text-sm font-semibold text-primary">Riecht wie:</span>
+                      <span className="ml-2 text-sm font-medium">{selectedVariant.inspiredBy}</span>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">Nummer:</span>
@@ -286,6 +292,9 @@ const ProductDetail = () => {
                   <ul className="space-y-2 text-muted-foreground">
                     <li><strong>Name:</strong> {selectedVariant.name}</li>
                     <li><strong>Nummer:</strong> {selectedVariant.number}</li>
+                    {selectedVariant.inspiredBy && (
+                      <li><strong>Riecht wie:</strong> {selectedVariant.inspiredBy}</li>
+                    )}
                     <li><strong>Bewertung:</strong> {variantRating && variantRating.count > 0 ? `${variantRating.rating.toFixed(1)}/5 Sterne` : 'Noch keine Bewertungen'}</li>
                     <li><strong>Anzahl Bewertungen:</strong> {variantRating?.count || 0}</li>
                   </ul>

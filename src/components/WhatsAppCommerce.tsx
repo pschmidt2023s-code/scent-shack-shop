@@ -35,11 +35,21 @@ export function WhatsAppCommerce({ perfume, variant }: WhatsAppCommerceProps) {
 
   const orderViaWhatsApp = () => {
     const phoneNumber = '4915569057649';
+    const selectedVariant = variant || perfume.variants[0];
     const productUrl = `${window.location.origin}/product/${perfume.id}`;
-    const message = `Hallo! Ich möchte folgendes Produkt bestellen:\n\n🌟 ${perfume.name}\n💰 ${variant?.price || perfume.variants[0]?.price}€\n🔗 ${productUrl}`;
+    const message = `Hallo! Ich möchte folgendes Produkt bestellen:\n\n🌟 ${perfume.name} - ${selectedVariant?.name}\n💰 ${selectedVariant?.price}€\n🔗 ${productUrl}`;
     
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    
+    // Try to open in app first, fallback to web
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    
+    if (isIOS || isAndroid) {
+      window.location.href = whatsappUrl;
+    } else {
+      window.open(whatsappUrl, '_blank');
+    }
     
     toast({
       title: "WhatsApp geöffnet",
@@ -52,7 +62,16 @@ export function WhatsAppCommerce({ perfume, variant }: WhatsAppCommerceProps) {
     const message = `Hallo! Ich habe eine Frage zu: ${perfume.name}`;
     
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    
+    // Try to open in app first, fallback to web
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    
+    if (isIOS || isAndroid) {
+      window.location.href = whatsappUrl;
+    } else {
+      window.open(whatsappUrl, '_blank');
+    }
   };
 
   return (
@@ -98,7 +117,7 @@ export function WhatsAppCommerce({ perfume, variant }: WhatsAppCommerceProps) {
         className="w-full justify-start gap-2 mt-2"
       >
         <Clock className="h-4 w-4" />
-        Live Warteschleife
+        Live Support
       </Button>
     </Card>
   );

@@ -323,7 +323,8 @@ export default function Checkout() {
           recipient: "ALDENAIR GmbH",
           iban: "DE89 3704 0044 0532 0130 00",
           bic: "COBADEFFXXX",
-          bank: "Commerzbank"
+          bank: "Commerzbank",
+          purpose: orderNumber
         };
         
         try {
