@@ -34,6 +34,7 @@ interface ProductVariant {
   release_date: string | null;
   rating: number;
   review_count: number;
+  inspired_by_fragrance: string | null;
 }
 
 export default function ProductManagement() {
@@ -43,6 +44,8 @@ export default function ProductManagement() {
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
   const [editingPriceValue, setEditingPriceValue] = useState<string>("");
   const [uploadingImageFor, setUploadingImageFor] = useState<string | null>(null);
+  const [editingFragranceId, setEditingFragranceId] = useState<string | null>(null);
+  const [editingFragranceValue, setEditingFragranceValue] = useState<string>("");
 
   useEffect(() => {
     loadProducts();
@@ -201,6 +204,43 @@ export default function ProductManagement() {
     setEditingPriceValue("");
   };
 
+  const startEditingFragrance = (variantId: string, currentFragrance: string | null) => {
+    setEditingFragranceId(variantId);
+    setEditingFragranceValue(currentFragrance || "");
+  };
+
+  const saveFragrance = async (variantId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('product_variants')
+        .update({ inspired_by_fragrance: editingFragranceValue || null })
+        .eq('id', variantId)
+        .select();
+
+      if (error) {
+        console.error('Update error:', error);
+        toast.error(`Fehler beim Aktualisieren: ${error.message}`);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        toast.success("Original-Duft erfolgreich aktualisiert!");
+        setEditingFragranceId(null);
+        loadProducts();
+      } else {
+        toast.error("Variante nicht gefunden");
+      }
+    } catch (err) {
+      console.error('Exception:', err);
+      toast.error("Unerwarteter Fehler beim Aktualisieren");
+    }
+  };
+
+  const cancelEditingFragrance = () => {
+    setEditingFragranceId(null);
+    setEditingFragranceValue("");
+  };
+
   const deleteProduct = async (productId: string) => {
     if (!confirm("Möchten Sie dieses Produkt wirklich löschen? Alle zugehörigen Varianten werden ebenfalls gelöscht.")) {
       return;
@@ -343,7 +383,8 @@ export default function ProductManagement() {
                     <TableHead>Produkt</TableHead>
                     <TableHead>Variante</TableHead>
                     <TableHead>Name</TableHead>
-                    <TableHead>Preis (klicken zum bearbeiten)</TableHead>
+                    <TableHead>Preis (klicken)</TableHead>
+                    <TableHead>Riecht wie (klicken)</TableHead>
                     <TableHead>Lager</TableHead>
                     <TableHead>Auf Lager</TableHead>
                     <TableHead className="text-right">Aktionen</TableHead>
@@ -353,6 +394,7 @@ export default function ProductManagement() {
                   {variants.map((variant) => {
                     const product = products.find(p => p.id === variant.product_id);
                     const isEditingPrice = editingPriceId === variant.id;
+                    const isEditingFragrance = editingFragranceId === variant.id;
                     
                     return (
                       <TableRow key={variant.id}>
@@ -406,6 +448,55 @@ export default function ProductManagement() {
                               className="flex items-center gap-2 hover:bg-accent"
                             >
                               <span className="font-semibold text-base">€{variant.price.toFixed(2)}</span>
+                              <span className="text-xs text-muted-foreground">(klicken)</span>
+                            </Button>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {isEditingFragrance ? (
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="text"
+                                placeholder="z.B. Dior Sauvage"
+                                value={editingFragranceValue}
+                                onChange={(e) => setEditingFragranceValue(e.target.value)}
+                                className="w-48"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    saveFragrance(variant.id);
+                                  }
+                                  if (e.key === 'Escape') {
+                                    e.preventDefault();
+                                    cancelEditingFragrance();
+                                  }
+                                }}
+                              />
+                              <Button
+                                size="sm"
+                                onClick={() => saveFragrance(variant.id)}
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                              >
+                                <Save className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={cancelEditingFragrance}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              onClick={() => startEditingFragrance(variant.id, variant.inspired_by_fragrance)}
+                              className="flex items-center gap-2 hover:bg-accent text-left"
+                            >
+                              <span className="text-sm">
+                                {variant.inspired_by_fragrance || "Nicht angegeben"}
+                              </span>
                               <span className="text-xs text-muted-foreground">(klicken)</span>
                             </Button>
                           )}

@@ -11,6 +11,7 @@ export interface PerfumeVariant {
   releaseDate?: string;
   rating?: number;
   reviewCount?: number;
+  inspiredBy?: string;
 }
 
 export interface Perfume {
