@@ -59,7 +59,8 @@ export function AdminMobileNav({ activeTab, onTabChange, onMenuClick }: AdminMob
         style={{ 
           paddingBottom: 'max(env(safe-area-inset-bottom), 12px)',
           paddingTop: '12px',
-          pointerEvents: 'auto'
+          pointerEvents: 'auto',
+          touchAction: 'manipulation'
         }}
       >
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
@@ -71,14 +72,23 @@ export function AdminMobileNav({ activeTab, onTabChange, onMenuClick }: AdminMob
             return (
               <button
                 key={item.value}
-                onClick={() => handleItemClick(item)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleItemClick(item);
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
                 className={cn(
                   "group relative flex flex-col items-center justify-center gap-1 px-2 py-2 transition-all duration-200 h-full rounded-xl",
-                  "hover:bg-primary/10 active:scale-95",
+                  "active:scale-95",
                   isActive 
                     ? "text-primary font-semibold bg-primary/5" 
-                    : "text-foreground/90 hover:text-primary"
+                    : "text-foreground/90"
                 )}
+                style={{ touchAction: 'manipulation' }}
               >
                 <div className="relative">
                   <Icon className="w-4 h-4" strokeWidth={2.5} />
