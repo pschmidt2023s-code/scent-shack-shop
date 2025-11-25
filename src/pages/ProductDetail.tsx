@@ -197,7 +197,7 @@ const ProductDetail = () => {
             {selectedVariant && (
               <Card className="bg-muted/50">
                 <CardContent className="p-4">
-                  <h3 className="font-semibold mb-2">Ausgewählte Variante: {selectedVariant.name}</h3>
+                  <h3 className="font-semibold mb-2">{selectedVariant.name}</h3>
                   <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                     {selectedVariant.description}
                   </p>
