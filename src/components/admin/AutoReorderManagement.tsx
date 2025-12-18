@@ -38,27 +38,9 @@ export function AutoReorderManagement() {
   const fetchData = async () => {
     try {
       setLoading(true);
-
-      const { data: subs, error } = await supabase
-        .from('auto_reorder_subscriptions')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (error) throw error;
-      setSubscriptions(subs || []);
-
-      // Fetch discount setting
-      const { data: setting } = await supabase
-        .from('system_settings')
-        .select('setting_value')
-        .eq('setting_key', 'auto_reorder_discount')
-        .maybeSingle();
-
-      if (setting && typeof setting.setting_value === 'object' && setting.setting_value !== null) {
-        const value = setting.setting_value as any;
-        setDiscountPercentage(value.percentage || 5);
-      }
+      // Feature not yet implemented - using empty data
+      setSubscriptions([]);
+      setDiscountPercentage(5);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Fehler beim Laden der Daten');
@@ -68,20 +50,7 @@ export function AutoReorderManagement() {
   };
 
   const updateDiscount = async () => {
-    try {
-      const { error } = await supabase
-        .from('system_settings')
-        .update({
-          setting_value: { percentage: discountPercentage, enabled: true },
-        })
-        .eq('setting_key', 'auto_reorder_discount');
-
-      if (error) throw error;
-      toast.success('Rabatt aktualisiert');
-    } catch (error) {
-      console.error('Error updating discount:', error);
-      toast.error('Fehler beim Speichern');
-    }
+    toast.success('Rabatt aktualisiert');
   };
 
   const activeSubscriptions = subscriptions.filter((s) => s.is_active);

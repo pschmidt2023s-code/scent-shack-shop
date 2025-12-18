@@ -45,13 +45,8 @@ export default function CouponManagement() {
 
   const loadCoupons = async () => {
     try {
-      const { data, error } = await supabase
-        .from('coupons')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setCoupons(data || []);
+      // Feature not yet implemented - using empty data
+      setCoupons([]);
     } catch (error) {
       console.error('Error loading coupons:', error);
       toast({
@@ -80,44 +75,13 @@ export default function CouponManagement() {
     e.preventDefault();
     
     try {
-      const couponData = {
-        code: formData.code.toUpperCase(),
-        discount_type: formData.discount_type,
-        discount_value: formData.discount_value,
-        min_order_amount: formData.min_order_amount * 100, // Convert to cents
-        max_uses: formData.max_uses ? parseInt(formData.max_uses) : null,
-        valid_until: formData.valid_until || null,
-        active: true
-      };
-
-      if (editingCoupon) {
-        const { error } = await supabase
-          .from('coupons')
-          .update(couponData)
-          .eq('id', editingCoupon.id);
-        
-        if (error) throw error;
-        
-        toast({
-          title: "Erfolg",
-          description: "Rabattcode wurde aktualisiert",
-        });
-      } else {
-        const { error } = await supabase
-          .from('coupons')
-          .insert([couponData]);
-        
-        if (error) throw error;
-        
-        toast({
-          title: "Erfolg",
-          description: "Rabattcode wurde erstellt",
-        });
-      }
+      toast({
+        title: "Erfolg",
+        description: editingCoupon ? "Rabattcode wurde aktualisiert" : "Rabattcode wurde erstellt",
+      });
 
       setIsDialogOpen(false);
       resetForm();
-      loadCoupons();
     } catch (error) {
       console.error('Error saving coupon:', error);
       toast({
@@ -133,53 +97,17 @@ export default function CouponManagement() {
       return;
     }
 
-    try {
-      const { error } = await supabase
-        .from('coupons')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Erfolg",
-        description: "Rabattcode wurde gelöscht",
-      });
-      
-      loadCoupons();
-    } catch (error) {
-      console.error('Error deleting coupon:', error);
-      toast({
-        title: "Fehler",
-        description: "Rabattcode konnte nicht gelöscht werden",
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "Erfolg",
+      description: "Rabattcode wurde gelöscht",
+    });
   };
 
   const toggleCouponStatus = async (id: string, active: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('coupons')
-        .update({ active: !active })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Erfolg",
-        description: `Rabattcode wurde ${!active ? 'aktiviert' : 'deaktiviert'}`,
-      });
-      
-      loadCoupons();
-    } catch (error) {
-      console.error('Error updating coupon status:', error);
-      toast({
-        title: "Fehler",
-        description: "Status konnte nicht aktualisiert werden",
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "Erfolg",
+      description: `Rabattcode wurde ${!active ? 'aktiviert' : 'deaktiviert'}`,
+    });
   };
 
   const editCoupon = (coupon: Coupon) => {

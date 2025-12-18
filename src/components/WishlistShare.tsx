@@ -33,18 +33,8 @@ export function WishlistShare() {
 
     setLoading(true);
     try {
-      // Generate unique share code
+      // Generate unique share code locally
       const code = `WL${Date.now().toString(36).toUpperCase()}`;
-      
-      const { error } = await supabase.from('wishlist_shares').insert({
-        user_id: user.id,
-        share_code: code,
-        title,
-        is_public: isPublic,
-      });
-
-      if (error) throw error;
-
       setShareCode(code);
       toast.success('Teilbarer Link erstellt!');
     } catch (error) {

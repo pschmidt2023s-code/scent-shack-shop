@@ -2,10 +2,8 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Gift, Copy, Share2, Users, Euro } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface ReferralStats {
@@ -23,6 +21,8 @@ export function ReferralProgram() {
   useEffect(() => {
     if (user) {
       fetchReferralStats();
+    } else {
+      setLoading(false);
     }
   }, [user]);
 
@@ -32,36 +32,14 @@ export function ReferralProgram() {
     try {
       setLoading(true);
       
-      // Check if user is already a partner
-      const { data: partner } = await supabase
-        .from('partners')
-        .select('partner_code, total_commission, total_paid_out')
-        .eq('user_id', user.id)
-        .single();
-
-      if (partner) {
-        // Get referral count
-        const { count } = await supabase
-          .from('partner_sales')
-          .select('*', { count: 'exact', head: true })
-          .eq('partner_id', partner.partner_code);
-
-        setStats({
-          referralCode: partner.partner_code,
-          totalReferrals: count || 0,
-          totalEarnings: partner.total_paid_out || 0,
-          pendingEarnings: partner.total_commission - (partner.total_paid_out || 0),
-        });
-      } else {
-        // Create a simple referral code (not a full partner)
-        const code = `REF${user.id.substring(0, 8).toUpperCase()}`;
-        setStats({
-          referralCode: code,
-          totalReferrals: 0,
-          totalEarnings: 0,
-          pendingEarnings: 0,
-        });
-      }
+      // Generate a simple referral code for the user
+      const code = `REF${user.id.substring(0, 8).toUpperCase()}`;
+      setStats({
+        referralCode: code,
+        totalReferrals: 0,
+        totalEarnings: 0,
+        pendingEarnings: 0,
+      });
     } catch (error) {
       console.error('Error fetching referral stats:', error);
     } finally {
