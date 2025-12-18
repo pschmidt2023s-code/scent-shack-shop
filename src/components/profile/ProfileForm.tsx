@@ -1,11 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { sanitizeInput, validatePhoneNumber } from '@/lib/validation';
@@ -31,19 +29,13 @@ export function ProfileForm() {
 
   const loadProfile = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user?.id)
-        .single();
+      const response = await fetch('/api/profile', {
+        credentials: 'include',
+      });
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading profile:', error);
-        return;
-      }
-
-      if (data) {
-        setValue('full_name', data.full_name || '');
+      if (response.ok) {
+        const data = await response.json();
+        setValue('full_name', data.fullName || '');
         setValue('phone', data.phone || '');
       }
     } catch (error) {
@@ -56,7 +48,6 @@ export function ProfileForm() {
   const onSubmit = async (data: ProfileFormData) => {
     if (!user) return;
 
-    // Validate phone number if provided
     if (data.phone && data.phone.trim()) {
       const phoneValidation = validatePhoneNumber(data.phone);
       if (!phoneValidation.isValid) {
@@ -71,16 +62,19 @@ export function ProfileForm() {
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          full_name: sanitizeInput(data.full_name),
+      const response = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          fullName: sanitizeInput(data.full_name),
           phone: data.phone ? sanitizeInput(data.phone) : null,
-          updated_at: new Date().toISOString(),
-        });
+        }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to update profile');
+      }
 
       toast({
         title: "Profil aktualisiert",
@@ -108,32 +102,33 @@ export function ProfileForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-2">
+      <div>
         <Label htmlFor="full_name">Vollständiger Name</Label>
         <Input
           id="full_name"
           {...register('full_name', { required: 'Name ist erforderlich' })}
           placeholder="Max Mustermann"
+          data-testid="input-profile-name"
         />
         {errors.full_name && (
-          <p className="text-sm text-destructive">{errors.full_name.message}</p>
+          <p className="text-sm text-destructive mt-1">{errors.full_name.message}</p>
         )}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="phone">Telefonnummer (optional)</Label>
+      <div>
+        <Label htmlFor="phone">Telefonnummer</Label>
         <Input
           id="phone"
-          type="tel"
           {...register('phone')}
-          placeholder="+49 123 456 7890"
+          placeholder="+49 123 456789"
+          data-testid="input-profile-phone"
         />
-        <p className="text-xs text-muted-foreground">
-          Internationale Formate werden unterstützt (7-15 Ziffern)
-        </p>
+        {errors.phone && (
+          <p className="text-sm text-destructive mt-1">{errors.phone.message}</p>
+        )}
       </div>
 
-      <Button type="submit" disabled={loading}>
+      <Button type="submit" disabled={loading} data-testid="button-save-profile">
         {loading ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />

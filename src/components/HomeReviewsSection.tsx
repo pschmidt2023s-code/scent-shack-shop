@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Star } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
-import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback } from './ui/avatar';
 
 interface Review {
@@ -9,8 +8,8 @@ interface Review {
   rating: number;
   title: string;
   content: string;
-  created_at: string;
-  reviewer_name: string;
+  createdAt: string;
+  reviewerName: string;
 }
 
 export function HomeReviewsSection() {
@@ -25,27 +24,14 @@ export function HomeReviewsSection() {
 
   const fetchTopReviews = async () => {
     try {
-      // Get recent 5-star reviews
-      const { data, error } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('rating', 5)
-        .order('created_at', { ascending: false })
-        .limit(3);
-
-      if (error) throw error;
+      const response = await fetch('/api/reviews/top');
       
-      // Transform to match interface with anonymous names
-      const transformedReviews = (data || []).map((review: any) => ({
-        id: review.id,
-        rating: review.rating,
-        title: review.title || 'Hervorragend',
-        content: review.content || '',
-        created_at: review.created_at,
-        reviewer_name: review.is_verified ? 'Verifizierter Kunde' : 'Kunde',
-      }));
-
-      setReviews(transformedReviews);
+      if (!response.ok) {
+        throw new Error('Failed to fetch reviews');
+      }
+      
+      const data = await response.json();
+      setReviews(data || []);
     } catch (error) {
       console.error('Error fetching reviews:', error);
     }
@@ -72,11 +58,11 @@ export function HomeReviewsSection() {
                 <div className="flex items-center gap-3">
                   <Avatar>
                     <AvatarFallback className="bg-luxury-gold text-luxury-black">
-                      {review.reviewer_name.charAt(0)}
+                      {review.reviewerName.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <p className="font-semibold text-sm glass-text-dark">{review.reviewer_name}</p>
+                    <p className="font-semibold text-sm glass-text-dark">{review.reviewerName}</p>
                     <div className="flex gap-0.5">
                       {Array.from({ length: 5 }).map((_, i) => (
                         <Star
@@ -94,12 +80,11 @@ export function HomeReviewsSection() {
                     {review.content}
                   </p>
                 </div>
-
-                <p className="text-xs glass-text-dark opacity-70">
-                  {new Date(review.created_at).toLocaleDateString('de-DE', {
-                    day: '2-digit',
+                
+                <p className="text-xs text-muted-foreground">
+                  {new Date(review.createdAt).toLocaleDateString('de-DE', {
+                    year: 'numeric',
                     month: 'long',
-                    year: 'numeric'
                   })}
                 </p>
               </CardContent>

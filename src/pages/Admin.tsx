@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -26,29 +25,29 @@ import { getPerfumeNameById } from '@/lib/perfume-utils';
 
 interface Order {
   id: string;
-  user_id: string | null;
-  stripe_session_id: string;
-  total_amount: number;
+  userId: string | null;
+  stripeSessionId: string;
+  totalAmount: number;
   currency: string;
   status: string;
-  created_at: string;
-  updated_at: string;
-  order_number?: string;
-  customer_name?: string;
-  customer_email?: string;
-  customer_phone?: string;
-  shipping_address_data?: any;
-  billing_address_data?: any;
-  order_items?: OrderItem[];
+  createdAt: string;
+  updatedAt: string;
+  orderNumber?: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  shippingAddressData?: any;
+  billingAddressData?: any;
+  orderItems?: OrderItem[];
 }
 
 interface OrderItem {
   id: string;
-  perfume_id: string;
-  variant_id: string;
+  perfumeId: string;
+  variantId: string;
   quantity: number;
-  unit_price: number;
-  total_price: number;
+  unitPrice: number;
+  totalPrice: number;
 }
 
 export default function Admin() {
@@ -70,16 +69,13 @@ export default function Admin() {
 
   const loadOrders = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          order_items (*)
-        `)
-        .not('order_number', 'is', null)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const response = await fetch('/api/admin/orders', {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) throw new Error('Failed to load orders');
+      
+      const data = await response.json();
       setOrders(data || []);
     } catch (error) {
       console.error('Error loading orders:', error);
@@ -95,42 +91,14 @@ export default function Admin() {
 
   const updateOrderStatus = useCallback(async (orderId: string, newStatus: string) => {
     try {
-      // Get current order data for email notification
-      const { data: orderData } = await supabase
-        .from('orders')
-        .select('status, customer_email, customer_name, order_number')
-        .eq('id', orderId)
-        .single();
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status: newStatus }),
+      });
 
-      const oldStatus = orderData?.status;
-
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', orderId);
-
-      if (error) throw error;
-
-      // Send status update email if customer email exists and status actually changed
-      if (orderData?.customer_email && oldStatus !== newStatus) {
-        try {
-          const { error: emailError } = await supabase.functions.invoke('send-order-status-update', {
-            body: {
-              orderId: orderId,
-              newStatus: newStatus,
-              oldStatus: oldStatus
-            }
-          });
-
-          if (emailError) {
-            console.error('Error sending order status update email:', emailError);
-          } else {
-            console.log('Order status update email sent successfully');
-          }
-        } catch (emailError) {
-          console.error('Failed to send order status update email:', emailError);
-        }
-      }
+      if (!response.ok) throw new Error('Failed to update order status');
 
       await loadOrders();
       toast({
@@ -149,12 +117,12 @@ export default function Admin() {
 
   const deleteOrder = useCallback(async (orderId: string) => {
     try {
-      const { error } = await supabase
-        .from('orders')
-        .delete()
-        .eq('id', orderId);
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to delete order');
 
       await loadOrders();
       toast({
@@ -175,12 +143,12 @@ export default function Admin() {
     if (selectedOrderIds.length === 0) return;
     
     try {
-      const { error } = await supabase
-        .from('orders')
-        .delete()
-        .in('id', selectedOrderIds);
-
-      if (error) throw error;
+      for (const orderId of selectedOrderIds) {
+        await fetch(`/api/orders/${orderId}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+      }
 
       setSelectedOrderIds([]);
       await loadOrders();
@@ -349,14 +317,14 @@ export default function Admin() {
                             onCheckedChange={() => toggleOrderSelection(order.id)}
                           />
                           <div>
-                            <p className="font-semibold">#{order.order_number || order.id.slice(-8).toUpperCase()}</p>
+                            <p className="font-semibold">#{order.orderNumber || order.id.slice(-8).toUpperCase()}</p>
                             <p className="text-sm text-muted-foreground">
-                              {new Date(order.created_at).toLocaleDateString('de-DE')}
+                              {new Date(order.createdAt).toLocaleDateString('de-DE')}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold">€{order.total_amount.toFixed(2)}</span>
+                          <span className="font-semibold">€{order.totalAmount.toFixed(2)}</span>
                           {getStatusBadge(order.status)}
                         </div>
                       </div>
@@ -395,7 +363,7 @@ export default function Admin() {
                           </DialogTrigger>
                           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                             <DialogHeader>
-                              <DialogTitle>Bestelldetails - #{order.order_number || order.id.slice(-8).toUpperCase()}</DialogTitle>
+                              <DialogTitle>Bestelldetails - #{order.orderNumber || order.id.slice(-8).toUpperCase()}</DialogTitle>
                             </DialogHeader>
                             
                             <div className="space-y-6">
@@ -407,14 +375,14 @@ export default function Admin() {
                                     <h3 className="font-medium">Kundeninformationen</h3>
                                   </div>
                                   <div className="bg-muted p-3 rounded-lg space-y-2">
-                                    {order.customer_name && (
-                                      <p className="text-sm"><strong>Name:</strong> {order.customer_name}</p>
+                                    {order.customerName && (
+                                      <p className="text-sm"><strong>Name:</strong> {order.customerName}</p>
                                     )}
-                                    {order.customer_email && (
-                                      <p className="text-sm"><strong>E-Mail:</strong> {order.customer_email}</p>
+                                    {order.customerEmail && (
+                                      <p className="text-sm"><strong>E-Mail:</strong> {order.customerEmail}</p>
                                     )}
-                                    {order.customer_phone && (
-                                      <p className="text-sm"><strong>Telefon:</strong> {order.customer_phone}</p>
+                                    {order.customerPhone && (
+                                      <p className="text-sm"><strong>Telefon:</strong> {order.customerPhone}</p>
                                     )}
                                   </div>
                                 </div>
@@ -426,14 +394,14 @@ export default function Admin() {
                                   </div>
                                   <div className="bg-muted p-3 rounded-lg space-y-2">
                                     <p className="text-sm"><strong>Status:</strong> {getStatusBadge(order.status)}</p>
-                                    <p className="text-sm"><strong>Betrag:</strong> €{order.total_amount.toFixed(2)}</p>
-                                    <p className="text-sm"><strong>Datum:</strong> {new Date(order.created_at).toLocaleDateString('de-DE')}</p>
+                                    <p className="text-sm"><strong>Betrag:</strong> €{order.totalAmount.toFixed(2)}</p>
+                                    <p className="text-sm"><strong>Datum:</strong> {new Date(order.createdAt).toLocaleDateString('de-DE')}</p>
                                   </div>
                                 </div>
                               </div>
 
                               {/* Shipping Address */}
-                              {order.shipping_address_data && (
+                              {order.shippingAddressData && (
                                 <div className="space-y-3">
                                   <div className="flex items-center gap-2">
                                     <MapPin className="w-4 h-4" />
@@ -441,32 +409,32 @@ export default function Admin() {
                                   </div>
                                   <div className="bg-muted p-3 rounded-lg">
                                     <div className="text-sm space-y-1">
-                                      <p>{order.shipping_address_data.firstName} {order.shipping_address_data.lastName}</p>
-                                      <p>{order.shipping_address_data.street}</p>
-                                      <p>{order.shipping_address_data.postalCode} {order.shipping_address_data.city}</p>
-                                      <p>{order.shipping_address_data.country}</p>
+                                      <p>{order.shippingAddressData.firstName} {order.shippingAddressData.lastName}</p>
+                                      <p>{order.shippingAddressData.street}</p>
+                                      <p>{order.shippingAddressData.postalCode} {order.shippingAddressData.city}</p>
+                                      <p>{order.shippingAddressData.country}</p>
                                     </div>
                                   </div>
                                 </div>
                               )}
 
                               {/* Order Items */}
-                              {order.order_items && order.order_items.length > 0 && (
+                              {order.orderItems && order.orderItems.length > 0 && (
                                 <div className="space-y-3">
                                   <h3 className="font-medium">Bestellte Artikel</h3>
                                   <div className="border rounded-lg divide-y">
-                                    {order.order_items.map((item) => (
+                                    {order.orderItems.map((item) => (
                                       <div key={item.id} className="p-3 flex justify-between items-center">
                                        <div>
                                            <p className="font-medium text-sm">
-                                             {item.quantity}x {getPerfumeNameById(item.perfume_id, item.variant_id)}
+                                             {item.quantity}x {getPerfumeNameById(item.perfumeId, item.variantId)}
                                            </p>
                                            <p className="text-xs text-muted-foreground">
-                                             Einzelpreis: €{item.unit_price.toFixed(2)}
+                                             Einzelpreis: €{item.unitPrice.toFixed(2)}
                                            </p>
                                          </div>
                                         <div className="text-right">
-                                          <p className="font-medium">€{item.total_price.toFixed(2)}</p>
+                                          <p className="font-medium">€{item.totalPrice.toFixed(2)}</p>
                                           <p className="text-xs text-muted-foreground">{item.quantity}x</p>
                                         </div>
                                       </div>

@@ -203,6 +203,15 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.get("/api/reviews/top", async (req, res) => {
+    try {
+      const reviews = await storage.getTopReviews();
+      res.json(reviews);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/products/:id/reviews", requireAuth, async (req, res) => {
     try {
       const data = insertReviewSchema.parse({
@@ -342,6 +351,15 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.delete("/api/orders/:id", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteOrder(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   app.get("/api/admin/orders", requireAdmin, async (req, res) => {
     try {
       const orders = await storage.getOrders();
@@ -433,6 +451,26 @@ export async function registerRoutes(app: Express) {
     try {
       const partner = await storage.getPartnerByUserId(req.session.userId!);
       res.json(partner || null);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/partners/validate/:code", async (req, res) => {
+    try {
+      const partner = await storage.getPartnerByCode(req.params.code.toUpperCase());
+      if (!partner || partner.status !== 'approved') {
+        return res.status(404).json({ error: "Invalid referral code" });
+      }
+      
+      const user = partner.userId ? await storage.getUser(partner.userId) : null;
+      
+      res.json({
+        id: partner.id,
+        partnerCode: partner.partnerCode,
+        commissionRate: parseFloat(partner.commissionRate || '2.5'),
+        fullName: user?.fullName || 'Partner'
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -583,6 +621,134 @@ Dein Verhalten:
       res.json(profile);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/returns", requireAuth, async (req, res) => {
+    try {
+      const { orderId, reason } = req.body;
+      if (!orderId || !reason) {
+        return res.status(400).json({ error: "Order ID and reason required" });
+      }
+      
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+      
+      if (order.userId !== req.session.userId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+      
+      res.json({ success: true, message: "Return request submitted" });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/loyalty", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      res.json({
+        points: 0,
+        lifetimePoints: 0,
+        tier: "bronze",
+        transactions: [],
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/partners/me/sales", requireAuth, async (req, res) => {
+    try {
+      const partner = await storage.getPartnerByUserId(req.session.userId!);
+      if (!partner) {
+        return res.status(404).json({ error: "Partner not found" });
+      }
+      
+      const sales = await storage.getPartnerSales(partner.id);
+      res.json(sales);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/partners/me/payouts", requireAuth, async (req, res) => {
+    try {
+      const partner = await storage.getPartnerByUserId(req.session.userId!);
+      if (!partner) {
+        return res.status(404).json({ error: "Partner not found" });
+      }
+      
+      const payouts = await storage.getPartnerPayouts(partner.id);
+      res.json(payouts);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/partners/me/bank", requireAuth, async (req, res) => {
+    try {
+      const partner = await storage.getPartnerByUserId(req.session.userId!);
+      if (!partner) {
+        return res.status(404).json({ error: "Partner not found" });
+      }
+      
+      const updated = await storage.updatePartner(partner.id, {
+        bankDetails: req.body,
+      });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/partners/me/payouts", requireAuth, async (req, res) => {
+    try {
+      const partner = await storage.getPartnerByUserId(req.session.userId!);
+      if (!partner) {
+        return res.status(404).json({ error: "Partner not found" });
+      }
+      
+      const { amount } = req.body;
+      if (!amount || parseFloat(amount) <= 0) {
+        return res.status(400).json({ error: "Invalid amount" });
+      }
+      
+      const pendingEarnings = parseFloat(partner.pendingEarnings || "0");
+      if (parseFloat(amount) > pendingEarnings) {
+        return res.status(400).json({ error: "Insufficient balance" });
+      }
+      
+      res.json({ success: true, message: "Payout request submitted" });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/admin/users", requireAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users.map(u => {
+        const { password, ...user } = u;
+        return user;
+      }));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/admin/newsletter", requireAdmin, async (req, res) => {
+    try {
+      const subscribers = await storage.getNewsletterSubscribers();
+      res.json(subscribers);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 }

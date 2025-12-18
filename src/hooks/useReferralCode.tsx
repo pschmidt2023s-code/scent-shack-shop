@@ -1,15 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface ReferralPartner {
   id: string;
-  partner_code: string;
-  commission_rate: number;
-  profiles?: {
-    full_name: string;
-  };
+  partnerCode: string;
+  commissionRate: number;
+  fullName?: string;
 }
 
 export function useReferralCode() {
@@ -31,32 +28,18 @@ export function useReferralCode() {
 
     setLoading(true);
     try {
-      const { data: partnerData, error } = await supabase
-        .from('partners')
-        .select(`
-          id,
-          partner_code,
-          commission_rate,
-          profiles!partners_user_id_fkey(full_name)
-        `)
-        .eq('partner_code', code.toUpperCase())
-        .eq('status', 'approved')
-        .single();
-
-      if (error || !partnerData) {
-        console.log('Invalid referral code:', code);
+      const response = await fetch(`/api/partners/validate/${code.toUpperCase()}`);
+      
+      if (!response.ok) {
         setPartner(null);
-        // Don't show error toast as this might be confusing for users
         return;
       }
 
-      setPartner(partnerData as any);
+      const partnerData = await response.json();
+      setPartner(partnerData);
       
-      // Show welcome message with partner info
-      const partnerName = (partnerData.profiles as any)?.full_name || 'Partner';
+      const partnerName = partnerData.fullName || 'Partner';
       toast.success(`Willkommen! Sie wurden von ${partnerName} empfohlen.`);
-      
-      console.log('Valid referral partner:', partnerData);
     } catch (error) {
       console.error('Error validating referral code:', error);
       setPartner(null);

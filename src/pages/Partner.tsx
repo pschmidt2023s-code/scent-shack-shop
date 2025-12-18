@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { isValidIBAN, formatIBAN } from '@/lib/iban-validator';
 import { 
@@ -18,44 +16,26 @@ import {
   Copy, 
   Check, 
   TrendingUp, 
-  Banknote,
-  ExternalLink,
   Share2,
   ArrowLeft
 } from 'lucide-react';
 
 interface Partner {
   id: string;
-  partner_code: string;
+  partnerCode: string;
   status: string;
-  commission_rate: number;
-  total_sales: number;
-  total_commission: number;
-  total_paid_out: number;
-  bank_details?: any;
-  created_at: string;
-  approved_at?: string;
+  commissionRate: string;
+  totalEarnings: string;
+  pendingEarnings: string;
+  bankDetails?: any;
+  createdAt: string;
 }
 
 interface PartnerSale {
   id: string;
-  commission_amount: number;
+  commissionAmount: string;
   status: string;
-  created_at: string;
-  order: {
-    order_number: string;
-    total_amount: number;
-    customer_name: string;
-  };
-}
-
-interface PartnerPayout {
-  id: string;
-  amount: number;
-  status: string;
-  requested_at: string;
-  processed_at?: string;
-  notes?: string;
+  createdAt: string;
 }
 
 export default function Partner() {
@@ -63,7 +43,6 @@ export default function Partner() {
   const navigate = useNavigate();
   const [partner, setPartner] = useState<Partner | null>(null);
   const [sales, setSales] = useState<PartnerSale[]>([]);
-  const [payouts, setPayouts] = useState<PartnerPayout[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [bankDetails, setBankDetails] = useState({
@@ -72,197 +51,109 @@ export default function Partner() {
     bic: '',
     bank_name: ''
   });
-  const [payoutAmount, setPayoutAmount] = useState('');
   const [applicationData, setApplicationData] = useState({
     first_name: '',
     last_name: '',
     address: '',
     motivation: ''
   });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      loadPartnerData();
-    } else {
-      setLoading(false);
-    }
+    loadPartnerData();
   }, [user]);
 
   const loadPartnerData = async () => {
     try {
-      // Load partner data
-      const { data: partnerData, error: partnerError } = await supabase
-        .from('partners')
-        .select('*')
-        .eq('user_id', user?.id)
-        .single();
+      const response = await fetch('/api/partners/me', {
+        credentials: 'include',
+      });
 
-      if (partnerError && partnerError.code !== 'PGRST116') {
-        throw partnerError;
-      }
-
-      if (partnerData) {
+      if (response.ok) {
+        const partnerData = await response.json();
         setPartner(partnerData);
-        setBankDetails(partnerData.bank_details as any || bankDetails);
+        setBankDetails(partnerData.bankDetails || bankDetails);
 
-        // Load sales data
-        const { data: salesData, error: salesError } = await supabase
-          .from('partner_sales')
-          .select(`
-            *,
-            orders!inner(order_number, total_amount, customer_name)
-          `)
-          .eq('partner_id', partnerData.id)
-          .order('created_at', { ascending: false });
-
-        if (salesError) throw salesError;
-        setSales((salesData || []).map(sale => ({
-          ...sale,
-          order: sale.orders
-        })) as any);
-
-        // Load payouts data
-        const { data: payoutsData, error: payoutsError } = await supabase
-          .from('partner_payouts')
-          .select('*')
-          .eq('partner_id', partnerData.id)
-          .order('requested_at', { ascending: false });
-
-        if (payoutsError) throw payoutsError;
-        setPayouts(payoutsData || []);
+        const salesResponse = await fetch('/api/partners/me/sales', {
+          credentials: 'include',
+        });
+        if (salesResponse.ok) {
+          const salesData = await salesResponse.json();
+          setSales(salesData || []);
+        }
       }
     } catch (error) {
       console.error('Error loading partner data:', error);
-      toast.error('Fehler beim Laden der Partner-Daten');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const applyAsPartner = async () => {
-    console.log('applyAsPartner called', { user, applicationData, bankDetails });
-    
-    // Validate required fields
-    if (!applicationData.first_name || !applicationData.last_name || !bankDetails.account_holder || !bankDetails.iban || !bankDetails.bic || !bankDetails.bank_name) {
-      console.log('Validation failed - missing required fields');
-      toast.error('Bitte füllen Sie alle Pflichtfelder aus');
-      return;
-    }
-
-    // Check for email (required for partner application)
-    let userEmail = user?.email;
-    if (!userEmail) {
-      // If no user, we need an email address for the application
-      const email = prompt('Bitte geben Sie Ihre E-Mail-Adresse für die Partner-Bewerbung ein:');
-      if (!email || !email.includes('@')) {
-        toast.error('Eine gültige E-Mail-Adresse ist erforderlich');
-        return;
-      }
-      userEmail = email;
-    }
-
-    // Validate IBAN
-    const cleanIban = bankDetails.iban.replace(/\s/g, '');
-    if (!isValidIBAN(cleanIban)) {
-      toast.error('Bitte geben Sie eine gültige IBAN ein');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      console.log('Sending partner application...');
-      const { data, error } = await supabase.functions.invoke('apply-partner', {
-        body: {
-          application_data: applicationData,
-          bank_details: {
-            ...bankDetails,
-            iban: cleanIban
-          },
-          email: userEmail,
-          user_id: user?.id || null
-        }
-      });
-
-      console.log('Partner application response:', { data, error });
-
-      if (error) throw error;
-
-      toast.success('Bewerbung wurde eingereicht! Sie erhalten eine Bestätigung per E-Mail.');
-      
-      if (user) {
-        await loadPartnerData();
-      }
-    } catch (error: any) {
-      console.error('Error applying as partner:', error);
-      toast.error('Fehler bei der Bewerbung: ' + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const requestPayout = async () => {
-    if (!partner || !payoutAmount) return;
-
-    const amount = parseFloat(payoutAmount);
-    const availableAmount = partner.total_commission - partner.total_paid_out;
-
-    if (amount > availableAmount) {
-      toast.error('Auszahlungsbetrag übersteigt verfügbares Guthaben');
-      return;
-    }
-
-    if (amount < 10) {
-      toast.error('Mindestbetrag für Auszahlung: 10€');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { error } = await supabase
-        .from('partner_payouts')
-        .insert({
-          partner_id: partner.id,
-          amount,
-          bank_details: bankDetails
-        });
-
-      if (error) throw error;
-
-      toast.success('Auszahlungsantrag wurde eingereicht');
-      setPayoutAmount('');
-      await loadPartnerData();
-    } catch (error: any) {
-      console.error('Error requesting payout:', error);
-      toast.error('Fehler bei der Auszahlung: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
   const copyReferralLink = () => {
-    const referralLink = `${window.location.origin}?ref=${partner?.partner_code}`;
-    navigator.clipboard.writeText(referralLink);
+    if (!partner) return;
+    const link = `${window.location.origin}?ref=${partner.partnerCode}`;
+    navigator.clipboard.writeText(link);
     setCopied(true);
-    toast.success('Referral-Link kopiert!');
+    toast.success('Link kopiert!');
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      pending: 'secondary',
-      approved: 'default',
-      rejected: 'destructive',
-      suspended: 'outline'
-    };
-    
-    const labels: Record<string, string> = {
-      pending: 'Wartend',
-      approved: 'Genehmigt',
-      rejected: 'Abgelehnt',
-      suspended: 'Gesperrt'
-    };
+  const applyAsPartner = async () => {
+    if (!applicationData.first_name || !applicationData.last_name) {
+      toast.error('Bitte füllen Sie alle Pflichtfelder aus');
+      return;
+    }
 
-    return <Badge variant={variants[status] || 'secondary'}>{labels[status] || status}</Badge>;
+    setSubmitting(true);
+    try {
+      const response = await fetch('/api/partners/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          firstName: applicationData.first_name,
+          lastName: applicationData.last_name,
+          address: applicationData.address,
+          motivation: applicationData.motivation,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Bewerbung fehlgeschlagen');
+      }
+
+      toast.success('Bewerbung erfolgreich eingereicht!');
+      await loadPartnerData();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const saveBankDetails = async () => {
+    if (!isValidIBAN(bankDetails.iban)) {
+      toast.error('Bitte geben Sie eine gültige IBAN ein');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/partners/me/bank', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(bankDetails),
+      });
+
+      if (!response.ok) {
+        throw new Error('Fehler beim Speichern');
+      }
+
+      toast.success('Bankdaten gespeichert!');
+    } catch (error) {
+      toast.error('Fehler beim Speichern der Bankdaten');
+    }
   };
 
   if (loading) {
@@ -273,43 +164,85 @@ export default function Partner() {
     );
   }
 
-  // Partner Application Form
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background py-8 pb-32 md:pb-8">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <Button variant="ghost" onClick={() => navigate('/')} className="mb-6">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Zurück
+          </Button>
+          
+          <Card className="text-center py-12">
+            <CardContent>
+              <Users className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+              <h2 className="text-2xl font-bold mb-4">Partner werden</h2>
+              <p className="text-muted-foreground mb-6">
+                Bitte melden Sie sich an, um Partner zu werden und Provisionen zu verdienen.
+              </p>
+              <Button onClick={() => navigate('/auth')}>
+                Anmelden
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   if (!partner) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-2xl mx-auto">
-            <Button 
-              onClick={() => navigate(-1)}
-              variant="outline" 
-              className="mb-6"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Zurück
-            </Button>
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold mb-4">Partner werden</h1>
-              <p className="text-muted-foreground">
-                Werden Sie Partner und verdienen Sie 2,50€ Provision pro Verkauf
-              </p>
-            </div>
+      <div className="min-h-screen bg-background py-8 pb-32 md:pb-8">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <Button variant="ghost" onClick={() => navigate('/')} className="mb-6">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Zurück
+          </Button>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Partner-Bewerbung</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-6 h-6" />
+                Partner werden
+              </CardTitle>
+              <CardDescription>
+                Verdienen Sie 2,5% Provision auf alle Verkäufe, die über Ihren Empfehlungslink generiert werden.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-3">
+                <Card className="bg-muted/50">
+                  <CardContent className="pt-6 text-center">
+                    <TrendingUp className="w-8 h-8 mx-auto mb-2 text-primary" />
+                    <h3 className="font-semibold">2,5% Provision</h3>
+                    <p className="text-sm text-muted-foreground">Auf jeden Verkauf</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/50">
+                  <CardContent className="pt-6 text-center">
+                    <Share2 className="w-8 h-8 mx-auto mb-2 text-primary" />
+                    <h3 className="font-semibold">Einfach teilen</h3>
+                    <p className="text-sm text-muted-foreground">Mit Ihrem persönlichen Link</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/50">
+                  <CardContent className="pt-6 text-center">
+                    <Euro className="w-8 h-8 mx-auto mb-2 text-primary" />
+                    <h3 className="font-semibold">Monatliche Auszahlung</h3>
+                    <p className="text-sm text-muted-foreground">Ab 25€ Guthaben</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <Label htmlFor="first_name">Vorname *</Label>
                     <Input
                       id="first_name"
                       value={applicationData.first_name}
-                      onChange={(e) => setApplicationData(prev => ({
-                        ...prev,
-                        first_name: e.target.value
-                      }))}
-                      required
+                      onChange={(e) => setApplicationData(prev => ({ ...prev, first_name: e.target.value }))}
+                      data-testid="input-partner-firstname"
                     />
                   </div>
                   <div>
@@ -317,25 +250,19 @@ export default function Partner() {
                     <Input
                       id="last_name"
                       value={applicationData.last_name}
-                      onChange={(e) => setApplicationData(prev => ({
-                        ...prev,
-                        last_name: e.target.value
-                      }))}
-                      required
+                      onChange={(e) => setApplicationData(prev => ({ ...prev, last_name: e.target.value }))}
+                      data-testid="input-partner-lastname"
                     />
                   </div>
                 </div>
 
                 <div>
                   <Label htmlFor="address">Adresse</Label>
-                  <Textarea
+                  <Input
                     id="address"
                     value={applicationData.address}
-                    onChange={(e) => setApplicationData(prev => ({
-                      ...prev,
-                      address: e.target.value
-                    }))}
-                    placeholder="Straße, Hausnummer, PLZ, Ort"
+                    onChange={(e) => setApplicationData(prev => ({ ...prev, address: e.target.value }))}
+                    data-testid="input-partner-address"
                   />
                 </div>
 
@@ -344,325 +271,208 @@ export default function Partner() {
                   <Textarea
                     id="motivation"
                     value={applicationData.motivation}
-                    onChange={(e) => setApplicationData(prev => ({
-                      ...prev,
-                      motivation: e.target.value
-                    }))}
-                    placeholder="Was motiviert Sie..."
+                    onChange={(e) => setApplicationData(prev => ({ ...prev, motivation: e.target.value }))}
+                    placeholder="Erzählen Sie uns von sich..."
+                    rows={4}
+                    data-testid="input-partner-motivation"
                   />
                 </div>
 
-                <div className="space-y-4">
-                  <h3 className="font-semibold">Bankverbindung für Auszahlungen</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="account_holder">Kontoinhaber *</Label>
-                      <Input
-                        id="account_holder"
-                        value={bankDetails.account_holder}
-                        onChange={(e) => setBankDetails(prev => ({
-                          ...prev,
-                          account_holder: e.target.value
-                        }))}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="bank_name">Bank *</Label>
-                      <Input
-                        id="bank_name"
-                        value={bankDetails.bank_name}
-                        onChange={(e) => setBankDetails(prev => ({
-                          ...prev,
-                          bank_name: e.target.value
-                        }))}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="iban">IBAN *</Label>
-                      <Input
-                        id="iban"
-                        value={bankDetails.iban}
-                        onChange={(e) => setBankDetails(prev => ({
-                          ...prev,
-                          iban: formatIBAN(e.target.value)
-                        }))}
-                        placeholder="DE89 3704 0044 0532 0130 00"
-                        required
-                      />
-                      {bankDetails.iban && !isValidIBAN(bankDetails.iban.replace(/\s/g, '')) && (
-                        <p className="text-sm text-red-500 mt-1">Ungültige IBAN</p>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="bic">BIC *</Label>
-                      <Input
-                        id="bic"
-                        value={bankDetails.bic}
-                        onChange={(e) => setBankDetails(prev => ({
-                          ...prev,
-                          bic: e.target.value
-                        }))}
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
                 <Button 
-                  onClick={() => {
-                    console.log('Button clicked!');
-                    applyAsPartner();
-                  }}
-                  disabled={loading}
+                  onClick={applyAsPartner} 
+                  disabled={submitting}
                   className="w-full"
-                  size="lg"
-                  type="button"
+                  data-testid="button-apply-partner"
                 >
-                  Als Partner bewerben
+                  {submitting ? 'Wird gesendet...' : 'Als Partner bewerben'}
                 </Button>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
   }
 
-  // Partner Dashboard
-  const availableForPayout = partner.total_commission - partner.total_paid_out;
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge variant="default">Aktiv</Badge>;
+      case 'pending':
+        return <Badge variant="secondary">Ausstehend</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">Abgelehnt</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const pendingEarnings = parseFloat(partner.pendingEarnings || '0');
+  const totalEarnings = parseFloat(partner.totalEarnings || '0');
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <Button 
-          onClick={() => navigate(-1)}
-          variant="outline" 
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
+    <div className="min-h-screen bg-background py-8 pb-32 md:pb-8">
+      <div className="container mx-auto px-4 max-w-4xl">
+        <Button variant="ghost" onClick={() => navigate('/')} className="mb-6">
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Zurück
         </Button>
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Partner Dashboard</h1>
-          <div className="flex items-center gap-2">
-            <span>Status:</span>
+
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">Partner Dashboard</h1>
+          <div className="flex items-center gap-2 mt-1">
             {getStatusBadge(partner.status)}
-            <span className="text-muted-foreground">• Code: {partner.partner_code}</span>
+            <span className="text-muted-foreground">Partner seit {new Date(partner.createdAt).toLocaleDateString('de-DE')}</span>
           </div>
         </div>
 
-        {partner.status === 'pending' && (
-          <Card className="mb-6 border-yellow-200 bg-yellow-50">
+        <div className="grid gap-4 md:grid-cols-3 mb-6">
+          <Card>
             <CardContent className="pt-6">
-              <p className="text-yellow-800">
-                Ihre Partner-Bewerbung wird geprüft. Sie erhalten eine E-Mail sobald sie genehmigt wurde.
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Ausstehend</p>
+                  <p className="text-2xl font-bold">{pendingEarnings.toFixed(2)} €</p>
+                </div>
+                <Euro className="w-8 h-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Gesamt verdient</p>
+                  <p className="text-2xl font-bold">{totalEarnings.toFixed(2)} €</p>
+                </div>
+                <TrendingUp className="w-8 h-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Provision</p>
+                  <p className="text-2xl font-bold">{parseFloat(partner.commissionRate).toFixed(1)}%</p>
+                </div>
+                <Users className="w-8 h-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {partner.status === 'approved' && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Ihr Empfehlungslink</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2">
+                <Input
+                  readOnly
+                  value={`${window.location.origin}?ref=${partner.partnerCode}`}
+                  className="font-mono text-sm"
+                />
+                <Button onClick={copyReferralLink} variant="outline" data-testid="button-copy-link">
+                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Teilen Sie diesen Link, um Provisionen zu verdienen.
               </p>
             </CardContent>
           </Card>
         )}
 
-        {partner.status === 'approved' && (
-          <>
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Gesamtumsatz</CardTitle>
-                  <Euro className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">€{partner.total_sales.toFixed(2)}</div>
-                </CardContent>
-              </Card>
+        <Tabs defaultValue="sales">
+          <TabsList className="w-full md:w-auto">
+            <TabsTrigger value="sales">Verkäufe</TabsTrigger>
+            <TabsTrigger value="bank">Bankdaten</TabsTrigger>
+          </TabsList>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Provision gesamt</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">€{partner.total_commission.toFixed(2)}</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Ausgezahlt</CardTitle>
-                  <Banknote className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">€{partner.total_paid_out.toFixed(2)}</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Verfügbar</CardTitle>
-                  <Euro className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">€{availableForPayout.toFixed(2)}</div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Referral Link */}
-            <Card className="mb-8">
+          <TabsContent value="sales" className="mt-4">
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Share2 className="w-5 h-5" />
-                  Ihr Referral-Link
-                </CardTitle>
+                <CardTitle>Ihre Verkäufe</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex gap-2">
-                  <Input
-                    value={`${window.location.origin}?ref=${partner.partner_code}`}
-                    readOnly
-                    className="font-mono"
-                  />
-                  <Button onClick={copyReferralLink} variant="outline">
-                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  </Button>
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Teilen Sie diesen Link und erhalten Sie €{partner.commission_rate.toFixed(2)} pro Verkauf
-                </p>
+                {sales.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    Noch keine Verkäufe. Teilen Sie Ihren Empfehlungslink!
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {sales.map((sale) => (
+                      <div key={sale.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                        <div>
+                          <p className="font-medium">{parseFloat(sale.commissionAmount).toFixed(2)} € Provision</p>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(sale.createdAt).toLocaleDateString('de-DE')}
+                          </p>
+                        </div>
+                        <Badge variant={sale.status === 'paid' ? 'default' : 'secondary'}>
+                          {sale.status === 'paid' ? 'Ausgezahlt' : 'Ausstehend'}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
+          </TabsContent>
 
-            <Tabs defaultValue="sales" className="space-y-6">
-              <TabsList>
-                <TabsTrigger value="sales">Verkäufe</TabsTrigger>
-                <TabsTrigger value="payouts">Auszahlungen</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="sales">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Ihre Verkäufe</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {sales.length === 0 ? (
-                      <p className="text-muted-foreground text-center py-8">
-                        Noch keine Verkäufe vorhanden
-                      </p>
-                    ) : (
-                      <div className="space-y-4">
-                        {sales.map((sale) => (
-                          <div key={sale.id} className="flex justify-between items-center p-4 border rounded-lg">
-                            <div>
-                              <p className="font-medium">#{sale.order.order_number}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {sale.order.customer_name} • €{sale.order.total_amount.toFixed(2)}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {new Date(sale.created_at).toLocaleDateString('de-DE')}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-lg font-bold text-green-600">
-                                +€{sale.commission_amount.toFixed(2)}
-                              </p>
-                              <Badge variant={sale.status === 'confirmed' ? 'default' : 'secondary'}>
-                                {sale.status === 'confirmed' ? 'Bestätigt' : 'Wartend'}
-                              </Badge>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="payouts">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Auszahlungen</CardTitle>
-                    {availableForPayout >= 10 && (
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button>Auszahlung beantragen</Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Auszahlung beantragen</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <Label htmlFor="payout-amount">Betrag (min. 10€)</Label>
-                              <Input
-                                id="payout-amount"
-                                type="number"
-                                min="10"
-                                max={availableForPayout}
-                                step="0.01"
-                                value={payoutAmount}
-                                onChange={(e) => setPayoutAmount(e.target.value)}
-                                placeholder="0.00"
-                              />
-                              <p className="text-sm text-muted-foreground mt-1">
-                                Verfügbar: €{availableForPayout.toFixed(2)}
-                              </p>
-                            </div>
-                            <Button onClick={requestPayout} disabled={loading} className="w-full">
-                              Auszahlung beantragen
-                            </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    {payouts.length === 0 ? (
-                      <p className="text-muted-foreground text-center py-8">
-                        Noch keine Auszahlungen beantragt
-                      </p>
-                    ) : (
-                      <div className="space-y-4">
-                        {payouts.map((payout) => (
-                          <div key={payout.id} className="flex justify-between items-center p-4 border rounded-lg">
-                            <div>
-                              <p className="font-medium">€{payout.amount.toFixed(2)}</p>
-                              <p className="text-sm text-muted-foreground">
-                                Beantragt: {new Date(payout.requested_at).toLocaleDateString('de-DE')}
-                              </p>
-                              {payout.processed_at && (
-                                <p className="text-xs text-muted-foreground">
-                                  Bearbeitet: {new Date(payout.processed_at).toLocaleDateString('de-DE')}
-                                </p>
-                              )}
-                            </div>
-                            <div className="text-right">
-                              <Badge variant={
-                                payout.status === 'completed' ? 'default' :
-                                payout.status === 'rejected' ? 'destructive' : 'secondary'
-                              }>
-                                {payout.status === 'requested' ? 'Beantragt' :
-                                 payout.status === 'processing' ? 'In Bearbeitung' :
-                                 payout.status === 'completed' ? 'Ausgezahlt' : 'Abgelehnt'}
-                              </Badge>
-                              {payout.notes && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {payout.notes}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </>
-        )}
+          <TabsContent value="bank" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Bankdaten für Auszahlungen</CardTitle>
+                <CardDescription>
+                  Hinterlegen Sie Ihre Bankdaten für automatische Auszahlungen ab 25€ Guthaben.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="account_holder">Kontoinhaber</Label>
+                  <Input
+                    id="account_holder"
+                    value={bankDetails.account_holder}
+                    onChange={(e) => setBankDetails(prev => ({ ...prev, account_holder: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="iban">IBAN</Label>
+                  <Input
+                    id="iban"
+                    value={formatIBAN(bankDetails.iban)}
+                    onChange={(e) => setBankDetails(prev => ({ ...prev, iban: e.target.value.replace(/\s/g, '') }))}
+                    placeholder="DE89 3704 0044 0532 0130 00"
+                  />
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <Label htmlFor="bic">BIC</Label>
+                    <Input
+                      id="bic"
+                      value={bankDetails.bic}
+                      onChange={(e) => setBankDetails(prev => ({ ...prev, bic: e.target.value.toUpperCase() }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="bank_name">Bank</Label>
+                    <Input
+                      id="bank_name"
+                      value={bankDetails.bank_name}
+                      onChange={(e) => setBankDetails(prev => ({ ...prev, bank_name: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <Button onClick={saveBankDetails} data-testid="button-save-bank">
+                  Bankdaten speichern
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

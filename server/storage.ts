@@ -358,6 +358,48 @@ export class DatabaseStorage implements IStorage {
     const random = Math.random().toString(36).substring(2, 6).toUpperCase();
     return `ALN-${timestamp}-${random}`;
   }
+
+  async getPartnerSales(partnerId: string): Promise<any[]> {
+    return db.select().from(schema.partnerSales)
+      .where(eq(schema.partnerSales.partnerId, partnerId))
+      .orderBy(desc(schema.partnerSales.createdAt));
+  }
+
+  async getPartnerPayouts(partnerId: string): Promise<any[]> {
+    return [];
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return db.select().from(schema.users).orderBy(desc(schema.users.createdAt));
+  }
+
+  async getNewsletterSubscribers(): Promise<NewsletterSubscription[]> {
+    return db.select().from(schema.newsletterSubscriptions)
+      .orderBy(desc(schema.newsletterSubscriptions.createdAt));
+  }
+
+  async getTopReviews(): Promise<any[]> {
+    const reviews = await db.select()
+      .from(schema.reviews)
+      .where(eq(schema.reviews.rating, 5))
+      .orderBy(desc(schema.reviews.createdAt))
+      .limit(3);
+    
+    return reviews.map(review => ({
+      id: review.id,
+      rating: review.rating,
+      title: review.title || 'Hervorragend',
+      content: review.content || '',
+      createdAt: review.createdAt,
+      reviewerName: review.isVerified ? 'Verifizierter Kunde' : 'Kunde',
+    }));
+  }
+
+  async deleteOrder(id: string): Promise<boolean> {
+    await db.delete(schema.orderItems).where(eq(schema.orderItems.orderId, id));
+    await db.delete(schema.orders).where(eq(schema.orders.id, id));
+    return true;
+  }
 }
 
 export const storage = new DatabaseStorage();

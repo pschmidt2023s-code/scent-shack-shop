@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,24 +6,25 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Package, Calendar, Euro, ChevronRight, RotateCcw, Download, FileText } from 'lucide-react';
+import { Package, Calendar, Euro, ChevronRight, RotateCcw, FileText } from 'lucide-react';
+
+interface OrderItem {
+  perfumeId: string;
+  variantId: string;
+  quantity: number;
+  unitPrice: string;
+  totalPrice: string;
+}
 
 interface Order {
   id: string;
   status: string;
-  total_amount: number;
+  totalAmount: string;
   currency: string;
-  created_at: string;
-  order_number?: string;
-  order_items: {
-    perfume_id: string;
-    variant_id: string;
-    quantity: number;
-    unit_price: number;
-    total_price: number;
-  }[];
+  createdAt: string;
+  orderNumber?: string;
+  items?: OrderItem[];
 }
 
 export function OrderHistory() {
@@ -45,16 +45,15 @@ export function OrderHistory() {
 
   const loadOrders = async () => {
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          order_items(*)
-        `)
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
+      const response = await fetch('/api/orders', {
+        credentials: 'include',
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to load orders');
+      }
+
+      const data = await response.json();
       setOrders(data || []);
     } catch (error) {
       console.error('Error loading orders:', error);
@@ -69,27 +68,26 @@ export function OrderHistory() {
   };
 
   const getStatusLabel = (status: string) => {
-    const statusLabels = {
+    const statusLabels: Record<string, string> = {
       pending: 'Ausstehend',
+      pending_payment: 'Zahlung ausstehend',
       paid: 'Bezahlt',
       processing: 'In Bearbeitung',
       shipped: 'Versendet',
       delivered: 'Zugestellt',
       cancelled: 'Storniert'
     };
-    return statusLabels[status as keyof typeof statusLabels] || status;
+    return statusLabels[status] || status;
   };
 
-  const getStatusVariant = (status: string) => {
+  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case 'pending':
+      case 'pending_payment':
         return 'secondary';
       case 'paid':
-        return 'default';
       case 'processing':
-        return 'default';
       case 'shipped':
-        return 'default';
       case 'delivered':
         return 'default';
       case 'cancelled':
@@ -111,30 +109,18 @@ export function OrderHistory() {
 
     setSubmittingReturn(true);
     try {
-      const { error } = await supabase
-        .from('returns')
-        .insert({
-          order_id: selectedOrder.id,
-          user_id: user?.id,
+      const response = await fetch('/api/returns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          orderId: selectedOrder.id,
           reason: returnReason.trim(),
-          status: 'pending'
-        });
+        }),
+      });
 
-      if (error) throw error;
-
-      // Send return notification email
-      try {
-        await supabase.functions.invoke('send-return-notification', {
-          body: { 
-            returnId: null, // We don't have the return ID yet since we just inserted
-            orderId: selectedOrder.id,
-            reason: returnReason.trim(),
-            type: 'customer_submission'
-          }
-        });
-      } catch (emailError) {
-        console.error('Error sending return notification email:', emailError);
-        // Don't fail the return submission if email fails
+      if (!response.ok) {
+        throw new Error('Failed to submit return');
       }
 
       toast({
@@ -157,47 +143,8 @@ export function OrderHistory() {
     }
   };
 
-  const downloadInvoice = async (orderId: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('download-invoice', {
-        body: { orderId }
-      });
-
-      if (error) throw error;
-
-      if (data?.pdfUrl) {
-        window.open(data.pdfUrl, '_blank');
-      } else if (data?.pdfData) {
-        // Create blob and download
-        const blob = new Blob([data.pdfData], { type: 'application/pdf' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = `Rechnung_${orderId.slice(-8)}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      }
-
-      toast({
-        title: "Rechnung herunterladen",
-        description: "Die Rechnung wird heruntergeladen.",
-      });
-    } catch (error) {
-      console.error('Error downloading invoice:', error);
-      toast({
-        title: "Fehler",
-        description: "Die Rechnung konnte nicht heruntergeladen werden.",
-        variant: "destructive",
-      });
-    }
-  };
-
   const canReturnOrder = (order: Order) => {
-    // Allow returns for paid, shipped, or delivered orders within 14 days
-    const orderDate = new Date(order.created_at);
+    const orderDate = new Date(order.createdAt);
     const fourteenDaysAgo = new Date();
     fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
     
@@ -219,21 +166,21 @@ export function OrderHistory() {
         </div>
       ) : (
         orders.map((order) => (
-          <Card key={order.id}>
+          <Card key={order.id} data-testid={`card-order-${order.id}`}>
             <CardHeader>
-              <div className="flex justify-between items-start">
+              <div className="flex flex-wrap justify-between items-start gap-2">
                 <div>
                   <CardTitle className="text-lg">
-                    Bestellung #{order.id.slice(-8)}
+                    Bestellung #{order.orderNumber || order.id.slice(-8)}
                   </CardTitle>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mt-1">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {new Date(order.created_at).toLocaleDateString('de-DE')}
+                      {new Date(order.createdAt).toLocaleDateString('de-DE')}
                     </div>
                     <div className="flex items-center gap-1">
                       <Euro className="w-3 h-3" />
-                      €{order.total_amount.toFixed(2)}
+                      {parseFloat(order.totalAmount).toFixed(2)} €
                     </div>
                   </div>
                 </div>
@@ -244,51 +191,109 @@ export function OrderHistory() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div>
-                  <h4 className="font-medium mb-2">Artikel ({order.order_items.length})</h4>
-                  <div className="space-y-1">
-                    {order.order_items.map((item, index) => (
-                      <div key={index} className="flex justify-between text-sm">
-                        <span>{item.quantity}x Parfum ({item.variant_id})</span>
-                        <span>€{item.total_price.toFixed(2)}</span>
-                      </div>
-                    ))}
+                {order.items && order.items.length > 0 && (
+                  <div>
+                    <h4 className="font-medium mb-2">Artikel ({order.items.length})</h4>
+                    <div className="space-y-1">
+                      {order.items.map((item, index) => (
+                        <div key={index} className="flex justify-between text-sm">
+                          <span>{item.quantity}x Parfum</span>
+                          <span>{parseFloat(item.totalPrice).toFixed(2)} €</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
                 
                 <div className="flex justify-between items-center pt-2 border-t">
                   <span className="font-medium">Gesamt</span>
-                  <span className="font-bold">€{order.total_amount.toFixed(2)}</span>
+                  <span className="font-bold">{parseFloat(order.totalAmount).toFixed(2)} €</span>
                 </div>
 
-                <div className="flex gap-2 pt-2 border-t">
+                <div className="flex flex-wrap gap-2 pt-2 border-t">
                   <Button 
                     variant="outline" 
                     size="sm" 
                     className="flex-1"
-                    onClick={() => downloadInvoice(order.id)}
+                    data-testid={`button-invoice-${order.id}`}
                   >
                     <FileText className="w-3 h-3 mr-1" />
                     Rechnung
                   </Button>
                   
                   {canReturnOrder(order) && (
-                    <Dialog open={returnDialogOpen} onOpenChange={setReturnDialogOpen}>
+                    <Dialog open={returnDialogOpen && selectedOrder?.id === order.id} onOpenChange={(open) => {
+                      setReturnDialogOpen(open);
+                      if (open) setSelectedOrder(order);
+                    }}>
                       <DialogTrigger asChild>
                         <Button 
                           variant="outline" 
                           size="sm" 
                           className="flex-1"
-                          onClick={() => setSelectedOrder(order)}
+                          data-testid={`button-return-${order.id}`}
                         >
                           <RotateCcw className="w-3 h-3 mr-1" />
                           Rückgabe
                         </Button>
                       </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Rückgabe anmelden</DialogTitle>
+                          <DialogDescription>
+                            Bestellung #{order.orderNumber || order.id.slice(-8)} - {parseFloat(order.totalAmount).toFixed(2)} €
+                          </DialogDescription>
+                        </DialogHeader>
+                        
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="return-reason">Grund für die Rückgabe *</Label>
+                            <Textarea
+                              id="return-reason"
+                              placeholder="Bitte beschreiben Sie den Grund für Ihre Rückgabe..."
+                              value={returnReason}
+                              onChange={(e) => setReturnReason(e.target.value)}
+                              className="mt-1"
+                              rows={4}
+                            />
+                          </div>
+                          
+                          <div className="bg-muted/50 p-3 rounded-lg text-sm">
+                            <p className="font-medium mb-1">Rückgabebedingungen:</p>
+                            <ul className="text-muted-foreground space-y-1">
+                              <li>Rückgabe innerhalb von 14 Tagen möglich</li>
+                              <li>Parfüms müssen ungeöffnet und originalverpackt sein</li>
+                              <li>Kostenlose Rückgabe mit unserem Retourenlabel</li>
+                            </ul>
+                          </div>
+                          
+                          <div className="flex gap-2 pt-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setReturnDialogOpen(false);
+                                setReturnReason('');
+                                setSelectedOrder(null);
+                              }}
+                              className="flex-1"
+                              disabled={submittingReturn}
+                            >
+                              Abbrechen
+                            </Button>
+                            <Button
+                              onClick={submitReturn}
+                              className="flex-1"
+                              disabled={submittingReturn || !returnReason.trim()}
+                            >
+                              {submittingReturn ? 'Wird angemeldet...' : 'Rückgabe anmelden'}
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
                     </Dialog>
                   )}
                   
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button variant="outline" size="sm" className="flex-1" data-testid={`button-details-${order.id}`}>
                     <ChevronRight className="w-3 h-3 mr-1" />
                     Details
                   </Button>
@@ -298,63 +303,6 @@ export function OrderHistory() {
           </Card>
         ))
       )}
-
-      {/* Return Dialog */}
-      <Dialog open={returnDialogOpen} onOpenChange={setReturnDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Rückgabe anmelden</DialogTitle>
-            <DialogDescription>
-              Bestellung #{selectedOrder?.id.slice(-8)} - €{selectedOrder ? selectedOrder.total_amount.toFixed(2) : '0.00'}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="return-reason">Grund für die Rückgabe *</Label>
-              <Textarea
-                id="return-reason"
-                placeholder="Bitte beschreiben Sie den Grund für Ihre Rückgabe..."
-                value={returnReason}
-                onChange={(e) => setReturnReason(e.target.value)}
-                className="mt-1"
-                rows={4}
-              />
-            </div>
-            
-            <div className="bg-muted/50 p-3 rounded-lg text-sm">
-              <p className="font-medium mb-1">Rückgabebedingungen:</p>
-              <ul className="text-muted-foreground space-y-1">
-                <li>• Rückgabe innerhalb von 14 Tagen möglich</li>
-                <li>• Parfüms müssen ungeöffnet und originalverpackt sein</li>
-                <li>• Kostenlose Rückgabe mit unserem Retourenlabel</li>
-              </ul>
-            </div>
-            
-            <div className="flex gap-2 pt-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setReturnDialogOpen(false);
-                  setReturnReason('');
-                  setSelectedOrder(null);
-                }}
-                className="flex-1"
-                disabled={submittingReturn}
-              >
-                Abbrechen
-              </Button>
-              <Button
-                onClick={submitReturn}
-                className="flex-1"
-                disabled={submittingReturn || !returnReason.trim()}
-              >
-                {submittingReturn ? 'Wird angemeldet...' : 'Rückgabe anmelden'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

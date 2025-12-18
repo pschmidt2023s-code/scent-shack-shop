@@ -12,7 +12,6 @@ import {
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Notification {
@@ -66,32 +65,32 @@ export function NotificationCenter() {
     
     setLoading(true);
     try {
-      // Load order notifications
-      const { data: orders, error: ordersError } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
+      const response = await fetch('/api/orders', {
+        credentials: 'include',
+      });
 
-      if (ordersError) throw ordersError;
+      if (!response.ok) {
+        throw new Error('Failed to load orders');
+      }
 
-      const orderNotifications: Notification[] = (orders || []).map((order) => {
+      const orders = await response.json();
+
+      const orderNotifications: Notification[] = (orders || []).slice(0, 10).map((order: any) => {
         let title = 'Neue Bestellung';
-        let message = `Ihre Bestellung ${order.order_number} wurde aufgegeben.`;
+        let message = `Ihre Bestellung ${order.orderNumber} wurde aufgegeben.`;
         let icon = Package;
 
         if (order.status === 'processing') {
           title = 'Bestellung wird bearbeitet';
-          message = `Ihre Bestellung ${order.order_number} wird bearbeitet.`;
+          message = `Ihre Bestellung ${order.orderNumber} wird bearbeitet.`;
           icon = Package;
         } else if (order.status === 'shipped') {
           title = 'Bestellung versendet';
-          message = `Ihre Bestellung ${order.order_number} wurde versendet und ist unterwegs.`;
+          message = `Ihre Bestellung ${order.orderNumber} wurde versendet und ist unterwegs.`;
           icon = Truck;
         } else if (order.status === 'completed') {
           title = 'Bestellung zugestellt';
-          message = `Ihre Bestellung ${order.order_number} wurde zugestellt.`;
+          message = `Ihre Bestellung ${order.orderNumber} wurde zugestellt.`;
           icon = CheckCircle;
         }
 
@@ -100,37 +99,13 @@ export function NotificationCenter() {
           type: 'order' as const,
           title,
           message,
-          time: formatTimeAgo(order.created_at),
+          time: formatTimeAgo(order.createdAt),
           read: false,
           icon
         };
       });
 
-      // Load stock notifications
-      const { data: stockNotifs, error: stockError } = await supabase
-        .from('stock_notifications')
-        .select(`
-          *,
-          product_variants!inner(name, in_stock)
-        `)
-        .eq('user_id', user.id)
-        .eq('notified', true)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (stockError) throw stockError;
-
-      const stockNotifications: Notification[] = (stockNotifs || []).map((notif: any) => ({
-        id: `stock-${notif.id}`,
-        type: 'wishlist' as const,
-        title: 'Artikel wieder verfügbar',
-        message: `${notif.product_variants.name} ist wieder auf Lager!`,
-        time: formatTimeAgo(notif.created_at),
-        read: false,
-        icon: Heart
-      }));
-
-      setNotifications([...orderNotifications, ...stockNotifications]);
+      setNotifications(orderNotifications);
     } catch (error) {
       console.error('Error loading notifications:', error);
     } finally {
@@ -138,10 +113,8 @@ export function NotificationCenter() {
     }
   };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-
   const markAsRead = (id: string) => {
-    setNotifications(prev =>
+    setNotifications(prev => 
       prev.map(n => n.id === id ? { ...n, read: true } : n)
     );
   };
@@ -150,18 +123,16 @@ export function NotificationCenter() {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
-  const removeNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative">
-          <Bell className="w-5 h-5" />
+        <Button variant="ghost" size="icon" className="relative" data-testid="button-notifications">
+          <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <Badge
-              variant="destructive"
+            <Badge 
+              variant="destructive" 
               className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
             >
               {unreadCount > 9 ? '9+' : unreadCount}
@@ -169,94 +140,80 @@ export function NotificationCenter() {
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-full sm:w-96">
-        <SheetHeader>
+      <SheetContent className="w-full sm:max-w-md">
+        <SheetHeader className="border-b pb-4">
           <div className="flex items-center justify-between">
-            <SheetTitle>Benachrichtigungen</SheetTitle>
+            <SheetTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              Benachrichtigungen
+            </SheetTitle>
             {unreadCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
+              <Button 
+                variant="ghost" 
+                size="sm" 
                 onClick={markAllAsRead}
+                className="text-xs"
               >
-                Alle als gelesen
+                Alle gelesen
               </Button>
             )}
           </div>
           <SheetDescription>
-            Sie haben {unreadCount} ungelesene Benachrichtigung{unreadCount !== 1 && 'en'}
+            Ihre aktuellen Benachrichtigungen
           </SheetDescription>
         </SheetHeader>
-
-        <ScrollArea className="h-[calc(100vh-150px)] mt-6">
-          <div className="space-y-3">
-            {loading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              </div>
-            ) : notifications.length === 0 ? (
-              <div className="text-center py-12">
-                <Bell className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">Keine Benachrichtigungen</p>
-              </div>
-            ) : (
-              notifications.map((notification) => {
+        
+        <ScrollArea className="h-[calc(100vh-180px)] mt-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Bell className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">Keine Benachrichtigungen</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {notifications.map((notification) => {
                 const Icon = notification.icon;
                 return (
                   <div
                     key={notification.id}
                     className={cn(
-                      "p-4 rounded-lg border transition-all cursor-pointer group",
-                      notification.read
-                        ? "bg-card hover:bg-accent/50"
-                        : "bg-primary/5 border-primary/20 hover:bg-primary/10"
+                      "p-4 rounded-lg cursor-pointer transition-colors",
+                      notification.read 
+                        ? "bg-muted/50" 
+                        : "bg-primary/5 border border-primary/10"
                     )}
                     onClick={() => markAsRead(notification.id)}
                   >
-                    <div className="flex gap-3">
+                    <div className="flex items-start gap-3">
                       <div className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
-                        notification.read ? "bg-muted" : "bg-primary/10"
+                        "p-2 rounded-full",
+                        notification.type === 'order' ? "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300" :
+                        notification.type === 'wishlist' ? "bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300" :
+                        notification.type === 'promo' ? "bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300" :
+                        "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
                       )}>
-                        <Icon className={cn(
-                          "w-5 h-5",
-                          notification.read ? "text-muted-foreground" : "text-primary"
-                        )} />
+                        <Icon className="h-4 w-4" />
                       </div>
-                      
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className={cn(
-                            "font-semibold text-sm",
-                            !notification.read && "text-primary"
-                          )}>
-                            {notification.title}
-                          </h4>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeNotification(notification.id);
-                            }}
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-sm">{notification.title}</p>
+                          {!notification.read && (
+                            <span className="h-2 w-2 rounded-full bg-primary" />
+                          )}
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {notification.message}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {notification.time}
-                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
+                        <p className="text-xs text-muted-foreground mt-2">{notification.time}</p>
                       </div>
                     </div>
                   </div>
                 );
-              })
-            )}
-          </div>
+              })}
+            </div>
+          )}
         </ScrollArea>
       </SheetContent>
     </Sheet>
