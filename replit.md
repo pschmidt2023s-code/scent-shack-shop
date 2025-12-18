@@ -19,7 +19,6 @@ ALDENAIR is a comprehensive e-commerce platform for premium perfumes featuring p
 │   ├── hooks/        # Custom hooks
 │   ├── pages/        # Page components
 │   └── lib/          # Utility functions
-└── supabase/         # Legacy Supabase functions (migrating to Express routes)
 ```
 
 ## Tech Stack
@@ -52,29 +51,39 @@ Using Neon PostgreSQL with Drizzle ORM. Schema includes:
 - `GET /api/products` - List products (with filters)
 - `GET /api/products/:id` - Get product with variants
 - `GET /api/products/:id/variants` - Get product variants
-- `GET /api/products/:id/reviews` - Get product reviews
+- `GET /api/products/:id/reviews` - Get product reviews (supports ?variantId filter)
 - `POST /api/products/:id/reviews` - Add review (auth required)
 
 ### Orders
 - `GET /api/orders` - Get user orders (auth required)
-- `POST /api/orders` - Create order
+- `POST /api/orders` - Create order with bank transfer payment
 - `GET /api/orders/:id` - Get order details
 - `PATCH /api/orders/:id` - Update order (admin)
+- `DELETE /api/orders/:id` - Delete order (admin)
+- `GET /api/orders/check-purchase` - Verify purchase for reviews
 
 ### User Profile
 - `GET /api/profile` - Get profile (auth required)
 - `PATCH /api/profile` - Update profile (auth required)
 - `GET /api/addresses` - Get addresses (auth required)
 - `POST /api/addresses` - Add address (auth required)
+- `DELETE /api/addresses/:id` - Delete address (auth required)
 
 ### Partners
 - `POST /api/partners/apply` - Apply as partner
 - `GET /api/partners/me` - Get partner status (auth required)
 
-### Other
+### Payback System
+- `GET /api/payback` - Get user's payback status (auth required)
+- `POST /api/payback/payout` - Request payout (auth required)
+
+### Other Features
 - `POST /api/newsletter/subscribe` - Newsletter signup
 - `POST /api/chat/message` - AI chat support
 - `POST /api/contests/:id/enter` - Enter contest
+- `POST /api/stock-notifications` - Stock availability notifications
+- `GET/POST/PATCH/DELETE /api/auto-reorder` - Auto-reorder subscriptions
+- `POST/DELETE /api/push-subscriptions` - Push notification subscriptions
 
 ## Development
 ```bash
@@ -86,15 +95,24 @@ npx drizzle-kit push # Push schema to database
 - `DATABASE_URL` - PostgreSQL connection string
 - `SESSION_SECRET` - Session encryption key
 - `LOVABLE_API_KEY` - AI chat gateway key (optional)
-- `STRIPE_SECRET_KEY` - Stripe payments (optional)
-- `PAYPAL_CLIENT_ID` - PayPal payments (optional)
+
+## Payment Method
+- Bank Transfer (Banküberweisung) is the active payment method
+- Order confirmation shows bank details and reference number
 
 ## Recent Changes (Dec 2024)
-- Migrated from Supabase to Replit with Neon PostgreSQL
-- Implemented Express.js backend with Drizzle ORM
-- Session-based authentication replacing Supabase Auth
-- Server-side API routes replacing Supabase Edge Functions
+- Complete migration from Supabase to local Express.js API
+- All customer-facing components use local API endpoints
+- Bank transfer checkout flow implemented
+- Product reviews with variant filtering
+- Payback/cashback system endpoints
+- Stock notifications and auto-reorder placeholders
+- Session-based authentication with PostgreSQL session store
 
 ## User Preferences
 - German language interface (primary market)
 - Dark mode support enabled
+
+## Admin Credentials (Development)
+- Email: admin@aldenair.de
+- Password: Admin123!
