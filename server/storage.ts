@@ -22,6 +22,7 @@ export interface IStorage {
   updateUser(id: string, data: Partial<InsertUser>): Promise<User | undefined>;
 
   getProducts(filters?: { category?: string; search?: string }): Promise<Product[]>;
+  getProductsWithVariants(filters?: { category?: string; search?: string }): Promise<(Product & { variants: ProductVariant[] })[]>;
   getProduct(id: string): Promise<Product | undefined>;
   getProductWithVariants(id: string): Promise<(Product & { variants: ProductVariant[] }) | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
@@ -128,6 +129,17 @@ export class DatabaseStorage implements IStorage {
     
     const variants = await this.getProductVariants(id);
     return { ...product, variants };
+  }
+
+  async getProductsWithVariants(filters?: { category?: string; search?: string }): Promise<(Product & { variants: ProductVariant[] })[]> {
+    const products = await this.getProducts(filters);
+    const productsWithVariants = await Promise.all(
+      products.map(async (product) => {
+        const variants = await this.getProductVariants(product.id);
+        return { ...product, variants };
+      })
+    );
+    return productsWithVariants;
   }
 
   async createProduct(product: InsertProduct): Promise<Product> {

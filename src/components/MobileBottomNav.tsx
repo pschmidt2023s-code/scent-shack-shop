@@ -74,7 +74,7 @@ export function MobileBottomNav() {
   return (
     <>
       {/* Spacer to prevent content from being hidden behind the nav */}
-      <div className="h-18 md:hidden" aria-hidden="true" />
+      <div className="h-20 md:hidden" aria-hidden="true" />
       
       <nav 
         className="fixed bottom-0 left-0 right-0 z-[99999] md:hidden glass-nav rounded-t-[2rem]"

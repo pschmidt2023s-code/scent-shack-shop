@@ -141,7 +141,7 @@ export async function registerRoutes(app: Express) {
   app.get("/api/products", async (req, res) => {
     try {
       const { category, search } = req.query;
-      const products = await storage.getProducts({
+      const products = await storage.getProductsWithVariants({
         category: category as string,
         search: search as string,
       });
