@@ -86,42 +86,24 @@ export default function BundleConfigurator() {
       const data = await response.json();
 
       if (data && Array.isArray(data)) {
-        const uniqueVariantsMap = new Map<string, any>();
-        
-        data.forEach((p: any) => {
-          if (p.variants && p.variants.length > 0) {
-            p.variants.forEach((v: any) => {
-              if (!uniqueVariantsMap.has(v.variantNumber)) {
-                uniqueVariantsMap.set(v.variantNumber, {
-                  productData: p,
-                  variantData: v
-                });
-              }
-            });
-          }
-        });
-
-        const transformedPerfumes: Perfume[] = Array.from(uniqueVariantsMap.values()).map((entry) => {
-          const p = entry.productData;
-          const v = entry.variantData;
-          
-          return {
+        const transformedPerfumes: Perfume[] = data
+          .filter((p: any) => p.variants && p.variants.length > 0)
+          .map((p: any, pIndex: number) => ({
             id: p.id,
             name: p.name,
             brand: p.brand,
             category: p.category,
             size: p.size,
             image: p.image || '/placeholder.svg',
-            variants: [{
+            variants: p.variants.map((v: any, vIndex: number) => ({
               id: v.id,
-              number: v.variantNumber,
+              number: String(pIndex * 10 + vIndex + 1).padStart(3, '0'),
               name: v.name,
               description: v.description,
-              price: v.price,
-              inStock: v.inStock,
-            }]
-          };
-        });
+              price: parseFloat(v.price) || 0,
+              inStock: v.inStock ?? true,
+            }))
+          }));
 
         setProducts(transformedPerfumes);
       }

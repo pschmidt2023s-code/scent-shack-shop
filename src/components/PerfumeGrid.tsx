@@ -44,18 +44,18 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
             category: p.category,
             size: p.size,
             image: p.image || '/placeholder.svg',
-            variants: p.variants.map((v: any) => ({
+            variants: p.variants.map((v: any, index: number) => ({
               id: v.id,
-              number: v.variantNumber,
+              number: String(index + 1).padStart(3, '0'),
               name: v.name,
               description: v.description,
-              price: v.price,
-              originalPrice: v.originalPrice,
-              inStock: v.inStock,
-              preorder: v.preorder,
+              price: parseFloat(v.price) || 0,
+              originalPrice: parseFloat(v.originalPrice) || parseFloat(v.price) * 1.2 || 0,
+              inStock: v.inStock ?? true,
+              preorder: v.preorder ?? false,
               releaseDate: v.releaseDate,
-              rating: v.rating,
-              reviewCount: v.reviewCount,
+              rating: v.rating ?? 4.5,
+              reviewCount: v.reviewCount ?? 0,
             })),
           }));
 
