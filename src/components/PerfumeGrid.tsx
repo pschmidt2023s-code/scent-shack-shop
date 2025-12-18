@@ -1,9 +1,7 @@
-
 import { useState, useEffect, memo } from 'react';
 import { PerfumeCard } from './PerfumeCard';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package } from 'lucide-react';
+import { Package, Filter } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Perfume } from '@/types/perfume';
 
@@ -92,65 +90,73 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
   });
 
   return (
-    <section className="py-16 glass rounded-3xl mx-4 my-8">
+    <section className="py-16 md:py-24 bg-muted/30">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12 animate-fade-in-up">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-luxury-gold/20 via-luxury-gold to-luxury-gold/20 bg-[length:400%_100%] bg-clip-text text-transparent animate-shimmer">
-            ALDENAIR Kollektionen
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+            Unsere Kollektionen
           </h2>
-          <p className="text-xl glass-text-dark opacity-80 max-w-2xl mx-auto leading-relaxed">
-            Entdecke unsere exklusiven Duft-Kollektionen - Wähle deine Favoriten
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Entdecke unsere handverlesene Auswahl an Premium-Düften
           </p>
         </div>
 
-        {/* Sort Options */}
-        <div className="flex justify-end mb-8">
-          <div>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-48 transition-all duration-300 hover:scale-105 hover:shadow-glow">
-                <SelectValue placeholder="Sortieren nach" />
-              </SelectTrigger>
-              <SelectContent className="backdrop-blur-md bg-background/80">
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="price-low">Preis: Niedrig bis Hoch</SelectItem>
-                <SelectItem value="price-high">Preis: Hoch bis Niedrig</SelectItem>
-                <SelectItem value="rating">Bewertung</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div className="flex flex-wrap gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setFilter(cat)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  filter === cat
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-background text-foreground hover:bg-muted border border-border'
+                }`}
+                data-testid={`filter-${cat}`}
+              >
+                {cat === 'all' ? 'Alle' : cat}
+              </button>
+            ))}
           </div>
+          
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-48" data-testid="select-sort">
+              <Filter className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Sortieren" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="price-low">Preis aufsteigend</SelectItem>
+              <SelectItem value="price-high">Preis absteigend</SelectItem>
+              <SelectItem value="rating">Beste Bewertung</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Product Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <Skeleton key={i} className="h-96" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="space-y-4">
+                <Skeleton className="aspect-square rounded-xl" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : sortedPerfumes.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {sortedPerfumes.map((perfume) => (
+              <PerfumeCard key={perfume.id} perfume={perfume} />
             ))}
           </div>
         ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {sortedPerfumes.map((perfume) => (
-                <div 
-                  key={perfume.id} 
-                  className="group"
-                >
-                  <PerfumeCard 
-                    perfume={perfume} 
-                  />
-                </div>
-              ))}
-            </div>
-
-            {sortedPerfumes.length === 0 && !loading && (
-              <div className="text-center py-12 animate-fade-in-up">
-                <Package className="w-16 h-16 mx-auto mb-4 text-muted-foreground animate-float" />
-                <p className="text-xl text-muted-foreground">
-                  Keine Parfüms in dieser Kategorie gefunden.
-                </p>
-              </div>
-            )}
-          </>
+          <div className="text-center py-16">
+            <Package className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">Keine Produkte gefunden</h3>
+            <p className="text-muted-foreground">
+              Versuche einen anderen Filter oder schaue später nochmal vorbei.
+            </p>
+          </div>
         )}
       </div>
     </section>

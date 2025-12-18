@@ -21,6 +21,7 @@ const PaybackManagement = lazy(() => import('@/components/admin/PaybackManagemen
 const AdminChatInterface = lazy(() => import('@/components/admin/AdminChatInterface'));
 const ContestManagement = lazy(() => import('@/components/admin/ContestManagement').then(module => ({ default: module.ContestManagement })));
 const ProductManagement = lazy(() => import('@/components/admin/ProductManagement'));
+const AdminAnalytics = lazy(() => import('@/components/admin/AdminAnalytics'));
 import { getPerfumeNameById } from '@/lib/perfume-utils';
 
 interface Order {
@@ -56,7 +57,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [activeTab, setActiveTab] = useState('orders');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -224,26 +225,28 @@ export default function Admin() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-10 w-full max-w-6xl animate-slide-in-right backdrop-blur-sm bg-card/80 border">
-            <TabsTrigger value="orders" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
-              <Package className="w-4 h-4 transition-transform duration-200" />
+          <TabsList className="grid grid-cols-6 lg:grid-cols-11 w-full max-w-6xl backdrop-blur-sm bg-card/80 border">
+            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="orders" className="flex items-center gap-2">
+              <Package className="w-4 h-4" />
               Bestellungen
             </TabsTrigger>
-            <TabsTrigger value="chat" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
-              <Users className="w-4 h-4 transition-transform duration-200" />
-              Live Chat
+            <TabsTrigger value="products" className="flex items-center gap-2">
+              <Package className="w-4 h-4" />
+              Produkte
             </TabsTrigger>
-            <TabsTrigger value="payback" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
-              <CreditCard className="w-4 h-4 transition-transform duration-200" />
-              Payback
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Kunden
             </TabsTrigger>
-            <TabsTrigger value="returns" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
-              <Package className="w-4 h-4 transition-transform duration-200" />
-              Retouren
-            </TabsTrigger>
-            <TabsTrigger value="coupons" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
-              <CreditCard className="w-4 h-4 transition-transform duration-200" />
+            <TabsTrigger value="coupons" className="flex items-center gap-2">
+              <CreditCard className="w-4 h-4" />
               Coupons
+            </TabsTrigger>
+            <TabsTrigger value="payback" className="flex items-center gap-2">
+              Payback
             </TabsTrigger>
             <TabsTrigger value="partners" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
               <Users className="w-4 h-4 transition-transform duration-200" />
@@ -267,19 +270,31 @@ export default function Admin() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="chat" className="space-y-6 animate-fade-in duration-500">
+          <TabsContent value="dashboard" className="space-y-6">
+            <Suspense fallback={<TabContentLoader />}>
+              <AdminAnalytics />
+            </Suspense>
+          </TabsContent>
+
+          <TabsContent value="products" className="space-y-6">
+            <Suspense fallback={<TabContentLoader />}>
+              <ProductManagement />
+            </Suspense>
+          </TabsContent>
+
+          <TabsContent value="chat" className="space-y-6">
             <Suspense fallback={<TabContentLoader />}>
               <AdminChatInterface />
             </Suspense>
           </TabsContent>
 
-          <TabsContent value="payback" className="space-y-6 animate-fade-in duration-500">
+          <TabsContent value="payback" className="space-y-6">
             <Suspense fallback={<TabContentLoader />}>
               <PaybackManagement />
             </Suspense>
           </TabsContent>
 
-          <TabsContent value="orders" className="space-y-6 animate-fade-in duration-500">
+          <TabsContent value="orders" className="space-y-6">
             <Card className="backdrop-blur-sm bg-card/90 border shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">

@@ -1,534 +1,537 @@
-import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Trash2, Upload, Image as ImageIcon, Save, X } from "lucide-react";
-import { useDropzone } from "react-dropzone";
+import { Plus, Pencil, Trash2, Package, Save, X, Loader2 } from "lucide-react";
+
+interface ProductVariant {
+  id: string;
+  perfumeId: string;
+  size: string;
+  price: string;
+  originalPrice: string | null;
+  stock: number;
+  sku: string | null;
+  isActive: boolean;
+}
 
 interface Product {
   id: string;
   name: string;
   brand: string;
   category: string;
-  size: string;
-  image: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface ProductVariant {
-  id: string;
-  product_id: string;
-  variant_number: string;
-  name: string;
   description: string | null;
-  price: number;
-  original_price: number | null;
-  stock_quantity: number;
-  in_stock: boolean;
-  preorder: boolean;
-  release_date: string | null;
-  rating: number;
-  review_count: number;
-  inspired_by_fragrance: string | null;
+  image: string | null;
+  isActive: boolean;
+  variants: ProductVariant[];
 }
 
 export default function ProductManagement() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
-  const [editingPriceValue, setEditingPriceValue] = useState<string>("");
-  const [uploadingImageFor, setUploadingImageFor] = useState<string | null>(null);
-  const [editingFragranceId, setEditingFragranceId] = useState<string | null>(null);
-  const [editingFragranceValue, setEditingFragranceValue] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
+  const [showProductDialog, setShowProductDialog] = useState(false);
+  const [showVariantDialog, setShowVariantDialog] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+
+  const [productForm, setProductForm] = useState({
+    name: "",
+    brand: "",
+    category: "herren",
+    description: "",
+    image: "",
+    isActive: true,
+  });
+
+  const [variantForm, setVariantForm] = useState({
+    size: "",
+    price: "",
+    originalPrice: "",
+    stock: 0,
+    sku: "",
+    isActive: true,
+  });
 
   useEffect(() => {
     loadProducts();
   }, []);
 
   const loadProducts = async () => {
-    setLoading(true);
-    const { data: productsData, error: productsError } = await supabase
-      .from("products")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (productsError) {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/admin/products", {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to load products");
+      const data = await response.json();
+      setProducts(data || []);
+    } catch (error) {
+      console.error("Error loading products:", error);
       toast.error("Fehler beim Laden der Produkte");
-      console.error(productsError);
-    } else {
-      setProducts(productsData || []);
+    } finally {
+      setLoading(false);
     }
-
-    const { data: variantsData, error: variantsError } = await supabase
-      .from("product_variants")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (variantsError) {
-      toast.error("Fehler beim Laden der Varianten");
-      console.error(variantsError);
-    } else {
-      setVariants(variantsData || []);
-    }
-
-    setLoading(false);
   };
 
-  const uploadImage = async (file: File, productId: string) => {
+  const handleSaveProduct = async () => {
     try {
-      setUploadingImageFor(productId);
-      
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${productId}-${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
+      setSaving(true);
+      const url = editingProduct ? `/api/products/${editingProduct.id}` : "/api/products";
+      const method = editingProduct ? "PATCH" : "POST";
 
-      const { error: uploadError } = await supabase.storage
-        .from('product-images')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(productForm),
+      });
 
-      if (uploadError) throw uploadError;
+      if (!response.ok) throw new Error("Failed to save product");
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('product-images')
-        .getPublicUrl(filePath);
-
-      const { error: updateError } = await supabase
-        .from('products')
-        .update({ image: publicUrl })
-        .eq('id', productId);
-
-      if (updateError) throw updateError;
-
-      toast.success("Bild erfolgreich hochgeladen!");
+      toast.success(editingProduct ? "Produkt aktualisiert" : "Produkt erstellt");
+      setShowProductDialog(false);
+      resetProductForm();
       loadProducts();
     } catch (error) {
-      console.error('Error uploading image:', error);
-      toast.error("Fehler beim Hochladen des Bildes");
+      console.error("Error saving product:", error);
+      toast.error("Fehler beim Speichern");
     } finally {
-      setUploadingImageFor(null);
+      setSaving(false);
     }
   };
 
-  const ImageDropzone = ({ productId, currentImage }: { productId: string; currentImage: string | null }) => {
-    const onDrop = useCallback((acceptedFiles: File[]) => {
-      if (acceptedFiles.length > 0) {
-        uploadImage(acceptedFiles[0], productId);
-      }
-    }, [productId]);
+  const handleDeleteProduct = async (id: string) => {
+    if (!confirm("Produkt wirklich löschen?")) return;
 
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({
-      onDrop,
-      accept: {
-        'image/*': ['.png', '.jpg', '.jpeg', '.webp']
-      },
-      maxFiles: 1,
-      disabled: uploadingImageFor === productId
+    try {
+      const response = await fetch(`/api/products/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete product");
+
+      toast.success("Produkt gelöscht");
+      loadProducts();
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      toast.error("Fehler beim Löschen");
+    }
+  };
+
+  const handleSaveVariant = async () => {
+    if (!selectedProductId) return;
+
+    try {
+      setSaving(true);
+      const url = editingVariant
+        ? `/api/variants/${editingVariant.id}`
+        : `/api/products/${selectedProductId}/variants`;
+      const method = editingVariant ? "PATCH" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          ...variantForm,
+          price: variantForm.price,
+          originalPrice: variantForm.originalPrice || null,
+          stock: parseInt(variantForm.stock.toString()),
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to save variant");
+
+      toast.success(editingVariant ? "Variante aktualisiert" : "Variante erstellt");
+      setShowVariantDialog(false);
+      resetVariantForm();
+      loadProducts();
+    } catch (error) {
+      console.error("Error saving variant:", error);
+      toast.error("Fehler beim Speichern");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteVariant = async (id: string) => {
+    if (!confirm("Variante wirklich löschen?")) return;
+
+    try {
+      const response = await fetch(`/api/variants/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete variant");
+
+      toast.success("Variante gelöscht");
+      loadProducts();
+    } catch (error) {
+      console.error("Error deleting variant:", error);
+      toast.error("Fehler beim Löschen");
+    }
+  };
+
+  const openEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setProductForm({
+      name: product.name,
+      brand: product.brand,
+      category: product.category,
+      description: product.description || "",
+      image: product.image || "",
+      isActive: product.isActive,
     });
-
-    return (
-      <div
-        {...getRootProps()}
-        className={`relative w-24 h-24 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer transition-all ${
-          isDragActive ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
-        } ${uploadingImageFor === productId ? 'opacity-50 cursor-not-allowed' : ''}`}
-      >
-        <input {...getInputProps()} />
-        {currentImage ? (
-          <img src={currentImage} alt="Product" className="w-full h-full object-cover rounded-lg" />
-        ) : (
-          <ImageIcon className="w-8 h-8 text-muted-foreground" />
-        )}
-        {uploadingImageFor === productId && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-lg">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-          </div>
-        )}
-        {!uploadingImageFor && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity rounded-lg">
-            <Upload className="w-6 h-6 text-white" />
-          </div>
-        )}
-      </div>
-    );
+    setShowProductDialog(true);
   };
 
-  const startEditingPrice = (variantId: string, currentPrice: number) => {
-    setEditingPriceId(variantId);
-    setEditingPriceValue(currentPrice.toString());
+  const openAddVariant = (productId: string) => {
+    setSelectedProductId(productId);
+    setEditingVariant(null);
+    resetVariantForm();
+    setShowVariantDialog(true);
   };
 
-  const savePrice = async (variantId: string) => {
-    const newPrice = parseFloat(editingPriceValue);
-    if (isNaN(newPrice) || newPrice < 0) {
-      toast.error("Ungültiger Preis");
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('product_variants')
-        .update({ price: newPrice })
-        .eq('id', variantId)
-        .select();
-
-      if (error) {
-        console.error('Update error:', error);
-        toast.error(`Fehler beim Aktualisieren: ${error.message}`);
-        return;
-      }
-
-      if (data && data.length > 0) {
-        toast.success("Preis erfolgreich aktualisiert!");
-        setEditingPriceId(null);
-        loadProducts();
-      } else {
-        toast.error("Variante nicht gefunden");
-      }
-    } catch (err) {
-      console.error('Exception:', err);
-      toast.error("Unerwarteter Fehler beim Aktualisieren");
-    }
+  const openEditVariant = (variant: ProductVariant, productId: string) => {
+    setSelectedProductId(productId);
+    setEditingVariant(variant);
+    setVariantForm({
+      size: variant.size,
+      price: variant.price,
+      originalPrice: variant.originalPrice || "",
+      stock: variant.stock,
+      sku: variant.sku || "",
+      isActive: variant.isActive,
+    });
+    setShowVariantDialog(true);
   };
 
-  const cancelEditingPrice = () => {
-    setEditingPriceId(null);
-    setEditingPriceValue("");
+  const resetProductForm = () => {
+    setEditingProduct(null);
+    setProductForm({
+      name: "",
+      brand: "",
+      category: "herren",
+      description: "",
+      image: "",
+      isActive: true,
+    });
   };
 
-  const startEditingFragrance = (variantId: string, currentFragrance: string | null) => {
-    setEditingFragranceId(variantId);
-    setEditingFragranceValue(currentFragrance || "");
-  };
-
-  const saveFragrance = async (variantId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('product_variants')
-        .update({ inspired_by_fragrance: editingFragranceValue || null })
-        .eq('id', variantId)
-        .select();
-
-      if (error) {
-        console.error('Update error:', error);
-        toast.error(`Fehler beim Aktualisieren: ${error.message}`);
-        return;
-      }
-
-      if (data && data.length > 0) {
-        toast.success("Original-Duft erfolgreich aktualisiert!");
-        setEditingFragranceId(null);
-        loadProducts();
-      } else {
-        toast.error("Variante nicht gefunden");
-      }
-    } catch (err) {
-      console.error('Exception:', err);
-      toast.error("Unerwarteter Fehler beim Aktualisieren");
-    }
-  };
-
-  const cancelEditingFragrance = () => {
-    setEditingFragranceId(null);
-    setEditingFragranceValue("");
-  };
-
-  const deleteProduct = async (productId: string) => {
-    if (!confirm("Möchten Sie dieses Produkt wirklich löschen? Alle zugehörigen Varianten werden ebenfalls gelöscht.")) {
-      return;
-    }
-
-    const { error: variantsError } = await supabase
-      .from('product_variants')
-      .delete()
-      .eq('product_id', productId);
-
-    if (variantsError) {
-      toast.error("Fehler beim Löschen der Varianten");
-      console.error(variantsError);
-      return;
-    }
-
-    const { error: productError } = await supabase
-      .from('products')
-      .delete()
-      .eq('id', productId);
-
-    if (productError) {
-      toast.error("Fehler beim Löschen des Produkts");
-      console.error(productError);
-    } else {
-      toast.success("Produkt gelöscht!");
-      loadProducts();
-    }
-  };
-
-  const deleteVariant = async (variantId: string) => {
-    if (!confirm("Möchten Sie diese Variante wirklich löschen?")) {
-      return;
-    }
-
-    const { error } = await supabase
-      .from('product_variants')
-      .delete()
-      .eq('id', variantId);
-
-    if (error) {
-      toast.error("Fehler beim Löschen der Variante");
-      console.error(error);
-    } else {
-      toast.success("Variante gelöscht!");
-      loadProducts();
-    }
-  };
-
-  const getVariantsForProduct = (productId: string) => {
-    return variants.filter(v => v.product_id === productId);
+  const resetVariantForm = () => {
+    setEditingVariant(null);
+    setVariantForm({
+      size: "",
+      price: "",
+      originalPrice: "",
+      stock: 0,
+      sku: "",
+      isActive: true,
+    });
   };
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Produktverwaltung</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Produktverwaltung</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Klicken oder ziehen Sie Bilder auf die Bildfelder. Klicken Sie auf Preise zum Bearbeiten.
-        </p>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="products">Produkte</TabsTrigger>
-            <TabsTrigger value="variants">Varianten & Preise</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="products" className="space-y-4">
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Bild</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Marke</TableHead>
-                    <TableHead>Kategorie</TableHead>
-                    <TableHead>Größe</TableHead>
-                    <TableHead>Varianten</TableHead>
-                    <TableHead className="text-right">Aktionen</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {products.map((product) => {
-                    const productVariants = getVariantsForProduct(product.id);
-                    return (
-                      <TableRow key={product.id}>
-                        <TableCell>
-                          <ImageDropzone 
-                            productId={product.id} 
-                            currentImage={product.image}
-                          />
-                        </TableCell>
-                        <TableCell className="font-medium">{product.name}</TableCell>
-                        <TableCell>{product.brand}</TableCell>
-                        <TableCell>{product.category}</TableCell>
-                        <TableCell>{product.size}</TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">
-                            {productVariants.length} Variante(n)
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteProduct(product.id)}
-                          >
-                            <Trash2 className="w-4 h-4 text-red-600" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Produktverwaltung</h2>
+        <Dialog open={showProductDialog} onOpenChange={setShowProductDialog}>
+          <DialogTrigger asChild>
+            <Button onClick={resetProductForm} data-testid="button-add-product">
+              <Plus className="w-4 h-4 mr-2" />
+              Neues Produkt
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>{editingProduct ? "Produkt bearbeiten" : "Neues Produkt"}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input
+                  value={productForm.name}
+                  onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+                  placeholder="Produktname"
+                  data-testid="input-product-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Marke</Label>
+                <Input
+                  value={productForm.brand}
+                  onChange={(e) => setProductForm({ ...productForm, brand: e.target.value })}
+                  placeholder="ALDENAIR"
+                  data-testid="input-product-brand"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Kategorie</Label>
+                <Select
+                  value={productForm.category}
+                  onValueChange={(value) => setProductForm({ ...productForm, category: value })}
+                >
+                  <SelectTrigger data-testid="select-product-category">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="herren">Herren</SelectItem>
+                    <SelectItem value="damen">Damen</SelectItem>
+                    <SelectItem value="unisex">Unisex</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Beschreibung</Label>
+                <Textarea
+                  value={productForm.description}
+                  onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                  placeholder="Produktbeschreibung..."
+                  data-testid="input-product-description"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Bild-URL</Label>
+                <Input
+                  value={productForm.image}
+                  onChange={(e) => setProductForm({ ...productForm, image: e.target.value })}
+                  placeholder="https://..."
+                  data-testid="input-product-image"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label>Aktiv</Label>
+                <Switch
+                  checked={productForm.isActive}
+                  onCheckedChange={(checked) => setProductForm({ ...productForm, isActive: checked })}
+                  data-testid="switch-product-active"
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setShowProductDialog(false)}>
+                  Abbrechen
+                </Button>
+                <Button onClick={handleSaveProduct} disabled={saving} data-testid="button-save-product">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                  Speichern
+                </Button>
+              </div>
             </div>
-          </TabsContent>
+          </DialogContent>
+        </Dialog>
+      </div>
 
-          <TabsContent value="variants" className="space-y-4">
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Produkt</TableHead>
-                    <TableHead>Variante</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Preis (klicken)</TableHead>
-                    <TableHead>Riecht wie (klicken)</TableHead>
-                    <TableHead>Lager</TableHead>
-                    <TableHead>Auf Lager</TableHead>
-                    <TableHead className="text-right">Aktionen</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {variants.map((variant) => {
-                    const product = products.find(p => p.id === variant.product_id);
-                    const isEditingPrice = editingPriceId === variant.id;
-                    const isEditingFragrance = editingFragranceId === variant.id;
-                    
-                    return (
-                      <TableRow key={variant.id}>
-                        <TableCell className="font-medium">
-                          {product?.name || 'Unbekannt'}
-                        </TableCell>
-                        <TableCell>{variant.variant_number}</TableCell>
-                        <TableCell>{variant.name}</TableCell>
-                        <TableCell>
-                          {isEditingPrice ? (
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">€</span>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={editingPriceValue}
-                                onChange={(e) => setEditingPriceValue(e.target.value)}
-                                className="w-28"
-                                autoFocus
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    savePrice(variant.id);
-                                  }
-                                  if (e.key === 'Escape') {
-                                    e.preventDefault();
-                                    cancelEditingPrice();
-                                  }
-                                }}
-                              />
-                              <Button
-                                size="sm"
-                                onClick={() => savePrice(variant.id)}
-                                className="bg-green-600 hover:bg-green-700 text-white"
-                              >
-                                <Save className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={cancelEditingPrice}
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <Button
-                              variant="ghost"
-                              onClick={() => startEditingPrice(variant.id, variant.price)}
-                              className="flex items-center gap-2 hover:bg-accent"
-                            >
-                              <span className="font-semibold text-base">€{variant.price.toFixed(2)}</span>
-                              <span className="text-xs text-muted-foreground">(klicken)</span>
-                            </Button>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {isEditingFragrance ? (
-                            <div className="flex items-center gap-2">
-                              <Input
-                                type="text"
-                                placeholder="z.B. Dior Sauvage"
-                                value={editingFragranceValue}
-                                onChange={(e) => setEditingFragranceValue(e.target.value)}
-                                className="w-48"
-                                autoFocus
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    saveFragrance(variant.id);
-                                  }
-                                  if (e.key === 'Escape') {
-                                    e.preventDefault();
-                                    cancelEditingFragrance();
-                                  }
-                                }}
-                              />
-                              <Button
-                                size="sm"
-                                onClick={() => saveFragrance(variant.id)}
-                                className="bg-green-600 hover:bg-green-700 text-white"
-                              >
-                                <Save className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={cancelEditingFragrance}
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <Button
-                              variant="ghost"
-                              onClick={() => startEditingFragrance(variant.id, variant.inspired_by_fragrance)}
-                              className="flex items-center gap-2 hover:bg-accent text-left"
-                            >
-                              <span className="text-sm">
-                                {variant.inspired_by_fragrance || "Nicht angegeben"}
+      <Dialog open={showVariantDialog} onOpenChange={setShowVariantDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingVariant ? "Variante bearbeiten" : "Neue Variante"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Größe</Label>
+              <Input
+                value={variantForm.size}
+                onChange={(e) => setVariantForm({ ...variantForm, size: e.target.value })}
+                placeholder="z.B. 50ml"
+                data-testid="input-variant-size"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Preis (EUR)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={variantForm.price}
+                  onChange={(e) => setVariantForm({ ...variantForm, price: e.target.value })}
+                  placeholder="29.99"
+                  data-testid="input-variant-price"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Originalpreis</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={variantForm.originalPrice}
+                  onChange={(e) => setVariantForm({ ...variantForm, originalPrice: e.target.value })}
+                  placeholder="Optional"
+                  data-testid="input-variant-original-price"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Lagerbestand</Label>
+                <Input
+                  type="number"
+                  value={variantForm.stock}
+                  onChange={(e) => setVariantForm({ ...variantForm, stock: parseInt(e.target.value) || 0 })}
+                  data-testid="input-variant-stock"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>SKU</Label>
+                <Input
+                  value={variantForm.sku}
+                  onChange={(e) => setVariantForm({ ...variantForm, sku: e.target.value })}
+                  placeholder="Optional"
+                  data-testid="input-variant-sku"
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <Label>Aktiv</Label>
+              <Switch
+                checked={variantForm.isActive}
+                onCheckedChange={(checked) => setVariantForm({ ...variantForm, isActive: checked })}
+                data-testid="switch-variant-active"
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowVariantDialog(false)}>
+                Abbrechen
+              </Button>
+              <Button onClick={handleSaveVariant} disabled={saving} data-testid="button-save-variant">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                Speichern
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <div className="space-y-4">
+        {products.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Package className="w-12 h-12 text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">Keine Produkte vorhanden</p>
+            </CardContent>
+          </Card>
+        ) : (
+          products.map((product) => (
+            <Card key={product.id} data-testid={`card-product-${product.id}`}>
+              <CardHeader className="flex flex-row items-center justify-between gap-4 pb-2">
+                <div className="flex items-center gap-4">
+                  {product.image && (
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-16 h-16 object-cover rounded-md"
+                    />
+                  )}
+                  <div>
+                    <CardTitle className="text-lg">{product.name}</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {product.brand} | {product.category}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openAddVariant(product.id)}
+                    data-testid={`button-add-variant-${product.id}`}
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Variante
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => openEditProduct(product)}
+                    data-testid={`button-edit-product-${product.id}`}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleDeleteProduct(product.id)}
+                    data-testid={`button-delete-product-${product.id}`}
+                  >
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
+              </CardHeader>
+              {product.variants && product.variants.length > 0 && (
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Größe</TableHead>
+                        <TableHead>Preis</TableHead>
+                        <TableHead>Lager</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Aktionen</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {product.variants.map((variant) => (
+                        <TableRow key={variant.id} data-testid={`row-variant-${variant.id}`}>
+                          <TableCell className="font-medium">{variant.size}</TableCell>
+                          <TableCell>
+                            {parseFloat(variant.price).toFixed(2)} EUR
+                            {variant.originalPrice && (
+                              <span className="text-muted-foreground line-through ml-2">
+                                {parseFloat(variant.originalPrice).toFixed(2)}
                               </span>
-                              <span className="text-xs text-muted-foreground">(klicken)</span>
+                            )}
+                          </TableCell>
+                          <TableCell>{variant.stock}</TableCell>
+                          <TableCell>
+                            <span className={variant.isActive ? "text-green-600" : "text-red-600"}>
+                              {variant.isActive ? "Aktiv" : "Inaktiv"}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => openEditVariant(variant, product.id)}
+                              data-testid={`button-edit-variant-${variant.id}`}
+                            >
+                              <Pencil className="w-4 h-4" />
                             </Button>
-                          )}
-                        </TableCell>
-                        <TableCell>{variant.stock_quantity}</TableCell>
-                        <TableCell>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            variant.in_stock 
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                          }`}>
-                            {variant.in_stock ? 'Ja' : 'Nein'}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteVariant(variant.id)}
-                          >
-                            <Trash2 className="w-4 h-4 text-red-600" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleDeleteVariant(variant.id)}
+                              data-testid={`button-delete-variant-${variant.id}`}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              )}
+            </Card>
+          ))
+        )}
+      </div>
+    </div>
   );
 }

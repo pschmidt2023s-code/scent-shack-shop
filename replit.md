@@ -109,6 +109,22 @@ npx drizzle-kit push # Push schema to database
 - Stock notifications and auto-reorder placeholders
 - Session-based authentication with PostgreSQL session store
 
+### Admin Dashboard Updates (Dec 18, 2024)
+- New Dashboard tab with analytics (revenue, orders, customers, products)
+- Complete Product Management with CRUD for products and variants
+- Admin API endpoints with Zod validation:
+  - GET /api/admin/products - list all products
+  - DELETE /api/products/:id - delete product
+  - POST /api/products/:productId/variants - create variant
+  - PATCH /api/variants/:id - update variant
+  - DELETE /api/variants/:id - delete variant
+  - GET /api/admin/analytics - dashboard statistics
+
+### Website Redesign (Dec 18, 2024)
+- Modern HeroSection with gradient background and trust badges
+- Cleaner PerfumeGrid with category filter buttons
+- Improved typography and spacing throughout
+
 ## User Preferences
 - German language interface (primary market)
 - Dark mode support enabled

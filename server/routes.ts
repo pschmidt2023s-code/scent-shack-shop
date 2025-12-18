@@ -1,4 +1,5 @@
 import type { Express, Request, Response, NextFunction } from "express";
+import { z } from "zod";
 import { storage } from "./storage";
 import { insertUserSchema, insertProductSchema, insertOrderSchema, insertReviewSchema, insertPartnerSchema, insertNewsletterSchema, insertAddressSchema, insertContestEntrySchema } from "../shared/schema";
 import bcrypt from "bcryptjs";
@@ -380,6 +381,112 @@ export async function registerRoutes(app: Express) {
     try {
       const orders = await storage.getOrders();
       res.json(orders);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin Products Management
+  app.get("/api/admin/products", requireAdmin, async (req, res) => {
+    try {
+      const products = await storage.getProductsWithVariants();
+      res.json(products);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/products/:id", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteProduct(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin Variants Management
+  const variantSchema = z.object({
+    size: z.string().min(1),
+    price: z.union([z.string(), z.number()]).transform(v => String(v)),
+    originalPrice: z.union([z.string(), z.number(), z.null()]).optional().transform(v => v ? String(v) : null),
+    stock: z.union([z.string(), z.number()]).transform(v => Number(v)),
+    sku: z.string().optional().nullable(),
+    isActive: z.boolean().default(true),
+    name: z.string().optional(),
+  });
+
+  app.post("/api/products/:productId/variants", requireAdmin, async (req, res) => {
+    try {
+      const parsed = variantSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid variant data", details: parsed.error.issues });
+      }
+      const variant = await storage.createProductVariant({
+        productId: req.params.productId,
+        name: parsed.data.name || parsed.data.size,
+        size: parsed.data.size,
+        price: parsed.data.price,
+        stock: parsed.data.stock,
+        isActive: parsed.data.isActive,
+      });
+      res.json(variant);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/variants/:id", requireAdmin, async (req, res) => {
+    try {
+      const parsed = variantSchema.partial().safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid variant data", details: parsed.error.issues });
+      }
+      const updateData: any = {};
+      if (parsed.data.size !== undefined) updateData.size = parsed.data.size;
+      if (parsed.data.price !== undefined) updateData.price = parsed.data.price;
+      if (parsed.data.stock !== undefined) updateData.stock = parsed.data.stock;
+      if (parsed.data.isActive !== undefined) updateData.isActive = parsed.data.isActive;
+      if (parsed.data.name !== undefined) updateData.name = parsed.data.name;
+
+      const variant = await storage.updateProductVariant(req.params.id, updateData);
+      if (!variant) {
+        return res.status(404).json({ error: "Variant not found" });
+      }
+      res.json(variant);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/variants/:id", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteProductVariant(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin Analytics
+  app.get("/api/admin/analytics", requireAdmin, async (req, res) => {
+    try {
+      const orders = await storage.getOrders();
+      const products = await storage.getProducts();
+      const users = await storage.getAllUsers();
+      
+      const totalRevenue = orders.reduce((sum, o) => sum + parseFloat(o.totalAmount?.toString() || '0'), 0);
+      const completedOrders = orders.filter(o => o.status === 'completed').length;
+      
+      res.json({
+        totalOrders: orders.length,
+        completedOrders,
+        pendingOrders: orders.filter(o => o.status === 'pending').length,
+        totalRevenue,
+        totalProducts: products.length,
+        totalCustomers: users.filter(u => u.role !== 'admin').length,
+        recentOrders: orders.slice(0, 10),
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
