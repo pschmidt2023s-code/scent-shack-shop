@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,16 +13,16 @@ interface PaybackEarning {
   id: string;
   amount: number;
   description?: string;
-  created_at: string;
-  order_id?: string;
+  createdAt: string;
+  orderId?: string;
 }
 
 interface PaybackPayout {
   id: string;
   amount: number;
   status: string;
-  created_at: string;
-  bank_details?: any;
+  createdAt: string;
+  bankDetails?: any;
 }
 
 export function PaybackSystem() {
@@ -48,36 +47,16 @@ export function PaybackSystem() {
 
   const loadPaybackData = async () => {
     try {
-      // Load earnings
-      const { data: earningsData, error: earningsError } = await supabase
-        .from('payback_earnings')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
-
-      if (earningsError) throw earningsError;
-      setEarnings(earningsData || []);
-
-      // Load payouts
-      const { data: payoutsData, error: payoutsError } = await supabase
-        .from('payback_payouts')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
-
-      if (payoutsError) throw payoutsError;
-      setPayouts(payoutsData || []);
-
-      // Load balance from profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('payback_balance')
-        .eq('user_id', user?.id)
-        .maybeSingle();
-
-      if (profileError) throw profileError;
-      setPaybackBalance(profileData?.payback_balance || 0);
-
+      const response = await fetch('/api/payback', {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) throw new Error('Failed to load payback data');
+      
+      const data = await response.json();
+      setEarnings(data.earnings || []);
+      setPayouts(data.payouts || []);
+      setPaybackBalance(data.balance || 0);
     } catch (error) {
       console.error('Error loading payback data:', error);
       toast.error('Fehler beim Laden der Payback-Daten');
@@ -103,16 +82,17 @@ export function PaybackSystem() {
     }
 
     try {
-      const { error } = await supabase
-        .from('payback_payouts')
-        .insert([{
-          user_id: user?.id || '',
+      const response = await fetch('/api/payback/payout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
           amount: parseFloat(payoutAmount),
-          bank_details: bankDetails,
-          status: 'requested'
-        }]);
+          bankDetails,
+        }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error('Payout request failed');
 
       toast.success('Auszahlungsantrag wurde eingereicht');
       setPayoutAmount('');
@@ -285,7 +265,7 @@ export function PaybackSystem() {
                   <div className="text-right">
                     <Badge variant="default">Gutgeschrieben</Badge>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {new Date(earning.created_at).toLocaleDateString()}
+                      {new Date(earning.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -323,7 +303,7 @@ export function PaybackSystem() {
                     <div>
                       <p className="font-medium">€{payout.amount.toFixed(2)}</p>
                       <p className="text-sm text-muted-foreground">
-                        Beantragt am {new Date(payout.created_at).toLocaleDateString()}
+                        Beantragt am {new Date(payout.createdAt).toLocaleDateString()}
                       </p>
                     </div>
                   </div>

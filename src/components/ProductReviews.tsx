@@ -7,23 +7,20 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Star, Upload, MessageCircle, AlertCircle, ShieldCheck } from 'lucide-react';
 import { AuthModal } from './AuthModal';
 
 interface Review {
   id: string;
-  user_id?: string; // Optional for public access (hidden by RLS)
+  userId?: string;
   rating: number;
   title: string;
   content: string;
   images: string[];
-  is_verified: boolean;
-  created_at: string;
-  profiles?: {
-    full_name: string;
-  };
+  isVerified: boolean;
+  createdAt: string;
+  reviewerName?: string;
 }
 
 interface ProductReviewsProps {
@@ -42,7 +39,7 @@ export function ProductReviews({ perfumeId, variantId, perfumeName }: ProductRev
   const [uploading, setUploading] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [hasVerifiedPurchase, setHasVerifiedPurchase] = useState(false);
-  const { user, supabaseConnected } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const averageRating = reviews.length > 0 
@@ -50,46 +47,26 @@ export function ProductReviews({ perfumeId, variantId, perfumeName }: ProductRev
     : 0;
 
   useEffect(() => {
-    if (supabaseConnected) {
-      fetchReviews();
-      if (user) {
-        checkVerifiedPurchase();
-      }
-    } else {
-      setLoading(false);
+    fetchReviews();
+    if (user) {
+      checkVerifiedPurchase();
     }
-  }, [perfumeId, variantId, supabaseConnected, user]);
+  }, [perfumeId, variantId, user]);
 
   const fetchReviews = async () => {
     try {
-      // Use secure database function that hides user identifiers
-      const { data, error } = await supabase
-        .rpc('get_public_reviews', {
-          p_perfume_id: perfumeId,
-          p_variant_id: variantId
-        } as any);
-
-      if (error) {
-        console.error('Error fetching reviews:', error);
-        toast({
-          title: "Fehler beim Laden der Bewertungen",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        // The secure function already returns anonymized data
-        const processedReviews = (data || []).map((review: any) => ({
-          ...review,
-          images: review.images || [],
-          is_verified: review.is_verified || false,
-          user_id: undefined, // Already hidden by secure function
-          profiles: { full_name: review.reviewer_name } // Use provided anonymous name
-        }));
-        
-        setReviews(processedReviews);
-      }
+      const response = await fetch(`/api/products/${perfumeId}/reviews?variantId=${variantId}`);
+      if (!response.ok) throw new Error('Failed to fetch reviews');
+      
+      const data = await response.json();
+      setReviews(data || []);
     } catch (error) {
       console.error('Error fetching reviews:', error);
+      toast({
+        title: "Fehler beim Laden der Bewertungen",
+        description: "Bewertungen konnten nicht geladen werden",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -99,14 +76,12 @@ export function ProductReviews({ perfumeId, variantId, perfumeName }: ProductRev
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
-        .rpc('check_verified_purchase', {
-          user_id_param: user.id,
-          variant_id_param: variantId
-        } as any);
-
-      if (!error) {
-        setHasVerifiedPurchase(data || false);
+      const response = await fetch(`/api/orders/check-purchase?variantId=${variantId}`, {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setHasVerifiedPurchase(data.verified || false);
       }
     } catch (error) {
       console.error('Error checking verified purchase:', error);
@@ -138,23 +113,25 @@ export function ProductReviews({ perfumeId, variantId, perfumeName }: ProductRev
     }
 
     try {
-      const { error } = await supabase
-        .from('reviews')
-        .insert([{
-          user_id: user.id,
-          perfume_id: perfumeId,
-          variant_id: variantId,
+      const response = await fetch(`/api/products/${perfumeId}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          variantId,
           rating,
           title: title || null,
           content: content || null,
           images: uploadedImages || [],
-          is_verified: hasVerifiedPurchase
-        }]);
+          isVerified: hasVerifiedPurchase
+        }),
+      });
 
-      if (error) {
+      if (!response.ok) {
+        const error = await response.json();
         toast({
           title: "Fehler beim Speichern",
-          description: error.message,
+          description: error.message || "Bewertung konnte nicht gespeichert werden",
           variant: "destructive",
         });
         return;
@@ -169,7 +146,7 @@ export function ProductReviews({ perfumeId, variantId, perfumeName }: ProductRev
       
       setReviewModalOpen(false);
       resetForm();
-      fetchReviews(); // Reload reviews
+      fetchReviews();
     } catch (error) {
       console.error('Error submitting review:', error);
       toast({
@@ -200,22 +177,6 @@ export function ProductReviews({ perfumeId, variantId, perfumeName }: ProductRev
       />
     ));
   };
-
-  if (!supabaseConnected) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-center gap-2 p-8 border rounded-lg bg-muted/50">
-          <AlertCircle className="w-5 h-5 text-amber-500" />
-          <div className="text-center">
-            <h3 className="font-semibold text-muted-foreground">Supabase Verbindung erforderlich</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Um Bewertungen anzuzeigen und zu erstellen, verbinden Sie bitte Ihr Projekt mit Supabase.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (loading) {
     return <div className="text-center py-8">Bewertungen werden geladen...</div>;
@@ -330,7 +291,7 @@ export function ProductReviews({ perfumeId, variantId, perfumeName }: ProductRev
                   <div className="flex items-center gap-2">
                     <div className="flex">{renderStars(review.rating)}</div>
                     <span className="font-semibold">{review.title}</span>
-                    {review.is_verified && (
+                    {review.isVerified && (
                       <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 border-green-200">
                         <ShieldCheck className="w-3 h-3 mr-1" />
                         Verifizierter Kauf
@@ -338,8 +299,8 @@ export function ProductReviews({ perfumeId, variantId, perfumeName }: ProductRev
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    von {review.profiles?.full_name || 'Anonymer Nutzer'} • {' '}
-                    {new Date(review.created_at).toLocaleDateString('de-DE')}
+                    von {review.reviewerName || 'Anonymer Nutzer'} • {' '}
+                    {new Date(review.createdAt).toLocaleDateString('de-DE')}
                   </p>
                 </div>
               </div>

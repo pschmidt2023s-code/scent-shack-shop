@@ -224,7 +224,15 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async getReviews(productId: string): Promise<Review[]> {
+  async getReviews(productId: string, variantId?: string): Promise<Review[]> {
+    if (variantId) {
+      return db.select().from(schema.reviews)
+        .where(and(
+          eq(schema.reviews.perfumeId, productId),
+          eq(schema.reviews.variantId, variantId)
+        ))
+        .orderBy(desc(schema.reviews.createdAt));
+    }
     return db.select().from(schema.reviews)
       .where(eq(schema.reviews.perfumeId, productId))
       .orderBy(desc(schema.reviews.createdAt));

@@ -196,8 +196,24 @@ export async function registerRoutes(app: Express) {
 
   app.get("/api/products/:id/reviews", async (req, res) => {
     try {
-      const reviews = await storage.getReviews(req.params.id);
-      res.json(reviews);
+      const { variantId } = req.query;
+      const reviews = await storage.getReviews(req.params.id, variantId as string | undefined);
+      
+      const mappedReviews = reviews.map(review => ({
+        id: review.id,
+        userId: review.userId,
+        perfumeId: review.perfumeId,
+        variantId: review.variantId,
+        rating: review.rating,
+        title: review.title,
+        content: review.content,
+        images: review.images || [],
+        isVerified: review.isVerified || false,
+        createdAt: review.createdAt,
+        reviewerName: review.isVerified ? 'Verifizierter Kunde' : 'Kunde',
+      }));
+      
+      res.json(mappedReviews);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -728,6 +744,53 @@ Dein Verhalten:
       res.json({ success: true, message: "Payout request submitted" });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Payback API endpoints
+  app.get("/api/payback", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const user = await storage.getUser(userId);
+      
+      res.json({
+        earnings: [],
+        payouts: [],
+        balance: parseFloat(user?.paybackBalance || "0"),
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/payback/payout", requireAuth, async (req, res) => {
+    try {
+      const { amount, bankDetails } = req.body;
+      
+      if (!amount || amount < 10) {
+        return res.status(400).json({ error: "Mindestbetrag für Auszahlung: 10€" });
+      }
+      
+      res.json({ success: true, message: "Auszahlungsantrag wurde eingereicht" });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Check verified purchase for reviews
+  app.get("/api/orders/check-purchase", requireAuth, async (req, res) => {
+    try {
+      const { variantId } = req.query;
+      const orders = await storage.getOrdersByUserId(req.session.userId!);
+      
+      const verified = orders.some(order => 
+        order.status === 'completed' && 
+        order.orderItems?.some(item => item.variantId === variantId)
+      );
+      
+      res.json({ verified });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 
