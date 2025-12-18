@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CustomerReviews } from '@/components/CustomerReviews';
 import { ProductImageZoom } from '@/components/ProductImageZoom';
@@ -11,15 +11,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Star, ShoppingBag, ArrowLeft, MessageCircle } from 'lucide-react';
+import { Star, ShoppingBag, ArrowLeft, MessageCircle, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { perfumes } from '@/data/perfumes';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
-import { usePerfumeRatings } from '@/hooks/usePerfumeRatings';
 import { ProductReviews } from '@/components/ProductReviews';
-import { PerfumeVariant } from '@/types/perfume';
+import { Perfume, PerfumeVariant } from '@/types/perfume';
 import { WhatsAppCommerce } from '@/components/WhatsAppCommerce';
 import { ARProductViewer } from '@/components/ARProductViewer';
 
@@ -28,12 +26,72 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { toast } = useToast();
-  const { getRatingForVariant } = usePerfumeRatings([id || '']);
+  
+  const [perfume, setPerfume] = useState<Perfume | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedVariant, setSelectedVariant] = useState<PerfumeVariant | null>(null);
 
-  const perfume = perfumes.find(p => p.id === id);
-  const [selectedVariant, setSelectedVariant] = useState<PerfumeVariant | null>(
-    perfume?.variants[0] || null
-  );
+  useEffect(() => {
+    const loadProduct = async () => {
+      if (!id) return;
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/products/${id}`);
+        if (!response.ok) {
+          console.error('Product not found');
+          setPerfume(null);
+          return;
+        }
+        const data = await response.json();
+        if (data) {
+          const transformed: Perfume = {
+            id: data.id,
+            name: data.name,
+            brand: data.brand || 'ALDENAIR',
+            category: data.category,
+            size: data.size,
+            image: data.image || '/placeholder.svg',
+            variants: (data.variants || []).map((v: any, index: number) => ({
+              id: v.id,
+              number: String(index + 1).padStart(3, '0'),
+              name: v.name,
+              description: v.description,
+              price: parseFloat(v.price) || 0,
+              originalPrice: parseFloat(v.originalPrice) || parseFloat(v.price) * 1.2 || 0,
+              inStock: v.inStock ?? true,
+              preorder: v.preorder ?? false,
+              releaseDate: v.releaseDate,
+              rating: v.rating ?? 4.5,
+              reviewCount: v.reviewCount ?? 0,
+            })),
+          };
+          setPerfume(transformed);
+          if (transformed.variants.length > 0) {
+            setSelectedVariant(transformed.variants[0]);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading product:', error);
+        setPerfume(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProduct();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen glass">
+        <Navigation />
+        <div className="container mx-auto px-4 py-16 text-center">
+          <Loader2 className="w-12 h-12 animate-spin mx-auto text-muted-foreground" />
+          <p className="mt-4 text-muted-foreground">Produkt wird geladen...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!perfume) {
     return (
@@ -88,8 +146,11 @@ const ProductDetail = () => {
     );
   };
 
-  // Get real rating data for selected variant
-  const variantRating = selectedVariant ? getRatingForVariant(perfume!.id, selectedVariant.id) : null;
+  // Get rating data from variant
+  const variantRating = selectedVariant ? { 
+    rating: selectedVariant.rating || 4.5, 
+    count: selectedVariant.reviewCount || 0 
+  } : null;
 
   return (
     <div className="min-h-screen glass pb-20 md:pb-0">

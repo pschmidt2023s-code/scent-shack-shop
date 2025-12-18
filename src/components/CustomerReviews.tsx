@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Star, ThumbsUp, ThumbsDown, MoreHorizontal, MessageCircle } from 'lucide-react'
-import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { ReviewListSkeleton } from './SkeletonComponents'
 import { toast } from '@/hooks/use-toast'
@@ -12,19 +11,17 @@ import { cn } from '@/lib/utils'
 
 interface Review {
   id: string
-  user_id: string
-  perfume_id: string
-  variant_id: string
+  userId: string
+  productId: string
+  variantId?: string
   rating: number
   title?: string
   content?: string
-  is_verified_purchase: boolean
-  helpful_count: number
-  created_at: string
+  isVerifiedPurchase: boolean
+  helpfulCount: number
+  createdAt: string
   user_vote?: boolean | null
-  profiles?: {
-    full_name?: string
-  }
+  userName?: string
 }
 
 interface CustomerReviewsProps {
@@ -47,77 +44,44 @@ export function CustomerReviews({ perfumeId, variantId, className }: CustomerRev
     try {
       setLoading(true)
       
-      let query = supabase
-        .from('reviews')
-        .select('*')
-        .eq('perfume_id', perfumeId)
-
-      if (variantId) {
-        query = query.eq('variant_id', variantId)
+      const response = await fetch(`/api/products/${perfumeId}/reviews`)
+      
+      if (!response.ok) {
+        setReviews([])
+        return
       }
 
-      // Add sorting
+      const reviewsData = await response.json()
+
+      // Sort reviews based on sortBy
+      let sortedReviews = [...(reviewsData || [])]
       switch (sortBy) {
         case 'newest':
-          query = query.order('created_at', { ascending: false })
+          sortedReviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
           break
         case 'oldest':
-          query = query.order('created_at', { ascending: true })
+          sortedReviews.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
           break
         case 'highest':
-          query = query.order('rating', { ascending: false })
+          sortedReviews.sort((a, b) => b.rating - a.rating)
           break
         case 'lowest':
-          query = query.order('rating', { ascending: true })
+          sortedReviews.sort((a, b) => a.rating - b.rating)
           break
         case 'helpful':
-          query = query.order('helpful_count', { ascending: false })
+          sortedReviews.sort((a, b) => (b.helpfulCount || 0) - (a.helpfulCount || 0))
           break
       }
 
-      const { data: reviewsData, error } = await query
-
-      if (error) throw error
-
-      // Fetch user profiles separately for display names
-      let reviewsWithProfiles = reviewsData || []
-      if (reviewsData?.length) {
-        const userIds = [...new Set(reviewsData.map(r => r.user_id))]
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('user_id, full_name')
-          .in('user_id', userIds)
-
-        const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || [])
-        
-        reviewsWithProfiles = reviewsData.map((review: any) => ({
-          ...review,
-          images: review.images || [],
-          is_verified_purchase: review.is_verified_purchase || false,
-          profiles: profilesMap.get(review.user_id) || null
-        }))
+      // Filter by variant if specified
+      if (variantId) {
+        sortedReviews = sortedReviews.filter(r => r.variantId === variantId)
       }
 
-      // Fetch user votes if logged in
-      let reviewsWithVotes = reviewsWithProfiles
-      if (user && reviewsWithProfiles?.length) {
-        const { data: votesData } = await supabase
-          .from('review_votes')
-          .select('review_id, is_helpful')
-          .eq('user_id', user.id)
-          .in('review_id', reviewsWithProfiles.map(r => r.id))
-
-        const votesMap = new Map(votesData?.map(v => [v.review_id, v.is_helpful]) || [])
-        
-        reviewsWithVotes = reviewsWithProfiles.map(review => ({
-          ...review,
-          user_vote: votesMap.get(review.id) ?? null
-        }))
-      }
-
-      setReviews(reviewsWithVotes)
+      setReviews(sortedReviews)
     } catch (error) {
       console.error('Error fetching reviews:', error)
+      setReviews([])
       toast({
         title: "Fehler beim Laden der Bewertungen",
         description: "Bitte versuchen Sie es später erneut.",
@@ -139,28 +103,17 @@ export function CustomerReviews({ perfumeId, variantId, className }: CustomerRev
     }
 
     try {
-      // Check if user already voted
-      const existingVote = reviews.find(r => r.id === reviewId)?.user_vote
+      const response = await fetch(`/api/reviews/${reviewId}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ isHelpful })
+      })
 
-      if (existingVote === isHelpful) {
-        // Remove vote
-        await supabase
-          .from('review_votes')
-          .delete()
-          .eq('review_id', reviewId)
-          .eq('user_id', user.id)
-      } else {
-        // Insert or update vote
-        await supabase
-          .from('review_votes')
-          .upsert([{
-            review_id: reviewId,
-            user_id: user.id,
-            is_helpful: isHelpful
-          }])
+      if (!response.ok) {
+        throw new Error('Vote failed')
       }
 
-      // Refresh reviews to update counts
       fetchReviews()
       
       toast({
@@ -302,15 +255,15 @@ export function CustomerReviews({ perfumeId, variantId, className }: CustomerRev
                   <div className="flex items-center gap-3">
                     <Avatar>
                       <AvatarFallback>
-                        {review.profiles?.full_name?.charAt(0) || 'A'}
+                        {review.userName?.charAt(0) || 'A'}
                       </AvatarFallback>
                     </Avatar>
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-medium">
-                          {review.profiles?.full_name || 'Anonymer Kunde'}
+                          {review.userName || 'Anonymer Kunde'}
                         </span>
-                        {review.is_verified_purchase && (
+                        {review.isVerifiedPurchase && (
                           <Badge variant="secondary" className="text-xs">
                             Verifizierter Kauf
                           </Badge>
@@ -319,7 +272,7 @@ export function CustomerReviews({ perfumeId, variantId, className }: CustomerRev
                       <div className="flex items-center gap-2 mt-1">
                         {renderStars(review.rating)}
                         <span className="text-sm text-muted-foreground">
-                          {new Date(review.created_at).toLocaleDateString('de-DE')}
+                          {new Date(review.createdAt).toLocaleDateString('de-DE')}
                         </span>
                       </div>
                     </div>
@@ -351,7 +304,7 @@ export function CustomerReviews({ perfumeId, variantId, className }: CustomerRev
                       disabled={!user}
                     >
                       <ThumbsUp className="w-4 h-4 mr-1" />
-                      {review.helpful_count}
+                      {review.helpfulCount || 0}
                     </Button>
                     <Button
                       variant="ghost"
