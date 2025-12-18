@@ -12,7 +12,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -33,7 +32,6 @@ export function WishlistShare() {
 
     setLoading(true);
     try {
-      // Generate unique share code locally
       const code = `WL${Date.now().toString(36).toUpperCase()}`;
       setShareCode(code);
       toast.success('Teilbarer Link erstellt!');
@@ -69,7 +67,7 @@ export function WishlistShare() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button variant="outline" size="sm" className="gap-2" data-testid="button-share-wishlist">
           <Share2 className="w-4 h-4" />
           Favoriten teilen
         </Button>
@@ -92,6 +90,7 @@ export function WishlistShare() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="z.B. Meine Sommerparfüms"
+                  data-testid="input-wishlist-title"
                 />
               </div>
 
@@ -102,10 +101,10 @@ export function WishlistShare() {
                     Jeder mit dem Link kann deine Favoriten sehen
                   </p>
                 </div>
-                <Switch checked={isPublic} onCheckedChange={setIsPublic} />
+                <Switch checked={isPublic} onCheckedChange={setIsPublic} data-testid="switch-public" />
               </div>
 
-              <Button onClick={generateShareLink} disabled={loading} className="w-full">
+              <Button onClick={generateShareLink} disabled={loading} className="w-full" data-testid="button-generate-link">
                 {loading ? 'Erstelle Link...' : 'Teilbaren Link erstellen'}
               </Button>
             </>
@@ -118,12 +117,14 @@ export function WishlistShare() {
                     value={`${window.location.origin}/wishlist/${shareCode}`}
                     readOnly
                     className="font-mono text-sm"
+                    data-testid="input-share-link"
                   />
                   <Button
                     onClick={copyLink}
                     size="icon"
                     variant="outline"
                     className="shrink-0"
+                    data-testid="button-copy-link"
                   >
                     {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   </Button>
@@ -135,11 +136,12 @@ export function WishlistShare() {
                   onClick={shareViaWhatsApp}
                   variant="outline"
                   className="gap-2"
+                  data-testid="button-share-whatsapp"
                 >
                   <MessageCircle className="w-4 h-4" />
                   WhatsApp
                 </Button>
-                <Button onClick={shareViaEmail} variant="outline" className="gap-2">
+                <Button onClick={shareViaEmail} variant="outline" className="gap-2" data-testid="button-share-email">
                   <Mail className="w-4 h-4" />
                   E-Mail
                 </Button>
@@ -152,6 +154,7 @@ export function WishlistShare() {
                 }}
                 variant="ghost"
                 className="w-full"
+                data-testid="button-new-link"
               >
                 Neuen Link erstellen
               </Button>

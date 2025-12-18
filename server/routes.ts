@@ -814,4 +814,78 @@ Dein Verhalten:
       res.status(500).json({ error: error.message });
     }
   });
+
+  // Stock notification endpoint (placeholder - stores in memory for now)
+  app.post("/api/stock-notifications", async (req, res) => {
+    try {
+      const { email, productId, variantId, userId } = req.body;
+      
+      if (!email || !productId || !variantId) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      // For now, just acknowledge the request
+      // In production, this would store the notification preference
+      console.log(`Stock notification registered: ${email} for variant ${variantId}`);
+      
+      res.json({ success: true, message: "Notification registered" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Auto-reorder endpoints (placeholder)
+  app.get("/api/auto-reorder", requireAuth, async (req, res) => {
+    try {
+      // Placeholder - returns empty array
+      res.json([]);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/auto-reorder", requireAuth, async (req, res) => {
+    try {
+      // Placeholder - acknowledge the request
+      res.json({ success: true, id: crypto.randomUUID() });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/auto-reorder/:id", requireAuth, async (req, res) => {
+    try {
+      // Placeholder - acknowledge the update
+      res.json({ success: true, id: req.params.id });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/auto-reorder/:id", requireAuth, async (req, res) => {
+    try {
+      // Placeholder - acknowledge the deletion
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Push notifications endpoint (placeholder)
+  app.post("/api/push-subscriptions", requireAuth, async (req, res) => {
+    try {
+      // Placeholder - acknowledge the subscription
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/push-subscriptions", requireAuth, async (req, res) => {
+    try {
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 }

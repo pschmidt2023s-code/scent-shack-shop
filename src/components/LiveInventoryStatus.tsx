@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { AlertCircle, TrendingDown, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { supabase } from '@/integrations/supabase/client';
 
 interface LiveInventoryStatusProps {
   variantId: string;
@@ -16,43 +15,23 @@ export function LiveInventoryStatus({ variantId, productId }: LiveInventoryStatu
 
   useEffect(() => {
     fetchStock();
-
-    // Set up realtime subscription
-    const channel = supabase
-      .channel('inventory-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'product_variants',
-          filter: `id=eq.${variantId}`,
-        },
-        (payload) => {
-          console.log('Stock updated:', payload);
-          const newStock = (payload.new as any).stock || 0;
-          setStock(newStock);
-          setLowStock(newStock > 0 && newStock <= 5);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    
+    const interval = setInterval(fetchStock, 30000);
+    return () => clearInterval(interval);
   }, [variantId]);
 
   const fetchStock = async () => {
     try {
-      const { data, error } = await supabase
-        .from('product_variants')
-        .select('stock')
-        .eq('id', variantId)
-        .single();
+      const response = await fetch(`/api/products/${productId}/variants`, {
+        credentials: 'include'
+      });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to fetch stock');
 
-      const stockQty = data?.stock || 0;
+      const variants = await response.json();
+      const variant = variants.find((v: any) => v.id === variantId);
+      
+      const stockQty = variant?.stock || 0;
       setStock(stockQty);
       setLowStock(stockQty > 0 && stockQty <= 5);
     } catch (error) {
@@ -66,7 +45,7 @@ export function LiveInventoryStatus({ variantId, productId }: LiveInventoryStatu
 
   if (stock === 0) {
     return (
-      <Alert variant="destructive" className="mt-4">
+      <Alert variant="destructive" className="mt-4" data-testid="alert-out-of-stock">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>Derzeit nicht verfügbar</AlertDescription>
       </Alert>
@@ -75,12 +54,12 @@ export function LiveInventoryStatus({ variantId, productId }: LiveInventoryStatu
 
   if (lowStock) {
     return (
-      <Alert className="mt-4 border-orange-200 bg-orange-50">
-        <TrendingDown className="h-4 w-4 text-orange-600" />
-        <AlertDescription className="text-orange-800">
-          <div className="flex items-center justify-between">
+      <Alert className="mt-4 border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950" data-testid="alert-low-stock">
+        <TrendingDown className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+        <AlertDescription className="text-orange-800 dark:text-orange-200">
+          <div className="flex items-center justify-between gap-2">
             <span className="font-semibold">Nur noch {stock} auf Lager!</span>
-            <Badge variant="secondary" className="bg-orange-100 text-orange-700">
+            <Badge variant="secondary" className="bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
               <Clock className="w-3 h-3 mr-1" />
               Begrenzt
             </Badge>
@@ -91,9 +70,9 @@ export function LiveInventoryStatus({ variantId, productId }: LiveInventoryStatu
   }
 
   return (
-    <div className="mt-4 flex items-center gap-2">
+    <div className="mt-4 flex items-center gap-2" data-testid="status-in-stock">
       <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-      <span className="text-sm text-green-700 font-medium">{stock} auf Lager</span>
+      <span className="text-sm text-green-700 dark:text-green-400 font-medium">{stock} auf Lager</span>
     </div>
   );
 }

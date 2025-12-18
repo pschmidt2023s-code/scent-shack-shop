@@ -4,16 +4,15 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Dialog, DialogContent } from './ui/dialog';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 
 export function ExitIntentPopup() {
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [hasShown, setHasShown] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      // Check if popup was already shown in this session
       const shown = sessionStorage.getItem('exitIntentShown');
       if (shown) {
         setHasShown(true);
@@ -21,7 +20,6 @@ export function ExitIntentPopup() {
       }
 
       const handleMouseLeave = (e: MouseEvent) => {
-        // Only trigger if mouse is leaving from top of page
         if (e.clientY <= 0 && !hasShown && !isOpen) {
           setIsOpen(true);
           setHasShown(true);
@@ -38,19 +36,28 @@ export function ExitIntentPopup() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     
     try {
-      const { error } = await supabase
-        .from('newsletter_subscriptions')
-        .insert([{ email, preferences: { promotions: true } }]);
+      const response = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, preferences: { promotions: true } })
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Fehler beim Anmelden');
+      }
 
-      toast.success('🎉 Willkommen! Ihr 10% Rabattcode: WELCOME10');
+      toast.success('Willkommen! Ihr 10% Rabattcode: WELCOME10');
       setIsOpen(false);
       setEmail('');
-    } catch (error) {
-      toast.error('Fehler beim Anmelden. Bitte versuchen Sie es später erneut.');
+    } catch (error: any) {
+      toast.error(error.message || 'Fehler beim Anmelden. Bitte versuchen Sie es später erneut.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -61,12 +68,12 @@ export function ExitIntentPopup() {
           onClick={() => setIsOpen(false)}
           className="absolute right-4 top-4 z-10 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           aria-label="Schließen"
+          data-testid="button-close-popup"
         >
           <X className="h-4 w-4" />
         </button>
         
         <div className="relative">
-          {/* Background gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-luxury-gold/20 via-transparent to-luxury-gold/20" />
           
           <div className="relative p-6 sm:p-8 space-y-4">
@@ -78,7 +85,7 @@ export function ExitIntentPopup() {
             
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-bold text-foreground">
-                Warte! 🎁
+                Warte!
               </h2>
               <p className="text-lg font-semibold text-luxury-gold">
                 Sichern Sie sich 10% Rabatt
@@ -96,13 +103,16 @@ export function ExitIntentPopup() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="text-center"
+                data-testid="input-exit-email"
               />
               <Button 
                 type="submit" 
                 className="w-full bg-luxury-gold hover:bg-luxury-gold-light text-luxury-black font-semibold"
                 size="lg"
+                disabled={loading}
+                data-testid="button-exit-submit"
               >
-                10% Rabattcode erhalten
+                {loading ? 'Wird angemeldet...' : '10% Rabattcode erhalten'}
               </Button>
             </form>
 

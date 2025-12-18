@@ -11,7 +11,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -42,14 +41,27 @@ export function StockNotificationButton({
 
     setLoading(true);
     try {
-      const { error } = await supabase.from('stock_notifications').insert({
-        user_id: user?.id,
-        email,
-        product_id: productId,
-        variant_id: variantId,
+      const response = await fetch('/api/stock-notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          userId: user?.id,
+          email,
+          productId,
+          variantId,
+        })
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const data = await response.json();
+        if (data.error?.includes('already')) {
+          toast.info('Du hast bereits eine Benachrichtigung für dieses Produkt aktiviert.');
+          setOpen(false);
+          return;
+        }
+        throw new Error(data.error || 'Fehler beim Aktivieren');
+      }
 
       setSubscribed(true);
       toast.success('Benachrichtigung aktiviert! Wir informieren dich, wenn das Produkt wieder verfügbar ist.');
@@ -60,12 +72,7 @@ export function StockNotificationButton({
       }, 2000);
     } catch (error: any) {
       console.error('Error subscribing to stock notification:', error);
-      
-      if (error.code === '23505') {
-        toast.info('Du hast bereits eine Benachrichtigung für dieses Produkt aktiviert.');
-      } else {
-        toast.error('Fehler beim Aktivieren der Benachrichtigung');
-      }
+      toast.error(error.message || 'Fehler beim Aktivieren der Benachrichtigung');
     } finally {
       setLoading(false);
     }
@@ -74,7 +81,7 @@ export function StockNotificationButton({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2 w-full">
+        <Button variant="outline" className="gap-2 w-full" data-testid="button-notify-stock">
           <Bell className="w-4 h-4" />
           Benachrichtigen wenn verfügbar
         </Button>
@@ -97,11 +104,12 @@ export function StockNotificationButton({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading || subscribed}
+              data-testid="input-notify-email"
             />
           </div>
 
           {subscribed ? (
-            <Button className="w-full gap-2" disabled>
+            <Button className="w-full gap-2" disabled data-testid="button-subscribed">
               <Check className="w-4 h-4" />
               Benachrichtigung aktiviert
             </Button>
@@ -110,6 +118,7 @@ export function StockNotificationButton({
               onClick={handleSubscribe}
               disabled={loading || !email}
               className="w-full gap-2"
+              data-testid="button-subscribe-notify"
             >
               <Bell className="w-4 h-4" />
               {loading ? 'Wird aktiviert...' : 'Benachrichtigung aktivieren'}

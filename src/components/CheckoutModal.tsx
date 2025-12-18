@@ -1,15 +1,22 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Loader2, CreditCard } from "lucide-react";
+import { Loader2, Building2, CheckCircle } from "lucide-react";
 
-export default function CheckoutModal({ open, onOpenChange }) {
-  const { items, total } = useCart();
+interface CheckoutModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export default function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
+  const { items, total, clearCart } = useCart();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [orderComplete, setOrderComplete] = useState(false);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
 
   const handleCheckout = async () => {
     if (!user) {
@@ -25,65 +32,126 @@ export default function CheckoutModal({ open, onOpenChange }) {
     setLoading(true);
     
     try {
-      // KORREKTER Aufruf der Edge Function mit richtiger Datenstruktur
-      const response = await fetch('https://tqswuibgnkdvrfocwjou.supabase.co/functions/v1/create-payment', {
+      const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
         },
+        credentials: 'include',
         body: JSON.stringify({
+          userId: user.id,
           items: items.map(item => ({
-            name: item.perfume.name,      // ✅ RICHTIG!
-            amount: Math.round(item.variant.price * 100), // ✅ RICHTIG!
+            perfumeId: item.perfume.id,
+            variantId: item.variant.id,
             quantity: item.quantity,
-            variant_id: item.variant.id,
-            perfume_id: item.perfume.id
+            unitPrice: item.variant.price.toString(),
+            totalPrice: (item.variant.price * item.quantity).toString()
           })),
-          user_id: user.id,
-          total_amount: total
+          subtotal: total.toString(),
+          shippingCost: "0",
+          totalAmount: total.toString(),
+          paymentMethod: "bank_transfer",
+          shippingAddress: user.email
         })
       });
       
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Edge Function Fehler ${response.status}: ${errorText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Fehler bei der Bestellung');
       }
       
-      const { url, sessionId } = await response.json();
-      
-      if (!url) throw new Error('Keine Checkout-URL erhalten');
-      
-      // Öffne Stripe Checkout in neuem Tab (verhindert iframe-Probleme)
-      window.open(url, '_blank');
-      toast.success('Stripe Checkout wurde in neuem Tab geöffnet');
-      onOpenChange(false);
+      const order = await response.json();
+      setOrderNumber(order.orderNumber);
+      setOrderComplete(true);
+      clearCart();
+      toast.success('Bestellung erfolgreich aufgegeben!');
 
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('Fehler:', error);
-      toast.error(error.message || 'Fehler beim Bezahlvorgang');
+      toast.error(error.message || 'Fehler beim Bestellvorgang');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleClose = () => {
+    setOrderComplete(false);
+    setOrderNumber(null);
+    onOpenChange(false);
+  };
+
+  if (orderComplete) {
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent data-testid="dialog-order-complete">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="text-green-500" />
+              Bestellung erfolgreich
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-muted p-4 rounded-lg space-y-2">
+              <p className="font-semibold">Bestellnummer: {orderNumber}</p>
+              <p className="text-sm text-muted-foreground">
+                Vielen Dank für Ihre Bestellung! Bitte überweisen Sie den Betrag auf folgendes Konto:
+              </p>
+              <div className="bg-background p-3 rounded border text-sm space-y-1">
+                <p><span className="font-medium">Empfänger:</span> ALDENAIR GmbH</p>
+                <p><span className="font-medium">IBAN:</span> DE89 3704 0044 0532 0130 00</p>
+                <p><span className="font-medium">BIC:</span> COBADEFFXXX</p>
+                <p><span className="font-medium">Betrag:</span> {total.toFixed(2)} EUR</p>
+                <p><span className="font-medium">Verwendungszweck:</span> {orderNumber}</p>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Nach Zahlungseingang wird Ihre Bestellung versendet.
+              </p>
+            </div>
+            <Button className="w-full" onClick={handleClose} data-testid="button-close-order">
+              Schließen
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent data-testid="dialog-checkout">
         <DialogHeader>
-          <DialogTitle>Zahlung</DialogTitle>
+          <DialogTitle>Zahlung per Banküberweisung</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="bg-muted p-4 rounded-lg">
-            <div className="flex justify-between font-bold">
+          <div className="bg-muted p-4 rounded-lg space-y-2">
+            <div className="flex justify-between">
+              <span>Zwischensumme:</span>
+              <span>{total.toFixed(2)} €</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Versand:</span>
+              <span>Kostenlos</span>
+            </div>
+            <div className="border-t pt-2 flex justify-between font-bold">
               <span>Gesamt:</span>
               <span>{total.toFixed(2)} €</span>
             </div>
           </div>
-          <Button className="w-full" onClick={handleCheckout} disabled={loading || items.length === 0}>
-            {loading ? <Loader2 className="animate-spin" /> : <CreditCard className="mr-2" />} 
-            Jetzt bezahlen
+          <div className="text-sm text-muted-foreground">
+            <p>Nach Abschluss der Bestellung erhalten Sie die Bankverbindungsdaten für die Überweisung.</p>
+          </div>
+          <Button 
+            className="w-full" 
+            onClick={handleCheckout} 
+            disabled={loading || items.length === 0}
+            data-testid="button-complete-order"
+          >
+            {loading ? (
+              <Loader2 className="animate-spin mr-2" />
+            ) : (
+              <Building2 className="mr-2" />
+            )}
+            Bestellung abschließen
           </Button>
         </div>
       </DialogContent>

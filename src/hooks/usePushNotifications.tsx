@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -41,7 +40,6 @@ export function usePushNotifications() {
 
       const registration = await navigator.serviceWorker.ready;
       
-      // Generate VAPID key (in production, use server-generated keys)
       const vapidPublicKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBmYRJcY2a5lHoJRr6jk';
       
       const sub = await registration.pushManager.subscribe({
@@ -51,11 +49,14 @@ export function usePushNotifications() {
 
       setSubscription(sub);
 
-      // Save subscription to backend
       if (user) {
-        await supabase.from('push_subscriptions').upsert({
-          user_id: user.id,
-          subscription_data: JSON.parse(JSON.stringify(sub)),
+        await fetch('/api/push-subscriptions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            subscriptionData: JSON.parse(JSON.stringify(sub))
+          })
         });
       }
 
@@ -71,10 +72,10 @@ export function usePushNotifications() {
       setSubscription(null);
       
       if (user) {
-        await supabase
-          .from('push_subscriptions')
-          .delete()
-          .eq('user_id', user.id);
+        await fetch('/api/push-subscriptions', {
+          method: 'DELETE',
+          credentials: 'include'
+        });
       }
       
       toast.success('Benachrichtigungen deaktiviert');
@@ -101,7 +102,6 @@ export function usePushNotifications() {
   };
 }
 
-// Helper function
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');

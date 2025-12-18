@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -16,7 +15,7 @@ interface AutoReorderSubscription {
 export function useAutoReorder() {
   const { user } = useAuth();
   const [subscriptions, setSubscriptions] = useState<AutoReorderSubscription[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -29,27 +28,20 @@ export function useAutoReorder() {
 
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('auto_reorder_subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('next_order_date', { ascending: true });
+      const response = await fetch('/api/auto-reorder', {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        setSubscriptions([]);
+        return;
+      }
 
-      if (error) throw error;
-
-      setSubscriptions(
-        data?.map((sub) => ({
-          id: sub.id,
-          productId: sub.product_id,
-          variantId: sub.variant_id,
-          frequencyDays: sub.frequency_days,
-          nextOrderDate: sub.next_order_date,
-          quantity: sub.quantity,
-          isActive: sub.is_active,
-        })) || []
-      );
+      const data = await response.json();
+      setSubscriptions(data || []);
     } catch (error) {
       console.error('Error fetching subscriptions:', error);
+      setSubscriptions([]);
     } finally {
       setLoading(false);
     }
@@ -70,16 +62,22 @@ export function useAutoReorder() {
       const nextDate = new Date();
       nextDate.setDate(nextDate.getDate() + frequencyDays);
 
-      const { error } = await supabase.from('auto_reorder_subscriptions').insert({
-        user_id: user.id,
-        product_id: productId,
-        variant_id: variantId,
-        frequency_days: frequencyDays,
-        next_order_date: nextDate.toISOString().split('T')[0],
-        quantity,
+      const response = await fetch('/api/auto-reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          productId,
+          variantId,
+          frequencyDays,
+          nextOrderDate: nextDate.toISOString().split('T')[0],
+          quantity,
+        })
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to create subscription');
+      }
 
       await fetchSubscriptions();
       toast.success('Auto-Nachbestellung aktiviert!');
@@ -98,23 +96,16 @@ export function useAutoReorder() {
     }>
   ) => {
     try {
-      const updateData: any = {};
-      if (updates.frequencyDays !== undefined) {
-        updateData.frequency_days = updates.frequencyDays;
-      }
-      if (updates.quantity !== undefined) {
-        updateData.quantity = updates.quantity;
-      }
-      if (updates.isActive !== undefined) {
-        updateData.is_active = updates.isActive;
-      }
+      const response = await fetch(`/api/auto-reorder/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(updates)
+      });
 
-      const { error } = await supabase
-        .from('auto_reorder_subscriptions')
-        .update(updateData)
-        .eq('id', id);
-
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to update subscription');
+      }
 
       await fetchSubscriptions();
       toast.success('Auto-Nachbestellung aktualisiert');
@@ -126,12 +117,14 @@ export function useAutoReorder() {
 
   const deleteSubscription = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('auto_reorder_subscriptions')
-        .delete()
-        .eq('id', id);
+      const response = await fetch(`/api/auto-reorder/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to delete subscription');
+      }
 
       await fetchSubscriptions();
       toast.success('Auto-Nachbestellung gelöscht');
