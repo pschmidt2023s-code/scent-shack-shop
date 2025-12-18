@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ShoppingCart, Package, Sparkles, Check } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import type { Perfume, PerfumeVariant } from '@/types/perfume';
@@ -78,39 +77,22 @@ export default function BundleConfigurator() {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          id,
-          name,
-          brand,
-          category,
-          size,
-          image,
-          product_variants(
-            id,
-            variant_number,
-            name,
-            description,
-            price,
-            in_stock
-          )
-        `)
-        .eq('category', config.category)
-        .order('created_at', { ascending: true });
+      const response = await fetch(`/api/products?category=${encodeURIComponent(config.category)}`);
+      if (!response.ok) {
+        console.error('Error loading bundles:', response.statusText);
+        return;
+      }
+      
+      const data = await response.json();
 
-      if (error) throw error;
-
-      if (data) {
-        // Create a Map to track unique variants by variant_number
+      if (data && Array.isArray(data)) {
         const uniqueVariantsMap = new Map<string, any>();
         
         data.forEach((p: any) => {
-          if (p.product_variants && p.product_variants.length > 0) {
-            p.product_variants.forEach((v: any) => {
-              // Only add if this variant_number hasn't been seen yet
-              if (!uniqueVariantsMap.has(v.variant_number)) {
-                uniqueVariantsMap.set(v.variant_number, {
+          if (p.variants && p.variants.length > 0) {
+            p.variants.forEach((v: any) => {
+              if (!uniqueVariantsMap.has(v.variantNumber)) {
+                uniqueVariantsMap.set(v.variantNumber, {
                   productData: p,
                   variantData: v
                 });
@@ -119,7 +101,6 @@ export default function BundleConfigurator() {
           }
         });
 
-        // Transform to Perfume format with unique variants
         const transformedPerfumes: Perfume[] = Array.from(uniqueVariantsMap.values()).map((entry) => {
           const p = entry.productData;
           const v = entry.variantData;
@@ -133,11 +114,11 @@ export default function BundleConfigurator() {
             image: p.image || '/placeholder.svg',
             variants: [{
               id: v.id,
-              number: v.variant_number,
+              number: v.variantNumber,
               name: v.name,
               description: v.description,
               price: v.price,
-              inStock: v.in_stock,
+              inStock: v.inStock,
             }]
           };
         });

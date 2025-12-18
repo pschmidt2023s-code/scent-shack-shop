@@ -2,9 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { sanitizeInput } from '@/lib/validation'
 import DOMPurify from 'dompurify'
@@ -41,7 +39,7 @@ const SUPPORT_HOURS = {
 const INITIAL_MESSAGES: Message[] = [
   {
     id: '1',
-    content: 'Hallo! 👋 Willkommen bei ALDENAIR. Wie kann ich Ihnen heute helfen?',
+    content: 'Hallo! Willkommen bei ALDENAIR. Wie kann ich Ihnen heute helfen?',
     sender: 'bot',
     timestamp: new Date(),
     status: 'read'
@@ -51,27 +49,37 @@ const INITIAL_MESSAGES: Message[] = [
 const FAQ_SUGGESTIONS = [
   'Wie lange dauert der Versand?',
   'Kann ich eine Probe bestellen?',
-  'Was ist die Rückgaberichtlinie?',
+  'Was ist die Rueckgaberichtlinie?',
   'Gibt es Mengenrabatte?'
 ]
 
 const BOT_RESPONSES: Record<string, string> = {
-  'versand': 'Unser Standardversand dauert 3-7 Werktage innerhalb Deutschlands. Kostenloser Versand ab 50€ Bestellwert.',
-  'probe': 'Ja! Wir bieten 5ml Proben für 4,99€ an. So können Sie unsere Düfte testen, bevor Sie sich für die 50ml Flasche entscheiden.',
-  'rückgabe': 'Sie haben 30 Tage Rückgaberecht. Ungeöffnete Artikel können kostenfrei zurückgesendet werden.',
-  'rabatt': 'Für Neukunden gibt es 10% Rabatt beim Newsletter-Abo. Stammkunden erhalten regelmäßige Angebote per E-Mail.',
-  'default': 'Vielen Dank für Ihre Nachricht! Ein Mitarbeiter wird sich in Kürze bei Ihnen melden. Unsere Servicezeiten sind Mo-Fr 9:00-18:00 Uhr.'
+  'versand': 'Unser Standardversand dauert 3-7 Werktage innerhalb Deutschlands. Kostenloser Versand ab 50 Euro Bestellwert.',
+  'probe': 'Ja! Wir bieten 5ml Proben fuer 4,99 Euro an. So koennen Sie unsere Duefte testen, bevor Sie sich fuer die 50ml Flasche entscheiden.',
+  'rueckgabe': 'Sie haben 30 Tage Rueckgaberecht. Ungeoeffnete Artikel koennen kostenfrei zurueckgesendet werden.',
+  'rabatt': 'Fuer Neukunden gibt es 10% Rabatt beim Newsletter-Abo. Stammkunden erhalten regelmaessige Angebote per E-Mail.',
+  'preis': 'Unsere Parfuems starten ab 4,99 Euro fuer 5ml Proben und 29,99 Euro fuer 50ml Flakons.',
+  'lieferung': 'Wir liefern deutschlandweit. Standardversand dauert 3-7 Werktage, Express 1-2 Werktage.',
+  'zahlung': 'Wir akzeptieren Kreditkarte, PayPal, Klarna und Bankueberweisung.',
+  'default': 'Vielen Dank fuer Ihre Nachricht! Ein Mitarbeiter wird sich in Kuerze bei Ihnen melden. Unsere Servicezeiten sind Mo-Fr 9:00-18:00 Uhr.'
 }
 
 function isSupportOnline(): boolean {
   const now = new Date()
   const hour = now.getHours()
   const day = now.getDay()
-  
-  // Weekend check (0 = Sunday, 6 = Saturday)
   if (day === 0 || day === 6) return false
-  
   return hour >= SUPPORT_HOURS.start && hour < SUPPORT_HOURS.end
+}
+
+function findBotResponse(message: string): string {
+  const lowerMessage = message.toLowerCase()
+  for (const [keyword, response] of Object.entries(BOT_RESPONSES)) {
+    if (keyword !== 'default' && lowerMessage.includes(keyword)) {
+      return response
+    }
+  }
+  return BOT_RESPONSES.default
 }
 
 export function LiveChat({ className }: LiveChatProps) {
@@ -82,7 +90,6 @@ export function LiveChat({ className }: LiveChatProps) {
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
-  const [sessionId, setSessionId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -93,458 +100,228 @@ export function LiveChat({ className }: LiveChatProps) {
   }, [messages])
 
   useEffect(() => {
-    if (isOpen && !sessionId && user) {
-      initializeSession()
+    if (isOpen) {
       setUnreadCount(0)
       inputRef.current?.focus()
     }
-  }, [isOpen, user])
-
-  useEffect(() => {
-    if (sessionId) {
-      loadMessages()
-      
-      // Subscribe to real-time messages
-      const subscription = supabase
-        .channel(`chat-session-${sessionId}`)
-        .on(
-          'postgres_changes',
-          { 
-            event: 'INSERT', 
-            schema: 'public', 
-            table: 'chat_messages',
-            filter: `session_id=eq.${sessionId}`
-          },
-          (payload) => {
-            const newMessage = payload.new as any;
-            if (newMessage.sender_type === 'admin' || newMessage.sender_type === 'bot') {
-              const message: Message = {
-                id: newMessage.id,
-                content: newMessage.content,
-                sender: newMessage.sender_type === 'admin' ? 'support' : 'bot',
-                timestamp: new Date(newMessage.created_at),
-                status: 'read'
-              };
-              setMessages(prev => [...prev, message]);
-              
-              if (!isOpen) {
-                setUnreadCount(prev => prev + 1);
-              }
-            }
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(subscription);
-      };
-    }
-  }, [sessionId, isOpen])
+  }, [isOpen])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const generateBotResponse = async (userMessage: string, conversationHistory: Message[]): Promise<string> => {
-    try {
-      // Prepare messages for AI
-      const messages = conversationHistory
-        .filter(m => m.sender !== 'bot' || conversationHistory.indexOf(m) > 0) // Skip initial bot greeting
-        .map(m => ({
-          role: m.sender === 'user' ? 'user' : 'assistant',
-          content: m.content
-        }));
+  const handleSendMessage = async () => {
+    if (!inputValue.trim()) return
 
-      messages.push({
-        role: 'user',
-        content: userMessage
-      });
-
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-ai-support`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({ messages }),
-      });
-
-      if (!response.ok) {
-        throw new Error('AI response failed');
-      }
-
-      // Handle streaming response
-      if (!response.body) {
-        throw new Error('No response body');
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let fullResponse = '';
-      let textBuffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        textBuffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex: number;
-        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
-          let line = textBuffer.slice(0, newlineIndex);
-          textBuffer = textBuffer.slice(newlineIndex + 1);
-
-          if (line.endsWith('\r')) line = line.slice(0, -1);
-          if (line.startsWith(':') || line.trim() === '') continue;
-          if (!line.startsWith('data: ')) continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === '[DONE]') break;
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-            if (content) {
-              fullResponse += content;
-            }
-          } catch {
-            // Incomplete JSON, buffer it
-            textBuffer = line + '\n' + textBuffer;
-            break;
-          }
-        }
-      }
-
-      return fullResponse || 'Entschuldigung, ich konnte keine Antwort generieren. Ein Mitarbeiter wird sich bei Ihnen melden.';
-    } catch (error) {
-      console.error('Error generating AI response:', error);
-      return 'Entschuldigung, ich bin momentan nicht erreichbar. Ein Mitarbeiter wird sich in Kürze bei Ihnen melden. Unsere Servicezeiten sind Mo-Fr 9:00-18:00 Uhr.';
-    }
-  };
-
-  const initializeSession = async () => {
-    if (!user) return;
-
-    try {
-      const { data: session, error: sessionError } = await supabase
-        .from('chat_sessions')
-        .insert([{
-          user_id: user.id,
-          status: 'active'
-        }])
-        .select()
-        .single();
-
-      if (sessionError) throw sessionError;
-      
-      setSessionId(session.id);
-    } catch (error) {
-      console.error('Error creating session:', error);
-    }
-  };
-
-  const loadMessages = async () => {
-    if (!sessionId) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-
-      const dbMessages: Message[] = data.map(msg => ({
-        id: msg.id,
-        content: msg.content,
-        sender: msg.sender_type === 'user' ? 'user' : (msg.sender_type === 'admin' ? 'support' : 'bot'),
-        timestamp: new Date(msg.created_at),
-        status: msg.status as 'sent' | 'delivered' | 'read'
-      }));
-
-      // Combine initial messages with database messages
-      setMessages([...INITIAL_MESSAGES, ...dbMessages]);
-    } catch (error) {
-      console.error('Error loading messages:', error);
-    }
-  };
-
-  const sendMessage = async (content?: string) => {
-    const messageContent = sanitizeInput(content || inputValue.trim());
-    if (!messageContent || !sessionId || !user) return;
-
+    const sanitizedMessage = sanitizeInput(inputValue.trim())
     const userMessage: Message = {
-      id: Date.now().toString(),
-      content: messageContent,
+      id: `user-${Date.now()}`,
+      content: DOMPurify.sanitize(sanitizedMessage),
       sender: 'user',
       timestamp: new Date(),
       status: 'sent'
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setInputValue('');
-
-    try {
-      // Save message to database
-      await supabase
-        .from('chat_messages')
-        .insert([{
-          session_id: sessionId,
-          sender_type: 'user',
-          content: messageContent,
-          status: 'sent',
-          user_id: user.id
-        }]);
-
-      // Update session last message time
-      await supabase
-        .from('chat_sessions')
-        .update({ 
-          last_message_at: new Date().toISOString(),
-          status: 'pending'
-        })
-        .eq('id', sessionId);
-
-      // Auto-respond with AI bot if no admin is available
-      if (!supportOnline) {
-        setIsTyping(true);
-        
-        setTimeout(async () => {
-          const botResponse = await generateBotResponse(messageContent, messages);
-          
-          await supabase
-            .from('chat_messages')
-            .insert([{
-              session_id: sessionId,
-              sender_type: 'bot',
-              content: botResponse,
-              status: 'sent'
-            }]);
-
-          setIsTyping(false);
-        }, 1000);
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      // Revert optimistic update on error
-      setMessages(prev => prev.filter(m => m.id !== userMessage.id));
     }
-  };
+
+    setMessages(prev => [...prev, userMessage])
+    setInputValue('')
+    setIsTyping(true)
+
+    setTimeout(() => {
+      const botResponse = findBotResponse(sanitizedMessage)
+      const botMessage: Message = {
+        id: `bot-${Date.now()}`,
+        content: botResponse,
+        sender: 'bot',
+        timestamp: new Date(),
+        status: 'read'
+      }
+      setMessages(prev => [...prev, botMessage])
+      setIsTyping(false)
+    }, 1000 + Math.random() * 1000)
+  }
 
   const handleSuggestionClick = (suggestion: string) => {
-    sendMessage(suggestion)
+    setInputValue(suggestion)
+    inputRef.current?.focus()
   }
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('de-DE', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    })
-  }
-
-  const getStatusIcon = (status?: string) => {
-    switch (status) {
-      case 'sent':
-        return <Clock className="w-3 h-3 text-muted-foreground" />
-      case 'delivered':
-        return <CheckCircle className="w-3 h-3 text-muted-foreground" />
-      case 'read':
-        return <CheckCircle className="w-3 h-3 text-primary" />
-      default:
-        return null
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSendMessage()
     }
+  }
+
+  if (!isOpen) {
+    return (
+      <div className={cn("fixed bottom-4 right-4 z-50", className)}>
+        <Button
+          onClick={() => setIsOpen(true)}
+          className="rounded-full w-14 h-14 shadow-lg"
+          data-testid="button-open-chat"
+        >
+          <MessageCircle className="w-6 h-6" />
+          {unreadCount > 0 && (
+            <Badge className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 text-xs">
+              {unreadCount}
+            </Badge>
+          )}
+        </Button>
+      </div>
+    )
+  }
+
+  if (isMinimized) {
+    return (
+      <div className={cn("fixed bottom-4 right-4 z-50", className)}>
+        <Card className="w-72 shadow-lg cursor-pointer" onClick={() => setIsMinimized(false)}>
+          <CardHeader className="p-3 flex flex-row items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5 text-primary" />
+              <span className="font-medium text-sm">Live Chat</span>
+            </div>
+            <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}>
+              <X className="w-4 h-4" />
+            </Button>
+          </CardHeader>
+        </Card>
+      </div>
+    )
   }
 
   return (
-    <>
-      {/* Chat Toggle Button */}
-      <Button
-        onClick={() => setIsOpen(true)}
-        className={cn(
-          "fixed bottom-4 right-4 z-50 w-14 h-14 rounded-full shadow-lg hover:scale-110 transition-all duration-200",
-          isOpen && "hidden",
-          className
-        )}
-        size="icon"
-      >
-        <MessageCircle className="w-6 h-6" />
-        {unreadCount > 0 && (
-          <Badge 
-            variant="destructive" 
-            className="absolute -top-2 -right-2 h-6 w-6 flex items-center justify-center p-0 text-xs animate-bounce"
-          >
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </Badge>
-        )}
-      </Button>
+    <div className={cn("fixed bottom-4 right-4 z-50", className)}>
+      <Card className="w-80 md:w-96 h-[500px] shadow-xl flex flex-col">
+        <CardHeader className="p-4 border-b flex flex-row items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <MessageCircle className="w-5 h-5 text-primary" />
+              <span className={cn(
+                "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background",
+                supportOnline ? "bg-green-500" : "bg-yellow-500"
+              )} />
+            </div>
+            <div>
+              <CardTitle className="text-sm font-medium">ALDENAIR Support</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                {supportOnline ? 'Online' : 'Offline - Bot aktiv'}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-1">
+            <Button size="icon" variant="ghost" onClick={() => setIsMinimized(true)}>
+              <Minimize2 className="w-4 h-4" />
+            </Button>
+            <Button size="icon" variant="ghost" onClick={() => setIsOpen(false)} data-testid="button-close-chat">
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </CardHeader>
 
-      {/* Chat Window */}
-      {isOpen && (
-        <Card className="fixed bottom-4 right-4 z-50 w-80 h-96 shadow-xl flex flex-col">
-          <CardHeader className="flex flex-row items-center justify-between p-3 border-b">
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                  <MessageCircle className="w-4 h-4 text-primary-foreground" />
+        <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={cn(
+                "flex gap-2",
+                message.sender === 'user' ? "justify-end" : "justify-start"
+              )}
+            >
+              {message.sender !== 'user' && (
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Bot className="w-4 h-4 text-primary" />
                 </div>
-                <div className={cn(
-                  "absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white",
-                  supportOnline ? "bg-green-500" : "bg-gray-400"
-                )} />
-              </div>
-              <div>
-                <CardTitle className="text-sm">ALDENAIR Support</CardTitle>
-                <p className="text-xs text-muted-foreground">
-                  {supportOnline ? 'Online' : 'Außerhalb der Geschäftszeiten'}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setIsMinimized(!isMinimized)}
-              >
-                <Minimize2 className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setIsOpen(false)}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          </CardHeader>
-
-          {!isMinimized && (
-            <>
-              <CardContent className="flex-1 overflow-y-auto p-3 space-y-3">
-                {!user ? (
-                  <div className="text-center py-8">
-                    <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="font-semibold mb-2">Anmeldung erforderlich</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Bitte melden Sie sich an, um den Chat zu verwenden.
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    {messages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={cn(
-                          "flex gap-2",
-                          message.sender === 'user' ? "justify-end" : "justify-start"
-                        )}
-                      >
-                        {message.sender !== 'user' && (
-                          <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
-                            {message.sender === 'bot' ? (
-                              <Bot className="w-3 h-3" />
-                            ) : (
-                              <User className="w-3 h-3" />
-                            )}
-                          </div>
-                        )}
-                        
-                        <div className={cn(
-                          "max-w-[70%] rounded-lg px-3 py-2 text-sm",
-                          message.sender === 'user' 
-                            ? "bg-primary text-primary-foreground" 
-                            : "bg-muted"
-                        )}>
-                          <p dangerouslySetInnerHTML={{ 
-                            __html: DOMPurify.sanitize(message.content, { 
-                              ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'br'],
-                              ALLOWED_ATTR: []
-                            })
-                          }} />
-                          <div className="flex items-center justify-between mt-1 gap-2">
-                            <span className="text-xs opacity-70">
-                              {formatTime(message.timestamp)}
-                            </span>
-                            {message.sender === 'user' && getStatusIcon(message.status)}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-
-                    {isTyping && (
-                      <div className="flex gap-2 justify-start">
-                        <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center">
-                          <Bot className="w-3 h-3" />
-                        </div>
-                        <div className="bg-muted rounded-lg px-3 py-2">
-                          <div className="flex space-x-1">
-                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
-                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </>
+              )}
+              <div
+                className={cn(
+                  "max-w-[75%] rounded-lg p-3",
+                  message.sender === 'user'
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
                 )}
-
-                <div ref={messagesEndRef} />
-              </CardContent>
-
-              {/* FAQ Suggestions */}
-              {user && messages.length <= 1 && (
-                <div className="p-3 border-t">
-                  <p className="text-xs text-muted-foreground mb-2">Häufige Fragen:</p>
-                  <div className="space-y-1">
-                    {FAQ_SUGGESTIONS.map((suggestion, index) => (
-                      <Button
-                        key={index}
-                        variant="ghost"
-                        size="sm"
-                        className="w-full justify-start text-xs h-8"
-                        onClick={() => handleSuggestionClick(suggestion)}
-                      >
-                        {suggestion}
-                      </Button>
-                    ))}
-                  </div>
+              >
+                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                <div className={cn(
+                  "flex items-center gap-1 mt-1",
+                  message.sender === 'user' ? "justify-end" : "justify-start"
+                )}>
+                  <Clock className="w-3 h-3 opacity-50" />
+                  <span className="text-xs opacity-50">
+                    {message.timestamp.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  {message.sender === 'user' && message.status && (
+                    <CheckCircle className="w-3 h-3 opacity-50" />
+                  )}
+                </div>
+              </div>
+              {message.sender === 'user' && (
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                  <User className="w-4 h-4 text-primary-foreground" />
                 </div>
               )}
+            </div>
+          ))}
 
-              {/* Input */}
-              {user && (
-                <div className="p-3 border-t">
-                  <div className="flex gap-2">
-                    <Input
-                      ref={inputRef}
-                      value={inputValue}
-                      onChange={(e) => setInputValue(e.target.value)}
-                      placeholder="Ihre Nachricht..."
-                      className="flex-1 text-sm"
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          sendMessage()
-                        }
-                      }}
-                    />
-                    <Button 
-                      size="icon" 
-                      onClick={() => sendMessage()}
-                      disabled={!inputValue.trim()}
-                      className="flex-shrink-0"
-                    >
-                      <Send className="w-4 h-4" />
-                    </Button>
-                  </div>
+          {isTyping && (
+            <div className="flex gap-2 items-center">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <Bot className="w-4 h-4 text-primary" />
+              </div>
+              <div className="bg-muted rounded-lg p-3">
+                <div className="flex gap-1">
+                  <span className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce" />
+                  <span className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                  <span className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                 </div>
-              )}
-            </>
+              </div>
+            </div>
           )}
-        </Card>
-      )}
-    </>
+
+          <div ref={messagesEndRef} />
+        </CardContent>
+
+        {messages.length === 1 && (
+          <div className="px-4 pb-2">
+            <p className="text-xs text-muted-foreground mb-2">Haeufige Fragen:</p>
+            <div className="flex flex-wrap gap-1">
+              {FAQ_SUGGESTIONS.map((suggestion, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-7"
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  data-testid={`button-suggestion-${index}`}
+                >
+                  {suggestion}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="p-4 border-t">
+          <div className="flex gap-2">
+            <Input
+              ref={inputRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Nachricht eingeben..."
+              className="flex-1"
+              disabled={isTyping}
+              data-testid="input-chat-message"
+            />
+            <Button
+              onClick={handleSendMessage}
+              disabled={!inputValue.trim() || isTyping}
+              data-testid="button-send-message"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
   )
 }

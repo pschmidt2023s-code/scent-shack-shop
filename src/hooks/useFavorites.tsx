@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { api } from '@/lib/api';
 
 interface Favorite {
   id: string;
@@ -18,19 +18,17 @@ export function useFavorites() {
   useEffect(() => {
     setLoading(false);
     if (user) {
-      loadFavoritesFromSupabase();
+      loadFavoritesFromAPI();
     } else {
       loadFavoritesFromLocalStorage();
     }
   }, [user]);
 
-  const loadFavoritesFromSupabase = async () => {
+  const loadFavoritesFromAPI = async () => {
     if (!user) return;
     try {
-      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000));
-      const fetchPromise = supabase.from('favorites').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
-      const { data, error } = await Promise.race([fetchPromise, timeout]) as any;
-      if (error) throw error;
+      const { data, error } = await api.favorites.list();
+      if (error) throw new Error(error);
       setFavorites(data || []);
     } catch (error) {
       console.error('Error loading favorites:', error);
@@ -59,15 +57,17 @@ export function useFavorites() {
   const addToFavorites = async (perfumeId: string, variantId: string) => {
     if (user) {
       try {
-        const { data, error } = await supabase.from('favorites').insert({ user_id: user.id, perfume_id: perfumeId, variant_id: variantId }).select().single();
+        const { data, error } = await api.favorites.add(perfumeId);
         if (error) {
-          if (error.code === '23505') {
+          if (error.includes('already')) {
             toast({ title: "Bereits in Favoriten" });
             return false;
           }
-          throw error;
+          throw new Error(error);
         }
-        setFavorites(prev => [data, ...prev]);
+        if (data) {
+          setFavorites(prev => [data, ...prev]);
+        }
         toast({ title: "Zu Favoriten hinzugefügt" });
         return true;
       } catch (error) {
@@ -97,8 +97,8 @@ export function useFavorites() {
   const removeFromFavorites = async (perfumeId: string, variantId: string) => {
     if (user) {
       try {
-        const { error } = await supabase.from('favorites').delete().eq('user_id', user.id).eq('perfume_id', perfumeId).eq('variant_id', variantId);
-        if (error) throw error;
+        const { error } = await api.favorites.remove(perfumeId);
+        if (error) throw new Error(error);
         setFavorites(prev => prev.filter(f => !(f.perfume_id === perfumeId && f.variant_id === variantId)));
         toast({ title: "Aus Favoriten entfernt" });
         return true;

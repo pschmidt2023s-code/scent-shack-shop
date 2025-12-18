@@ -4,7 +4,6 @@ import { PerfumeCard } from './PerfumeCard';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Package } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Perfume } from '@/types/perfume';
 
@@ -22,46 +21,21 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const { data: products, error } = await supabase
-        .from('products')
-        .select(`
-          id,
-          name,
-          brand,
-          category,
-          size,
-          image,
-          product_variants(
-            id,
-            variant_number,
-            name,
-            description,
-            price,
-            original_price,
-            in_stock,
-            preorder,
-            release_date,
-            rating,
-            review_count
-          )
-        `)
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Error loading products:', error);
+      const response = await fetch('/api/products');
+      if (!response.ok) {
+        console.error('Error loading products:', response.statusText);
         return;
       }
 
-      if (products) {
-        // Transform database products to Perfume format
-        // Filter out Testerkits and Sparkits
+      const products = await response.json();
+
+      if (products && Array.isArray(products)) {
         const transformedPerfumes: Perfume[] = products
           .filter((p: any) => {
-            // Exclude Testerkits and Sparkits (5x Proben)
             const isTestkit = p.category === 'Testerkits';
-            const isSparkit = p.name.toLowerCase().includes('sparkit') || 
-                            p.name.toLowerCase().includes('proben');
-            return p.product_variants && p.product_variants.length > 0 && !isTestkit && !isSparkit;
+            const isSparkit = p.name?.toLowerCase().includes('sparkit') || 
+                            p.name?.toLowerCase().includes('proben');
+            return p.variants && p.variants.length > 0 && !isTestkit && !isSparkit;
           })
           .map((p: any) => ({
             id: p.id,
@@ -70,24 +44,23 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
             category: p.category,
             size: p.size,
             image: p.image || '/placeholder.svg',
-            variants: p.product_variants.map((v: any) => ({
+            variants: p.variants.map((v: any) => ({
               id: v.id,
-              number: v.variant_number,
+              number: v.variantNumber,
               name: v.name,
               description: v.description,
               price: v.price,
-              originalPrice: v.original_price,
-              inStock: v.in_stock,
+              originalPrice: v.originalPrice,
+              inStock: v.inStock,
               preorder: v.preorder,
-              releaseDate: v.release_date,
+              releaseDate: v.releaseDate,
               rating: v.rating,
-              reviewCount: v.review_count,
+              reviewCount: v.reviewCount,
             })),
           }));
 
         setPerfumes(transformedPerfumes);
         
-        // Extract unique categories
         const uniqueCategories = ['all', ...Array.from(new Set(transformedPerfumes.map(p => p.category)))];
         setCategories(uniqueCategories);
       }

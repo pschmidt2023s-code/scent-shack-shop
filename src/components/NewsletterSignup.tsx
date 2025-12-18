@@ -5,13 +5,13 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Mail, Gift, Sparkles, TrendingUp, CheckCircle, UserX } from 'lucide-react'
-import { supabase } from '@/integrations/supabase/client'
 import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { sanitizeInput, validateEmail } from '@/lib/validation'
 import { newsletterRateLimiter } from '@/lib/security'
 import { useAuth } from '@/contexts/AuthContext'
 import { Link } from 'react-router-dom'
+import { api } from '@/lib/api'
 
 interface NewsletterSignupProps {
   variant?: 'default' | 'compact' | 'floating'
@@ -90,34 +90,15 @@ export function NewsletterSignup({
     setLoading(true)
     
     try {
-      // Use secure server-side newsletter signup
-      const { data, error } = await supabase.functions.invoke('newsletter-signup-secure', {
-        body: { 
-          email: sanitizedEmail.toLowerCase(), 
-          preferences 
-        }
-      });
+      const { data, error } = await api.newsletter.subscribe(sanitizedEmail.toLowerCase());
 
       if (error) {
         console.error('Newsletter signup error:', error);
         
-        // Handle specific error types
-        if (error.message?.includes('already subscribed')) {
+        if (error.includes('already')) {
           toast({
             title: "Bereits angemeldet",
             description: "Diese E-Mail-Adresse ist bereits für unseren Newsletter angemeldet.",
-            variant: "destructive"
-          });
-        } else if (error.message?.includes('Authentication required')) {
-          toast({
-            title: "Anmeldung erforderlich",
-            description: "Bitte melden Sie sich an, um den Newsletter zu abonnieren.",
-            variant: "destructive"
-          });
-        } else if (error.message?.includes('Rate limit')) {
-          toast({
-            title: "Zu viele Versuche",
-            description: "Bitte warten Sie einen Moment, bevor Sie es erneut versuchen.",
             variant: "destructive"
           });
         } else {
@@ -132,16 +113,6 @@ export function NewsletterSignup({
 
       setSuccess(true);
       setEmail('');
-      
-      // Send welcome email
-      try {
-        await supabase.functions.invoke('send-newsletter-welcome', {
-          body: { email: sanitizedEmail.toLowerCase(), preferences }
-        });
-      } catch (emailError) {
-        console.error('Welcome email error:', emailError);
-        // Don't fail the signup if email fails
-      }
       
       toast({
         title: "Erfolgreich angemeldet!",

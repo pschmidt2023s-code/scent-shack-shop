@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Upload, Gift, Calendar, Shield, CheckCircle } from 'lucide-react';
+import { Upload, Gift, Calendar, Shield, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Form,
   FormControl,
@@ -18,15 +20,18 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api';
+import Navigation from '@/components/Navigation';
+import { Footer } from '@/components/Footer';
 
 const contestSchema = z.object({
   firstName: z.string().min(2, 'Vorname muss mindestens 2 Zeichen lang sein').max(50),
   lastName: z.string().min(2, 'Nachname muss mindestens 2 Zeichen lang sein').max(50),
-  email: z.string().email('Bitte gib eine gültige E-Mail-Adresse ein'),
-  phone: z.string().min(10, 'Bitte gib eine gültige Telefonnummer ein').optional(),
+  email: z.string().email('Bitte gib eine gueltige E-Mail-Adresse ein'),
+  phone: z.string().min(10, 'Bitte gib eine gueltige Telefonnummer ein').optional().or(z.literal('')),
   birthDate: z.string().refine((date) => {
+    if (!date) return false;
     const birthDate = new Date(date);
     const today = new Date();
     const age = today.getFullYear() - birthDate.getFullYear();
@@ -34,7 +39,7 @@ const contestSchema = z.object({
   }, 'Du musst mindestens 18 Jahre alt sein'),
   message: z.string().min(10, 'Nachricht muss mindestens 10 Zeichen lang sein').max(500),
   ageConfirmed: z.boolean().refine((val) => val === true, {
-    message: 'Du musst bestätigen, dass du mindestens 18 Jahre alt bist',
+    message: 'Du musst bestaetigen, dass du mindestens 18 Jahre alt bist',
   }),
   termsAccepted: z.boolean().refine((val) => val === true, {
     message: 'Du musst die Teilnahmebedingungen akzeptieren',
@@ -45,11 +50,8 @@ type ContestFormValues = z.infer<typeof contestSchema>;
 
 export default function Contest() {
   const { user } = useAuth();
-  const [uploadedImages, setUploadedImages] = useState<File[]>([]);
-  const [idDocument, setIdDocument] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [ageVerified, setAgeVerified] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const form = useForm<ContestFormValues>({
     resolver: zodResolver(contestSchema),
@@ -65,202 +67,35 @@ export default function Contest() {
     },
   });
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const validFiles = files.filter(file => {
-      const isImage = file.type.startsWith('image/');
-      const isUnder5MB = file.size <= 5 * 1024 * 1024;
-      
-      if (!isImage) {
-        toast.error(`${file.name} ist kein gültiges Bild`);
-        return false;
-      }
-      if (!isUnder5MB) {
-        toast.error(`${file.name} ist zu groß (max. 5MB)`);
-        return false;
-      }
-      return true;
-    });
-
-    if (uploadedImages.length + validFiles.length > 3) {
-      toast.error('Du kannst maximal 3 Bilder hochladen');
-      return;
-    }
-
-    setUploadedImages([...uploadedImages, ...validFiles]);
-  };
-
-  const removeImage = (index: number) => {
-    setUploadedImages(uploadedImages.filter((_, i) => i !== index));
-  };
-
-  const handleIdUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const isImage = file.type.startsWith('image/');
-    const isUnder10MB = file.size <= 10 * 1024 * 1024;
-
-    if (!isImage) {
-      toast.error('Bitte lade ein Bild deines Ausweises hoch');
-      return;
-    }
-    if (!isUnder10MB) {
-      toast.error('Die Datei ist zu groß (max. 10MB)');
-      return;
-    }
-
-    setIdDocument(file);
-    await verifyAge(file);
-  };
-
-  const verifyAge = async (file: File) => {
-    const birthDate = form.getValues('birthDate');
-    if (!birthDate) {
-      toast.error('Bitte gib zuerst dein Geburtsdatum ein');
-      return;
-    }
-
-    setIsVerifying(true);
-    try {
-      // Convert image to base64
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      
-      const base64Image = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const result = reader.result as string;
-          // Remove data:image/...;base64, prefix
-          const base64 = result.split(',')[1];
-          resolve(base64);
-        };
-        reader.onerror = reject;
-      });
-
-      // Call AI verification
-      const { data, error } = await supabase.functions.invoke('verify-age-with-ai', {
-        body: {
-          imageBase64: base64Image,
-          birthDate,
-        },
-      });
-
-      if (error) {
-        console.error('Age verification error:', error);
-        throw error;
-      }
-
-      if (data.verified) {
-        setAgeVerified(true);
-        toast.success('✓ Alter erfolgreich verifiziert!');
-      } else {
-        toast.error(`Altersverifikation fehlgeschlagen: ${data.reason}`);
-        setIdDocument(null);
-      }
-    } catch (error) {
-      console.error('Error verifying age:', error);
-      toast.error('Fehler bei der Altersverifikation. Bitte versuche es erneut.');
-      setIdDocument(null);
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
   const onSubmit = async (data: ContestFormValues) => {
     if (!user) {
       toast.error('Bitte melde dich an, um am Gewinnspiel teilzunehmen.');
       return;
     }
 
-    if (!ageVerified) {
-      toast.error('Bitte lade deinen Ausweis hoch, um dein Alter zu verifizieren.');
-      return;
-    }
-
     setIsSubmitting(true);
     try {
-      // Check for duplicate entries by email
-      const { data: existingEntries, error: checkError } = await supabase
-        .from('contest_entries')
-        .select('id')
-        .eq('email', data.email);
+      const { error } = await api.contests.enter('current', {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone || null,
+        birthDate: data.birthDate,
+        message: data.message,
+      });
 
-      if (checkError) {
-        throw checkError;
-      }
-
-      if (existingEntries && existingEntries.length > 0) {
-        toast.error('Mit dieser E-Mail-Adresse wurde bereits teilgenommen.');
-        setIsSubmitting(false);
+      if (error) {
+        if (error.includes('already')) {
+          toast.error('Mit dieser E-Mail-Adresse wurde bereits teilgenommen.');
+        } else {
+          throw new Error(error);
+        }
         return;
       }
 
-      // Upload images to storage
-      const imageUrls: string[] = [];
-      
-      for (const file of uploadedImages) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-        const filePath = `${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('contest-images')
-          .upload(filePath, file);
-
-        if (uploadError) {
-          console.error('Error uploading image:', uploadError);
-          throw uploadError;
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('contest-images')
-          .getPublicUrl(filePath);
-        
-        imageUrls.push(publicUrl);
-      }
-
-      // Save contest entry to database
-      const { error: insertError } = await supabase
-        .from('contest_entries')
-        .insert({
-          user_id: user.id,
-          first_name: data.firstName,
-          last_name: data.lastName,
-          email: data.email,
-          phone: data.phone || null,
-          birth_date: data.birthDate,
-          message: data.message,
-          images: imageUrls,
-        });
-
-      if (insertError) {
-        console.error('Error saving contest entry:', insertError);
-        throw insertError;
-      }
-
-      // Send confirmation email
-      try {
-        const { error: emailError } = await supabase.functions.invoke('send-contest-confirmation', {
-          body: {
-            firstName: data.firstName,
-            lastName: data.lastName,
-            email: data.email,
-          },
-        });
-
-        if (emailError) {
-          console.error('Error sending confirmation email:', emailError);
-        }
-      } catch (emailError) {
-        console.error('Error calling email function:', emailError);
-        // Don't fail the entire submission if email fails
-      }
-
-      toast.success('Vielen Dank für deine Teilnahme! Eine Bestätigungs-E-Mail wurde versendet.');
+      setSubmitted(true);
+      toast.success('Vielen Dank fuer deine Teilnahme!');
       form.reset();
-      setUploadedImages([]);
-      setIdDocument(null);
-      setAgeVerified(false);
     } catch (error) {
       console.error('Error submitting contest entry:', error);
       toast.error('Ein Fehler ist aufgetreten. Bitte versuche es erneut.');
@@ -271,8 +106,9 @@ export default function Contest() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      <Navigation />
+      
       <div className="container mx-auto px-4 py-12 max-w-3xl">
-        {/* Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary/60 mb-6">
             <Gift className="w-10 h-10 text-primary-foreground" />
@@ -281,325 +117,221 @@ export default function Contest() {
             Gewinnspiel
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Mach mit und gewinne exklusive Parfüm-Sets! Fülle einfach das Formular aus, 
-            lade deine Bilder hoch und mit etwas Glück gehört der Gewinn dir.
+            Mach mit und gewinne exklusive Parfuem-Sets! Fuelle einfach das Formular aus 
+            und mit etwas Glueck gehoert der Gewinn dir.
           </p>
         </div>
 
-        {/* Form */}
-        <div className="bg-card rounded-2xl shadow-lg p-8 border border-border">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Personal Information */}
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold flex items-center gap-2">
-                  Persönliche Daten
-                </h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="firstName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Vorname *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Max" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+        {!user && (
+          <Alert className="mb-8">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Anmeldung erforderlich</AlertTitle>
+            <AlertDescription>
+              Bitte melde dich an, um am Gewinnspiel teilzunehmen.
+            </AlertDescription>
+          </Alert>
+        )}
 
-                  <FormField
-                    control={form.control}
-                    name="lastName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nachname *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Mustermann" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>E-Mail *</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="max@beispiel.de" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Telefon (optional)</FormLabel>
-                      <FormControl>
-                        <Input type="tel" placeholder="+49 123 456789" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Age Verification */}
-              <div className="space-y-4 pt-6 border-t">
-                <h2 className="text-xl font-semibold flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  Altersverifikation
-                </h2>
-
-                <FormField
-                  control={form.control}
-                  name="birthDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Geburtsdatum *</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Du musst mindestens 18 Jahre alt sein, um teilnehmen zu können.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="ageConfirmed"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Ich bestätige, dass ich mindestens 18 Jahre alt bin *
-                        </FormLabel>
-                        <FormMessage />
-                      </div>
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* ID Document Upload for AI Verification */}
-              <div className="space-y-4 pt-6 border-t">
-                <h2 className="text-xl font-semibold flex items-center gap-2">
-                  <Shield className="w-5 h-5" />
-                  KI-gestützte Altersverifikation *
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Bitte lade ein Foto deines Ausweises hoch. Unsere KI verifiziert automatisch dein Alter. Deine Daten werden sicher behandelt und nicht gespeichert.
-                </p>
-
-                <div className="space-y-4">
-                  {!idDocument ? (
-                    <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleIdUpload}
-                        className="hidden"
-                        id="id-upload"
-                      />
-                      <label htmlFor="id-upload" className="cursor-pointer">
-                        <Shield className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground mb-2">
-                          Klicke hier, um deinen Ausweis hochzuladen *
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Personalausweis, Reisepass oder Führerschein (max. 10MB)
-                        </p>
-                      </label>
-                    </div>
-                  ) : (
-                    <div className={cn(
-                      "border-2 rounded-lg p-4",
-                      ageVerified ? "border-green-500 bg-green-50 dark:bg-green-950/20" : "border-border"
-                    )}>
-                      <div className="flex items-center gap-3">
-                        {ageVerified ? (
-                          <CheckCircle className="w-6 h-6 text-green-600" />
-                        ) : (
-                          <Shield className="w-6 h-6 text-muted-foreground animate-pulse" />
-                        )}
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">
-                            {ageVerified ? 'Alter erfolgreich verifiziert!' : 'Verifizierung läuft...'}
-                          </p>
-                          <p className="text-xs text-muted-foreground">{idDocument.name}</p>
-                        </div>
-                        {isVerifying && (
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {ageVerified && (
-                  <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                    <p className="text-sm text-green-800 dark:text-green-200">
-                      ✓ Dein Alter wurde erfolgreich durch unsere KI verifiziert!
-                    </p>
+        {submitted ? (
+          <Card className="text-center py-12">
+            <CardContent>
+              <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold mb-2">Teilnahme erfolgreich!</h2>
+              <p className="text-muted-foreground">
+                Vielen Dank fuer deine Teilnahme am Gewinnspiel. Wir druecken dir die Daumen!
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Teilnahmeformular
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Vorname</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Max" {...field} data-testid="input-firstname" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nachname</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Mustermann" {...field} data-testid="input-lastname" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                )}
-              </div>
 
-              {/* Message */}
-              <div className="space-y-4 pt-6 border-t">
-                <FormField
-                  control={form.control}
-                  name="message"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Warum möchtest du gewinnen? *</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Erzähl uns, warum du teilnimmst..."
-                          className="min-h-[120px] resize-none"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Mindestens 10 Zeichen, maximal 500 Zeichen
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Image Upload */}
-              <div className="space-y-4 pt-6 border-t">
-                <h2 className="text-xl font-semibold flex items-center gap-2">
-                  <Upload className="w-5 h-5" />
-                  Bilder hochladen (optional)
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Du kannst bis zu 3 Bilder hochladen (max. 5MB pro Bild)
-                </p>
-
-                <div className="space-y-4">
-                  {uploadedImages.length < 3 && (
-                    <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleImageUpload}
-                        className="hidden"
-                        id="image-upload"
-                      />
-                      <label htmlFor="image-upload" className="cursor-pointer">
-                        <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                          Klicke hier oder ziehe Bilder hierher
-                        </p>
-                      </label>
-                    </div>
-                  )}
-
-                  {uploadedImages.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {uploadedImages.map((file, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={URL.createObjectURL(file)}
-                            alt={`Upload ${index + 1}`}
-                            className="w-full h-32 object-cover rounded-lg border border-border"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Terms */}
-              <div className="pt-6 border-t">
-                <FormField
-                  control={form.control}
-                  name="termsAccepted"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Ich akzeptiere die Teilnahmebedingungen und die Datenschutzerklärung *
-                        </FormLabel>
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>E-Mail</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="max@beispiel.de" {...field} data-testid="input-email" />
+                        </FormControl>
                         <FormMessage />
-                      </div>
-                    </FormItem>
-                  )}
-                />
-              </div>
+                      </FormItem>
+                    )}
+                  />
 
-              {/* Submit */}
-              <div className="pt-6">
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="w-full"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Wird gesendet...' : 'Jetzt teilnehmen'}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </div>
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefon (optional)</FormLabel>
+                        <FormControl>
+                          <Input type="tel" placeholder="+49 123 456789" {...field} data-testid="input-phone" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-        {/* Info */}
-        <div className="mt-8 text-center text-sm text-muted-foreground">
-          <p>
-            * Pflichtfelder | Teilnahmeschluss: 31.12.2025 | 
-            Der Gewinner wird per E-Mail benachrichtigt
-          </p>
+                  <FormField
+                    control={form.control}
+                    name="birthDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Geburtsdatum</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} data-testid="input-birthdate" />
+                        </FormControl>
+                        <FormDescription>
+                          Du musst mindestens 18 Jahre alt sein, um teilnehmen zu koennen.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="message"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Warum moechtest du gewinnen?</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Erzaehle uns, warum du den Gewinn verdient hast..." 
+                            className="min-h-[100px]"
+                            {...field} 
+                            data-testid="input-message"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="space-y-4 pt-4 border-t">
+                    <FormField
+                      control={form.control}
+                      name="ageConfirmed"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              data-testid="checkbox-age"
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>
+                              Ich bestatige, dass ich mindestens 18 Jahre alt bin
+                            </FormLabel>
+                            <FormMessage />
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="termsAccepted"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              data-testid="checkbox-terms"
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>
+                              Ich akzeptiere die Teilnahmebedingungen und Datenschutzbestimmungen
+                            </FormLabel>
+                            <FormMessage />
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={isSubmitting || !user}
+                    data-testid="button-submit-contest"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                        Wird gesendet...
+                      </>
+                    ) : (
+                      <>
+                        <Gift className="w-4 h-4 mr-2" />
+                        Jetzt teilnehmen
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="mt-8 p-6 bg-muted/50 rounded-lg">
+          <div className="flex items-center gap-2 mb-4">
+            <Shield className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold">Teilnahmebedingungen</h3>
+          </div>
+          <ul className="text-sm text-muted-foreground space-y-2">
+            <li>Teilnahme ab 18 Jahren</li>
+            <li>Nur eine Teilnahme pro Person</li>
+            <li>Gewinner werden per E-Mail benachrichtigt</li>
+            <li>Keine Barauszahlung moeglich</li>
+            <li>Rechtsweg ausgeschlossen</li>
+          </ul>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

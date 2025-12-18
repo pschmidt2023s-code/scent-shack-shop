@@ -4,7 +4,6 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Package, Sparkles, ArrowRight } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 
 interface BundleOption {
   id: string;
@@ -19,215 +18,119 @@ interface BundleOption {
   quantity_required: number;
 }
 
+const DEFAULT_BUNDLES: BundleOption[] = [
+  {
+    id: '5-proben',
+    title: 'Sparkit - 5x Proben',
+    description: 'Stelle dir dein persoenliches Testerset zusammen',
+    items: '5x 5ml Proben deiner Wahl',
+    price: 29.95,
+    originalPrice: 34.75,
+    discount: 14,
+    image: '/lovable-uploads/dc821e74-0a27-4a45-a347-45a4ae0d55ef.png',
+    link: '/bundle-konfigurator?type=5-proben',
+    quantity_required: 5
+  },
+  {
+    id: '3-flakons',
+    title: 'Sparkit - 3x 50ml Flakons',
+    description: 'Perfekt zum Kennenlernen verschiedener Duefte',
+    items: '3x 50ml Flakons deiner Wahl',
+    price: 129.99,
+    originalPrice: 149.97,
+    discount: 13,
+    image: '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png',
+    link: '/bundle-konfigurator?type=3-flakons',
+    quantity_required: 3
+  },
+  {
+    id: '5-flakons',
+    title: 'Sparkit - 5x 50ml Flakons',
+    description: 'Maximale Auswahl fuer echte Duft-Liebhaber',
+    items: '5x 50ml Flakons deiner Wahl',
+    price: 199.99,
+    originalPrice: 249.95,
+    discount: 20,
+    image: '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png',
+    link: '/bundle-konfigurator?type=5-flakons',
+    quantity_required: 5
+  }
+];
+
 export function BundleSection() {
-  const [bundles, setBundles] = useState<BundleOption[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [bundles] = useState<BundleOption[]>(DEFAULT_BUNDLES);
 
-  useEffect(() => {
-    loadBundles();
-  }, []);
+  if (bundles.length === 0) return null;
 
-  const loadBundles = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('bundle_products')
-        .select('*')
-        .eq('is_active', true)
-        .order('quantity_required', { ascending: true });
-
-      if (error) throw error;
-
-      if (data) {
-        // Map database bundles to display format
-        const mappedBundles: BundleOption[] = data.map((bundle) => {
-          // Determine if it's a probe bundle
-          const isProben = bundle.name.toLowerCase().includes('probe') || bundle.quantity_required === 5 && bundle.total_price < 50;
-          const quantity = bundle.quantity_required;
-          
-          // Determine the correct link type
-          let linkType = '';
-          if (isProben) {
-            linkType = '5-proben';
-          } else if (quantity === 3) {
-            linkType = '3-flakons';
-          } else if (quantity === 5) {
-            linkType = '5-flakons';
-          }
-          
-          return {
-            id: bundle.id,
-            title: bundle.name,
-            description: bundle.description || 'Stelle dir dein persönliches Bundle zusammen',
-            items: isProben 
-              ? `${quantity}x 5ml Proben deiner Wahl`
-              : `${quantity}x 50ml Flakons deiner Wahl`,
-            price: bundle.total_price,
-            originalPrice: bundle.total_price / (1 - bundle.discount_percentage / 100),
-            discount: bundle.discount_percentage,
-            image: isProben
-              ? '/lovable-uploads/dc821e74-0a27-4a45-a347-45a4ae0d55ef.png'
-              : '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png',
-            link: `/bundle-konfigurator?type=${linkType}`,
-            quantity_required: quantity
-          };
-        });
-
-        setBundles(mappedBundles);
-      }
-    } catch (error) {
-      console.error('Error loading bundles:', error);
-      // Fallback to hardcoded bundles on error
-      setBundles([
-        {
-          id: '5-proben',
-          title: 'Sparkit - 5x Proben',
-          description: 'Stelle dir dein persönliches Testerset zusammen',
-          items: '5x 5ml Proben deiner Wahl',
-          price: 29.95,
-          originalPrice: 34.75,
-          discount: 14,
-          image: '/lovable-uploads/dc821e74-0a27-4a45-a347-45a4ae0d55ef.png',
-          link: '/bundle-konfigurator?type=5-proben',
-          quantity_required: 5
-        },
-        {
-          id: '3-flakons',
-          title: 'Sparkit - 3x 50ml Flakons',
-          description: 'Perfekt zum Kennenlernen verschiedener Düfte',
-          items: '3x 50ml Flakons deiner Wahl',
-          price: 129.99,
-          originalPrice: 149.97,
-          discount: 13,
-          image: '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png',
-          link: '/bundle-konfigurator?type=3-flakons',
-          quantity_required: 3
-        },
-        {
-          id: '5-flakons',
-          title: 'Sparkit - 5x 50ml Flakons',
-          description: 'Unser beliebtestes Bundle mit maximaler Ersparnis',
-          items: '5x 50ml Flakons deiner Wahl',
-          price: 199.99,
-          originalPrice: 249.95,
-          discount: 20,
-          image: '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png',
-          link: '/bundle-konfigurator?type=5-flakons',
-          quantity_required: 5
-        }
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <section className="py-16 glass rounded-3xl mx-4 my-8">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <div className="w-12 h-12 mx-auto animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (bundles.length === 0) {
-    return null;
-  }
   return (
-    <section className="py-16 glass rounded-3xl mx-4 my-8">
+    <section className="py-16 bg-gradient-to-br from-background via-muted/30 to-background">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12 animate-fade-in-up">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Sparkles className="w-8 h-8 text-luxury-gold animate-pulse" />
-            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-luxury-gold/20 via-luxury-gold to-luxury-gold/20 bg-[length:400%_100%] bg-clip-text text-transparent animate-shimmer">
-              Sparkits - Spare beim Bundle-Kauf
-            </h2>
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 mb-4">
+            <Package className="w-6 h-6 text-primary" />
+            <Badge variant="secondary" className="text-sm">
+              Spare bis zu 20%
+            </Badge>
           </div>
-          <p className="text-xl glass-text-dark opacity-80 max-w-2xl mx-auto leading-relaxed">
-            Stelle dir dein persönliches Bundle zusammen und spare dabei! Wähle deine Lieblingsdüfte aus unserem kompletten Sortiment.
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Bundle Angebote
+          </h2>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Kombiniere deine Lieblingsduefte und spare dabei - stelle dir dein persoenliches Set zusammen
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {bundles.map((bundle, index) => (
-            <Card
-              key={bundle.id}
-              className="relative overflow-hidden hover:shadow-glow transition-all duration-300 group"
-              style={{ animationDelay: `${index * 100}ms` }}
+            <Card 
+              key={bundle.id} 
+              className="relative overflow-hidden hover-elevate transition-all duration-300 group"
             >
-              {/* Sparkle Effect */}
-              <div className="absolute top-4 right-4 z-10">
-                <Sparkles className="w-6 h-6 text-luxury-gold animate-pulse" />
-              </div>
-
-              {/* Discount Badge */}
-              <div className="absolute top-4 left-4 z-10">
-                <Badge className="bg-green-500 hover:bg-green-600 text-white font-bold">
-                  -{bundle.discount}% SPAREN
-                </Badge>
-              </div>
-
-              {/* Image */}
-              <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-muted to-muted/50">
+              {bundle.discount >= 15 && (
+                <div className="absolute top-3 right-3 z-10">
+                  <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    Bestseller
+                  </Badge>
+                </div>
+              )}
+              
+              <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-muted to-muted/50">
                 <img
                   src={bundle.image}
                   alt={bundle.title}
-                  className="w-full h-full object-contain p-8 transition-transform duration-500 group-hover:scale-110"
+                  className="w-full h-full object-contain p-4 transition-transform duration-300 group-hover:scale-105"
                 />
+                <div className="absolute top-3 left-3">
+                  <Badge variant="destructive" className="text-sm font-bold">
+                    -{bundle.discount}%
+                  </Badge>
+                </div>
               </div>
 
-              {/* Content */}
-              <div className="p-6 space-y-4">
-                <div className="flex items-start gap-2">
-                  <Package className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold mb-1">{bundle.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-2">{bundle.description}</p>
-                    <p className="text-sm font-medium text-primary">{bundle.items}</p>
-                  </div>
+              <div className="p-6">
+                <h3 className="text-xl font-bold mb-2">{bundle.title}</h3>
+                <p className="text-muted-foreground text-sm mb-3">{bundle.description}</p>
+                <p className="text-sm text-muted-foreground mb-4">{bundle.items}</p>
+
+                <div className="flex items-baseline gap-2 mb-4">
+                  <span className="text-2xl font-bold text-primary">
+                    {bundle.price.toFixed(2)} EUR
+                  </span>
+                  <span className="text-sm text-muted-foreground line-through">
+                    {bundle.originalPrice.toFixed(2)} EUR
+                  </span>
                 </div>
 
-                {/* Pricing */}
-                <div className="border-t pt-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground line-through text-sm">
-                      €{bundle.originalPrice.toFixed(2)}
-                    </span>
-                    <Badge variant="secondary" className="bg-green-100 text-green-700">
-                      Spare €{(bundle.originalPrice - bundle.price).toFixed(2)}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Bundle-Preis:</span>
-                    <span className="text-3xl font-bold text-primary">€{bundle.price.toFixed(2)}</span>
-                  </div>
-                </div>
-
-                {/* CTA Button */}
                 <Link to={bundle.link}>
-                  <Button className="w-full gap-2 group" size="lg">
-                    <span>Jetzt zusammenstellen</span>
-                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  <Button className="w-full group" data-testid={`button-bundle-${bundle.id}`}>
+                    Bundle zusammenstellen
+                    <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
               </div>
             </Card>
           ))}
-        </div>
-
-        {/* Info Section */}
-        <div className="mt-12 text-center glass-light rounded-2xl p-6">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <Package className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-semibold">So funktioniert's</h3>
-          </div>
-          <p className="text-muted-foreground max-w-3xl mx-auto">
-            Wähle dein Bundle, stelle deine Lieblingsdüfte zusammen und spare automatisch! 
-            Perfekt, um verschiedene Düfte zu testen oder deine Sammlung zu erweitern. 
-            Alle Produkte aus unserem Sortiment sind verfügbar.
-          </p>
         </div>
       </div>
     </section>

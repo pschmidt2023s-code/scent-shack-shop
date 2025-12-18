@@ -7,7 +7,12 @@ import { useCart } from '@/contexts/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Minus, Plus, Trash2, Package, X } from 'lucide-react';
 import { BundleOfferDialog } from '@/components/BundleOfferDialog';
-import { supabase } from '@/integrations/supabase/client';
+
+const DEFAULT_BUNDLES = [
+  { id: '3-flakons', name: 'Sparkit - 3 Flakons', discount_percentage: 13 },
+  { id: '5-flakons', name: 'Sparkit - 5 Flakons', discount_percentage: 20 },
+  { id: '5-proben', name: 'Sparkit - 5 Proben', discount_percentage: 14 },
+];
 
 interface CartSidebarProps {
   open: boolean;
@@ -17,22 +22,9 @@ interface CartSidebarProps {
 export function CartSidebar({ open, onOpenChange }: CartSidebarProps) {
   const { items, updateQuantity, removeFromCart, total, itemCount, appliedBundle, applyBundle, removeBundle } = useCart();
   const navigate = useNavigate();
-  const [bundles, setBundles] = useState<any[]>([]);
+  const [bundles] = useState<any[]>(DEFAULT_BUNDLES);
   const [showBundleDialog, setShowBundleDialog] = useState(false);
   const [checkedBundleCount, setCheckedBundleCount] = useState(0);
-
-  useEffect(() => {
-    const fetchBundles = async () => {
-      const { data } = await supabase
-        .from('bundle_products')
-        .select('*')
-        .eq('is_active', true)
-        .order('discount_percentage', { ascending: false });
-      
-      if (data) setBundles(data);
-    };
-    fetchBundles();
-  }, []);
 
   useEffect(() => {
     if (itemCount !== checkedBundleCount && itemCount >= 3 && !appliedBundle) {
