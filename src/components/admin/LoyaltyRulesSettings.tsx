@@ -61,10 +61,6 @@ export function LoyaltyRulesSettings({ onUpdate }: LoyaltyRulesSettingsProps) {
     toast.success('Punkte aktualisiert');
     setEditing(null);
   };
-      console.error('Error updating points:', error);
-      toast.error('Fehler beim Aktualisieren');
-    }
-  };
 
   if (loading) {
     return <div className="text-center py-8">Lädt Loyalty-Regeln...</div>;

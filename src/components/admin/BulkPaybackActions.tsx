@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { CheckSquare, XCircle, Loader2 } from 'lucide-react';
 
@@ -12,9 +11,6 @@ interface PaybackEarning {
   amount: number;
   description?: string;
   created_at: string;
-  profiles?: {
-    full_name: string;
-  };
 }
 
 interface BulkPaybackActionsProps {
@@ -26,8 +22,6 @@ export function BulkPaybackActions({ earnings, onUpdate }: BulkPaybackActionsPro
   const [selectedEarnings, setSelectedEarnings] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const pendingEarnings = earnings;
-
   const toggleSelection = (earningId: string) => {
     setSelectedEarnings(prev => 
       prev.includes(earningId) 
@@ -37,7 +31,7 @@ export function BulkPaybackActions({ earnings, onUpdate }: BulkPaybackActionsPro
   };
 
   const selectAll = () => {
-    setSelectedEarnings(pendingEarnings.map(e => e.id));
+    setSelectedEarnings(earnings.map(e => e.id));
   };
 
   const clearSelection = () => {
@@ -68,12 +62,12 @@ export function BulkPaybackActions({ earnings, onUpdate }: BulkPaybackActionsPro
     }
   };
 
-  if (pendingEarnings.length === 0) {
+  if (earnings.length === 0) {
     return null;
   }
 
   return (
-    <Card className="mb-6 border-luxury-gold/20">
+    <Card className="mb-6 border-primary/20">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CheckSquare className="w-5 h-5" />
@@ -87,9 +81,9 @@ export function BulkPaybackActions({ earnings, onUpdate }: BulkPaybackActionsPro
               variant="outline"
               size="sm"
               onClick={selectAll}
-              disabled={selectedEarnings.length === pendingEarnings.length}
+              disabled={selectedEarnings.length === earnings.length}
             >
-              Alle auswählen ({pendingEarnings.length})
+              Alle auswählen ({earnings.length})
             </Button>
             <Button
               variant="ghost"
@@ -130,7 +124,7 @@ export function BulkPaybackActions({ earnings, onUpdate }: BulkPaybackActionsPro
 
         {/* Selection List */}
         <div className="max-h-40 overflow-y-auto space-y-2 border rounded-md p-2 bg-muted/20">
-          {pendingEarnings.map((earning) => (
+          {earnings.map((earning) => (
             <div key={earning.id} className="flex items-center space-x-2 p-2 hover:bg-muted/40 rounded">
               <Checkbox
                 id={earning.id}
@@ -141,7 +135,7 @@ export function BulkPaybackActions({ earnings, onUpdate }: BulkPaybackActionsPro
                 htmlFor={earning.id}
                 className="flex-1 text-sm cursor-pointer"
               >
-                {earning.profiles?.full_name} - €{earning.amount.toFixed(2)}
+                €{Number(earning.amount).toFixed(2)} - {earning.description || 'Cashback'}
               </label>
             </div>
           ))}
