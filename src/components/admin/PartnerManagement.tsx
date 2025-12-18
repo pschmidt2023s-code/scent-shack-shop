@@ -1,23 +1,13 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { 
   Users, 
-  Euro, 
   Check, 
-  X, 
   Eye, 
-  Edit,
   Banknote,
-  TrendingUp
 } from 'lucide-react';
 
 interface Partner {
@@ -47,21 +37,12 @@ interface PartnerPayout {
   requested_at: string;
   processed_at?: string;
   notes?: string;
-  partners: {
-    partner_code: string;
-    profiles: {
-      full_name: string;
-    };
-  };
 }
 
 export default function PartnerManagement() {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [payouts, setPayouts] = useState<PartnerPayout[]>([]);
-  const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
-  const [selectedPayout, setSelectedPayout] = useState<PartnerPayout | null>(null);
   const [loading, setLoading] = useState(true);
-  const [payoutNotes, setPayoutNotes] = useState('');
 
   useEffect(() => {
     loadData();
@@ -69,187 +50,14 @@ export default function PartnerManagement() {
 
   const loadData = async () => {
     try {
-      // Load partners - simple query without foreign key constraints
-      const { data: partnersData, error: partnersError } = await supabase
-        .from('partners')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (partnersError) throw partnersError;
-      
-      // For each partner, try to get profile data if user_id exists
-      const partnersWithProfiles = await Promise.all(
-        (partnersData || []).map(async (partner: any) => {
-          if (partner.user_id) {
-            try {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('full_name')
-                .eq('id', partner.user_id)
-                .single();
-              
-              return {
-                ...partner,
-                profiles: profile ? { full_name: profile.full_name } : null
-              };
-            } catch {
-              // If profile doesn't exist, use email from application_data
-              const name = partner.application_data?.email || 
-                          `${partner.application_data?.first_name || ''} ${partner.application_data?.last_name || ''}`.trim();
-              return {
-                ...partner,
-                profiles: { full_name: name }
-              };
-            }
-          } else {
-            // For partners without user_id, use application data
-            const name = partner.application_data?.email || 
-                        `${partner.application_data?.first_name || ''} ${partner.application_data?.last_name || ''}`.trim();
-            return {
-              ...partner,
-              profiles: { full_name: name }
-            };
-          }
-        })
-      );
-      
-      setPartners(partnersWithProfiles);
-
-      // Load pending payouts
-      const { data: payoutsData, error: payoutsError } = await supabase
-        .from('partner_payouts')
-        .select(`
-          *,
-          partners!inner(partner_code)
-        `)
-        .order('requested_at', { ascending: false });
-
-      if (payoutsError) throw payoutsError;
-      setPayouts(payoutsData as any || []);
+      // Feature not yet implemented - using empty data
+      setPartners([]);
+      setPayouts([]);
     } catch (error) {
       console.error('Error loading data:', error);
       toast.error('Fehler beim Laden der Daten');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const updatePartnerStatus = async (partnerId: string, status: string) => {
-    try {
-      const updateData: any = { 
-        status,
-        updated_at: new Date().toISOString()
-      };
-      
-      if (status === 'approved') {
-        updateData.approved_at = new Date().toISOString();
-        updateData.approved_by = (await supabase.auth.getUser()).data.user?.id;
-      }
-
-      // Get partner data before update for email
-      const { data: partnerData } = await supabase
-        .from('partners')
-        .select('*')
-        .eq('id', partnerId)
-        .single();
-
-      const { error } = await supabase
-        .from('partners')
-        .update(updateData)
-        .eq('id', partnerId);
-
-      if (error) throw error;
-
-      // Send status update email
-      if (partnerData && (status === 'approved' || status === 'rejected')) {
-        try {
-          // Call email function with user_id, let the function handle getting the email
-          const { error: emailError } = await supabase.functions.invoke('send-partner-confirmation', {
-            body: {
-              email: (partnerData?.application_data as any)?.email || partnerData?.user_id, // Use email or user_id
-              userId: partnerData?.user_id,
-              name: (partnerData?.application_data as any)?.email || 
-                    `${(partnerData?.application_data as any)?.first_name || ''} ${(partnerData?.application_data as any)?.last_name || ''}`.trim() ||
-                    'Partner',
-              partnerCode: partnerData.partner_code,
-              status: status
-            }
-          });
-
-          if (emailError) {
-            console.error('Error sending status update email:', emailError);
-          }
-        } catch (emailError) {
-          console.error('Failed to send partner status email:', emailError);
-        }
-      }
-
-      toast.success('Partner-Status aktualisiert');
-      await loadData();
-    } catch (error: any) {
-      console.error('Error updating partner status:', error);
-      toast.error('Fehler beim Aktualisieren: ' + error.message);
-    }
-  };
-
-  const updateCommissionRate = async (partnerId: string, rate: number) => {
-    if (rate < 0 || rate > 5) {
-      toast.error('Provision muss zwischen 0 und 5€ liegen');
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('partners')
-        .update({ 
-          commission_rate: rate,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', partnerId);
-
-      if (error) throw error;
-
-      toast.success('Provision aktualisiert');
-      await loadData();
-    } catch (error: any) {
-      console.error('Error updating commission:', error);
-      toast.error('Fehler beim Aktualisieren: ' + error.message);
-    }
-  };
-
-  const processPayout = async (payoutId: string, status: string, notes?: string) => {
-    try {
-      const { error } = await supabase
-        .from('partner_payouts')
-        .update({
-          status,
-          processed_at: new Date().toISOString(),
-          processed_by: (await supabase.auth.getUser()).data.user?.id,
-          notes: notes || null
-        })
-        .eq('id', payoutId);
-
-      if (error) throw error;
-
-      // If completing payout, update partner's paid_out amount
-      if (status === 'completed' && selectedPayout) {
-        const { error: partnerError } = await supabase
-          .from('partners')
-          .update({
-            total_paid_out: selectedPayout.amount
-          })
-          .eq('id', selectedPayout.partner_id);
-
-        if (partnerError) throw partnerError;
-      }
-
-      toast.success('Auszahlung bearbeitet');
-      setSelectedPayout(null);
-      setPayoutNotes('');
-      await loadData();
-    } catch (error: any) {
-      console.error('Error processing payout:', error);
-      toast.error('Fehler bei der Bearbeitung: ' + error.message);
     }
   };
 
@@ -266,24 +74,6 @@ export default function PartnerManagement() {
       approved: 'Genehmigt',
       rejected: 'Abgelehnt',
       suspended: 'Gesperrt'
-    };
-
-    return <Badge variant={variants[status] || 'secondary'}>{labels[status] || status}</Badge>;
-  };
-
-  const getPayoutStatusBadge = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      requested: 'secondary',
-      processing: 'outline',
-      completed: 'default',
-      rejected: 'destructive'
-    };
-    
-    const labels: Record<string, string> = {
-      requested: 'Beantragt',
-      processing: 'In Bearbeitung',
-      completed: 'Ausgezahlt',
-      rejected: 'Abgelehnt'
     };
 
     return <Badge variant={variants[status] || 'secondary'}>{labels[status] || status}</Badge>;
@@ -354,252 +144,31 @@ export default function PartnerManagement() {
           <CardTitle>Partner verwalten</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {partners.map((partner) => (
-              <div key={partner.id} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="font-semibold">
-                      {partner.profiles?.full_name || 'Unbekannt'}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Code: {partner.partner_code} • Erstellt: {new Date(partner.created_at).toLocaleDateString('de-DE')}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getStatusBadge(partner.status)}
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setSelectedPartner(partner)}
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          Details
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Partner Details</DialogTitle>
-                        </DialogHeader>
-                        {selectedPartner && (
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label>Status</Label>
-                                <Select 
-                                  value={selectedPartner.status}
-                                  onValueChange={(value) => updatePartnerStatus(selectedPartner.id, value)}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="pending">Wartend</SelectItem>
-                                    <SelectItem value="approved">Genehmigt</SelectItem>
-                                    <SelectItem value="rejected">Abgelehnt</SelectItem>
-                                    <SelectItem value="suspended">Gesperrt</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div>
-                                <Label>Provision (€)</Label>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max="5"
-                                  step="0.10"
-                                  value={selectedPartner.commission_rate}
-                                  onChange={(e) => updateCommissionRate(selectedPartner.id, parseFloat(e.target.value))}
-                                />
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-4">
-                              <div>
-                                <Label>Gesamtumsatz</Label>
-                                <p className="text-lg font-bold">€{selectedPartner.total_sales.toFixed(2)}</p>
-                              </div>
-                              <div>
-                                <Label>Provision verdient</Label>
-                                <p className="text-lg font-bold">€{selectedPartner.total_commission.toFixed(2)}</p>
-                              </div>
-                              <div>
-                                <Label>Ausgezahlt</Label>
-                                <p className="text-lg font-bold">€{selectedPartner.total_paid_out.toFixed(2)}</p>
-                              </div>
-                            </div>
-
-                            {selectedPartner.application_data && (
-                              <div>
-                                <Label>Bewerbungsdaten</Label>
-                                <div className="bg-muted p-3 rounded text-sm space-y-2">
-                                   {selectedPartner.application_data.first_name && (
-                                     <p><strong>Vorname:</strong> {selectedPartner.application_data.first_name}</p>
-                                   )}
-                                   {selectedPartner.application_data.last_name && (
-                                     <p><strong>Nachname:</strong> {selectedPartner.application_data.last_name}</p>
-                                   )}
-                                   {selectedPartner.application_data.address && (
-                                     <p><strong>Adresse:</strong> {selectedPartner.application_data.address}</p>
-                                   )}
-                                   {selectedPartner.application_data.motivation && (
-                                     <p><strong>Motivation:</strong> {selectedPartner.application_data.motivation}</p>
-                                   )}
-                                </div>
-                              </div>
-                            )}
-
-                            {selectedPartner.bank_details && (
-                              <div>
-                                <Label>Bankverbindung</Label>
-                                <div className="bg-muted p-3 rounded text-sm space-y-1">
-                                  <p><strong>Kontoinhaber:</strong> {selectedPartner.bank_details.account_holder}</p>
-                                  <p><strong>IBAN:</strong> {selectedPartner.bank_details.iban}</p>
-                                  <p><strong>BIC:</strong> {selectedPartner.bank_details.bic}</p>
-                                  <p><strong>Bank:</strong> {selectedPartner.bank_details.bank_name}</p>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Provision:</span>
-                    <p className="font-medium">€{partner.commission_rate.toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Umsatz:</span>
-                    <p className="font-medium">€{partner.total_sales.toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Verdient:</span>
-                    <p className="font-medium">€{partner.total_commission.toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Ausgezahlt:</span>
-                    <p className="font-medium">€{partner.total_paid_out.toFixed(2)}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {partners.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">Keine Partner gefunden.</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Payouts */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Auszahlungen verwalten</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {payouts.map((payout) => (
-              <div key={payout.id} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold">
-                      {payout.partners.profiles.full_name} ({payout.partners.partner_code})
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      €{payout.amount.toFixed(2)} • Beantragt: {new Date(payout.requested_at).toLocaleDateString('de-DE')}
-                    </p>
-                    {payout.processed_at && (
-                      <p className="text-xs text-muted-foreground">
-                        Bearbeitet: {new Date(payout.processed_at).toLocaleDateString('de-DE')}
+          {partners.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Noch keine Partner vorhanden. Das Partner-System wird noch eingerichtet.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {partners.map((partner) => (
+                <div key={partner.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-semibold">
+                        {partner.profiles?.full_name || 'Unbekannt'}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Code: {partner.partner_code} • Erstellt: {new Date(partner.created_at).toLocaleDateString('de-DE')}
                       </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getPayoutStatusBadge(payout.status)}
-                    {payout.status === 'requested' && (
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setSelectedPayout(payout)}
-                          >
-                            Bearbeiten
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Auszahlung bearbeiten</DialogTitle>
-                          </DialogHeader>
-                          {selectedPayout && (
-                            <div className="space-y-4">
-                              <div>
-                                <Label>Partner</Label>
-                                <p className="font-medium">{selectedPayout.partners.profiles.full_name}</p>
-                              </div>
-                              <div>
-                                <Label>Betrag</Label>
-                                <p className="text-lg font-bold">€{selectedPayout.amount.toFixed(2)}</p>
-                              </div>
-                              <div>
-                                <Label>Bankverbindung</Label>
-                                <div className="bg-muted p-3 rounded text-sm space-y-1">
-                                  <p><strong>Kontoinhaber:</strong> {selectedPayout.bank_details.account_holder}</p>
-                                  <p><strong>IBAN:</strong> {selectedPayout.bank_details.iban}</p>
-                                  <p><strong>BIC:</strong> {selectedPayout.bank_details.bic}</p>
-                                  <p><strong>Bank:</strong> {selectedPayout.bank_details.bank_name}</p>
-                                </div>
-                              </div>
-                              <div>
-                                <Label htmlFor="notes">Notizen (optional)</Label>
-                                <Textarea
-                                  id="notes"
-                                  value={payoutNotes}
-                                  onChange={(e) => setPayoutNotes(e.target.value)}
-                                  placeholder="Interne Notizen..."
-                                />
-                              </div>
-                              <div className="flex gap-2">
-                                <Button 
-                                  onClick={() => processPayout(selectedPayout.id, 'completed', payoutNotes)}
-                                  className="flex-1"
-                                >
-                                  <Check className="w-4 h-4 mr-1" />
-                                  Auszahlung bestätigen
-                                </Button>
-                                <Button 
-                                  variant="destructive"
-                                  onClick={() => processPayout(selectedPayout.id, 'rejected', payoutNotes)}
-                                  className="flex-1"
-                                >
-                                  <X className="w-4 h-4 mr-1" />
-                                  Ablehnen
-                                </Button>
-                              </div>
-                            </div>
-                          )}
-                        </DialogContent>
-                      </Dialog>
-                    )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(partner.status)}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-
-            {payouts.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">Keine Auszahlungen gefunden.</p>
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

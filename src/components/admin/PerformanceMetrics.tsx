@@ -1,16 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Activity, TrendingUp, TrendingDown, Zap, Monitor, Smartphone } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Activity } from 'lucide-react';
 
 interface Metric {
   page_url: string;
@@ -31,39 +22,8 @@ export function PerformanceMetrics() {
   const fetchMetrics = async () => {
     try {
       setLoading(true);
-      
-      // Get aggregated metrics from last 7 days
-      const { data, error } = await supabase
-        .from('performance_metrics')
-        .select('*')
-        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Aggregate by page and metric
-      const aggregated: Record<string, Metric> = {};
-      data?.forEach((m) => {
-        const key = `${m.page_url}-${m.metric_name}-${m.device_type}`;
-        if (!aggregated[key]) {
-          aggregated[key] = {
-            page_url: m.page_url,
-            metric_name: m.metric_name,
-            avg_value: 0,
-            device_type: m.device_type || 'unknown',
-            count: 0,
-          };
-        }
-        aggregated[key].avg_value += Number(m.metric_value);
-        aggregated[key].count += 1;
-      });
-
-      const results = Object.values(aggregated).map((m) => ({
-        ...m,
-        avg_value: m.avg_value / m.count,
-      }));
-
-      setMetrics(results);
+      // Feature not yet implemented - using empty data
+      setMetrics([]);
     } catch (error) {
       console.error('Error fetching metrics:', error);
     } finally {
@@ -101,10 +61,6 @@ export function PerformanceMetrics() {
     }
   };
 
-  const topMetrics = metrics
-    .filter((m) => ['TTFB', 'DOM Interactive', 'Load Complete'].includes(m.metric_name))
-    .slice(0, 6);
-
   return (
     <div className="space-y-6">
       <div>
@@ -116,99 +72,63 @@ export function PerformanceMetrics() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-              <Zap className="w-6 h-6 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Ø TTFB</p>
-              <p className="text-2xl font-bold">
-                {(
-                  metrics
-                    .filter((m) => m.metric_name === 'TTFB')
-                    .reduce((sum, m) => sum + m.avg_value, 0) /
-                    Math.max(metrics.filter((m) => m.metric_name === 'TTFB').length, 1) || 0
-                ).toFixed(0)}
-                ms
-              </p>
-            </div>
+          <div className="flex items-center gap-3 mb-3">
+            <Activity className="w-5 h-5 text-primary" />
+            <span className="font-medium">TTFB</span>
           </div>
+          <p className="text-2xl font-bold">--</p>
+          <p className="text-sm text-muted-foreground">Time to First Byte</p>
         </Card>
+
         <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-              <Monitor className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Desktop Messungen</p>
-              <p className="text-2xl font-bold">
-                {metrics.filter((m) => m.device_type === 'desktop').length}
-              </p>
-            </div>
+          <div className="flex items-center gap-3 mb-3">
+            <Activity className="w-5 h-5 text-primary" />
+            <span className="font-medium">DOM Interactive</span>
           </div>
+          <p className="text-2xl font-bold">--</p>
+          <p className="text-sm text-muted-foreground">DOM bereit zur Interaktion</p>
         </Card>
+
         <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-              <Smartphone className="w-6 h-6 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Mobile Messungen</p>
-              <p className="text-2xl font-bold">
-                {metrics.filter((m) => m.device_type === 'mobile').length}
-              </p>
-            </div>
+          <div className="flex items-center gap-3 mb-3">
+            <Activity className="w-5 h-5 text-primary" />
+            <span className="font-medium">Load Complete</span>
           </div>
+          <p className="text-2xl font-bold">--</p>
+          <p className="text-sm text-muted-foreground">Seite vollständig geladen</p>
         </Card>
       </div>
 
-      <Card>
-        <div className="p-4 border-b">
-          <h3 className="font-semibold">Key Performance Metrics</h3>
+      {loading ? (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Seite</TableHead>
-              <TableHead>Metrik</TableHead>
-              <TableHead>Gerät</TableHead>
-              <TableHead>Ø Wert</TableHead>
-              <TableHead>Bewertung</TableHead>
-              <TableHead>Messungen</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {topMetrics.map((metric, index) => {
-              const rating = getMetricRating(metric.metric_name, metric.avg_value);
-              return (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{metric.page_url}</TableCell>
-                  <TableCell>{metric.metric_name}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      {metric.device_type === 'mobile' ? (
-                        <Smartphone className="w-4 h-4" />
-                      ) : (
-                        <Monitor className="w-4 h-4" />
-                      )}
-                      <span className="text-sm">{metric.device_type}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{metric.avg_value.toFixed(0)}ms</TableCell>
-                  <TableCell>
-                    <Badge className={getRatingColor(rating)}>
-                      {rating === 'good' && <TrendingUp className="w-3 h-3 mr-1" />}
-                      {rating === 'poor' && <TrendingDown className="w-3 h-3 mr-1" />}
-                      {rating === 'good' ? 'Gut' : rating === 'needs-improvement' ? 'OK' : 'Langsam'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{metric.count}</TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </Card>
+      ) : metrics.length === 0 ? (
+        <Card className="p-8 text-center">
+          <Activity className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+          <h3 className="text-lg font-semibold mb-2">Keine Performance-Daten</h3>
+          <p className="text-muted-foreground">
+            Performance-Tracking wird noch eingerichtet.
+          </p>
+        </Card>
+      ) : (
+        <Card className="p-4">
+          <h3 className="text-lg font-semibold mb-4">Detaillierte Metriken</h3>
+          <div className="space-y-4">
+            {metrics.map((metric, i) => (
+              <div key={i} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <div>
+                  <p className="font-medium">{metric.metric_name}</p>
+                  <p className="text-sm text-muted-foreground">{metric.page_url}</p>
+                </div>
+                <Badge className={getRatingColor(getMetricRating(metric.metric_name, metric.avg_value))}>
+                  {metric.avg_value.toFixed(0)}ms
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

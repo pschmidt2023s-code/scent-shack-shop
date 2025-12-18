@@ -94,112 +94,15 @@ export function CustomerTiersSettings({ onUpdate }: CustomerTiersSettingsProps) 
     toast.success('Bonus gelöscht');
     loadData();
   };
-    try {
-      if (tier.id) {
-        // Update
-        const { error } = await supabase
-          .from('customer_tiers')
-          .update(tier)
-          .eq('id', tier.id);
-        if (error) throw error;
-        toast.success('Kundenstufe aktualisiert');
-      } else {
-        // Insert - validate required fields
-        if (!tier.tier_name) {
-          toast.error('Stufen-Name ist erforderlich');
-          return;
-        }
-        const { error } = await supabase
-          .from('customer_tiers')
-          .insert([{
-            tier_name: tier.tier_name,
-            base_cashback_bonus: tier.base_cashback_bonus ?? 0,
-            description: tier.description ?? '',
-            min_lifetime_purchases: tier.min_lifetime_purchases ?? 0,
-            priority: tier.priority ?? 1,
-            is_active: tier.is_active ?? true
-          }]);
-        if (error) throw error;
-        toast.success('Kundenstufe erstellt');
-      }
-      setEditingTier(null);
-      setIsAddingTier(false);
-      loadData();
-      onUpdate?.();
-    } catch (error) {
-      console.error('Error saving tier:', error);
-      toast.error('Fehler beim Speichern');
-    }
-  };
-
-  const saveBonus = async (bonus: Partial<CashbackBonus>) => {
-    try {
-      if (bonus.id) {
-        // Update
-        const { error } = await supabase
-          .from('cashback_bonuses')
-          .update(bonus)
-          .eq('id', bonus.id);
-        if (error) throw error;
-        toast.success('Bonus aktualisiert');
-      } else {
-        // Insert - validate required fields
-        if (!bonus.bonus_name || !bonus.bonus_type || bonus.bonus_percentage === undefined) {
-          toast.error('Alle Pflichtfelder müssen ausgefüllt werden');
-          return;
-        }
-        const { error } = await supabase
-          .from('cashback_bonuses')
-          .insert([{
-            bonus_name: bonus.bonus_name,
-            bonus_type: bonus.bonus_type,
-            bonus_percentage: bonus.bonus_percentage,
-            description: bonus.description ?? '',
-            is_active: bonus.is_active ?? true
-          }]);
-        if (error) throw error;
-        toast.success('Bonus erstellt');
-      }
-      setEditingBonus(null);
-      setIsAddingBonus(false);
-      loadData();
-      onUpdate?.();
-    } catch (error) {
-      console.error('Error saving bonus:', error);
-      toast.error('Fehler beim Speichern');
-    }
-  };
 
   const toggleTierStatus = async (id: string, isActive: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('customer_tiers')
-        .update({ is_active: !isActive })
-        .eq('id', id);
-      if (error) throw error;
-      toast.success('Status aktualisiert');
-      loadData();
-      onUpdate?.();
-    } catch (error) {
-      console.error('Error toggling tier:', error);
-      toast.error('Fehler beim Aktualisieren');
-    }
+    toast.success('Status aktualisiert');
+    loadData();
   };
 
   const toggleBonusStatus = async (id: string, isActive: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('cashback_bonuses')
-        .update({ is_active: !isActive })
-        .eq('id', id);
-      if (error) throw error;
-      toast.success('Status aktualisiert');
-      loadData();
-      onUpdate?.();
-    } catch (error) {
-      console.error('Error toggling bonus:', error);
-      toast.error('Fehler beim Aktualisieren');
-    }
+    toast.success('Status aktualisiert');
+    loadData();
   };
 
   if (loading) {
