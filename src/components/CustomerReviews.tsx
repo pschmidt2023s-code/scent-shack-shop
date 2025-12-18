@@ -18,7 +18,7 @@ interface Review {
   rating: number
   title?: string
   content?: string
-  is_verified: boolean
+  is_verified_purchase: boolean
   helpful_count: number
   created_at: string
   user_vote?: boolean | null
@@ -85,15 +85,15 @@ export function CustomerReviews({ perfumeId, variantId, className }: CustomerRev
         const userIds = [...new Set(reviewsData.map(r => r.user_id))]
         const { data: profilesData } = await supabase
           .from('profiles')
-          .select('id, full_name')
-          .in('id', userIds)
+          .select('user_id, full_name')
+          .in('user_id', userIds)
 
-        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || [])
+        const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || [])
         
         reviewsWithProfiles = reviewsData.map((review: any) => ({
           ...review,
           images: review.images || [],
-          is_verified: review.is_verified || false,
+          is_verified_purchase: review.is_verified_purchase || false,
           profiles: profilesMap.get(review.user_id) || null
         }))
       }
@@ -310,7 +310,7 @@ export function CustomerReviews({ perfumeId, variantId, className }: CustomerRev
                         <span className="font-medium">
                           {review.profiles?.full_name || 'Anonymer Kunde'}
                         </span>
-                        {review.is_verified && (
+                        {review.is_verified_purchase && (
                           <Badge variant="secondary" className="text-xs">
                             Verifizierter Kauf
                           </Badge>

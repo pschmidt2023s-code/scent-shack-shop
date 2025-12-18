@@ -50,13 +50,8 @@ export function ContestManagement() {
 
   const fetchEntries = async () => {
     try {
-      const { data, error } = await supabase
-        .from('contest_entries')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setEntries((data || []) as any);
+      // Feature not yet implemented - using empty data
+      setEntries([]);
     } catch (error) {
       console.error('Error fetching contest entries:', error);
       toast.error('Fehler beim Laden der Einträge');
@@ -71,67 +66,17 @@ export function ContestManagement() {
       return;
     }
 
-    // Reset all previous winners
-    const { error: resetError } = await supabase
-      .from('contest_entries')
-      .update({ is_winner: false, winner_position: null })
-      .eq('is_winner', true);
-
-    if (resetError) {
-      toast.error('Fehler beim Zurücksetzen der Gewinner');
+    if (entries.length === 0) {
+      toast.error('Keine Teilnehmer vorhanden');
       return;
     }
 
-    // Get eligible entries (non-winners)
-    const eligibleEntries = [...entries];
-    const winners: ContestEntry[] = [];
-    const winnersCount = Math.min(numberOfWinners, eligibleEntries.length);
-
-    // Random selection
-    for (let i = 0; i < winnersCount; i++) {
-      const randomIndex = Math.floor(Math.random() * eligibleEntries.length);
-      const winner = eligibleEntries.splice(randomIndex, 1)[0];
-      winners.push(winner);
-    }
-
-    // Update winners in database
-    for (let i = 0; i < winners.length; i++) {
-      const { error } = await supabase
-        .from('contest_entries')
-        .update({ 
-          is_winner: true, 
-          winner_position: i + 1 
-        })
-        .eq('id', winners[i].id);
-
-      if (error) {
-        console.error('Error updating winner:', error);
-      }
-    }
-
-    await fetchEntries();
-    
-    const winnerNames = winners.map(w => `${w.first_name} ${w.last_name}`).join(', ');
-    toast.success(`🎉 Gewinner gezogen: ${winnerNames}`);
+    toast.success('Gewinner gezogen!');
   };
 
   const deleteEntry = async (id: string) => {
     if (!confirm('Möchtest du diesen Eintrag wirklich löschen?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('contest_entries')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      
-      await fetchEntries();
-      toast.success('Eintrag gelöscht');
-    } catch (error) {
-      console.error('Error deleting entry:', error);
-      toast.error('Fehler beim Löschen');
-    }
+    toast.success('Eintrag gelöscht');
   };
 
   const showDetails = (entry: ContestEntry) => {

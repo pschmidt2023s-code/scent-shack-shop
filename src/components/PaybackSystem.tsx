@@ -13,10 +13,8 @@ import { Euro, TrendingUp, Calendar, CheckCircle, Clock, X } from 'lucide-react'
 interface PaybackEarning {
   id: string;
   amount: number;
-  percentage: number;
-  status: string;
-  earned_at: string;
-  approved_at?: string;
+  description?: string;
+  created_at: string;
   order_id?: string;
 }
 
@@ -24,9 +22,8 @@ interface PaybackPayout {
   id: string;
   amount: number;
   status: string;
-  requested_at: string;
-  approved_at?: string;
-  notes?: string;
+  created_at: string;
+  bank_details?: any;
 }
 
 export function PaybackSystem() {
@@ -56,7 +53,7 @@ export function PaybackSystem() {
         .from('payback_earnings')
         .select('*')
         .eq('user_id', user?.id)
-        .order('earned_at', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (earningsError) throw earningsError;
       setEarnings(earningsData || []);
@@ -66,7 +63,7 @@ export function PaybackSystem() {
         .from('payback_payouts')
         .select('*')
         .eq('user_id', user?.id)
-        .order('requested_at', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (payoutsError) throw payoutsError;
       setPayouts(payoutsData || []);
@@ -75,8 +72,8 @@ export function PaybackSystem() {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('payback_balance')
-        .eq('id', user?.id)
-        .single();
+        .eq('user_id', user?.id)
+        .maybeSingle();
 
       if (profileError) throw profileError;
       setPaybackBalance(profileData?.payback_balance || 0);
@@ -281,14 +278,14 @@ export function PaybackSystem() {
                     <div>
                       <p className="font-medium">€{earning.amount.toFixed(2)}</p>
                       <p className="text-sm text-muted-foreground">
-                        {earning.percentage}% Cashback
+                        {earning.description || 'Cashback'}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    {getStatusBadge(earning.status)}
+                    <Badge variant="default">Gutgeschrieben</Badge>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {new Date(earning.earned_at).toLocaleDateString()}
+                      {new Date(earning.created_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -326,7 +323,7 @@ export function PaybackSystem() {
                     <div>
                       <p className="font-medium">€{payout.amount.toFixed(2)}</p>
                       <p className="text-sm text-muted-foreground">
-                        Beantragt am {new Date(payout.requested_at).toLocaleDateString()}
+                        Beantragt am {new Date(payout.created_at).toLocaleDateString()}
                       </p>
                     </div>
                   </div>

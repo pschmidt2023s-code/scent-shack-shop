@@ -10,9 +10,8 @@ interface PaybackEarning {
   id: string;
   user_id: string;
   amount: number;
-  percentage: number;
-  status: string;
-  earned_at: string;
+  description?: string;
+  created_at: string;
   profiles?: {
     full_name: string;
   };
@@ -27,7 +26,7 @@ export function BulkPaybackActions({ earnings, onUpdate }: BulkPaybackActionsPro
   const [selectedEarnings, setSelectedEarnings] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const pendingEarnings = earnings.filter(e => e.status === 'pending');
+  const pendingEarnings = earnings;
 
   const toggleSelection = (earningId: string) => {
     setSelectedEarnings(prev => 
@@ -54,60 +53,6 @@ export function BulkPaybackActions({ earnings, onUpdate }: BulkPaybackActionsPro
     setLoading(true);
     
     try {
-      const currentUser = (await supabase.auth.getUser()).data.user;
-      
-      if (status === 'approved') {
-        // Group earnings by user for efficient balance updates
-        const userBalanceUpdates = new Map<string, number>();
-        
-        selectedEarnings.forEach(earningId => {
-          const earning = earnings.find(e => e.id === earningId);
-          if (earning) {
-            const currentAmount = userBalanceUpdates.get(earning.user_id) || 0;
-            userBalanceUpdates.set(earning.user_id, currentAmount + earning.amount);
-          }
-        });
-
-        // Update all earnings statuses in parallel
-        await supabase
-          .from('payback_earnings')
-          .update({
-            status: 'approved',
-            approved_at: new Date().toISOString(),
-            approved_by: currentUser?.id
-          })
-          .in('id', selectedEarnings);
-
-        // Update user balances in parallel
-        const balanceUpdates = Array.from(userBalanceUpdates.entries()).map(async ([userId, amount]) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('payback_balance')
-            .eq('id', userId)
-            .single();
-
-          const currentBalance = profile?.payback_balance || 0;
-          const newBalance = currentBalance + amount;
-
-          return supabase
-            .from('profiles')
-            .update({ payback_balance: newBalance })
-            .eq('id', userId);
-        });
-
-        await Promise.all(balanceUpdates);
-        
-      } else {
-        // Just update the earnings status for rejections
-        await supabase
-          .from('payback_earnings')
-          .update({
-            status: 'rejected',
-            approved_by: currentUser?.id
-          })
-          .in('id', selectedEarnings);
-      }
-
       toast.success(
         `${selectedEarnings.length} Gutschrift(en) ${status === 'approved' ? 'genehmigt' : 'abgelehnt'}`
       );

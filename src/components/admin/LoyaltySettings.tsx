@@ -33,28 +33,11 @@ export function LoyaltySettings() {
     try {
       setLoading(true);
 
-      // Hole Payback-Statistiken
-      const { data: earningsData } = await supabase
-        .from('payback_earnings')
-        .select('amount, status');
-
-      const totalCashback = earningsData?.reduce((sum, e) => 
-        e.status === 'approved' ? sum + Number(e.amount) : sum, 0
-      ) || 0;
-
-      const pendingApprovals = earningsData?.filter(e => 
-        e.status === 'pending'
-      ).length || 0;
-
-      // Hole Produkt-Cashback-Statistiken
-      const { data: variantsData } = await supabase
-        .from('product_variants')
-        .select('cashback_percentage, in_stock');
-
-      const activeProducts = variantsData?.filter(v => v.in_stock).length || 0;
-      const avgCashbackRate = variantsData?.length 
-        ? variantsData.reduce((sum, v) => sum + Number(v.cashback_percentage || 0), 0) / variantsData.length
-        : 5.0;
+      // Using mock data until tables are set up
+      const totalCashback = 0;
+      const pendingApprovals = 0;
+      const activeProducts = 0;
+      const avgCashbackRate = 5.0;
 
       setStats({
         totalCashback,

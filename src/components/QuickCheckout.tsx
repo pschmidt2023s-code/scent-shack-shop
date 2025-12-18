@@ -8,9 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -36,53 +34,13 @@ export function QuickCheckout({ productId, variantId, price, name }: QuickChecko
 
     setLoading(true);
     try {
-      // Get user's default address
-      const { data: address } = await supabase
-        .from('addresses')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_default', true)
-        .maybeSingle();
-
-      if (!address) {
-        toast.error('Bitte füge zuerst eine Lieferadresse hinzu');
-        navigate('/profile');
-        return;
-      }
-
-      // Create quick order
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          user_id: user.id,
-          customer_email: user.email,
-          total_amount: price,
-          shipping_address_id: address.id,
-          billing_address_id: address.id,
-          status: 'pending',
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      // Add order item
-      await supabase.from('order_items').insert({
-        order_id: order.id,
-        perfume_id: productId,
-        variant_id: variantId,
-        quantity: 1,
-        unit_price: price,
-        total_price: price,
-      });
-
-      // Redirect to payment
-      navigate(`/checkout?orderId=${order.id}&express=true`);
+      // Redirect to checkout with product info
+      navigate(`/checkout?productId=${productId}&variantId=${variantId}&express=true`);
       
-      toast.success('Express-Bestellung erstellt!');
+      toast.success('Express-Checkout gestartet!');
       setOpen(false);
     } catch (error) {
-      console.error('Error creating quick order:', error);
+      console.error('Error starting quick checkout:', error);
       toast.error('Fehler bei der Bestellung');
     } finally {
       setLoading(false);
@@ -151,7 +109,7 @@ export function QuickCheckout({ productId, variantId, price, name }: QuickChecko
             </Button>
 
             <p className="text-xs text-center text-muted-foreground">
-              Du verwendest deine Standard-Lieferadresse und kannst die Zahlungsmethode im nächsten Schritt wählen.
+              Du kannst die Zahlungsmethode im nächsten Schritt wählen.
             </p>
           </div>
         </DialogContent>

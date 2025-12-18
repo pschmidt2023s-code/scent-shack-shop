@@ -30,7 +30,7 @@ export function LiveInventoryStatus({ variantId, productId }: LiveInventoryStatu
         },
         (payload) => {
           console.log('Stock updated:', payload);
-          const newStock = (payload.new as any).stock_quantity;
+          const newStock = (payload.new as any).stock || 0;
           setStock(newStock);
           setLowStock(newStock > 0 && newStock <= 5);
         }
@@ -46,13 +46,13 @@ export function LiveInventoryStatus({ variantId, productId }: LiveInventoryStatu
     try {
       const { data, error } = await supabase
         .from('product_variants')
-        .select('stock_quantity')
+        .select('stock')
         .eq('id', variantId)
         .single();
 
       if (error) throw error;
 
-      const stockQty = data?.stock_quantity || 0;
+      const stockQty = data?.stock || 0;
       setStock(stockQty);
       setLowStock(stockQty > 0 && stockQty <= 5);
     } catch (error) {

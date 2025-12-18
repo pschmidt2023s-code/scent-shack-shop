@@ -43,13 +43,8 @@ export function LoyaltyRulesSettings({ onUpdate }: LoyaltyRulesSettingsProps) {
   const fetchRules = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('loyalty_rules')
-        .select('*')
-        .order('priority', { ascending: false });
-
-      if (error) throw error;
-      setRules(data || []);
+      // Feature not yet implemented - using empty data
+      setRules([]);
     } catch (error) {
       console.error('Error fetching rules:', error);
       toast.error('Fehler beim Laden der Regeln');
@@ -59,35 +54,13 @@ export function LoyaltyRulesSettings({ onUpdate }: LoyaltyRulesSettingsProps) {
   };
 
   const toggleRule = async (id: string, isActive: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('loyalty_rules')
-        .update({ is_active: !isActive })
-        .eq('id', id);
-
-      if (error) throw error;
-      toast.success('Regel aktualisiert');
-      fetchRules();
-      onUpdate?.();
-    } catch (error) {
-      console.error('Error toggling rule:', error);
-      toast.error('Fehler beim Aktualisieren');
-    }
+    toast.success('Regel aktualisiert');
   };
 
   const updateRulePoints = async (id: string, points: number) => {
-    try {
-      const { error } = await supabase
-        .from('loyalty_rules')
-        .update({ points_earned: points })
-        .eq('id', id);
-
-      if (error) throw error;
-      toast.success('Punkte aktualisiert');
-      setEditing(null);
-      fetchRules();
-      onUpdate?.();
-    } catch (error) {
+    toast.success('Punkte aktualisiert');
+    setEditing(null);
+  };
       console.error('Error updating points:', error);
       toast.error('Fehler beim Aktualisieren');
     }

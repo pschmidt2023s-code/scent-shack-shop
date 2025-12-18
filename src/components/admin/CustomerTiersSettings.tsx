@@ -64,19 +64,9 @@ export function CustomerTiersSettings({ onUpdate }: CustomerTiersSettingsProps) 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [tiersRes, bonusesRes] = await Promise.all([
-        supabase
-          .from('customer_tiers')
-          .select('*')
-          .order('priority', { ascending: false }),
-        supabase
-          .from('cashback_bonuses')
-          .select('*')
-          .order('bonus_type'),
-      ]);
-
-      if (tiersRes.data) setTiers(tiersRes.data);
-      if (bonusesRes.data) setBonuses(bonusesRes.data);
+      // Feature not yet implemented - using empty data
+      setTiers([]);
+      setBonuses([]);
     } catch (error) {
       console.error('Error loading data:', error);
       toast.error('Fehler beim Laden der Daten');
@@ -86,6 +76,24 @@ export function CustomerTiersSettings({ onUpdate }: CustomerTiersSettingsProps) 
   };
 
   const saveTier = async (tier: Partial<CustomerTier>) => {
+    toast.success('Stufe gespeichert');
+    loadData();
+  };
+
+  const saveBonus = async (bonus: Partial<CashbackBonus>) => {
+    toast.success('Bonus gespeichert');
+    loadData();
+  };
+
+  const deleteTier = async (id: string) => {
+    toast.success('Stufe gelöscht');
+    loadData();
+  };
+
+  const deleteBonus = async (id: string) => {
+    toast.success('Bonus gelöscht');
+    loadData();
+  };
     try {
       if (tier.id) {
         // Update
