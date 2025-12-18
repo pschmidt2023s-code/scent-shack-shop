@@ -262,7 +262,7 @@ export async function registerRoutes(app: Express) {
         return res.status(400).json({ error: "Order must contain at least one item" });
       }
       
-      let calculatedTotal = 0;
+      let calculatedSubtotal = 0;
       const validatedItems: Array<{
         perfumeId?: string;
         variantId: string;
@@ -283,7 +283,7 @@ export async function registerRoutes(app: Express) {
         
         const unitPrice = parseFloat(variant.price);
         const totalPrice = unitPrice * item.quantity;
-        calculatedTotal += totalPrice;
+        calculatedSubtotal += totalPrice;
         
         validatedItems.push({
           perfumeId: item.perfumeId || variant.productId || undefined,
@@ -294,11 +294,14 @@ export async function registerRoutes(app: Express) {
         });
       }
       
+      const discountAmount = parseFloat(req.body.discountAmount) || 0;
+      const finalAmount = Math.max(0, calculatedSubtotal - discountAmount);
+      
       const orderData = {
         orderNumber,
         partnerId,
         userId: req.session.userId || null,
-        totalAmount: calculatedTotal.toFixed(2),
+        totalAmount: finalAmount.toFixed(2),
         currency: "EUR",
         customerName: req.body.customerName,
         customerEmail: req.body.customerEmail,

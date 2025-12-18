@@ -33,6 +33,7 @@ export default function Checkout() {
   const [referralCode, setReferralCode] = useState('');
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
+  const [orderTotal, setOrderTotal] = useState(0);
   const [customerData, setCustomerData] = useState({
     firstName: '',
     lastName: '',
@@ -117,6 +118,7 @@ export default function Checkout() {
           billingAddressData: customerData,
           paymentMethod: paymentMethod,
           referralCode: referralCode || undefined,
+          discountAmount: checkoutData.discountAmount || 0,
         }),
       });
 
@@ -128,6 +130,7 @@ export default function Checkout() {
       const order = await response.json();
       
       setOrderNumber(order.orderNumber);
+      setOrderTotal(parseFloat(order.totalAmount));
       setOrderSuccess(true);
       clearCart();
       toast.success('Bestellung erfolgreich aufgegeben!');
@@ -163,7 +166,7 @@ export default function Checkout() {
                     <p><span className="text-muted-foreground">IBAN:</span> DE89 3704 0044 0532 0130 00</p>
                     <p><span className="text-muted-foreground">BIC:</span> COBADEFFXXX</p>
                     <p><span className="text-muted-foreground">Verwendungszweck:</span> {orderNumber}</p>
-                    <p><span className="text-muted-foreground">Betrag:</span> {checkoutData.finalAmount.toFixed(2)} €</p>
+                    <p><span className="text-muted-foreground">Betrag:</span> {orderTotal.toFixed(2)} €</p>
                   </div>
                   <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
                     Wichtig: Bitte geben Sie unbedingt die Bestellnummer als Verwendungszweck an!
