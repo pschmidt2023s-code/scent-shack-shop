@@ -278,8 +278,8 @@ function DashboardOverview({ orders, stats }: { orders: Order[]; stats: Dashboar
         <div className="admin-glass rounded-xl overflow-hidden">
           <div className="flex flex-row items-center justify-between gap-4 p-6 pb-4">
             <div>
-              <h3 className="text-base font-semibold">Letzte Bestellungen</h3>
-              <p className="text-sm text-muted-foreground">Die neuesten 5 Bestellungen</p>
+              <h3 className="text-base font-semibold text-white">Letzte Bestellungen</h3>
+              <p className="text-sm text-white/60">Die neuesten 5 Bestellungen</p>
             </div>
             <Button variant="ghost" size="sm" className="gap-1" data-testid="btn-view-all-orders">
               Alle anzeigen <ArrowUpRight className="w-4 h-4" />
@@ -329,8 +329,8 @@ function DashboardOverview({ orders, stats }: { orders: Order[]; stats: Dashboar
 
         <div className="admin-glass rounded-xl overflow-hidden">
           <div className="p-6 pb-4">
-            <h3 className="text-base font-semibold">Schnellzugriff</h3>
-            <p className="text-sm text-muted-foreground">Häufig verwendete Aktionen</p>
+            <h3 className="text-base font-semibold text-white">Schnellzugriff</h3>
+            <p className="text-sm text-white/60">Häufig verwendete Aktionen</p>
           </div>
           <div className="px-6 pb-6">
             <div className="grid grid-cols-2 gap-4">
@@ -338,25 +338,25 @@ function DashboardOverview({ orders, stats }: { orders: Order[]; stats: Dashboar
                 <div className="admin-stat-icon cyan">
                   <Package className="w-5 h-5" />
                 </div>
-                <span className="text-sm font-medium group-hover:text-cyan-400 transition-colors">Neues Produkt</span>
+                <span className="text-sm font-medium text-white/90 group-hover:text-cyan-400 transition-colors">Neues Produkt</span>
               </button>
               <button className="admin-stat-card rounded-xl p-5 flex flex-col items-center gap-3 hover:border-purple-500/30 transition-all group" data-testid="btn-quick-new-coupon">
                 <div className="admin-stat-icon purple">
                   <Tag className="w-5 h-5" />
                 </div>
-                <span className="text-sm font-medium group-hover:text-purple-400 transition-colors">Neuer Rabattcode</span>
+                <span className="text-sm font-medium text-white/90 group-hover:text-purple-400 transition-colors">Neuer Rabattcode</span>
               </button>
               <button className="admin-stat-card rounded-xl p-5 flex flex-col items-center gap-3 hover:border-pink-500/30 transition-all group" data-testid="btn-quick-newsletter">
                 <div className="admin-stat-icon pink">
                   <Mail className="w-5 h-5" />
                 </div>
-                <span className="text-sm font-medium group-hover:text-pink-400 transition-colors">Newsletter</span>
+                <span className="text-sm font-medium text-white/90 group-hover:text-pink-400 transition-colors">Newsletter</span>
               </button>
               <button className="admin-stat-card rounded-xl p-5 flex flex-col items-center gap-3 hover:border-green-500/30 transition-all group" data-testid="btn-quick-analytics">
                 <div className="admin-stat-icon green">
                   <BarChart3 className="w-5 h-5" />
                 </div>
-                <span className="text-sm font-medium group-hover:text-emerald-400 transition-colors">Analytics</span>
+                <span className="text-sm font-medium text-white/90 group-hover:text-emerald-400 transition-colors">Analytics</span>
               </button>
             </div>
           </div>

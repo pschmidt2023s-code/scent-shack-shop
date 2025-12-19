@@ -562,22 +562,22 @@
 
 .admin-theme {
   --background: 210 60% 7%;
-  --foreground: 210 20% 98%;
+  --foreground: 210 15% 96%;
 
   --card: 212 50% 12%;
-  --card-foreground: 210 20% 98%;
+  --card-foreground: 210 15% 96%;
 
   --popover: 212 50% 12%;
-  --popover-foreground: 210 20% 98%;
+  --popover-foreground: 210 15% 96%;
 
   --primary: 191 90% 55%;
   --primary-foreground: 210 60% 7%;
 
-  --secondary: 215 48% 16%;
-  --secondary-foreground: 210 20% 98%;
+  --secondary: 215 48% 18%;
+  --secondary-foreground: 210 15% 96%;
 
-  --muted: 215 45% 14%;
-  --muted-foreground: 215 20% 60%;
+  --muted: 215 45% 16%;
+  --muted-foreground: 215 15% 75%;
 
   --accent: 263 70% 60%;
   --accent-foreground: 210 20% 98%;
