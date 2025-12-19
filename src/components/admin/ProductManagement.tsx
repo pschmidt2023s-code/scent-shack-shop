@@ -4,12 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Package, Save, X, Loader2, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Save, X, Loader2, Sparkles, ChevronDown, ChevronUp, Droplets, FlaskConical, Layers } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface ProductVariant {
@@ -36,7 +37,101 @@ interface Product {
   aiDescription: string | null;
   seasons: string[] | null;
   occasions: string[] | null;
+  topNotes: string[] | null;
+  middleNotes: string[] | null;
+  baseNotes: string[] | null;
+  ingredients: string[] | null;
   variants: ProductVariant[];
+}
+
+interface ProductFormState {
+  name: string;
+  brand: string;
+  category: string;
+  description: string;
+  image: string;
+  isActive: boolean;
+  scentNotes: string[];
+  inspiredBy: string;
+  aiDescription: string;
+  seasons: string[];
+  occasions: string[];
+  topNotes: string[];
+  middleNotes: string[];
+  baseNotes: string[];
+  ingredients: string[];
+}
+
+function ChipInput({ 
+  label, 
+  values, 
+  onChange, 
+  placeholder,
+  icon: Icon
+}: { 
+  label: string; 
+  values: string[]; 
+  onChange: (values: string[]) => void; 
+  placeholder?: string;
+  icon?: React.ComponentType<{ className?: string }>;
+}) {
+  const [input, setInput] = useState("");
+
+  const handleAdd = () => {
+    const trimmed = input.trim();
+    if (trimmed && !values.includes(trimmed)) {
+      onChange([...values, trimmed]);
+      setInput("");
+    }
+  };
+
+  const handleRemove = (value: string) => {
+    onChange(values.filter((v) => v !== value));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAdd();
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label className="flex items-center gap-2">
+        {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
+        {label}
+      </Label>
+      <div className="flex gap-2">
+        <Input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          className="flex-1"
+        />
+        <Button type="button" variant="outline" onClick={handleAdd} size="sm">
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+      {values.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          {values.map((value) => (
+            <Badge key={value} variant="secondary" className="gap-1 pr-1">
+              {value}
+              <button
+                type="button"
+                onClick={() => handleRemove(value)}
+                className="ml-1 rounded-full p-0.5 hover:bg-muted"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function ProductManagement() {
@@ -48,23 +143,28 @@ export default function ProductManagement() {
   const [showProductDialog, setShowProductDialog] = useState(false);
   const [showVariantDialog, setShowVariantDialog] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [generatingAI, setGeneratingAI] = useState(false);
+  const [activeFormTab, setActiveFormTab] = useState("essentials");
 
-  const [productForm, setProductForm] = useState({
+  const initialProductForm: ProductFormState = {
     name: "",
-    brand: "",
+    brand: "ALDENAIR",
     category: "herren",
     description: "",
     image: "",
     isActive: true,
-    scentNotes: [] as string[],
+    scentNotes: [],
     inspiredBy: "",
     aiDescription: "",
-    seasons: [] as string[],
-    occasions: [] as string[],
-  });
-  const [scentNoteInput, setScentNoteInput] = useState("");
-  const [generatingAI, setGeneratingAI] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
+    seasons: [],
+    occasions: [],
+    topNotes: [],
+    middleNotes: [],
+    baseNotes: [],
+    ingredients: [],
+  };
+
+  const [productForm, setProductForm] = useState<ProductFormState>(initialProductForm);
 
   const [variantForm, setVariantForm] = useState({
     size: "",
@@ -97,16 +197,36 @@ export default function ProductManagement() {
   };
 
   const handleSaveProduct = async () => {
+    if (!productForm.name.trim()) {
+      toast.error("Produktname ist erforderlich");
+      return;
+    }
+
     try {
       setSaving(true);
       const url = editingProduct ? `/api/products/${editingProduct.id}` : "/api/products";
       const method = editingProduct ? "PATCH" : "POST";
 
+      const payload = {
+        ...productForm,
+        scentNotes: productForm.scentNotes.length > 0 ? productForm.scentNotes : null,
+        topNotes: productForm.topNotes.length > 0 ? productForm.topNotes : null,
+        middleNotes: productForm.middleNotes.length > 0 ? productForm.middleNotes : null,
+        baseNotes: productForm.baseNotes.length > 0 ? productForm.baseNotes : null,
+        ingredients: productForm.ingredients.length > 0 ? productForm.ingredients : null,
+        seasons: productForm.seasons.length > 0 ? productForm.seasons : null,
+        occasions: productForm.occasions.length > 0 ? productForm.occasions : null,
+        inspiredBy: productForm.inspiredBy.trim() || null,
+        aiDescription: productForm.aiDescription.trim() || null,
+        description: productForm.description.trim() || null,
+        image: productForm.image.trim() || null,
+      };
+
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(productForm),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) throw new Error("Failed to save product");
@@ -124,7 +244,7 @@ export default function ProductManagement() {
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (!confirm("Produkt wirklich löschen?")) return;
+    if (!confirm("Produkt wirklich löschen? Alle Varianten werden ebenfalls gelöscht.")) return;
 
     try {
       const response = await fetch(`/api/products/${id}`, {
@@ -211,8 +331,12 @@ export default function ProductManagement() {
       aiDescription: product.aiDescription || "",
       seasons: product.seasons || [],
       occasions: product.occasions || [],
+      topNotes: product.topNotes || [],
+      middleNotes: product.middleNotes || [],
+      baseNotes: product.baseNotes || [],
+      ingredients: product.ingredients || [],
     });
-    setShowAdvanced(!!product.scentNotes?.length || !!product.inspiredBy);
+    setActiveFormTab("essentials");
     setShowProductDialog(true);
   };
 
@@ -239,37 +363,19 @@ export default function ProductManagement() {
 
   const resetProductForm = () => {
     setEditingProduct(null);
-    setProductForm({
-      name: "",
-      brand: "",
-      category: "herren",
-      description: "",
-      image: "",
+    setProductForm(initialProductForm);
+    setActiveFormTab("essentials");
+  };
+
+  const resetVariantForm = () => {
+    setEditingVariant(null);
+    setVariantForm({
+      size: "",
+      price: "",
+      originalPrice: "",
+      stock: 0,
+      sku: "",
       isActive: true,
-      scentNotes: [],
-      inspiredBy: "",
-      aiDescription: "",
-      seasons: [],
-      occasions: [],
-    });
-    setScentNoteInput("");
-    setShowAdvanced(false);
-  };
-
-  const addScentNote = () => {
-    if (scentNoteInput.trim() && !productForm.scentNotes.includes(scentNoteInput.trim())) {
-      setProductForm({
-        ...productForm,
-        scentNotes: [...productForm.scentNotes, scentNoteInput.trim()],
-      });
-      setScentNoteInput("");
-    }
-  };
-
-  const removeScentNote = (note: string) => {
-    setProductForm({
-      ...productForm,
-      scentNotes: productForm.scentNotes.filter((n) => n !== note),
     });
   };
 
@@ -297,7 +403,7 @@ export default function ProductManagement() {
         body: JSON.stringify({
           productName: productForm.name,
           brand: productForm.brand,
-          scentNotes: productForm.scentNotes,
+          scentNotes: [...productForm.topNotes, ...productForm.middleNotes, ...productForm.baseNotes],
           inspiredBy: productForm.inspiredBy,
           gender: productForm.category,
           category: "Eau de Parfum",
@@ -326,18 +432,6 @@ export default function ProductManagement() {
   const allSeasons = ["Frühling", "Sommer", "Herbst", "Winter"];
   const allOccasions = ["Alltag", "Büro", "Date", "Abendveranstaltung", "Hochzeit", "Sport", "Freizeit"];
 
-  const resetVariantForm = () => {
-    setEditingVariant(null);
-    setVariantForm({
-      size: "",
-      price: "",
-      originalPrice: "",
-      stock: 0,
-      sku: "",
-      isActive: true,
-    });
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -348,8 +442,11 @@ export default function ProductManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Produktverwaltung</h2>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold">Produktverwaltung</h2>
+          <p className="text-muted-foreground">{products.length} Produkte</p>
+        </div>
         <Dialog open={showProductDialog} onOpenChange={setShowProductDialog}>
           <DialogTrigger asChild>
             <Button onClick={resetProductForm} data-testid="button-add-product">
@@ -357,251 +454,411 @@ export default function ProductManagement() {
               Neues Produkt
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingProduct ? "Produkt bearbeiten" : "Neues Produkt"}</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                {editingProduct ? "Produkt bearbeiten" : "Neues Produkt"}
+              </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Name</Label>
-                <Input
-                  value={productForm.name}
-                  onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                  placeholder="Produktname"
-                  data-testid="input-product-name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Marke</Label>
-                <Input
-                  value={productForm.brand}
-                  onChange={(e) => setProductForm({ ...productForm, brand: e.target.value })}
-                  placeholder="ALDENAIR"
-                  data-testid="input-product-brand"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Kategorie</Label>
-                <Select
-                  value={productForm.category}
-                  onValueChange={(value) => setProductForm({ ...productForm, category: value })}
-                >
-                  <SelectTrigger data-testid="select-product-category">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="herren">Herren</SelectItem>
-                    <SelectItem value="damen">Damen</SelectItem>
-                    <SelectItem value="unisex">Unisex</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Beschreibung</Label>
-                <Textarea
-                  value={productForm.description}
-                  onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                  placeholder="Produktbeschreibung..."
-                  data-testid="input-product-description"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Bild-URL</Label>
-                <Input
-                  value={productForm.image}
-                  onChange={(e) => setProductForm({ ...productForm, image: e.target.value })}
-                  placeholder="https://..."
-                  data-testid="input-product-image"
-                />
-              </div>
-              
-              {/* Advanced section toggle */}
-              <button
-                type="button"
-                onClick={() => setShowAdvanced(!showAdvanced)}
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
-                data-testid="button-toggle-advanced"
-              >
-                {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                Duftnoten & KI-Beschreibung
-              </button>
+            
+            <Tabs value={activeFormTab} onValueChange={setActiveFormTab} className="mt-4">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="essentials">Basis</TabsTrigger>
+                <TabsTrigger value="fragrance">Duftprofil</TabsTrigger>
+                <TabsTrigger value="metadata">Metadaten</TabsTrigger>
+                <TabsTrigger value="ai">KI-Features</TabsTrigger>
+              </TabsList>
 
-              {showAdvanced && (
-                <div className="space-y-4 border-t pt-4">
-                  {/* Inspired By */}
+              <TabsContent value="essentials" className="space-y-4 pt-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Inspiriert von</Label>
+                    <Label>Produktname *</Label>
                     <Input
-                      value={productForm.inspiredBy}
-                      onChange={(e) => setProductForm({ ...productForm, inspiredBy: e.target.value })}
-                      placeholder="z.B. Dior Sauvage, Chanel No. 5..."
-                      data-testid="input-product-inspired"
+                      value={productForm.name}
+                      onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+                      placeholder="z.B. Aventus Inspiration"
+                      data-testid="input-product-name"
                     />
                   </div>
-
-                  {/* Scent Notes */}
                   <div className="space-y-2">
-                    <Label>Duftnoten</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={scentNoteInput}
-                        onChange={(e) => setScentNoteInput(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addScentNote())}
-                        placeholder="z.B. Bergamotte, Vanille..."
-                        data-testid="input-scent-note"
-                      />
-                      <Button type="button" variant="outline" onClick={addScentNote} data-testid="button-add-scent-note">
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    {productForm.scentNotes.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {productForm.scentNotes.map((note) => (
-                          <Badge key={note} variant="secondary" className="gap-1">
-                            {note}
-                            <button onClick={() => removeScentNote(note)} className="ml-1" data-testid={`button-remove-note-${note}`}>
-                              <X className="w-3 h-3" />
-                            </button>
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
+                    <Label>Marke</Label>
+                    <Input
+                      value={productForm.brand}
+                      onChange={(e) => setProductForm({ ...productForm, brand: e.target.value })}
+                      placeholder="ALDENAIR"
+                      data-testid="input-product-brand"
+                    />
                   </div>
-
-                  {/* AI Generate Button */}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={generateAIDescription}
-                    disabled={generatingAI || !productForm.name}
-                    data-testid="button-generate-ai"
-                  >
-                    {generatingAI ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-4 h-4 mr-2" />
-                    )}
-                    KI-Beschreibung generieren
-                  </Button>
-
-                  {/* Seasons */}
-                  <div className="space-y-2">
-                    <Label>Jahreszeiten</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {allSeasons.map((season) => (
-                        <Badge
-                          key={season}
-                          variant={productForm.seasons.includes(season) ? "default" : "outline"}
-                          className="cursor-pointer"
-                          onClick={() => toggleSeason(season)}
-                          data-testid={`badge-season-${season}`}
-                        >
-                          {season}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Occasions */}
-                  <div className="space-y-2">
-                    <Label>Anlässe</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {allOccasions.map((occasion) => (
-                        <Badge
-                          key={occasion}
-                          variant={productForm.occasions.includes(occasion) ? "default" : "outline"}
-                          className="cursor-pointer"
-                          onClick={() => toggleOccasion(occasion)}
-                          data-testid={`badge-occasion-${occasion}`}
-                        >
-                          {occasion}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* AI Description Preview */}
-                  {productForm.aiDescription && (
-                    <div className="space-y-2">
-                      <Label>KI-Beschreibung</Label>
-                      <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-                        {productForm.aiDescription}
-                      </p>
-                    </div>
-                  )}
                 </div>
-              )}
 
-              <div className="flex items-center justify-between">
-                <Label>Aktiv</Label>
-                <Switch
-                  checked={productForm.isActive}
-                  onCheckedChange={(checked) => setProductForm({ ...productForm, isActive: checked })}
-                  data-testid="switch-product-active"
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Kategorie</Label>
+                    <Select
+                      value={productForm.category}
+                      onValueChange={(value) => setProductForm({ ...productForm, category: value })}
+                    >
+                      <SelectTrigger data-testid="select-product-category">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="herren">Herren</SelectItem>
+                        <SelectItem value="damen">Damen</SelectItem>
+                        <SelectItem value="unisex">Unisex</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Bild-URL</Label>
+                    <Input
+                      value={productForm.image}
+                      onChange={(e) => setProductForm({ ...productForm, image: e.target.value })}
+                      placeholder="https://..."
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Inspiriert von (Luxus-Parfüm)</Label>
+                  <Input
+                    value={productForm.inspiredBy}
+                    onChange={(e) => setProductForm({ ...productForm, inspiredBy: e.target.value })}
+                    placeholder="z.B. Creed Aventus, Dior Sauvage..."
+                    data-testid="input-inspired-by"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Welches bekannte Luxus-Parfüm hat diesen Duft inspiriert?
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Beschreibung</Label>
+                  <Textarea
+                    value={productForm.description}
+                    onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+                    placeholder="Ausführliche Produktbeschreibung..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 pt-2">
+                  <Switch
+                    checked={productForm.isActive}
+                    onCheckedChange={(checked) => setProductForm({ ...productForm, isActive: checked })}
+                  />
+                  <Label>Produkt aktiv (im Shop sichtbar)</Label>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="fragrance" className="space-y-4 pt-4">
+                <div className="rounded-lg border p-4 bg-muted/30">
+                  <h4 className="font-medium mb-4 flex items-center gap-2">
+                    <Layers className="h-4 w-4" />
+                    Duftpyramide
+                  </h4>
+                  <div className="space-y-4">
+                    <ChipInput
+                      label="Kopfnoten (Top Notes)"
+                      values={productForm.topNotes}
+                      onChange={(values) => setProductForm({ ...productForm, topNotes: values })}
+                      placeholder="z.B. Bergamotte, Zitrone..."
+                      icon={Droplets}
+                    />
+                    <ChipInput
+                      label="Herznoten (Middle Notes)"
+                      values={productForm.middleNotes}
+                      onChange={(values) => setProductForm({ ...productForm, middleNotes: values })}
+                      placeholder="z.B. Jasmin, Rose..."
+                      icon={Droplets}
+                    />
+                    <ChipInput
+                      label="Basisnoten (Base Notes)"
+                      values={productForm.baseNotes}
+                      onChange={(values) => setProductForm({ ...productForm, baseNotes: values })}
+                      placeholder="z.B. Moschus, Sandelholz..."
+                      icon={Droplets}
+                    />
+                  </div>
+                </div>
+
+                <ChipInput
+                  label="Inhaltsstoffe / Ingredients"
+                  values={productForm.ingredients}
+                  onChange={(values) => setProductForm({ ...productForm, ingredients: values })}
+                  placeholder="z.B. Alkohol, Aqua, Parfum..."
+                  icon={FlaskConical}
                 />
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setShowProductDialog(false)}>
-                  Abbrechen
-                </Button>
-                <Button onClick={handleSaveProduct} disabled={saving} data-testid="button-save-product">
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                  Speichern
-                </Button>
-              </div>
-            </div>
+
+                <ChipInput
+                  label="Allgemeine Duftnoten"
+                  values={productForm.scentNotes}
+                  onChange={(values) => setProductForm({ ...productForm, scentNotes: values })}
+                  placeholder="z.B. Holzig, Frisch, Orientalisch..."
+                />
+              </TabsContent>
+
+              <TabsContent value="metadata" className="space-y-4 pt-4">
+                <div className="space-y-3">
+                  <Label>Passende Jahreszeiten</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {allSeasons.map((season) => (
+                      <Badge
+                        key={season}
+                        variant={productForm.seasons.includes(season) ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => toggleSeason(season)}
+                      >
+                        {season}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label>Passende Anlässe</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {allOccasions.map((occasion) => (
+                      <Badge
+                        key={occasion}
+                        variant={productForm.occasions.includes(occasion) ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => toggleOccasion(occasion)}
+                      >
+                        {occasion}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="ai" className="space-y-4 pt-4">
+                <div className="rounded-lg border p-4 bg-primary/5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-5 w-5 text-primary" />
+                      <Label className="text-base font-medium">KI-Beschreibung generieren</Label>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={generateAIDescription}
+                      disabled={generatingAI || !productForm.name}
+                    >
+                      {generatingAI ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : (
+                        <Sparkles className="w-4 h-4 mr-2" />
+                      )}
+                      Generieren
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Erstellt automatisch eine ansprechende Beschreibung basierend auf den Produktdaten.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>KI-Beschreibung</Label>
+                  <Textarea
+                    value={productForm.aiDescription}
+                    onChange={(e) => setProductForm({ ...productForm, aiDescription: e.target.value })}
+                    placeholder="Die KI-generierte Beschreibung erscheint hier..."
+                    rows={4}
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            <DialogFooter className="mt-6">
+              <Button variant="outline" onClick={() => setShowProductDialog(false)}>
+                Abbrechen
+              </Button>
+              <Button onClick={handleSaveProduct} disabled={saving}>
+                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                {editingProduct ? "Speichern" : "Erstellen"}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[250px]">Produkt</TableHead>
+                <TableHead>Kategorie</TableHead>
+                <TableHead>Inspiriert von</TableHead>
+                <TableHead>Varianten</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Aktionen</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {products.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      {product.image ? (
+                        <img src={product.image} alt={product.name} className="w-10 h-10 rounded-md object-cover" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center">
+                          <Package className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-medium">{product.name}</p>
+                        <p className="text-xs text-muted-foreground">{product.brand}</p>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="capitalize">
+                      {product.category}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {product.inspiredBy ? (
+                      <span className="text-sm">{product.inspiredBy}</span>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{product.variants.length}</Badge>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => openAddVariant(product.id)}
+                      >
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={product.isActive ? "default" : "secondary"}>
+                      {product.isActive ? "Aktiv" : "Inaktiv"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => openEditProduct(product)}
+                        data-testid={`btn-edit-${product.id}`}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleDeleteProduct(product.id)}
+                        data-testid={`btn-delete-${product.id}`}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {products.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                    Keine Produkte vorhanden
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {products.map((product) => (
+        product.variants.length > 0 && (
+          <Card key={`variants-${product.id}`}>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Package className="w-4 h-4" />
+                Varianten: {product.name}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Größe</TableHead>
+                    <TableHead>Preis</TableHead>
+                    <TableHead>Originalpreis</TableHead>
+                    <TableHead>Bestand</TableHead>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Aktionen</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {product.variants.map((variant) => (
+                    <TableRow key={variant.id}>
+                      <TableCell className="font-medium">{variant.size}</TableCell>
+                      <TableCell>EUR {parseFloat(variant.price).toFixed(2)}</TableCell>
+                      <TableCell>
+                        {variant.originalPrice ? `EUR ${parseFloat(variant.originalPrice).toFixed(2)}` : "-"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={variant.stock > 0 ? "secondary" : "destructive"}>
+                          {variant.stock}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">{variant.sku || "-"}</TableCell>
+                      <TableCell>
+                        <Badge variant={variant.isActive ? "default" : "secondary"}>
+                          {variant.isActive ? "Aktiv" : "Inaktiv"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => openEditVariant(variant, product.id)}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleDeleteVariant(variant.id)}
+                          >
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )
+      ))}
+
       <Dialog open={showVariantDialog} onOpenChange={setShowVariantDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingVariant ? "Variante bearbeiten" : "Neue Variante"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Größe</Label>
-              <Input
-                value={variantForm.size}
-                onChange={(e) => setVariantForm({ ...variantForm, size: e.target.value })}
-                placeholder="z.B. 50ml"
-                data-testid="input-variant-size"
-              />
-            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Preis (EUR)</Label>
+                <Label>Größe *</Label>
                 <Input
-                  type="number"
-                  step="0.01"
-                  value={variantForm.price}
-                  onChange={(e) => setVariantForm({ ...variantForm, price: e.target.value })}
-                  placeholder="29.99"
-                  data-testid="input-variant-price"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Originalpreis</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={variantForm.originalPrice}
-                  onChange={(e) => setVariantForm({ ...variantForm, originalPrice: e.target.value })}
-                  placeholder="Optional"
-                  data-testid="input-variant-original-price"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Lagerbestand</Label>
-                <Input
-                  type="number"
-                  value={variantForm.stock}
-                  onChange={(e) => setVariantForm({ ...variantForm, stock: parseInt(e.target.value) || 0 })}
-                  data-testid="input-variant-stock"
+                  value={variantForm.size}
+                  onChange={(e) => setVariantForm({ ...variantForm, size: e.target.value })}
+                  placeholder="z.B. 50ml"
                 />
               </div>
               <div className="space-y-2">
@@ -609,145 +866,62 @@ export default function ProductManagement() {
                 <Input
                   value={variantForm.sku}
                   onChange={(e) => setVariantForm({ ...variantForm, sku: e.target.value })}
-                  placeholder="Optional"
-                  data-testid="input-variant-sku"
+                  placeholder="z.B. ALD-001-50"
                 />
               </div>
             </div>
-            <div className="flex items-center justify-between">
-              <Label>Aktiv</Label>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Preis (EUR) *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={variantForm.price}
+                  onChange={(e) => setVariantForm({ ...variantForm, price: e.target.value })}
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Originalpreis (EUR)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={variantForm.originalPrice}
+                  onChange={(e) => setVariantForm({ ...variantForm, originalPrice: e.target.value })}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Bestand</Label>
+              <Input
+                type="number"
+                value={variantForm.stock}
+                onChange={(e) => setVariantForm({ ...variantForm, stock: parseInt(e.target.value) || 0 })}
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
               <Switch
                 checked={variantForm.isActive}
                 onCheckedChange={(checked) => setVariantForm({ ...variantForm, isActive: checked })}
-                data-testid="switch-variant-active"
               />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setShowVariantDialog(false)}>
-                Abbrechen
-              </Button>
-              <Button onClick={handleSaveVariant} disabled={saving} data-testid="button-save-variant">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                Speichern
-              </Button>
+              <Label>Variante aktiv</Label>
             </div>
           </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowVariantDialog(false)}>
+              Abbrechen
+            </Button>
+            <Button onClick={handleSaveVariant} disabled={saving}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+              {editingVariant ? "Speichern" : "Erstellen"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <div className="space-y-4">
-        {products.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Package className="w-12 h-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Keine Produkte vorhanden</p>
-            </CardContent>
-          </Card>
-        ) : (
-          products.map((product) => (
-            <Card key={product.id} data-testid={`card-product-${product.id}`}>
-              <CardHeader className="flex flex-row items-center justify-between gap-4 pb-2">
-                <div className="flex items-center gap-4">
-                  {product.image && (
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-16 h-16 object-cover rounded-md"
-                    />
-                  )}
-                  <div>
-                    <CardTitle className="text-lg">{product.name}</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      {product.brand} | {product.category}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => openAddVariant(product.id)}
-                    data-testid={`button-add-variant-${product.id}`}
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Variante
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => openEditProduct(product)}
-                    data-testid={`button-edit-product-${product.id}`}
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleDeleteProduct(product.id)}
-                    data-testid={`button-delete-product-${product.id}`}
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
-                </div>
-              </CardHeader>
-              {product.variants && product.variants.length > 0 && (
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Größe</TableHead>
-                        <TableHead>Preis</TableHead>
-                        <TableHead>Lager</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Aktionen</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {product.variants.map((variant) => (
-                        <TableRow key={variant.id} data-testid={`row-variant-${variant.id}`}>
-                          <TableCell className="font-medium">{variant.size}</TableCell>
-                          <TableCell>
-                            {parseFloat(variant.price).toFixed(2)} EUR
-                            {variant.originalPrice && (
-                              <span className="text-muted-foreground line-through ml-2">
-                                {parseFloat(variant.originalPrice).toFixed(2)}
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell>{variant.stock}</TableCell>
-                          <TableCell>
-                            <span className={variant.isActive ? "text-green-600" : "text-red-600"}>
-                              {variant.isActive ? "Aktiv" : "Inaktiv"}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => openEditVariant(variant, product.id)}
-                              data-testid={`button-edit-variant-${variant.id}`}
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleDeleteVariant(variant.id)}
-                              data-testid={`button-delete-variant-${variant.id}`}
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              )}
-            </Card>
-          ))
-        )}
-      </div>
     </div>
   );
 }
