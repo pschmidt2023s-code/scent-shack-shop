@@ -101,6 +101,13 @@ npx drizzle-kit push # Push schema to database
 - Order confirmation shows bank details and reference number
 
 ## Recent Changes (Dec 2024)
+### Complete Redesign (Dec 19, 2024)
+- About page added at /about with company values, story, and statistics
+- AdminNew.tsx deprecated file removed - /admin route now uses rebuilt Admin.tsx
+- All navigation links verified working (Home, Shop, Über uns, Kontakt)
+- Light/Dark mode fully functional across all pages using semantic CSS variables
+
+### Previous Changes (Dec 2024)
 - Complete migration from Supabase to local Express.js API
 - All customer-facing components use local API endpoints
 - Bank transfer checkout flow implemented
