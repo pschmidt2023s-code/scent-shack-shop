@@ -46,9 +46,11 @@ function ProductCard({ product }: { product: Product }) {
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
   const { addToCart } = useCart();
   
-  const variant = product.variants[0];
+  const variant = product.variants?.[0];
   const isInFavorites = variant ? isFavorite(product.id, variant.id) : false;
-  const price = variant ? parseFloat(variant.price) : 0;
+  const price = variant?.price ? parseFloat(variant.price) : 0;
+  
+  if (!variant) return null;
 
   const handleWishlistToggle = async (e: React.MouseEvent) => {
     e.preventDefault();

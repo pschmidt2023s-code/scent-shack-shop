@@ -67,13 +67,15 @@ function ChipInput({
   values, 
   onChange, 
   placeholder,
-  icon: Icon
+  icon: Icon,
+  testId
 }: { 
   label: string; 
   values: string[]; 
   onChange: (values: string[]) => void; 
   placeholder?: string;
   icon?: React.ComponentType<{ className?: string }>;
+  testId?: string;
 }) {
   const [input, setInput] = useState("");
 
@@ -109,20 +111,28 @@ function ChipInput({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className="flex-1"
+          data-testid={testId ? `input-${testId}` : undefined}
         />
-        <Button type="button" variant="outline" onClick={handleAdd} size="sm">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={handleAdd} 
+          size="sm"
+          data-testid={testId ? `btn-add-${testId}` : undefined}
+        >
           <Plus className="h-4 w-4" />
         </Button>
       </div>
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1.5 pt-1">
-          {values.map((value) => (
+          {values.map((value, index) => (
             <Badge key={value} variant="secondary" className="gap-1 pr-1">
               {value}
               <button
                 type="button"
                 onClick={() => handleRemove(value)}
                 className="ml-1 rounded-full p-0.5 hover:bg-muted"
+                data-testid={testId ? `btn-remove-${testId}-${index}` : undefined}
               >
                 <X className="h-3 w-3" />
               </button>
@@ -564,6 +574,7 @@ export default function ProductManagement() {
                       onChange={(values) => setProductForm({ ...productForm, topNotes: values })}
                       placeholder="z.B. Bergamotte, Zitrone..."
                       icon={Droplets}
+                      testId="top-notes"
                     />
                     <ChipInput
                       label="Herznoten (Middle Notes)"
@@ -571,6 +582,7 @@ export default function ProductManagement() {
                       onChange={(values) => setProductForm({ ...productForm, middleNotes: values })}
                       placeholder="z.B. Jasmin, Rose..."
                       icon={Droplets}
+                      testId="middle-notes"
                     />
                     <ChipInput
                       label="Basisnoten (Base Notes)"
@@ -578,6 +590,7 @@ export default function ProductManagement() {
                       onChange={(values) => setProductForm({ ...productForm, baseNotes: values })}
                       placeholder="z.B. Moschus, Sandelholz..."
                       icon={Droplets}
+                      testId="base-notes"
                     />
                   </div>
                 </div>
@@ -588,6 +601,7 @@ export default function ProductManagement() {
                   onChange={(values) => setProductForm({ ...productForm, ingredients: values })}
                   placeholder="z.B. Alkohol, Aqua, Parfum..."
                   icon={FlaskConical}
+                  testId="ingredients"
                 />
 
                 <ChipInput
@@ -595,6 +609,7 @@ export default function ProductManagement() {
                   values={productForm.scentNotes}
                   onChange={(values) => setProductForm({ ...productForm, scentNotes: values })}
                   placeholder="z.B. Holzig, Frisch, Orientalisch..."
+                  testId="scent-notes"
                 />
               </TabsContent>
 
