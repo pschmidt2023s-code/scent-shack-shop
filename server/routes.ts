@@ -735,6 +735,28 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // ==================== BANK SETTINGS ====================
+  
+  // Get bank details for checkout (public)
+  app.get("/api/settings/bank", async (req, res) => {
+    res.json({
+      recipient: process.env.BANK_RECIPIENT || 'ALDENAIR',
+      iban: process.env.BANK_IBAN || '',
+      bic: process.env.BANK_BIC || '',
+      bankName: process.env.BANK_NAME || '',
+    });
+  });
+
+  // Admin: Update bank details
+  app.patch("/api/admin/settings/bank", requireAdmin, async (req, res) => {
+    // Note: In production, you would store these in a database settings table
+    // For now, we just return success - the actual values need to be set as environment variables
+    res.json({ 
+      success: true, 
+      message: "Bankdaten werden über Umgebungsvariablen konfiguriert. Bitte BANK_RECIPIENT, BANK_IBAN, BANK_BIC, BANK_NAME in den Secrets setzen." 
+    });
+  });
+
   app.get("/api/addresses", requireAuth, async (req, res) => {
     try {
       const addresses = await storage.getAddresses(req.session.userId!);
@@ -1165,7 +1187,7 @@ Dein Verhalten:
 
   app.post("/api/admin/shipping", requireAdmin, async (req, res) => {
     try {
-      const { name, description, price, estimatedDays, freeAbove, isActive } = req.body;
+      const { name, description, price, estimatedDays, isExpress, isActive } = req.body;
       if (!name || price === undefined) {
         return res.status(400).json({ error: "Name and price required" });
       }
@@ -1174,7 +1196,7 @@ Dein Verhalten:
         description: description || '',
         price: String(parseFloat(price) || 0),
         estimatedDays: estimatedDays || '3-5',
-        freeAbove: freeAbove ? String(parseFloat(freeAbove)) : null,
+        isExpress: isExpress === true,
         isActive: isActive !== false,
       });
       res.json(option);
@@ -1185,13 +1207,13 @@ Dein Verhalten:
 
   app.patch("/api/admin/shipping/:id", requireAdmin, async (req, res) => {
     try {
-      const { name, description, price, estimatedDays, freeAbove, isActive } = req.body;
+      const { name, description, price, estimatedDays, isExpress, isActive } = req.body;
       const validatedData: Record<string, any> = {};
       if (name !== undefined) validatedData.name = name;
       if (description !== undefined) validatedData.description = description;
       if (price !== undefined) validatedData.price = String(parseFloat(price) || 0);
       if (estimatedDays !== undefined) validatedData.estimatedDays = estimatedDays;
-      if (freeAbove !== undefined) validatedData.freeAbove = freeAbove ? String(parseFloat(freeAbove)) : null;
+      if (isExpress !== undefined) validatedData.isExpress = Boolean(isExpress);
       if (isActive !== undefined) validatedData.isActive = Boolean(isActive);
       
       const option = await storage.updateShippingOption(req.params.id, validatedData);
@@ -1482,7 +1504,7 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
   // Create Stripe Checkout Session - uses server-side pricing for security
   app.post("/api/stripe/create-checkout-session", async (req, res) => {
     try {
-      const { items, customerEmail, shippingAddress } = req.body;
+      const { items, customerEmail, shippingAddress, shippingCost, shippingOptionName, discountAmount } = req.body;
       
       if (!items || items.length === 0) {
         return res.status(400).json({ error: "Keine Artikel im Warenkorb" });
@@ -1520,10 +1542,27 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
         };
       }));
 
+      // Add shipping as a line item if applicable
+      const parsedShippingCost = parseFloat(shippingCost) || 0;
+      if (parsedShippingCost > 0) {
+        lineItems.push({
+          price_data: {
+            currency: 'eur',
+            product_data: {
+              name: shippingOptionName || 'Versand',
+              description: 'Versandkosten',
+            },
+            unit_amount: Math.round(parsedShippingCost * 100),
+          },
+          quantity: 1,
+        });
+      }
+
       // Create order in database first
-      const totalAmount = lineItems.reduce((sum, item) => 
+      const productTotal = lineItems.reduce((sum, item) => 
         sum + (item.price_data.unit_amount * item.quantity) / 100, 0
       );
+      const totalAmount = productTotal - (discountAmount || 0);
       
       const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
       const order = await storage.createOrder({
@@ -1535,6 +1574,18 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
         userId: req.session.userId || null,
       });
 
+      // Create discount coupon if applicable
+      let discounts: any[] = [];
+      if (discountAmount && discountAmount > 0) {
+        const coupon = await stripe.coupons.create({
+          amount_off: Math.round(discountAmount * 100),
+          currency: 'eur',
+          duration: 'once',
+          name: 'Rabatt',
+        });
+        discounts = [{ coupon: coupon.id }];
+      }
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: lineItems,
@@ -1542,9 +1593,11 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
         success_url: `${baseUrl}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/checkout-cancel`,
         customer_email: customerEmail,
+        discounts: discounts.length > 0 ? discounts : undefined,
         metadata: {
           orderId: order.id,
           orderNumber: order.orderNumber,
+          shippingCost: parsedShippingCost.toString(),
         },
         shipping_address_collection: {
           allowed_countries: ['DE', 'AT', 'CH'],
@@ -1569,38 +1622,68 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
         expand: ['line_items'],
       });
       
+      console.log('Stripe session retrieved:', session.id, 'payment_status:', session.payment_status, 'orderId:', session.metadata?.orderId);
+      
       // If payment successful, update order and send email
       if (session.payment_status === 'paid' && session.metadata?.orderId) {
         const order = await storage.getOrder(session.metadata.orderId);
-        if (order && order.paymentStatus !== 'completed') {
-          // Update order status
-          await storage.updateOrder(order.id, {
-            paymentStatus: 'completed',
-            status: 'processing',
-          });
-          
-          // Send confirmation email
-          try {
-            const { sendOrderConfirmationEmail } = await import('./email');
-            const emailItems = session.line_items?.data.map((item: any) => ({
-              name: item.description || 'Produkt',
-              quantity: item.quantity || 1,
-              price: (item.amount_total || 0) / 100,
-            })) || [];
-            
-            await sendOrderConfirmationEmail({
-              orderNumber: order.orderNumber,
-              customerEmail: session.customer_email || order.customerEmail || '',
-              customerName: order.customerName || 'Kunde',
-              items: emailItems,
-              totalAmount: (session.amount_total || 0) / 100,
-              shippingCost: 0,
-              shippingAddress: order.shippingAddressData || {},
-              paymentMethod: 'card',
+        console.log('Order found:', order?.id, 'current paymentStatus:', order?.paymentStatus);
+        
+        // Always try to send email for paid orders (use flag in order to track if sent)
+        if (order) {
+          // Update order status if not already completed
+          if (order.paymentStatus !== 'completed') {
+            await storage.updateOrder(order.id, {
+              paymentStatus: 'completed',
+              status: 'processing',
             });
-            console.log('Order confirmation email sent for Stripe order:', order.orderNumber);
-          } catch (emailError) {
-            console.error('Failed to send order confirmation email:', emailError);
+          }
+          
+          // Check if email was already sent (use notes field as flag)
+          const emailSent = order.notes?.includes('EMAIL_SENT');
+          
+          if (!emailSent) {
+            // Send confirmation email
+            try {
+              const { sendOrderConfirmationEmail } = await import('./email');
+              const emailItems = session.line_items?.data.map((item: any) => ({
+                name: item.description || 'Produkt',
+                quantity: item.quantity || 1,
+                price: (item.amount_total || 0) / 100,
+              })) || [];
+              
+              const shippingAddr = typeof order.shippingAddressData === 'object' && order.shippingAddressData 
+                ? order.shippingAddressData as Record<string, string>
+                : { street: '', city: '', postalCode: '' };
+              
+              const emailResult = await sendOrderConfirmationEmail({
+                orderNumber: order.orderNumber,
+                customerEmail: session.customer_email || order.customerEmail || '',
+                customerName: order.customerName || shippingAddr.name || 'Kunde',
+                items: emailItems,
+                totalAmount: (session.amount_total || 0) / 100,
+                shippingCost: 0,
+                shippingAddress: {
+                  street: shippingAddr.street || shippingAddr.line1 || '',
+                  city: shippingAddr.city || '',
+                  postalCode: shippingAddr.postalCode || shippingAddr.postal_code || '',
+                  country: shippingAddr.country || 'Deutschland',
+                },
+                paymentMethod: 'card',
+              });
+              
+              if (emailResult) {
+                // Mark email as sent
+                await storage.updateOrder(order.id, {
+                  notes: (order.notes || '') + ' EMAIL_SENT',
+                });
+                console.log('Order confirmation email sent for Stripe order:', order.orderNumber);
+              }
+            } catch (emailError) {
+              console.error('Failed to send order confirmation email:', emailError);
+            }
+          } else {
+            console.log('Email already sent for order:', order.orderNumber);
           }
         }
       }

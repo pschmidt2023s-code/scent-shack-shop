@@ -62,6 +62,15 @@ export default function Checkout() {
     queryKey: ['/api/shipping-options'],
   });
 
+  const { data: bankDetails } = useQuery<{
+    recipient: string;
+    iban: string;
+    bic: string;
+    bankName: string;
+  }>({
+    queryKey: ['/api/settings/bank'],
+  });
+
   const [checkoutData] = useState<CheckoutData>(() => location.state?.checkoutData || {
     items: items,
     totalAmount: total,
@@ -165,6 +174,9 @@ export default function Checkout() {
             items: stripeItems,
             customerEmail: user?.email || guestEmail,
             shippingAddress: customerData,
+            shippingCost: actualShippingCost,
+            shippingOptionName: selectedShippingOption?.name || 'Versand',
+            discountAmount: totalDiscountAmount,
           }),
         });
         
@@ -252,11 +264,11 @@ export default function Checkout() {
                     Bitte überweisen Sie den Betrag an folgendes Konto:
                   </p>
                   <div className="space-y-2 font-mono text-sm">
-                    <p><span className="text-muted-foreground">Empfänger:</span> ALDENAIR GmbH</p>
-                    <p><span className="text-muted-foreground">IBAN:</span> DE89 3704 0044 0532 0130 00</p>
-                    <p><span className="text-muted-foreground">BIC:</span> COBADEFFXXX</p>
+                    <p><span className="text-muted-foreground">Empfänger:</span> {bankDetails?.recipient || 'ALDENAIR'}</p>
+                    <p><span className="text-muted-foreground">IBAN:</span> {bankDetails?.iban || 'Wird geladen...'}</p>
+                    {bankDetails?.bic && <p><span className="text-muted-foreground">BIC:</span> {bankDetails.bic}</p>}
                     <p><span className="text-muted-foreground">Verwendungszweck:</span> {orderNumber}</p>
-                    <p><span className="text-muted-foreground">Betrag:</span> {orderTotal.toFixed(2)} €</p>
+                    <p><span className="text-muted-foreground">Betrag:</span> {orderTotal.toFixed(2)} EUR</p>
                   </div>
                   <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
                     Wichtig: Bitte geben Sie unbedingt die Bestellnummer als Verwendungszweck an!
