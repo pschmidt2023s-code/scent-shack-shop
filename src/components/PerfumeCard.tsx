@@ -1,9 +1,10 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Heart } from 'lucide-react';
+import { Heart, ShoppingCart } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useCart } from '@/contexts/CartContext';
 import { Perfume } from '@/types/perfume';
 import { Link } from 'react-router-dom';
 
@@ -14,6 +15,7 @@ interface PerfumeCardProps {
 export function PerfumeCard({ perfume }: PerfumeCardProps) {
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
   const { discount, roleLabel, loading, isNewsletterSubscriber } = useUserRole();
+  const { addToCart } = useCart();
 
   // Use first variant for display
   const displayVariant = perfume.variants[0];
@@ -36,6 +38,12 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
 
   const handleProductClick = () => {
     console.log('Product clicked:', perfume.name);
+  };
+
+  const handleQuickAdd = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(perfume, displayVariant);
   };
 
   // Display collection name based on category
@@ -115,13 +123,24 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
               <Badge variant="secondary">{perfume.category}</Badge>
             </div>
 
-            <Button 
-              className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-              variant="outline"
-              aria-label={`${collectionName} Kollektion durchstöbern`}
-            >
-              Kollektion durchstöbern
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                className="flex-1"
+                variant="outline"
+                aria-label={`${collectionName} Produkt ansehen`}
+                data-testid={`btn-view-product-${perfume.id}`}
+              >
+                Produkt ansehen
+              </Button>
+              <Button 
+                size="icon"
+                onClick={handleQuickAdd}
+                aria-label={`${collectionName} in den Warenkorb`}
+                data-testid={`btn-quick-add-${perfume.id}`}
+              >
+                <ShoppingCart className="w-4 h-4" />
+              </Button>
+            </div>
           </Link>
         </div>
       </CardContent>

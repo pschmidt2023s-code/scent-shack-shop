@@ -28,7 +28,9 @@ import {
   Gift,
   MessageSquare,
   Percent,
-  UserCheck
+  UserCheck,
+  Menu,
+  X
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -91,6 +93,7 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -459,32 +462,58 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen dark bg-slate-950 text-slate-100" style={{ colorScheme: 'dark' }}>
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden" 
+          onClick={() => setMobileMenuOpen(false)} 
+        />
+      )}
+
       <div className="flex">
-        <aside className={`${sidebarCollapsed ? 'w-16' : 'w-64'} min-h-screen bg-slate-900 border-r border-slate-800 transition-all duration-300 flex flex-col`}>
+        <aside className={`
+          fixed md:relative z-50 
+          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
+          md:translate-x-0
+          ${sidebarCollapsed ? 'md:w-16' : 'md:w-64'} 
+          w-64 min-h-screen bg-slate-900 border-r border-slate-800 transition-all duration-300 flex flex-col
+        `}>
           <div className="p-4 border-b border-slate-800">
             <div className="flex items-center justify-between">
-              {!sidebarCollapsed && (
+              {(!sidebarCollapsed || mobileMenuOpen) && (
                 <div>
                   <h1 className="font-bold text-lg text-white">ALDENAIR</h1>
                   <p className="text-xs text-slate-400">Admin Panel</p>
                 </div>
               )}
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                className="text-slate-400 hover:text-white hover:bg-slate-800"
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              >
-                {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="text-slate-400 hover:text-white hover:bg-slate-800 md:hidden"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="text-slate-400 hover:text-white hover:bg-slate-800 hidden md:flex"
+                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                >
+                  {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                </Button>
+              </div>
             </div>
           </div>
 
-          <nav className="flex-1 p-2 space-y-1">
+          <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
             {menuItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setMobileMenuOpen(false);
+                }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === item.id 
                     ? 'bg-blue-600 text-white' 
@@ -493,7 +522,7 @@ export default function Admin() {
                 data-testid={`nav-${item.id}`}
               >
                 <item.icon className="w-5 h-5 flex-shrink-0" />
-                {!sidebarCollapsed && <span>{item.label}</span>}
+                {(!sidebarCollapsed || mobileMenuOpen) && <span>{item.label}</span>}
               </button>
             ))}
           </nav>
@@ -504,38 +533,47 @@ export default function Admin() {
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
             >
               <Settings className="w-5 h-5" />
-              {!sidebarCollapsed && <span>Zur Website</span>}
+              {(!sidebarCollapsed || mobileMenuOpen) && <span>Zur Website</span>}
             </Link>
             <button
               onClick={signOut}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors"
             >
               <LogOut className="w-5 h-5" />
-              {!sidebarCollapsed && <span>Abmelden</span>}
+              {(!sidebarCollapsed || mobileMenuOpen) && <span>Abmelden</span>}
             </button>
           </div>
         </aside>
 
-        <main className="flex-1 min-h-screen">
-          <header className="bg-slate-900/50 border-b border-slate-800 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-xl font-bold text-white">
-                  {menuItems.find(m => m.id === activeTab)?.label || 'Dashboard'}
-                </h1>
-                <p className="text-sm text-slate-400">
-                  Willkommen zuruck, {user.fullName || user.email?.split('@')[0]}
-                </p>
+        <main className="flex-1 min-h-screen w-full">
+          <header className="bg-slate-900/50 border-b border-slate-800 px-4 md:px-6 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="text-slate-400 hover:text-white hover:bg-slate-800 md:hidden"
+                  onClick={() => setMobileMenuOpen(true)}
+                  data-testid="btn-mobile-menu"
+                >
+                  <Menu className="w-5 h-5" />
+                </Button>
+                <div>
+                  <h1 className="text-lg md:text-xl font-bold text-white">
+                    {menuItems.find(m => m.id === activeTab)?.label || 'Dashboard'}
+                  </h1>
+                  <p className="text-xs md:text-sm text-slate-400 hidden sm:block">
+                    Willkommen zuruck, {user.fullName || user.email?.split('@')[0]}
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30">
-                  Online
-                </Badge>
-              </div>
+              <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30">
+                Online
+              </Badge>
             </div>
           </header>
 
-          <div className="p-6">
+          <div className="p-4 md:p-6">
             {renderContent()}
           </div>
         </main>

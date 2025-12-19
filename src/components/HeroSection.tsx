@@ -45,16 +45,6 @@ export function HeroSection() {
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
               </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="border-slate-600 text-white hover:bg-slate-800 text-lg px-8 py-6"
-                asChild
-              >
-                <Link to="/shop?category=proben" data-testid="link-samples-cta">
-                  Proben ab 4,99 EUR
-                </Link>
-              </Button>
             </div>
 
             <div className="flex flex-wrap gap-6 pt-4">

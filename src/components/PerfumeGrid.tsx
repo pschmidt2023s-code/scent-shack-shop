@@ -32,9 +32,11 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
         const transformedPerfumes: Perfume[] = products
           .filter((p: any) => {
             const isTestkit = p.category === 'Testerkits';
+            const isAutoParfum = p.category === 'Auto Perfumes';
             const isSparkit = p.name?.toLowerCase().includes('sparkit') || 
-                            p.name?.toLowerCase().includes('proben');
-            return p.variants && p.variants.length > 0 && !isTestkit && !isSparkit;
+                            p.name?.toLowerCase().includes('proben') ||
+                            p.name?.toLowerCase().includes('probe');
+            return p.variants && p.variants.length > 0 && !isTestkit && !isSparkit && !isAutoParfum;
           })
           .map((p: any) => ({
             id: p.id,
@@ -137,7 +139,7 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="space-y-4">
                 <Skeleton className="aspect-square rounded-xl" />
@@ -147,7 +149,7 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
             ))}
           </div>
         ) : sortedPerfumes.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
             {sortedPerfumes.map((perfume) => (
               <PerfumeCard key={perfume.id} perfume={perfume} />
             ))}
