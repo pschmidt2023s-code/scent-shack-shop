@@ -565,3 +565,61 @@ export type ShippingOption = typeof shippingOptions.$inferSelect;
 export type InsertShippingOption = z.infer<typeof insertShippingOptionSchema>;
 export type AbandonedCart = typeof abandonedCarts.$inferSelect;
 export type InsertAbandonedCart = z.infer<typeof insertAbandonedCartSchema>;
+
+// Update schemas with strict field allowlists for security
+export const updateProductSchema = z.object({
+  name: z.string().min(1).optional(),
+  brand: z.string().optional(),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  gender: z.string().optional(),
+  image: z.string().optional(),
+  size: z.string().optional(),
+  scentNotes: z.array(z.string()).optional(),
+  topNotes: z.array(z.string()).optional(),
+  middleNotes: z.array(z.string()).optional(),
+  baseNotes: z.array(z.string()).optional(),
+  ingredients: z.array(z.string()).optional(),
+  inspiredBy: z.string().optional(),
+  aiDescription: z.string().optional(),
+  seasons: z.array(z.string()).optional(),
+  occasions: z.array(z.string()).optional(),
+  isActive: z.boolean().optional(),
+}).strict();
+
+export const updateProductVariantSchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().optional(),
+  size: z.string().optional(),
+  price: z.string().regex(/^\d+(\.\d{1,2})?$/, "Ungültiger Preis").optional(),
+  stock: z.number().int().min(0).optional(),
+  inStock: z.boolean().optional(),
+  inspiredByFragrance: z.string().optional(),
+  isActive: z.boolean().optional(),
+}).strict();
+
+export const updateOrderSchema = z.object({
+  status: z.enum(["pending", "processing", "shipped", "completed", "cancelled"]).optional(),
+  trackingNumber: z.string().optional(),
+  adminNotes: z.string().optional(),
+  paymentStatus: z.enum(["pending", "paid", "refunded", "failed"]).optional(),
+}).strict();
+
+export const updateUserSchema = z.object({
+  fullName: z.string().optional(),
+  phone: z.string().optional(),
+  avatarUrl: z.string().url().optional().nullable(),
+  iban: z.string().optional(),
+  bic: z.string().optional(),
+  accountHolder: z.string().optional(),
+  bankName: z.string().optional(),
+}).strict();
+
+export const updateUserRoleSchema = z.object({
+  role: z.enum(["customer", "partner", "admin"]),
+}).strict();
+
+export type UpdateProduct = z.infer<typeof updateProductSchema>;
+export type UpdateProductVariant = z.infer<typeof updateProductVariantSchema>;
+export type UpdateOrder = z.infer<typeof updateOrderSchema>;
+export type UpdateUser = z.infer<typeof updateUserSchema>;

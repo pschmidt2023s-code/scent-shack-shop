@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { eq, and, desc, ilike, or } from "drizzle-orm";
+import { eq, and, desc, ilike, or, inArray } from "drizzle-orm";
 import * as schema from "../shared/schema";
 import type {
   User, InsertUser,
@@ -136,34 +136,59 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProductsWithVariants(filters?: { category?: string; search?: string }): Promise<(Product & { variants: ProductVariant[] })[]> {
+    // When searching, first check variants to find additional products
+    let additionalProductIds: string[] = [];
+    if (filters?.search) {
+      const matchingVariants = await db.select()
+        .from(schema.productVariants)
+        .where(ilike(schema.productVariants.name, `%${filters.search}%`));
+      additionalProductIds = [...new Set(matchingVariants.map(v => v.productId).filter((id): id is string => id !== null))];
+    }
+    
+    // Get products matching filters
     let products = await this.getProducts(filters);
     
-    // If searching, also find products that have matching variants
-    if (filters?.search) {
-      const matchingVariants = await db.select().from(schema.productVariants)
-        .where(ilike(schema.productVariants.name, `%${filters.search}%`));
-      
-      const productIdsFromVariants = [...new Set(matchingVariants.map(v => v.productId).filter((id): id is string => id !== null))];
-      
-      // Get additional products that weren't already found
+    // Add products found via variant search
+    if (additionalProductIds.length > 0) {
       const existingProductIds = new Set(products.map(p => p.id));
-      const additionalProductIds = productIdsFromVariants.filter(id => !existingProductIds.has(id));
+      const newProductIds = additionalProductIds.filter(id => !existingProductIds.has(id));
       
-      if (additionalProductIds.length > 0) {
-        const additionalProducts = await Promise.all(
-          additionalProductIds.map(id => this.getProduct(id))
-        );
-        products = [...products, ...additionalProducts.filter((p): p is Product => p !== undefined && p.isActive === true)];
+      if (newProductIds.length > 0) {
+        const additionalProducts = await db.select()
+          .from(schema.products)
+          .where(and(
+            inArray(schema.products.id, newProductIds),
+            eq(schema.products.isActive, true)
+          ));
+        products = [...products, ...additionalProducts];
       }
     }
     
-    const productsWithVariants = await Promise.all(
-      products.map(async (product) => {
-        const variants = await this.getProductVariants(product.id);
-        return { ...product, variants };
-      })
-    );
-    return productsWithVariants;
+    if (products.length === 0) return [];
+    
+    // Get all product IDs
+    const productIds = products.map(p => p.id);
+    
+    // Fetch ALL variants for these products in ONE query (fixes N+1 problem)
+    const allVariants = await db.select()
+      .from(schema.productVariants)
+      .where(inArray(schema.productVariants.productId, productIds));
+    
+    // Group variants by productId for efficient lookup
+    const variantsByProductId = new Map<string, ProductVariant[]>();
+    for (const variant of allVariants) {
+      if (variant.productId) {
+        const existing = variantsByProductId.get(variant.productId) || [];
+        existing.push(variant);
+        variantsByProductId.set(variant.productId, existing);
+      }
+    }
+    
+    // Map products with their variants using the lookup
+    return products.map(product => ({
+      ...product,
+      variants: variantsByProductId.get(product.id) || [],
+    }));
   }
 
   async createProduct(product: InsertProduct): Promise<Product> {

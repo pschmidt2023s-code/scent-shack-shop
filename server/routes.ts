@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { storage } from "./storage";
-import { insertUserSchema, insertProductSchema, insertOrderSchema, insertReviewSchema, insertPartnerSchema, insertNewsletterSchema, insertAddressSchema, insertContestEntrySchema } from "../shared/schema";
+import { insertUserSchema, insertProductSchema, insertOrderSchema, insertReviewSchema, insertPartnerSchema, insertNewsletterSchema, insertAddressSchema, insertContestEntrySchema, updateProductSchema, updateOrderSchema, updateUserRoleSchema } from "../shared/schema";
 import bcrypt from "bcryptjs";
 import OpenAI from "openai";
 
@@ -234,9 +234,13 @@ export async function registerRoutes(app: Express) {
 
   app.patch("/api/products/:id", requireAdmin, async (req, res) => {
     try {
-      const product = await storage.updateProduct(req.params.id, req.body);
+      const parsed = updateProductSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Ungültige Produktdaten", details: parsed.error.issues });
+      }
+      const product = await storage.updateProduct(req.params.id, parsed.data);
       if (!product) {
-        return res.status(404).json({ error: "Product not found" });
+        return res.status(404).json({ error: "Produkt nicht gefunden" });
       }
       res.json(product);
     } catch (error: any) {
@@ -418,9 +422,13 @@ export async function registerRoutes(app: Express) {
 
   app.patch("/api/orders/:id", requireAdmin, async (req, res) => {
     try {
-      const order = await storage.updateOrder(req.params.id, req.body);
+      const parsed = updateOrderSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Ungültige Bestellungsdaten", details: parsed.error.issues });
+      }
+      const order = await storage.updateOrder(req.params.id, parsed.data);
       if (!order) {
-        return res.status(404).json({ error: "Order not found" });
+        return res.status(404).json({ error: "Bestellung nicht gefunden" });
       }
       res.json(order);
     } catch (error: any) {
@@ -540,10 +548,13 @@ export async function registerRoutes(app: Express) {
 
   app.patch("/api/admin/users/:id", requireAdmin, async (req, res) => {
     try {
-      const { role } = req.body;
-      const user = await storage.updateUser(req.params.id, { role });
+      const parsed = updateUserRoleSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Ungültige Rollendaten", details: parsed.error.issues });
+      }
+      const user = await storage.updateUser(req.params.id, parsed.data);
       if (!user) {
-        return res.status(404).json({ error: "User not found" });
+        return res.status(404).json({ error: "Benutzer nicht gefunden" });
       }
       res.json(user);
     } catch (error: any) {
@@ -1223,23 +1234,6 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
     } catch (error: any) {
       console.error("AI description error:", error);
       res.status(500).json({ error: error.message || "KI-Beschreibung fehlgeschlagen" });
-    }
-  });
-
-  // Update product with extended fields
-  app.patch("/api/products/:id", requireAdmin, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const updateData = req.body;
-      
-      const updated = await storage.updateProduct(id, updateData);
-      if (!updated) {
-        return res.status(404).json({ error: "Produkt nicht gefunden" });
-      }
-      
-      res.json(updated);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
     }
   });
 

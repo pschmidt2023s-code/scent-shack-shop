@@ -22,26 +22,38 @@ const isProduction = process.env.NODE_ENV === "production";
 
 app.set('trust proxy', 1);
 
+// CSP is stricter in production, relaxed in development for Vite HMR
+const cspDirectives = {
+  defaultSrc: ["'self'"],
+  scriptSrc: isProduction 
+    ? ["'self'", "https://js.stripe.com", "https://www.paypal.com"]
+    : ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com", "https://www.paypal.com"],
+  styleSrc: isProduction
+    ? ["'self'", "https://fonts.googleapis.com"]
+    : ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+  fontSrc: ["'self'", "https://fonts.gstatic.com"],
+  imgSrc: ["'self'", "data:", "https:", "blob:"],
+  connectSrc: ["'self'", "https://*.replit.dev", "https://*.repl.co", "https://*.replit.app", "wss:", "https://api.stripe.com"],
+  frameSrc: ["'self'", "https://js.stripe.com", "https://www.paypal.com"],
+  objectSrc: ["'none'"],
+  baseUri: ["'self'"],
+  formAction: ["'self'"],
+  upgradeInsecureRequests: isProduction ? [] : null,
+};
+
 app.use(helmet({
   contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com", "https://www.paypal.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "https://*.replit.dev", "https://*.repl.co", "https://*.replit.app", "wss:"],
-      frameSrc: ["'self'", "https://js.stripe.com", "https://www.paypal.com"],
-      objectSrc: ["'none'"],
-      upgradeInsecureRequests: isProduction ? [] : null,
-    },
+    directives: cspDirectives,
   },
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: { policy: "cross-origin" },
   referrerPolicy: { policy: "strict-origin-when-cross-origin" },
-  hsts: isProduction ? { maxAge: 31536000, includeSubDomains: true } : false,
+  hsts: isProduction ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
   noSniff: true,
   xssFilter: true,
+  dnsPrefetchControl: { allow: false },
+  frameguard: { action: "deny" },
+  permittedCrossDomainPolicies: { permittedPolicies: "none" },
 }));
 
 const generalLimiter = rateLimit({
