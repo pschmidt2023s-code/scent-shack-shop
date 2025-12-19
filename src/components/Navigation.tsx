@@ -8,7 +8,7 @@ import { AuthModal } from './AuthModal';
 import { CartSidebar } from './CartSidebar';
 import { DarkModeToggle } from './DarkModeToggle';
 import { NotificationCenter } from './notifications/NotificationCenter';
-import { Input } from '@/components/ui/input';
+import { SearchWithSuggestions } from './SearchWithSuggestions';
 
 const Navigation = () => {
   const { user, signOut } = useAuth();
@@ -19,7 +19,6 @@ const Navigation = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -237,22 +236,7 @@ const Navigation = () => {
 
         {/* Search Overlay */}
         {showSearch && (
-          <div className="absolute top-full left-0 right-0 bg-background border-b border-border p-4 shadow-lg animate-in slide-in-from-top-2 duration-200">
-            <div className="max-w-2xl mx-auto flex gap-2">
-              <Input
-                type="search"
-                placeholder="Suche nach Düften, Marken..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1"
-                autoFocus
-                data-testid="input-search"
-              />
-              <Button onClick={() => setShowSearch(false)} variant="ghost" size="icon">
-                <X className="w-5 h-5" />
-              </Button>
-            </div>
-          </div>
+          <SearchWithSuggestions onClose={() => setShowSearch(false)} />
         )}
 
         {/* Mobile Menu */}

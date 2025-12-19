@@ -7,6 +7,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useCart } from '@/contexts/CartContext';
 import { Perfume } from '@/types/perfume';
 import { Link } from 'react-router-dom';
+import { OptimizedImage } from './OptimizedImage';
 
 interface PerfumeCardProps {
   perfume: Perfume;
@@ -62,17 +63,10 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
             onClick={handleProductClick}
             aria-label={`${collectionName} Kollektion ansehen`}
           >
-            <img
+            <OptimizedImage
               src={perfume.image}
               alt={`${collectionName} - ${perfume.brand} Parfüm Kollektion`}
-              className="w-full h-32 sm:h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-              loading="lazy"
-              decoding="async"
-              role="img"
-              style={{ 
-                backfaceVisibility: 'hidden',
-                transform: 'translateZ(0)'
-              }}
+              className="w-full h-32 sm:h-48 transition-transform duration-300 group-hover:scale-105"
             />
           </Link>
           
