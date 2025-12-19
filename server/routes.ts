@@ -327,13 +327,15 @@ export async function registerRoutes(app: Express) {
       }
       
       const discountAmount = parseFloat(req.body.discountAmount) || 0;
-      const finalAmount = Math.max(0, calculatedSubtotal - discountAmount);
+      const shippingCost = parseFloat(req.body.shippingCost) || 0;
+      const finalAmount = Math.max(0, calculatedSubtotal - discountAmount + shippingCost);
       
       const orderData = {
         orderNumber,
         partnerId,
         userId: req.session.userId || null,
         totalAmount: finalAmount.toFixed(2),
+        shippingCost: shippingCost.toFixed(2),
         currency: "EUR",
         customerName: req.body.customerName,
         customerEmail: req.body.customerEmail,
@@ -1088,6 +1090,131 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
       }
       
       res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==================== SAMPLE SETS / PROBENSETS ====================
+  
+  // Get all sample set options
+  app.get("/api/sample-sets", async (req, res) => {
+    try {
+      const sampleSets = await storage.getSampleSets();
+      res.json(sampleSets);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create custom sample set order
+  app.post("/api/sample-sets/order", async (req, res) => {
+    try {
+      const { sampleSetId, variantIds, customerEmail, shippingAddress } = req.body;
+      
+      if (!sampleSetId || !variantIds || variantIds.length === 0) {
+        return res.status(400).json({ error: "Sample Set und Varianten erforderlich" });
+      }
+
+      const sampleSet = await storage.getSampleSetById(sampleSetId);
+      if (!sampleSet) {
+        return res.status(404).json({ error: "Sample Set nicht gefunden" });
+      }
+
+      if (variantIds.length > (sampleSet.maxSamples || 5)) {
+        return res.status(400).json({ 
+          error: `Maximal ${sampleSet.maxSamples} Proben erlaubt` 
+        });
+      }
+
+      // Create order for sample set
+      const orderNumber = `SS-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+      const order = await storage.createOrder({
+        orderNumber,
+        totalAmount: sampleSet.price,
+        customerEmail,
+        shippingAddressData: shippingAddress,
+        paymentMethod: "bank_transfer",
+        notes: `Probenset: ${sampleSet.name} - ${variantIds.length} Proben`,
+        userId: req.session.userId || null,
+      });
+
+      res.json({ 
+        success: true, 
+        orderId: order.id, 
+        orderNumber: order.orderNumber,
+        sampleSet: sampleSet.name,
+        samplesCount: variantIds.length
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==================== SHIPPING OPTIONS ====================
+  
+  // Get all shipping options
+  app.get("/api/shipping-options", async (req, res) => {
+    try {
+      const options = await storage.getShippingOptions();
+      res.json(options);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==================== ABANDONED CARTS ====================
+  
+  // Save abandoned cart
+  app.post("/api/abandoned-cart", async (req, res) => {
+    try {
+      const { email, cartData, totalAmount } = req.body;
+      
+      if (!cartData || Object.keys(cartData).length === 0) {
+        return res.status(400).json({ error: "Warenkorb ist leer" });
+      }
+
+      const cart = await storage.saveAbandonedCart({
+        userId: req.session.userId || null,
+        email: email || null,
+        cartData,
+        totalAmount: totalAmount?.toString() || "0",
+      });
+
+      res.json({ success: true, cartId: cart.id });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Mark abandoned cart as recovered
+  app.post("/api/abandoned-cart/:id/recover", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.recoverAbandonedCart(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Get abandoned carts for email reminders
+  app.get("/api/admin/abandoned-carts", requireAdmin, async (req, res) => {
+    try {
+      const carts = await storage.getAbandonedCartsForReminder();
+      res.json(carts);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Send reminder email for abandoned cart
+  app.post("/api/admin/abandoned-carts/:id/send-reminder", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.markReminderSent(id);
+      // In production, this would trigger an email
+      res.json({ success: true, message: "Erinnerung wurde als gesendet markiert" });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

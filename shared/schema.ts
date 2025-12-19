@@ -285,6 +285,50 @@ export const auditLogs = pgTable("audit_logs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Sample Sets / Probensets
+export const sampleSets = pgTable("sample_sets", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  maxSamples: integer("max_samples").default(5),
+  price: numeric("price").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const sampleSetItems = pgTable("sample_set_items", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sampleSetId: uuid("sample_set_id").references(() => sampleSets.id, { onDelete: "cascade" }),
+  variantId: uuid("variant_id").references(() => productVariants.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Shipping Options
+export const shippingOptions = pgTable("shipping_options", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  price: numeric("price").notNull(),
+  estimatedDays: text("estimated_days"),
+  isExpress: boolean("is_express").default(false),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Abandoned Carts
+export const abandonedCarts = pgTable("abandoned_carts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id),
+  email: text("email"),
+  cartData: jsonb("cart_data").notNull(),
+  totalAmount: numeric("total_amount"),
+  reminderSent: boolean("reminder_sent").default(false),
+  reminderSentAt: timestamp("reminder_sent_at"),
+  recoveredAt: timestamp("recovered_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
   reviews: many(reviews),
@@ -460,6 +504,31 @@ export const insertContestEntrySchema = z.object({
   phone: z.string().optional(),
 });
 
+export const insertSampleSetSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().optional(),
+  maxSamples: z.number().optional(),
+  price: z.string(),
+  isActive: z.boolean().optional(),
+});
+
+export const insertShippingOptionSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().optional(),
+  price: z.string(),
+  estimatedDays: z.string().optional(),
+  isExpress: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const insertAbandonedCartSchema = z.object({
+  userId: z.string().uuid().optional().nullable(),
+  email: z.string().email().optional(),
+  cartData: z.any(),
+  totalAmount: z.string().optional(),
+  reminderSent: z.boolean().optional(),
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Product = typeof products.$inferSelect;
@@ -482,3 +551,9 @@ export type Address = typeof addresses.$inferSelect;
 export type InsertAddress = z.infer<typeof insertAddressSchema>;
 export type ContestEntry = typeof contestEntries.$inferSelect;
 export type InsertContestEntry = z.infer<typeof insertContestEntrySchema>;
+export type SampleSet = typeof sampleSets.$inferSelect;
+export type InsertSampleSet = z.infer<typeof insertSampleSetSchema>;
+export type ShippingOption = typeof shippingOptions.$inferSelect;
+export type InsertShippingOption = z.infer<typeof insertShippingOptionSchema>;
+export type AbandonedCart = typeof abandonedCarts.$inferSelect;
+export type InsertAbandonedCart = z.infer<typeof insertAbandonedCartSchema>;

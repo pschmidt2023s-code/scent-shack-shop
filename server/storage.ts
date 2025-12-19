@@ -13,6 +13,9 @@ import type {
   NewsletterSubscription, InsertNewsletter,
   Address, InsertAddress,
   ContestEntry, InsertContestEntry,
+  SampleSet, InsertSampleSet,
+  ShippingOption, InsertShippingOption,
+  AbandonedCart, InsertAbandonedCart,
 } from "../shared/schema";
 
 export interface IStorage {
@@ -413,6 +416,57 @@ export class DatabaseStorage implements IStorage {
     await db.delete(schema.orderItems).where(eq(schema.orderItems.orderId, id));
     await db.delete(schema.orders).where(eq(schema.orders.id, id));
     return true;
+  }
+
+  // ==================== SAMPLE SETS ====================
+  async getSampleSets(): Promise<SampleSet[]> {
+    return db.select().from(schema.sampleSets)
+      .where(eq(schema.sampleSets.isActive, true))
+      .orderBy(schema.sampleSets.price);
+  }
+
+  async getSampleSetById(id: string): Promise<SampleSet | undefined> {
+    const [sampleSet] = await db.select().from(schema.sampleSets)
+      .where(eq(schema.sampleSets.id, id));
+    return sampleSet;
+  }
+
+  // ==================== SHIPPING OPTIONS ====================
+  async getShippingOptions(): Promise<ShippingOption[]> {
+    return db.select().from(schema.shippingOptions)
+      .where(eq(schema.shippingOptions.isActive, true))
+      .orderBy(schema.shippingOptions.price);
+  }
+
+  // ==================== ABANDONED CARTS ====================
+  async saveAbandonedCart(data: InsertAbandonedCart): Promise<AbandonedCart> {
+    const [cart] = await db.insert(schema.abandonedCarts)
+      .values(data)
+      .returning();
+    return cart;
+  }
+
+  async recoverAbandonedCart(id: string): Promise<void> {
+    await db.update(schema.abandonedCarts)
+      .set({ recoveredAt: new Date(), updatedAt: new Date() })
+      .where(eq(schema.abandonedCarts.id, id));
+  }
+
+  async getAbandonedCartsForReminder(): Promise<AbandonedCart[]> {
+    return db.select().from(schema.abandonedCarts)
+      .where(
+        and(
+          eq(schema.abandonedCarts.reminderSent, false),
+          eq(schema.abandonedCarts.recoveredAt, null as any)
+        )
+      )
+      .orderBy(desc(schema.abandonedCarts.createdAt));
+  }
+
+  async markReminderSent(id: string): Promise<void> {
+    await db.update(schema.abandonedCarts)
+      .set({ reminderSent: true, reminderSentAt: new Date(), updatedAt: new Date() })
+      .where(eq(schema.abandonedCarts.id, id));
   }
 }
 

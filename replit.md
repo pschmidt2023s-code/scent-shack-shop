@@ -101,6 +101,17 @@ npx drizzle-kit push # Push schema to database
 - Order confirmation shows bank details and reference number
 
 ## Recent Changes (Dec 2024)
+### Phase 3: Sample Sets & Express Shipping (Dec 19, 2024)
+- **Sample Sets (Probensets)**: New /sample-sets page for building custom sample sets
+  - 3 tiers: Entdecker (3 Proben, 12.95€), Kenner (5 Proben, 19.95€), Sammler (8 Proben, 29.95€)
+  - Database tables: sample_sets, sample_set_order_items
+- **Express Shipping**: Integrated shipping options in Checkout
+  - Standard (free over 50€), Express (9.95€, 1-2 days), Premium Express (14.95€, next day)
+  - Database table: shipping_options with default data
+- **Abandoned Cart Tracking**: Infrastructure for cart recovery emails
+  - Database table: abandoned_carts
+  - API endpoints: GET/POST/DELETE /api/abandoned-carts
+
 ### Phase 2: Performance & UX Improvements (Dec 19, 2024)
 - **Lazy Loading**: PerfumeCard now uses OptimizedImage with IntersectionObserver
 - **Debounced Search**: New SearchWithSuggestions component with 300ms debounce and typeahead

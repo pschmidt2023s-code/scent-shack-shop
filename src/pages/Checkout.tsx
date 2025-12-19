@@ -10,7 +10,17 @@ import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { ArrowLeft, CreditCard, Building2, Banknote, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CreditCard, Building2, CheckCircle, Truck, Zap } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+
+interface ShippingOption {
+  id: string;
+  name: string;
+  description: string | null;
+  price: string;
+  estimatedDays: string | null;
+  isExpress: boolean;
+}
 
 interface CheckoutData {
   items: any[];
@@ -29,6 +39,7 @@ export default function Checkout() {
   
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'bank' | 'card'>('bank');
+  const [selectedShipping, setSelectedShipping] = useState<string>('');
   const [guestEmail, setGuestEmail] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [orderSuccess, setOrderSuccess] = useState(false);
@@ -45,6 +56,10 @@ export default function Checkout() {
     country: 'Deutschland'
   });
 
+  const { data: shippingOptions = [] } = useQuery<ShippingOption[]>({
+    queryKey: ['/api/shipping-options'],
+  });
+
   const checkoutData: CheckoutData = location.state?.checkoutData || {
     items: items,
     totalAmount: total,
@@ -52,6 +67,21 @@ export default function Checkout() {
     discountAmount: 0,
     finalAmount: total
   };
+
+  const selectedShippingOption = shippingOptions.find(opt => opt.id === selectedShipping);
+  const shippingCost = selectedShippingOption ? parseFloat(selectedShippingOption.price) : 0;
+  const freeShippingThreshold = 50;
+  const qualifiesForFreeStandard = checkoutData.totalAmount >= freeShippingThreshold;
+  const finalTotal = checkoutData.finalAmount + (qualifiesForFreeStandard && !selectedShippingOption?.isExpress ? 0 : shippingCost);
+
+  useEffect(() => {
+    if (shippingOptions.length > 0 && !selectedShipping) {
+      const standardOption = shippingOptions.find(opt => !opt.isExpress);
+      if (standardOption) {
+        setSelectedShipping(standardOption.id);
+      }
+    }
+  }, [shippingOptions, selectedShipping]);
 
   useEffect(() => {
     if (checkoutData.items.length === 0 && !orderSuccess) {
@@ -105,6 +135,8 @@ export default function Checkout() {
         quantity: item.quantity,
       }));
 
+      const actualShippingCost = qualifiesForFreeStandard && !selectedShippingOption?.isExpress ? 0 : shippingCost;
+      
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -119,6 +151,8 @@ export default function Checkout() {
           paymentMethod: paymentMethod,
           referralCode: referralCode || undefined,
           discountAmount: checkoutData.discountAmount || 0,
+          shippingOptionId: selectedShipping || undefined,
+          shippingCost: actualShippingCost,
         }),
       });
 
@@ -361,6 +395,60 @@ export default function Checkout() {
                 )}
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Truck className="w-5 h-5" />
+                  Versandoption
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RadioGroup value={selectedShipping} onValueChange={setSelectedShipping}>
+                  {shippingOptions.map((option) => {
+                    const isStandard = !option.isExpress;
+                    const isFree = isStandard && qualifiesForFreeStandard;
+                    return (
+                      <div 
+                        key={option.id} 
+                        className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover-elevate"
+                      >
+                        <RadioGroupItem value={option.id} id={`shipping-${option.id}`} />
+                        <Label htmlFor={`shipping-${option.id}`} className="flex items-center cursor-pointer w-full">
+                          {option.isExpress ? (
+                            <Zap className="mr-3 h-5 w-5 text-amber-500" />
+                          ) : (
+                            <Truck className="mr-3 h-5 w-5" />
+                          )}
+                          <div className="flex-1">
+                            <span className="font-medium">{option.name}</span>
+                            <p className="text-xs text-muted-foreground">{option.estimatedDays}</p>
+                          </div>
+                          <div className="text-right">
+                            {isFree ? (
+                              <span className="text-green-600 dark:text-green-400 font-medium">Kostenlos</span>
+                            ) : (
+                              <span className="font-medium">{parseFloat(option.price).toFixed(2)} €</span>
+                            )}
+                            {option.isExpress && (
+                              <Badge variant="secondary" className="ml-2">Express</Badge>
+                            )}
+                          </div>
+                        </Label>
+                      </div>
+                    );
+                  })}
+                </RadioGroup>
+                
+                {!qualifiesForFreeStandard && (
+                  <div className="mt-4 p-3 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      Noch {(freeShippingThreshold - checkoutData.totalAmount).toFixed(2)} € bis zum kostenlosen Standardversand
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           <div>
@@ -392,15 +480,21 @@ export default function Checkout() {
                   </div>
                   
                   <div className="flex justify-between text-sm">
-                    <span>Versand</span>
-                    <span className="text-green-600 dark:text-green-400">Kostenlos</span>
+                    <span>
+                      Versand {selectedShippingOption ? `(${selectedShippingOption.name})` : ''}
+                    </span>
+                    {qualifiesForFreeStandard && !selectedShippingOption?.isExpress ? (
+                      <span className="text-green-600 dark:text-green-400">Kostenlos</span>
+                    ) : (
+                      <span>{shippingCost.toFixed(2)} €</span>
+                    )}
                   </div>
 
                   <Separator />
 
                   <div className="flex justify-between text-lg font-bold">
                     <span>Gesamt</span>
-                    <span>{checkoutData.finalAmount.toFixed(2)} €</span>
+                    <span>{finalTotal.toFixed(2)} €</span>
                   </div>
                 </div>
 
