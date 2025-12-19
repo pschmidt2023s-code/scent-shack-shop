@@ -554,3 +554,119 @@
     }
   }
 }
+
+/* ========================================
+   ADMIN DASHBOARD THEME
+   Professional dark theme for back-office
+   ======================================== */
+
+.admin-theme {
+  --background: 222 47% 11%;
+  --foreground: 210 40% 98%;
+
+  --card: 217 33% 17%;
+  --card-foreground: 210 40% 98%;
+
+  --popover: 217 33% 17%;
+  --popover-foreground: 210 40% 98%;
+
+  --primary: 210 100% 50%;
+  --primary-foreground: 210 40% 98%;
+
+  --secondary: 217 33% 22%;
+  --secondary-foreground: 210 40% 98%;
+
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+
+  --accent: 210 100% 50%;
+  --accent-foreground: 210 40% 98%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 217 33% 22%;
+  --input: 217 33% 22%;
+  --ring: 210 100% 50%;
+
+  --radius: 0.5rem;
+
+  --sidebar-background: 222 47% 8%;
+  --sidebar-foreground: 210 40% 98%;
+  --sidebar-primary: 210 100% 50%;
+  --sidebar-primary-foreground: 210 40% 98%;
+  --sidebar-accent: 217 33% 17%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-border: 217 33% 17%;
+  --sidebar-ring: 210 100% 50%;
+
+  --admin-success: 142 76% 36%;
+  --admin-warning: 38 92% 50%;
+  --admin-info: 199 89% 48%;
+  --admin-pending: 38 92% 50%;
+}
+
+.admin-theme .admin-stat-card {
+  background: hsl(var(--card) / 0.5);
+  border-color: hsl(var(--border) / 0.5);
+  backdrop-filter: blur(8px);
+}
+
+.admin-theme .admin-header {
+  background: hsl(var(--background) / 0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid hsl(var(--border) / 0.5);
+}
+
+.admin-theme .admin-sidebar {
+  background: hsl(var(--sidebar-background));
+  border-right: 1px solid hsl(var(--sidebar-border));
+}
+
+.admin-theme .admin-table-header {
+  background: hsl(var(--muted) / 0.3);
+}
+
+.admin-theme .admin-badge-success {
+  @apply bg-green-500/20 text-green-400 border-green-500/30;
+}
+
+.admin-theme .admin-badge-warning {
+  @apply bg-amber-500/20 text-amber-400 border-amber-500/30;
+}
+
+.admin-theme .admin-badge-error {
+  @apply bg-red-500/20 text-red-400 border-red-500/30;
+}
+
+.admin-theme .admin-badge-info {
+  @apply bg-blue-500/20 text-blue-400 border-blue-500/30;
+}
+
+.admin-theme .admin-badge-pending {
+  @apply bg-orange-500/20 text-orange-400 border-orange-500/30;
+}
+
+.admin-theme .admin-icon-success {
+  @apply text-green-400;
+}
+
+.admin-theme .admin-icon-warning {
+  @apply text-amber-400;
+}
+
+.admin-theme .admin-icon-error {
+  @apply text-red-400;
+}
+
+.admin-theme .admin-icon-info {
+  @apply text-blue-400;
+}
+
+.admin-theme .admin-kpi-up {
+  @apply text-green-400;
+}
+
+.admin-theme .admin-kpi-down {
+  @apply text-red-400;
+}

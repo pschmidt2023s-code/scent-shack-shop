@@ -918,10 +918,12 @@ export default function Admin() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Lade Admin Dashboard...</p>
+      <div className="admin-theme">
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="text-center">
+            <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Lade Admin Dashboard...</p>
+          </div>
         </div>
       </div>
     );
@@ -929,38 +931,42 @@ export default function Admin() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <User className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-xl font-bold mb-2">Anmeldung erforderlich</h2>
-            <p className="text-muted-foreground mb-6">
-              Bitte melden Sie sich an, um auf das Admin Dashboard zuzugreifen.
-            </p>
-            <Button asChild className="w-full" data-testid="btn-login-redirect">
-              <Link to="/">Zur Startseite</Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="admin-theme">
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+          <Card className="w-full max-w-md">
+            <CardContent className="pt-6 text-center">
+              <User className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+              <h2 className="text-xl font-bold mb-2">Anmeldung erforderlich</h2>
+              <p className="text-muted-foreground mb-6">
+                Bitte melden Sie sich an, um auf das Admin Dashboard zuzugreifen.
+              </p>
+              <Button asChild className="w-full" data-testid="btn-login-redirect">
+                <Link to="/">Zur Startseite</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   if (user.role !== 'admin') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <Settings className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-xl font-bold mb-2">Zugriff verweigert</h2>
-            <p className="text-muted-foreground mb-6">
-              Sie haben keine Berechtigung für das Admin Dashboard.
-            </p>
-            <Button asChild className="w-full" data-testid="btn-access-denied-redirect">
-              <Link to="/">Zur Startseite</Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="admin-theme">
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+          <Card className="w-full max-w-md">
+            <CardContent className="pt-6 text-center">
+              <Settings className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+              <h2 className="text-xl font-bold mb-2">Zugriff verweigert</h2>
+              <p className="text-muted-foreground mb-6">
+                Sie haben keine Berechtigung für das Admin Dashboard.
+              </p>
+              <Button asChild className="w-full" data-testid="btn-access-denied-redirect">
+                <Link to="/">Zur Startseite</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -1038,8 +1044,9 @@ export default function Admin() {
   } as React.CSSProperties;
 
   return (
-    <SidebarProvider style={sidebarStyle}>
-      <div className="flex min-h-screen w-full">
+    <div className="admin-theme">
+      <SidebarProvider style={sidebarStyle}>
+        <div className="flex min-h-screen w-full bg-background text-foreground">
         <div className="hidden lg:block">
           <AdminSidebarNav activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
@@ -1107,6 +1114,7 @@ export default function Admin() {
           </main>
         </div>
       </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </div>
   );
 }
