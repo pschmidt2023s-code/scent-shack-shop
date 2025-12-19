@@ -27,20 +27,9 @@ export function TouchOptimizations() {
         -webkit-touch-callout: none;
       }
       
-      /* Prevent scale/zoom effects on tap */
-      button, a, [role="button"] {
-        transform: scale(1) !important;
-        transition: none !important;
-      }
       
-      /* Remove active/focus visual states on mobile */
+      /* Mobile touch target sizing for accessibility */
       @media (hover: none) and (pointer: coarse) {
-        button:active, a:active, [role="button"]:active {
-          transform: none !important;
-          opacity: 1 !important;
-          background-color: inherit !important;
-        }
-        
         button, a, [role="button"] {
           min-height: 44px;
           min-width: 44px;

@@ -1,31 +1,23 @@
-import { useEffect } from 'react';
 import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useToast } from './ui/use-toast';
 
 export function GlobalGestures() {
-  const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
 
-  // Disable gestures on admin pages to prevent navigation interference
-  const isAdminPage = location.pathname.startsWith('/admin');
+  // Disable all gestures on admin, checkout, and product pages to prevent navigation interference
+  const isDisabledPage = location.pathname.startsWith('/admin') || 
+                         location.pathname.startsWith('/checkout') ||
+                         location.pathname.startsWith('/product') ||
+                         location.pathname.startsWith('/cart');
 
   const { isPulling, pullDistance } = useAdvancedGestures({
-    onSwipeLeft: () => {
-      if (isAdminPage) return; // Disable on admin pages
-      console.log('Swipe Left detected');
-    },
-    onSwipeRight: () => {
-      if (isAdminPage) return; // Disable on admin pages
-      console.log('Swipe Right detected');
-      // Optional: Navigate back on swipe right
-      if (location.pathname !== '/') {
-        navigate(-1);
-      }
-    },
-    onPullToRefresh: async () => {
-      if (isAdminPage) return; // Disable on admin pages
+    // Swipe navigation completely disabled - it was causing issues where tapping 
+    // buttons would accidentally trigger back navigation on mobile devices
+    onSwipeLeft: undefined,
+    onSwipeRight: undefined,
+    onPullToRefresh: isDisabledPage ? undefined : async () => {
       console.log('Pull to refresh triggered');
       toast({
         title: "Aktualisiert",
@@ -34,16 +26,13 @@ export function GlobalGestures() {
       await new Promise(resolve => setTimeout(resolve, 500));
       window.location.reload();
     },
-    onLongPress: () => {
-      if (isAdminPage) return; // Disable on admin pages
-      console.log('Long press detected');
-    },
-    enableHaptic: !isAdminPage, // Disable haptic on admin pages
-    swipeThreshold: 50,
+    onLongPress: undefined,
+    enableHaptic: !isDisabledPage,
+    swipeThreshold: 150, // Increased from 50 to prevent accidental triggers
   });
 
-  // Don't render pull indicator on admin pages
-  if (isAdminPage) {
+  // Don't render pull indicator on disabled pages
+  if (isDisabledPage) {
     return null;
   }
 
