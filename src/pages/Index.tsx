@@ -11,7 +11,10 @@ import { KeyboardShortcuts } from '@/components/desktop/KeyboardShortcuts';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Gift, Percent, Star } from 'lucide-react';
+import { ArrowRight, Gift, Percent, Star, Sparkles } from 'lucide-react';
+import { ScentStylist } from '@/components/features/ScentStylist';
+import { ScentCalendar } from '@/components/features/ScentCalendar';
+import { ScentMemory } from '@/components/features/ScentMemory';
 
 const Index = () => {
   return (
@@ -69,6 +72,30 @@ const Index = () => {
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Link>
               </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* AI Features Section */}
+        <section className="py-12 lg:py-20 bg-muted/30">
+          <div className="max-w-7xl mx-auto px-4 lg:px-8">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-4">
+                <Sparkles className="w-4 h-4" />
+                <span className="text-sm font-medium">Einzigartige Features</span>
+              </div>
+              <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
+                Dein personalisiertes Dufterlebnis
+              </h2>
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                Entdecke innovative Tools, die dir helfen, den perfekten Duft zu finden
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <ScentStylist />
+              <ScentCalendar />
+              <ScentMemory />
             </div>
           </div>
         </section>

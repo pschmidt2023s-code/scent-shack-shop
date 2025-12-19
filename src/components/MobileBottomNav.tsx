@@ -53,6 +53,11 @@ export function MobileBottomNav() {
   const { count: favoritesCount } = useFavorites()
   const [showCart, setShowCart] = useState(false)
 
+  // Hide on admin pages
+  if (location.pathname.startsWith('/admin')) {
+    return null
+  }
+
   const handleCartClick = () => {
     setShowCart(true)
   }
