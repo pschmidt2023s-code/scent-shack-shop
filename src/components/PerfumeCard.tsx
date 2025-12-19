@@ -65,7 +65,7 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
             <img
               src={perfume.image}
               alt={`${collectionName} - ${perfume.brand} Parfüm Kollektion`}
-              className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+              className="w-full h-32 sm:h-48 object-cover transition-transform duration-300 group-hover:scale-105"
               loading="lazy"
               decoding="async"
               role="img"
@@ -101,47 +101,48 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
           </div>
         </div>
 
-        <div className="p-4">
+        <div className="p-3 sm:p-4">
           <Link 
             to={`/product/${perfume.id}`} 
             onClick={handleProductClick}
             className="block"
-            aria-label={`${collectionName} Kollektion ansehen`}
+            aria-label={`${collectionName} Produkt ansehen`}
           >
-            <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">
+            <h3 className="font-semibold text-sm sm:text-lg mb-1 sm:mb-2 group-hover:text-primary transition-colors line-clamp-1">
               {collectionName}
             </h3>
             
-            <p className="text-sm text-muted-foreground mb-3">
-              {perfume.variants.length} {perfume.variants.length === 1 ? 'Duft' : 'Düfte'} verfügbar
+            <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">
+              {perfume.variants.length} {perfume.variants.length === 1 ? 'Duft' : 'Düfte'}
             </p>
 
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <span className="text-xl font-bold text-primary">{priceRange}</span>
-              </div>
-              <Badge variant="secondary">{perfume.category}</Badge>
-            </div>
-
-            <div className="flex gap-2">
-              <Button 
-                className="flex-1"
-                variant="outline"
-                aria-label={`${collectionName} Produkt ansehen`}
-                data-testid={`btn-view-product-${perfume.id}`}
-              >
-                Produkt ansehen
-              </Button>
-              <Button 
-                size="icon"
-                onClick={handleQuickAdd}
-                aria-label={`${collectionName} in den Warenkorb`}
-                data-testid={`btn-quick-add-${perfume.id}`}
-              >
-                <ShoppingCart className="w-4 h-4" />
-              </Button>
+            <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2">
+              <span className="text-base sm:text-xl font-bold text-primary">{priceRange}</span>
             </div>
           </Link>
+
+          <div className="flex gap-2">
+            <Button 
+              className="flex-1 text-xs sm:text-sm"
+              variant="outline"
+              size="sm"
+              aria-label={`${collectionName} Produkt ansehen`}
+              data-testid={`btn-view-product-${perfume.id}`}
+              asChild
+            >
+              <Link to={`/product/${perfume.id}`}>
+                Ansehen
+              </Link>
+            </Button>
+            <Button 
+              size="icon"
+              onClick={handleQuickAdd}
+              aria-label={`${collectionName} in den Warenkorb`}
+              data-testid={`btn-quick-add-${perfume.id}`}
+            >
+              <ShoppingCart className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
