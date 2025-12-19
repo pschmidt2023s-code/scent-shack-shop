@@ -77,6 +77,13 @@ For full functionality, add these secrets:
   - Input Validation: Zod schemas for auth endpoints, password strength requirements
   - bcrypt: Cost factor increased from 10 to 12
   - Rate Limiting: Auth endpoints (20/15min), API (100/min), General (1000/15min)
+- **Stripe Payment Integration** (December 19, 2025):
+  - stripeClient.ts: Credentials from Replit Connection API, Stripe SDK and StripeSync
+  - webhookHandlers.ts: Processes Stripe webhook events for order updates
+  - Server-side pricing validation: Checkout fetches prices from database, not client
+  - Webhook route registered BEFORE express.json() for raw body access
+  - Endpoints: /api/stripe/publishable-key, /api/stripe/create-checkout-session, /api/stripe/session/:sessionId
+  - Base URL strategy: Uses REPLIT_DOMAINS or falls back to req.protocol/host
 
 ## User Preferences
 - German language interface
