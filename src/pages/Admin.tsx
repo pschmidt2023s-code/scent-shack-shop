@@ -933,7 +933,7 @@ export default function Admin() {
 
   if (loading) {
     return (
-      <div className="admin-theme">
+      <div className="dark admin-theme">
         <div className="min-h-screen flex items-center justify-center bg-background">
           <div className="text-center">
             <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
@@ -946,7 +946,7 @@ export default function Admin() {
 
   if (!user) {
     return (
-      <div className="admin-theme">
+      <div className="dark admin-theme">
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
           <Card className="w-full max-w-md">
             <CardContent className="pt-6 text-center">
@@ -967,7 +967,7 @@ export default function Admin() {
 
   if (user.role !== 'admin') {
     return (
-      <div className="admin-theme">
+      <div className="dark admin-theme">
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
           <Card className="w-full max-w-md">
             <CardContent className="pt-6 text-center">
@@ -1059,7 +1059,7 @@ export default function Admin() {
   } as React.CSSProperties;
 
   return (
-    <div className="admin-theme admin-shell">
+    <div className="dark admin-theme admin-shell">
       <SidebarProvider style={sidebarStyle}>
         <div className="flex min-h-screen w-full">
         <div className="hidden lg:block">
