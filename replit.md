@@ -63,6 +63,13 @@ For full functionality, add these secrets:
 - Modernized Admin Dashboard with tabbed ProductManagement (Essentials, Fragrance Profile, Metadata, AI)
 - Added ChipInput component for managing fragrance notes and ingredients
 - Refactored Products.tsx with API-driven data, 4-column grid, variant guards
+- **Complete Admin Dashboard redesign** with Shadcn SidebarProvider shell layout
+  - Grouped sidebar navigation (Übersicht, Verkauf, Kunden, Marketing)
+  - Dashboard Overview with KPI StatCards (Revenue, Orders, Customers, Pending)
+  - Recent Orders widget and Quick Actions panel
+  - Enhanced Orders DataTable with search, filter, and bulk actions
+  - Responsive mobile navigation using Sheet component
+  - Sticky header with notifications and user dropdown
 
 ## User Preferences
 - German language interface
