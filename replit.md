@@ -70,6 +70,13 @@ For full functionality, add these secrets:
   - Enhanced Orders DataTable with search, filter, and bulk actions
   - Responsive mobile navigation using Sheet component
   - Sticky header with notifications and user dropdown
+- **Critical Security Hardening** (December 19, 2025):
+  - CORS: Strict origin validation, only Replit domains and localhost allowed
+  - Session Security: Secure cookies, sameSite strict, session regeneration on login
+  - Helmet CSP: Content Security Policy with Stripe/PayPal, HSTS, referrer policy
+  - Input Validation: Zod schemas for auth endpoints, password strength requirements
+  - bcrypt: Cost factor increased from 10 to 12
+  - Rate Limiting: Auth endpoints (20/15min), API (100/min), General (1000/15min)
 
 ## User Preferences
 - German language interface
