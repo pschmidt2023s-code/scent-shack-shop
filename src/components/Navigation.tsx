@@ -149,7 +149,7 @@ const Navigation = () => {
                 asChild
                 className="hidden sm:flex"
               >
-                <Link to="/wishlist" data-testid="link-wishlist">
+                <Link to="/favorites" data-testid="link-wishlist">
                   <Heart className="w-5 h-5" />
                 </Link>
               </Button>
