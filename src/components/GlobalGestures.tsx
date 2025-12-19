@@ -8,11 +8,16 @@ export function GlobalGestures() {
   const location = useLocation();
   const { toast } = useToast();
 
+  // Disable gestures on admin pages to prevent navigation interference
+  const isAdminPage = location.pathname.startsWith('/admin');
+
   const { isPulling, pullDistance } = useAdvancedGestures({
     onSwipeLeft: () => {
+      if (isAdminPage) return; // Disable on admin pages
       console.log('Swipe Left detected');
     },
     onSwipeRight: () => {
+      if (isAdminPage) return; // Disable on admin pages
       console.log('Swipe Right detected');
       // Optional: Navigate back on swipe right
       if (location.pathname !== '/') {
@@ -20,6 +25,7 @@ export function GlobalGestures() {
       }
     },
     onPullToRefresh: async () => {
+      if (isAdminPage) return; // Disable on admin pages
       console.log('Pull to refresh triggered');
       toast({
         title: "Aktualisiert",
@@ -29,11 +35,17 @@ export function GlobalGestures() {
       window.location.reload();
     },
     onLongPress: () => {
+      if (isAdminPage) return; // Disable on admin pages
       console.log('Long press detected');
     },
-    enableHaptic: true,
+    enableHaptic: !isAdminPage, // Disable haptic on admin pages
     swipeThreshold: 50,
   });
+
+  // Don't render pull indicator on admin pages
+  if (isAdminPage) {
+    return null;
+  }
 
   return (
     <>
