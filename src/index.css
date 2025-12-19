@@ -836,3 +836,96 @@
 .admin-glow {
   animation: admin-glow 3s ease-in-out infinite;
 }
+
+/* Admin theme: Force all interactive elements to use dark styling */
+.dark.admin-theme table,
+.dark.admin-theme [data-slot="table"] {
+  background-color: hsl(212 45% 10% / 0.6);
+}
+
+.dark.admin-theme thead,
+.dark.admin-theme [data-slot="table-header"] {
+  background-color: hsl(212 45% 12%);
+}
+
+.dark.admin-theme th {
+  color: hsl(210 15% 80%);
+  border-color: hsl(215 40% 18%);
+}
+
+.dark.admin-theme td {
+  color: hsl(210 15% 95%);
+  border-color: hsl(215 40% 15%);
+}
+
+.dark.admin-theme tbody tr {
+  background-color: hsl(212 45% 11% / 0.4);
+}
+
+.dark.admin-theme tbody tr:hover {
+  background-color: hsl(212 45% 14% / 0.6);
+}
+
+.dark.admin-theme .text-muted-foreground {
+  color: hsl(210 15% 70%);
+}
+
+/* Ensure all text in admin is readable */
+.dark.admin-theme {
+  color: hsl(210 15% 95%);
+}
+
+.dark.admin-theme p,
+.dark.admin-theme span,
+.dark.admin-theme h1,
+.dark.admin-theme h2,
+.dark.admin-theme h3,
+.dark.admin-theme h4,
+.dark.admin-theme h5,
+.dark.admin-theme h6 {
+  color: inherit;
+}
+
+.dark.admin-theme .font-medium,
+.dark.admin-theme .font-semibold,
+.dark.admin-theme .font-bold {
+  color: hsl(210 15% 98%);
+}
+
+.dark.admin-theme label {
+  color: hsl(210 15% 90%);
+}
+
+/* Badges in admin */
+.dark.admin-theme .badge,
+.dark.admin-theme [data-slot="badge"] {
+  color: inherit;
+}
+
+/* Input and Select styling */
+.dark.admin-theme input,
+.dark.admin-theme textarea,
+.dark.admin-theme select {
+  background-color: hsl(215 45% 12%);
+  border-color: hsl(215 40% 20%);
+  color: hsl(210 15% 95%);
+}
+
+.dark.admin-theme input::placeholder,
+.dark.admin-theme textarea::placeholder {
+  color: hsl(215 15% 50%);
+}
+
+.dark.admin-theme [role="combobox"],
+.dark.admin-theme button[data-state] {
+  background-color: hsl(215 45% 12%);
+  border-color: hsl(215 40% 20%);
+  color: hsl(210 15% 95%);
+}
+
+/* Card styling in admin */
+.dark.admin-theme .card,
+.dark.admin-theme [data-slot="card"] {
+  background-color: hsl(212 50% 10% / 0.5);
+  border-color: hsl(215 40% 18%);
+}
