@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { User, ChevronDown, LogOut, Sparkles } from "lucide-react";
+import { User, ChevronDown, LogOut, ShoppingCart, Settings } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { AuthModal } from './AuthModal';
 import { CartSidebar } from './CartSidebar';
 import { AdvancedSearch } from './AdvancedSearch';
@@ -33,22 +34,24 @@ const Navigation = () => {
 
   return (
     <>
-      <nav className="glass sticky top-0 z-50 border-b border-border/10 rounded-b-3xl">
+      <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-14 sm:h-16">
-            <div className="flex items-center gap-3">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-4">
               <HamburgerMenu />
-              <Link to="/" className="flex items-center space-x-3 nav-link group">
-                <span className="text-2xl md:text-3xl font-bold text-foreground group-hover:text-primary transition-colors duration-300">
+              <Link to="/" className="flex items-center group" data-testid="link-home">
+                <span className="text-xl md:text-2xl font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">
                   ALDENAIR
                 </span>
               </Link>
             </div>
 
-            <div className="flex items-center space-x-2 sm:space-x-6">
+            <div className="hidden md:flex items-center gap-6">
               <MegaMenu />
+            </div>
 
-              <div className="hidden lg:flex flex-1 max-w-md">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="hidden lg:block w-64">
                 <AdvancedSearch className="w-full" />
               </div>
 
@@ -56,13 +59,14 @@ const Navigation = () => {
 
               {user && <NotificationCenter />}
 
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setShowCart(true)}
-                className="relative p-1.5 sm:p-2 text-foreground hover:text-primary transition-colors"
+                className="relative"
+                data-testid="button-cart"
               >
-                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 1.5M7 13l-1.5-1.5M16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM9 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
-                </svg>
+                <ShoppingCart className="w-5 h-5" />
                 {itemCount > 0 && (
                   <Badge 
                     variant="destructive" 
@@ -71,57 +75,66 @@ const Navigation = () => {
                     {itemCount > 99 ? '99+' : itemCount}
                   </Badge>
                 )}
-              </button>
+              </Button>
               <CartSidebar open={showCart} onOpenChange={setShowCart} />
 
               {user ? (
                 <div className="relative" ref={dropdownRef}>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center space-x-1 sm:space-x-2 p-1.5 sm:p-2 text-foreground hover:text-primary transition-colors"
+                    className="flex items-center gap-2"
+                    data-testid="button-user-menu"
                   >
-                    <User className="w-5 h-5 sm:w-6 sm:h-6" />
+                    <User className="w-5 h-5" />
                     <span className="hidden md:block text-sm truncate max-w-24">
-                      {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                      {user.fullName || user.email?.split('@')[0]}
                     </span>
                     <ChevronDown className="hidden md:block w-4 h-4" />
-                  </button>
+                  </Button>
                   {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-56 bg-background/95 backdrop-blur-sm border border-border rounded-xl shadow-2xl py-2 z-50">
+                    <div className="absolute right-0 mt-2 w-56 bg-background border border-border rounded-lg shadow-lg py-2 z-50">
                       <Link
                         to="/profile"
-                        className="flex items-center px-4 py-3 text-sm text-foreground hover:bg-primary/10 transition-colors rounded-lg mx-2"
+                        className="flex items-center px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
                         onClick={() => setShowUserMenu(false)}
+                        data-testid="link-profile"
                       >
-                        <User className="w-5 h-5 mr-3" />
-                        <span className="font-medium">Profil</span>
+                        <User className="w-4 h-4 mr-3" />
+                        Mein Profil
                       </Link>
-                      <Link
-                        to="/admin"
-                        className="flex items-center px-4 py-3 text-sm text-foreground hover:bg-primary/10 transition-colors rounded-lg mx-2"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        <User className="w-5 h-5 mr-3" />
-                        <span className="font-medium">Admin</span>
-                      </Link>
+                      {user.role === 'admin' && (
+                        <Link
+                          to="/admin"
+                          className="flex items-center px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+                          onClick={() => setShowUserMenu(false)}
+                          data-testid="link-admin"
+                        >
+                          <Settings className="w-4 h-4 mr-3" />
+                          Admin Dashboard
+                        </Link>
+                      )}
+                      <hr className="my-2 border-border" />
                       <button
                         onClick={() => {
                           signOut();
                           setShowUserMenu(false);
                         }}
-                        className="flex items-center w-full text-left px-4 py-3 text-sm text-foreground hover:bg-primary/10 transition-colors rounded-lg mx-2"
+                        className="flex items-center w-full text-left px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+                        data-testid="button-logout"
                       >
-                        <LogOut className="w-5 h-5 mr-3" />
-                        <span className="font-medium">Abmelden</span>
+                        <LogOut className="w-4 h-4 mr-3" />
+                        Abmelden
                       </button>
                     </div>
                   )}
                 </div>
               ) : (
                 <AuthModal>
-                  <button className="bg-foreground text-background px-3 py-1.5 sm:px-4 sm:py-2 text-sm sm:text-base rounded-md hover:bg-foreground/90 transition-colors">
+                  <Button data-testid="button-login">
                     Anmelden
-                  </button>
+                  </Button>
                 </AuthModal>
               )}
             </div>
