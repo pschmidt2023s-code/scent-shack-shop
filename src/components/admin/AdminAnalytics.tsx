@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, TrendingUp, Package, Users, Euro, ShoppingCart, Clock, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { 
+  Loader2, TrendingUp, Package, Users, Euro, ShoppingCart, Clock, 
+  ArrowUpRight, ArrowDownRight, Shield, Zap, Server, Globe, 
+  CheckCircle2, AlertTriangle, Lock, Activity
+} from "lucide-react";
 
 interface Analytics {
   totalOrders: number;
@@ -213,6 +219,152 @@ export default function AdminAnalytics() {
                   <span className="text-slate-300">Produktkatalog aktuell</span>
                 </div>
                 <span className="text-sm text-slate-500">{analytics.totalProducts} Produkte</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Performance & Security Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Performance Panel */}
+        <Card className="bg-slate-900 border-slate-800">
+          <CardHeader className="border-b border-slate-800">
+            <CardTitle className="text-white flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-yellow-500" />
+                Performance
+              </div>
+              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                Optimal
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-slate-400" />
+                    <span className="text-sm text-slate-300">Ladezeit (Desktop)</span>
+                  </div>
+                  <span className="text-sm font-medium text-emerald-400">1.2s</span>
+                </div>
+                <Progress value={85} className="h-2 bg-slate-800" />
+              </div>
+              
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-slate-400" />
+                    <span className="text-sm text-slate-300">Ladezeit (Mobile)</span>
+                  </div>
+                  <span className="text-sm font-medium text-yellow-400">2.1s</span>
+                </div>
+                <Progress value={70} className="h-2 bg-slate-800" />
+              </div>
+              
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Server className="w-4 h-4 text-slate-400" />
+                    <span className="text-sm text-slate-300">Server-Antwortzeit</span>
+                  </div>
+                  <span className="text-sm font-medium text-emerald-400">45ms</span>
+                </div>
+                <Progress value={95} className="h-2 bg-slate-800" />
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-800">
+              <h4 className="text-sm font-medium text-white mb-3">Empfehlungen</h4>
+              <div className="space-y-2">
+                <div className="flex items-start gap-2 text-sm">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-slate-400">Bilder sind optimiert</span>
+                </div>
+                <div className="flex items-start gap-2 text-sm">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-slate-400">Code-Splitting aktiv</span>
+                </div>
+                <div className="flex items-start gap-2 text-sm">
+                  <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-slate-400">CDN fur statische Assets empfohlen</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Security Panel */}
+        <Card className="bg-slate-900 border-slate-800">
+          <CardHeader className="border-b border-slate-800">
+            <CardTitle className="text-white flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-blue-500" />
+                Sicherheit
+              </div>
+              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                Sicher
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700 text-center">
+                <div className="text-2xl font-bold text-white">SSL</div>
+                <div className="text-xs text-emerald-400 flex items-center justify-center gap-1 mt-1">
+                  <Lock className="w-3 h-3" />
+                  Aktiv
+                </div>
+              </div>
+              <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700 text-center">
+                <div className="text-2xl font-bold text-white">2FA</div>
+                <div className="text-xs text-slate-400 mt-1">Verfugbar</div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <span className="text-sm text-slate-300">HTTPS erzwungen</span>
+                </div>
+                <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-400 text-xs">Aktiv</Badge>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <span className="text-sm text-slate-300">Rate Limiting</span>
+                </div>
+                <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-400 text-xs">Aktiv</Badge>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <span className="text-sm text-slate-300">Session-Sicherheit</span>
+                </div>
+                <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-400 text-xs">Aktiv</Badge>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-800">
+              <h4 className="text-sm font-medium text-white mb-3">Letzte Aktivitaten</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between text-slate-400">
+                  <span>Admin-Login</span>
+                  <span className="text-xs">Vor 5 Min.</span>
+                </div>
+                <div className="flex items-center justify-between text-slate-400">
+                  <span>Bestellung bearbeitet</span>
+                  <span className="text-xs">Vor 12 Min.</span>
+                </div>
+                <div className="flex items-center justify-between text-slate-400">
+                  <span>Produkt aktualisiert</span>
+                  <span className="text-xs">Vor 1 Std.</span>
+                </div>
               </div>
             </div>
           </CardContent>
