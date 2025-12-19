@@ -101,6 +101,13 @@ npx drizzle-kit push # Push schema to database
 - Order confirmation shows bank details and reference number
 
 ## Recent Changes (Dec 2024)
+### Phase 2: Performance & UX Improvements (Dec 19, 2024)
+- **Lazy Loading**: PerfumeCard now uses OptimizedImage with IntersectionObserver
+- **Debounced Search**: New SearchWithSuggestions component with 300ms debounce and typeahead
+- **useDebounce Hook**: Reusable hook for debouncing values
+- Skeleton loading states already existed in ProductSkeleton.tsx
+- Quick-View Modal and Wishlist already implemented
+
 ### Product Scent Information Feature (Dec 19, 2024)
 - Extended products table with: scentNotes (array), inspiredBy, aiDescription, seasons (array), occasions (array)
 - Admin Panel: New "Duftnoten & KI-Beschreibung" expandable section in product form
