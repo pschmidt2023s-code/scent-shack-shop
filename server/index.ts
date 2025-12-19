@@ -14,12 +14,31 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
+const isReplit = !!process.env.REPL_SLUG;
+const isProduction = process.env.NODE_ENV === "production";
 
 app.set('trust proxy', 1);
 
 app.use(helmet({
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com", "https://www.paypal.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      connectSrc: ["'self'", "https://*.replit.dev", "https://*.repl.co", "https://*.replit.app", "wss:"],
+      frameSrc: ["'self'", "https://js.stripe.com", "https://www.paypal.com"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: isProduction ? [] : null,
+    },
+  },
   crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  hsts: isProduction ? { maxAge: 31536000, includeSubDomains: true } : false,
+  noSniff: true,
+  xssFilter: true,
 }));
 
 const generalLimiter = rateLimit({
@@ -57,13 +76,29 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) || origin.endsWith(".replit.dev") || origin.endsWith(".repl.co")) {
+    if (!origin) {
       callback(null, true);
-    } else {
-      callback(null, true);
+      return;
     }
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    
+    if (origin.endsWith(".replit.dev") || origin.endsWith(".repl.co") || origin.endsWith(".replit.app")) {
+      callback(null, true);
+      return;
+    }
+    
+    console.warn(`CORS blocked origin: ${origin}`);
+    callback(new Error("Not allowed by CORS"), false);
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Requested-With'],
+  exposedHeaders: ['X-CSRF-Token'],
+  maxAge: 86400,
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -93,7 +128,8 @@ const csrfProtection = (req: Request, res: Response, next: NextFunction) => {
       const parsed = new URL(url);
       return allowedHosts.some(h => parsed.host === h) || 
              parsed.host.endsWith('.replit.dev') || 
-             parsed.host.endsWith('.repl.co');
+             parsed.host.endsWith('.repl.co') ||
+             parsed.host.endsWith('.replit.app');
     } catch {
       return false;
     }
@@ -117,28 +153,29 @@ app.use('/api/', csrfProtection);
 const PgSession = ConnectPgSimple(session);
 
 const sessionSecret = process.env.SESSION_SECRET;
-if (!sessionSecret && process.env.NODE_ENV === "production") {
+if (!sessionSecret && isProduction) {
   throw new Error("SESSION_SECRET must be set in production");
 }
-
-const isReplit = !!process.env.REPL_SLUG;
-const isProduction = process.env.NODE_ENV === "production";
 
 app.use(session({
   store: new PgSession({
     pool: pool,
     tableName: "user_sessions",
     createTableIfMissing: true,
+    pruneSessionInterval: 60 * 15,
   }),
   secret: sessionSecret || "dev-secret-change-in-production-" + Math.random().toString(36),
+  name: "aldenair.sid",
   resave: false,
   saveUninitialized: false,
+  rolling: true,
   proxy: isReplit || isProduction,
   cookie: {
-    secure: isReplit || isProduction ? "auto" : false,
+    secure: isReplit || isProduction,
     httpOnly: true,
-    maxAge: 30 * 24 * 60 * 60 * 1000,
-    sameSite: isReplit ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: isReplit ? "none" : "strict",
+    path: "/",
   },
 }));
 

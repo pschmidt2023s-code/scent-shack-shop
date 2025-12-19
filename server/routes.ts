@@ -51,21 +51,44 @@ const requireAdmin = async (req: Request, res: Response, next: NextFunction) => 
   next();
 };
 
+const registerSchema = z.object({
+  email: z.string().email("Ungültige E-Mail-Adresse").max(255),
+  password: z.string()
+    .min(8, "Passwort muss mindestens 8 Zeichen haben")
+    .max(128)
+    .regex(/[A-Z]/, "Passwort muss mindestens einen Großbuchstaben enthalten")
+    .regex(/[a-z]/, "Passwort muss mindestens einen Kleinbuchstaben enthalten")
+    .regex(/[0-9]/, "Passwort muss mindestens eine Zahl enthalten"),
+  fullName: z.string().min(2).max(100).optional(),
+});
+
+const loginSchema = z.object({
+  email: z.string().email("Ungültige E-Mail-Adresse").max(255),
+  password: z.string().min(1, "Passwort erforderlich").max(128),
+});
+
 export async function registerRoutes(app: Express) {
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { email, password, fullName } = req.body;
-      
-      const existing = await storage.getUserByEmail(email);
-      if (existing) {
-        return res.status(400).json({ error: "Email already registered" });
+      const validation = registerSchema.safeParse(req.body);
+      if (!validation.success) {
+        const errors = validation.error.errors.map(e => e.message).join(", ");
+        return res.status(400).json({ error: errors });
       }
       
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const { email, password, fullName } = validation.data;
+      
+      const normalizedEmail = email.toLowerCase().trim();
+      const existing = await storage.getUserByEmail(normalizedEmail);
+      if (existing) {
+        return res.status(400).json({ error: "Diese E-Mail ist bereits registriert" });
+      }
+      
+      const hashedPassword = await bcrypt.hash(password, 12);
       const user = await storage.createUser({
-        email,
+        email: normalizedEmail,
         password: hashedPassword,
-        fullName,
+        fullName: fullName?.trim(),
       });
       
       req.session.userId = user.id;
@@ -86,43 +109,61 @@ export async function registerRoutes(app: Express) {
       });
     } catch (error: any) {
       console.error("Registration error:", error);
-      res.status(500).json({ error: error.message || "Registration failed" });
+      res.status(500).json({ error: "Registrierung fehlgeschlagen" });
     }
   });
 
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const validation = loginSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Ungültige Eingabe" });
+      }
       
-      const user = await storage.getUserByEmail(email);
+      const { email, password } = validation.data;
+      const normalizedEmail = email.toLowerCase().trim();
+      
+      const user = await storage.getUserByEmail(normalizedEmail);
       if (!user) {
-        return res.status(401).json({ error: "Invalid credentials" });
+        return res.status(401).json({ error: "Ungültige Anmeldedaten" });
       }
       
       const valid = await bcrypt.compare(password, user.password);
       if (!valid) {
-        return res.status(401).json({ error: "Invalid credentials" });
+        return res.status(401).json({ error: "Ungültige Anmeldedaten" });
       }
       
-      req.session.userId = user.id;
-      req.session.user = {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName || undefined,
-        role: user.role || undefined,
-      };
-      
-      res.json({ 
-        user: { 
-          id: user.id, 
-          email: user.email, 
-          fullName: user.fullName,
-          role: user.role 
-        } 
+      req.session.regenerate((err) => {
+        if (err) {
+          return res.status(500).json({ error: "Sitzungsfehler" });
+        }
+        
+        req.session.userId = user.id;
+        req.session.user = {
+          id: user.id,
+          email: user.email,
+          fullName: user.fullName || undefined,
+          role: user.role || undefined,
+        };
+        
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            return res.status(500).json({ error: "Sitzungsfehler" });
+          }
+          
+          res.json({ 
+            user: { 
+              id: user.id, 
+              email: user.email, 
+              fullName: user.fullName,
+              role: user.role 
+            } 
+          });
+        });
       });
     } catch (error: any) {
       console.error("Login error:", error);
-      res.status(500).json({ error: error.message || "Login failed" });
+      res.status(500).json({ error: "Anmeldung fehlgeschlagen" });
     }
   });
 
