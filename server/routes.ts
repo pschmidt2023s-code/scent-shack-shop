@@ -1367,4 +1367,118 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
       res.status(500).json({ error: error.message });
     }
   });
+
+  // ==================== STRIPE PAYMENTS ====================
+  
+  // Get Stripe publishable key for frontend
+  app.get("/api/stripe/publishable-key", async (req, res) => {
+    try {
+      const { getStripePublishableKey } = await import("./stripeClient");
+      const publishableKey = await getStripePublishableKey();
+      res.json({ publishableKey });
+    } catch (error: any) {
+      console.error("Stripe key error:", error);
+      res.status(500).json({ error: "Stripe nicht konfiguriert" });
+    }
+  });
+
+  // Create Stripe Checkout Session - uses server-side pricing for security
+  app.post("/api/stripe/create-checkout-session", async (req, res) => {
+    try {
+      const { items, customerEmail, shippingAddress } = req.body;
+      
+      if (!items || items.length === 0) {
+        return res.status(400).json({ error: "Keine Artikel im Warenkorb" });
+      }
+
+      const { getUncachableStripeClient } = await import("./stripeClient");
+      const stripe = await getUncachableStripeClient();
+
+      // Build base URL from request or environment
+      const replitDomains = process.env.REPLIT_DOMAINS;
+      const baseUrl = replitDomains 
+        ? `https://${replitDomains.split(',')[0]}`
+        : `${req.protocol}://${req.get('host')}`;
+      
+      // Fetch authoritative pricing from database for each item
+      const lineItems = await Promise.all(items.map(async (item: any) => {
+        const variant = await storage.getProductVariant(item.variantId);
+        if (!variant) {
+          throw new Error(`Variante ${item.variantId} nicht gefunden`);
+        }
+        
+        // Use server-side price, not client-provided price
+        const serverPrice = parseFloat(variant.price);
+        
+        return {
+          price_data: {
+            currency: 'eur',
+            product_data: {
+              name: variant.name,
+              description: variant.description || undefined,
+            },
+            unit_amount: Math.round(serverPrice * 100),
+          },
+          quantity: item.quantity || 1,
+        };
+      }));
+
+      // Create order in database first
+      const totalAmount = lineItems.reduce((sum, item) => 
+        sum + (item.price_data.unit_amount * item.quantity) / 100, 0
+      );
+      
+      const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+      const order = await storage.createOrder({
+        orderNumber,
+        totalAmount: totalAmount.toString(),
+        customerEmail: customerEmail || null,
+        shippingAddressData: shippingAddress || null,
+        paymentMethod: "stripe",
+        userId: req.session.userId || null,
+      });
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: lineItems,
+        mode: 'payment',
+        success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/checkout/cancel`,
+        customer_email: customerEmail,
+        metadata: {
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+        },
+        shipping_address_collection: {
+          allowed_countries: ['DE', 'AT', 'CH'],
+        },
+      });
+
+      res.json({ url: session.url, sessionId: session.id, orderId: order.id });
+    } catch (error: any) {
+      console.error("Checkout session error:", error);
+      res.status(500).json({ error: error.message || "Checkout fehlgeschlagen" });
+    }
+  });
+
+  // Verify Stripe payment session
+  app.get("/api/stripe/session/:sessionId", async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const { getUncachableStripeClient } = await import("./stripeClient");
+      const stripe = await getUncachableStripeClient();
+
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      
+      res.json({
+        status: session.payment_status,
+        customerEmail: session.customer_email,
+        amountTotal: session.amount_total,
+        currency: session.currency,
+      });
+    } catch (error: any) {
+      console.error("Session verify error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
 }
