@@ -333,6 +333,14 @@ export const abandonedCarts = pgTable("abandoned_carts", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Shop Settings (singleton table for store configuration)
+export const shopSettings = pgTable("shop_settings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  key: text("key").notNull().unique(),
+  value: jsonb("value"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
   reviews: many(reviews),
@@ -565,6 +573,17 @@ export type ShippingOption = typeof shippingOptions.$inferSelect;
 export type InsertShippingOption = z.infer<typeof insertShippingOptionSchema>;
 export type AbandonedCart = typeof abandonedCarts.$inferSelect;
 export type InsertAbandonedCart = z.infer<typeof insertAbandonedCartSchema>;
+export type ShopSetting = typeof shopSettings.$inferSelect;
+export type PaybackEarning = typeof paybackEarnings.$inferSelect;
+
+// Bank settings type for admin panel
+export const bankSettingsSchema = z.object({
+  recipient: z.string().min(1, "Empfängername erforderlich"),
+  iban: z.string().min(15, "IBAN muss mindestens 15 Zeichen haben"),
+  bic: z.string().optional(),
+  bankName: z.string().optional(),
+});
+export type BankSettings = z.infer<typeof bankSettingsSchema>;
 
 // Update schemas with strict field allowlists for security
 export const updateProductSchema = z.object({

@@ -92,6 +92,7 @@ const NewsletterManagement = lazy(() => import('@/components/admin/NewsletterMan
 const PaybackManagement = lazy(() => import('@/components/admin/PaybackManagement'));
 const ContestManagement = lazy(() => import('@/components/admin/ContestManagement').then(module => ({ default: module.ContestManagement })));
 const ProductManagement = lazy(() => import('@/components/admin/ProductManagement'));
+const SettingsManagement = lazy(() => import('@/components/admin/SettingsManagement'));
 
 interface Order {
   id: string;
@@ -157,6 +158,12 @@ const navGroups = [
     items: [
       { id: 'newsletter', label: 'Newsletter', icon: Mail },
       { id: 'contest', label: 'Gewinnspiel', icon: Gift },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { id: 'settings', label: 'Einstellungen', icon: Settings },
     ],
   },
 ];
@@ -1042,6 +1049,12 @@ export default function Admin() {
         return (
           <Suspense fallback={<LoadingSpinner />}>
             <ContestManagement />
+          </Suspense>
+        );
+      case 'settings':
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <SettingsManagement />
           </Suspense>
         );
       default:

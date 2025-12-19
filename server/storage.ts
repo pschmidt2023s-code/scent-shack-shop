@@ -17,6 +17,8 @@ import type {
   ShippingOption, InsertShippingOption,
   AbandonedCart, InsertAbandonedCart,
   PaybackEarning,
+  ShopSetting,
+  BankSettings,
 } from "../shared/schema";
 
 export interface IStorage {
@@ -83,6 +85,11 @@ export interface IStorage {
   createShippingOption(data: InsertShippingOption): Promise<ShippingOption>;
   updateShippingOption(id: string, data: Partial<InsertShippingOption>): Promise<ShippingOption | undefined>;
   deleteShippingOption(id: string): Promise<boolean>;
+  
+  getShopSetting(key: string): Promise<any>;
+  setShopSetting(key: string, value: any): Promise<ShopSetting>;
+  getBankSettings(): Promise<BankSettings | null>;
+  setBankSettings(settings: BankSettings): Promise<ShopSetting>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -462,7 +469,7 @@ export class DatabaseStorage implements IStorage {
       title: review.title || 'Hervorragend',
       content: review.content || '',
       createdAt: review.createdAt,
-      reviewerName: review.isVerified ? 'Verifizierter Kunde' : 'Kunde',
+      reviewerName: review.isVerifiedPurchase ? 'Verifizierter Kunde' : 'Kunde',
     }));
   }
 
@@ -606,6 +613,38 @@ export class DatabaseStorage implements IStorage {
   async getAllShippingOptions(): Promise<ShippingOption[]> {
     return db.select().from(schema.shippingOptions)
       .orderBy(schema.shippingOptions.price);
+  }
+
+  // ==================== SHOP SETTINGS ====================
+  async getShopSetting(key: string): Promise<any> {
+    const [setting] = await db.select().from(schema.shopSettings)
+      .where(eq(schema.shopSettings.key, key));
+    return setting?.value || null;
+  }
+
+  async setShopSetting(key: string, value: any): Promise<ShopSetting> {
+    const existing = await this.getShopSetting(key);
+    if (existing !== null) {
+      const [updated] = await db.update(schema.shopSettings)
+        .set({ value, updatedAt: new Date() })
+        .where(eq(schema.shopSettings.key, key))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(schema.shopSettings)
+      .values({ key, value })
+      .returning();
+    return created;
+  }
+
+  async getBankSettings(): Promise<BankSettings | null> {
+    const value = await this.getShopSetting('bank_settings');
+    if (!value) return null;
+    return value as BankSettings;
+  }
+
+  async setBankSettings(settings: BankSettings): Promise<ShopSetting> {
+    return this.setShopSetting('bank_settings', settings);
   }
 }
 

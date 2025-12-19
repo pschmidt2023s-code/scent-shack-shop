@@ -739,22 +739,48 @@ export async function registerRoutes(app: Express) {
   
   // Get bank details for checkout (public)
   app.get("/api/settings/bank", async (req, res) => {
-    res.json({
-      recipient: process.env.BANK_RECIPIENT || 'ALDENAIR',
-      iban: process.env.BANK_IBAN || '',
-      bic: process.env.BANK_BIC || '',
-      bankName: process.env.BANK_NAME || '',
-    });
+    try {
+      const bankSettings = await storage.getBankSettings();
+      if (bankSettings) {
+        res.json(bankSettings);
+      } else {
+        res.json({
+          recipient: process.env.BANK_RECIPIENT || 'ALDENAIR',
+          iban: process.env.BANK_IBAN || '',
+          bic: process.env.BANK_BIC || '',
+          bankName: process.env.BANK_NAME || '',
+        });
+      }
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Get bank details
+  app.get("/api/admin/settings/bank", requireAdmin, async (req, res) => {
+    try {
+      const bankSettings = await storage.getBankSettings();
+      res.json(bankSettings || {
+        recipient: '',
+        iban: '',
+        bic: '',
+        bankName: '',
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
   });
 
   // Admin: Update bank details
-  app.patch("/api/admin/settings/bank", requireAdmin, async (req, res) => {
-    // Note: In production, you would store these in a database settings table
-    // For now, we just return success - the actual values need to be set as environment variables
-    res.json({ 
-      success: true, 
-      message: "Bankdaten werden über Umgebungsvariablen konfiguriert. Bitte BANK_RECIPIENT, BANK_IBAN, BANK_BIC, BANK_NAME in den Secrets setzen." 
-    });
+  app.put("/api/admin/settings/bank", requireAdmin, async (req, res) => {
+    try {
+      const { bankSettingsSchema } = await import("../shared/schema");
+      const validated = bankSettingsSchema.parse(req.body);
+      await storage.setBankSettings(validated);
+      res.json({ success: true, message: "Bankdaten erfolgreich gespeichert" });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
   });
 
   app.get("/api/addresses", requireAuth, async (req, res) => {
