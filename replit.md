@@ -59,6 +59,10 @@ For full functionality, add these secrets:
 - Added default queryFn to TanStack Query for API calls
 - Seeded database with products, variants, and sample sets
 - Created admin user for platform management
+- Extended product schema with Duftpyramide (topNotes, middleNotes, baseNotes), ingredients, and inspiredBy fields
+- Modernized Admin Dashboard with tabbed ProductManagement (Essentials, Fragrance Profile, Metadata, AI)
+- Added ChipInput component for managing fragrance notes and ingredients
+- Refactored Products.tsx with API-driven data, 4-column grid, variant guards
 
 ## User Preferences
 - German language interface
