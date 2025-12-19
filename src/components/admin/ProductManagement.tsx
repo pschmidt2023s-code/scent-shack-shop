@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Package, Save, X, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Save, X, Loader2, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface ProductVariant {
   id: string;
@@ -30,6 +31,11 @@ interface Product {
   description: string | null;
   image: string | null;
   isActive: boolean;
+  scentNotes: string[] | null;
+  inspiredBy: string | null;
+  aiDescription: string | null;
+  seasons: string[] | null;
+  occasions: string[] | null;
   variants: ProductVariant[];
 }
 
@@ -50,7 +56,15 @@ export default function ProductManagement() {
     description: "",
     image: "",
     isActive: true,
+    scentNotes: [] as string[],
+    inspiredBy: "",
+    aiDescription: "",
+    seasons: [] as string[],
+    occasions: [] as string[],
   });
+  const [scentNoteInput, setScentNoteInput] = useState("");
+  const [generatingAI, setGeneratingAI] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const [variantForm, setVariantForm] = useState({
     size: "",
@@ -192,7 +206,13 @@ export default function ProductManagement() {
       description: product.description || "",
       image: product.image || "",
       isActive: product.isActive,
+      scentNotes: product.scentNotes || [],
+      inspiredBy: product.inspiredBy || "",
+      aiDescription: product.aiDescription || "",
+      seasons: product.seasons || [],
+      occasions: product.occasions || [],
     });
+    setShowAdvanced(!!product.scentNotes?.length || !!product.inspiredBy);
     setShowProductDialog(true);
   };
 
@@ -226,8 +246,85 @@ export default function ProductManagement() {
       description: "",
       image: "",
       isActive: true,
+      scentNotes: [],
+      inspiredBy: "",
+      aiDescription: "",
+      seasons: [],
+      occasions: [],
+    });
+    setScentNoteInput("");
+    setShowAdvanced(false);
+  };
+
+  const addScentNote = () => {
+    if (scentNoteInput.trim() && !productForm.scentNotes.includes(scentNoteInput.trim())) {
+      setProductForm({
+        ...productForm,
+        scentNotes: [...productForm.scentNotes, scentNoteInput.trim()],
+      });
+      setScentNoteInput("");
+    }
+  };
+
+  const removeScentNote = (note: string) => {
+    setProductForm({
+      ...productForm,
+      scentNotes: productForm.scentNotes.filter((n) => n !== note),
     });
   };
+
+  const toggleSeason = (season: string) => {
+    const seasons = productForm.seasons.includes(season)
+      ? productForm.seasons.filter((s) => s !== season)
+      : [...productForm.seasons, season];
+    setProductForm({ ...productForm, seasons });
+  };
+
+  const toggleOccasion = (occasion: string) => {
+    const occasions = productForm.occasions.includes(occasion)
+      ? productForm.occasions.filter((o) => o !== occasion)
+      : [...productForm.occasions, occasion];
+    setProductForm({ ...productForm, occasions });
+  };
+
+  const generateAIDescription = async () => {
+    try {
+      setGeneratingAI(true);
+      const response = await fetch("/api/admin/generate-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          productName: productForm.name,
+          brand: productForm.brand,
+          scentNotes: productForm.scentNotes,
+          inspiredBy: productForm.inspiredBy,
+          gender: productForm.category,
+          category: "Eau de Parfum",
+        }),
+      });
+
+      if (!response.ok) throw new Error("KI-Generierung fehlgeschlagen");
+
+      const result = await response.json();
+      setProductForm({
+        ...productForm,
+        aiDescription: result.description,
+        seasons: result.seasons || [],
+        occasions: result.occasions || [],
+        description: productForm.description || result.description,
+      });
+      toast.success("KI-Beschreibung erstellt");
+    } catch (error) {
+      console.error("AI generation error:", error);
+      toast.error("KI-Beschreibung fehlgeschlagen");
+    } finally {
+      setGeneratingAI(false);
+    }
+  };
+
+  const allSeasons = ["Frühling", "Sommer", "Herbst", "Winter"];
+  const allOccasions = ["Alltag", "Büro", "Date", "Abendveranstaltung", "Hochzeit", "Sport", "Freizeit"];
 
   const resetVariantForm = () => {
     setEditingVariant(null);
@@ -317,6 +414,125 @@ export default function ProductManagement() {
                   data-testid="input-product-image"
                 />
               </div>
+              
+              {/* Advanced section toggle */}
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
+                data-testid="button-toggle-advanced"
+              >
+                {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                Duftnoten & KI-Beschreibung
+              </button>
+
+              {showAdvanced && (
+                <div className="space-y-4 border-t pt-4">
+                  {/* Inspired By */}
+                  <div className="space-y-2">
+                    <Label>Inspiriert von</Label>
+                    <Input
+                      value={productForm.inspiredBy}
+                      onChange={(e) => setProductForm({ ...productForm, inspiredBy: e.target.value })}
+                      placeholder="z.B. Dior Sauvage, Chanel No. 5..."
+                      data-testid="input-product-inspired"
+                    />
+                  </div>
+
+                  {/* Scent Notes */}
+                  <div className="space-y-2">
+                    <Label>Duftnoten</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        value={scentNoteInput}
+                        onChange={(e) => setScentNoteInput(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addScentNote())}
+                        placeholder="z.B. Bergamotte, Vanille..."
+                        data-testid="input-scent-note"
+                      />
+                      <Button type="button" variant="outline" onClick={addScentNote} data-testid="button-add-scent-note">
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    {productForm.scentNotes.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {productForm.scentNotes.map((note) => (
+                          <Badge key={note} variant="secondary" className="gap-1">
+                            {note}
+                            <button onClick={() => removeScentNote(note)} className="ml-1" data-testid={`button-remove-note-${note}`}>
+                              <X className="w-3 h-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* AI Generate Button */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={generateAIDescription}
+                    disabled={generatingAI || !productForm.name}
+                    data-testid="button-generate-ai"
+                  >
+                    {generatingAI ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4 mr-2" />
+                    )}
+                    KI-Beschreibung generieren
+                  </Button>
+
+                  {/* Seasons */}
+                  <div className="space-y-2">
+                    <Label>Jahreszeiten</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {allSeasons.map((season) => (
+                        <Badge
+                          key={season}
+                          variant={productForm.seasons.includes(season) ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => toggleSeason(season)}
+                          data-testid={`badge-season-${season}`}
+                        >
+                          {season}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Occasions */}
+                  <div className="space-y-2">
+                    <Label>Anlässe</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {allOccasions.map((occasion) => (
+                        <Badge
+                          key={occasion}
+                          variant={productForm.occasions.includes(occasion) ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => toggleOccasion(occasion)}
+                          data-testid={`badge-occasion-${occasion}`}
+                        >
+                          {occasion}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* AI Description Preview */}
+                  {productForm.aiDescription && (
+                    <div className="space-y-2">
+                      <Label>KI-Beschreibung</Label>
+                      <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                        {productForm.aiDescription}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="flex items-center justify-between">
                 <Label>Aktiv</Label>
                 <Switch

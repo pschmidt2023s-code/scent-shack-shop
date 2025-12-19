@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Star, ShoppingBag, ArrowLeft, MessageCircle, Loader2 } from 'lucide-react';
+import { Star, ShoppingBag, ArrowLeft, MessageCircle, Loader2, Sparkles, Leaf, Sun, CloudSnow, TreeDeciduous, Calendar, Award } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCart } from '@/contexts/CartContext';
@@ -51,6 +51,12 @@ const ProductDetail = () => {
             category: data.category,
             size: data.size,
             image: data.image || '/placeholder.svg',
+            description: data.description,
+            scentNotes: data.scentNotes,
+            inspiredBy: data.inspiredBy,
+            aiDescription: data.aiDescription,
+            seasons: data.seasons,
+            occasions: data.occasions,
             variants: (data.variants || []).map((v: any, index: number) => ({
               id: v.id,
               number: String(index + 1).padStart(3, '0'),
@@ -332,6 +338,104 @@ const ProductDetail = () => {
             </div>
           </div>
         </div>
+
+        {/* Scent Information Section */}
+        {(perfume.scentNotes?.length || perfume.inspiredBy || perfume.aiDescription || perfume.seasons?.length || perfume.occasions?.length) && (
+          <Card className="mb-12" data-testid="card-scent-info">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <Sparkles className="w-6 h-6 text-primary" />
+                <h2 className="text-2xl font-bold">Duftprofil</h2>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Left Column */}
+                <div className="space-y-6">
+                  {/* AI Description */}
+                  {perfume.aiDescription && (
+                    <div>
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        <Award className="w-4 h-4 text-primary" />
+                        Beschreibung
+                      </h3>
+                      <p className="text-muted-foreground leading-relaxed" data-testid="text-ai-description">
+                        {perfume.aiDescription}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Inspired By */}
+                  {perfume.inspiredBy && (
+                    <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                      <h3 className="font-semibold mb-2 text-primary">Inspiriert von</h3>
+                      <p className="text-lg font-medium" data-testid="text-inspired-by">{perfume.inspiredBy}</p>
+                    </div>
+                  )}
+
+                  {/* Scent Notes */}
+                  {perfume.scentNotes && perfume.scentNotes.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        <Leaf className="w-4 h-4" />
+                        Duftnoten
+                      </h3>
+                      <div className="flex flex-wrap gap-2" data-testid="container-scent-notes">
+                        {perfume.scentNotes.map((note) => (
+                          <Badge key={note} variant="secondary" className="text-sm">
+                            {note}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Column */}
+                <div className="space-y-6">
+                  {/* Seasons */}
+                  {perfume.seasons && perfume.seasons.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        <Sun className="w-4 h-4" />
+                        Passende Jahreszeiten
+                      </h3>
+                      <div className="flex flex-wrap gap-2" data-testid="container-seasons">
+                        {perfume.seasons.map((season) => {
+                          const SeasonIcon = season === 'Frühling' ? Leaf : 
+                                           season === 'Sommer' ? Sun :
+                                           season === 'Herbst' ? TreeDeciduous : CloudSnow;
+                          return (
+                            <Badge key={season} variant="outline" className="gap-1.5">
+                              <SeasonIcon className="w-3 h-3" />
+                              {season}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Occasions */}
+                  {perfume.occasions && perfume.occasions.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        Passende Anlässe
+                      </h3>
+                      <div className="flex flex-wrap gap-2" data-testid="container-occasions">
+                        {perfume.occasions.map((occasion) => (
+                          <Badge key={occasion} variant="outline">
+                            {occasion}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Additional Product Details */}
         <Card className="mb-12">

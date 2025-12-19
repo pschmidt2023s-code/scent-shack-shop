@@ -29,6 +29,11 @@ export const products = pgTable("products", {
   gender: text("gender"),
   image: text("image"),
   size: text("size"),
+  scentNotes: text("scent_notes").array(),
+  inspiredBy: text("inspired_by"),
+  aiDescription: text("ai_description"),
+  seasons: text("seasons").array(),
+  occasions: text("occasions").array(),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -352,6 +357,11 @@ export const insertProductSchema = z.object({
   gender: z.string().optional(),
   image: z.string().optional(),
   size: z.string().optional(),
+  scentNotes: z.array(z.string()).optional(),
+  inspiredBy: z.string().optional(),
+  aiDescription: z.string().optional(),
+  seasons: z.array(z.string()).optional(),
+  occasions: z.array(z.string()).optional(),
   isActive: z.boolean().optional(),
 });
 

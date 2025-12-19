@@ -101,6 +101,17 @@ npx drizzle-kit push # Push schema to database
 - Order confirmation shows bank details and reference number
 
 ## Recent Changes (Dec 2024)
+### Product Scent Information Feature (Dec 19, 2024)
+- Extended products table with: scentNotes (array), inspiredBy, aiDescription, seasons (array), occasions (array)
+- Admin Panel: New "Duftnoten & KI-Beschreibung" expandable section in product form
+  - Add/remove scent notes with tags
+  - Inspired by field for original perfume reference
+  - AI description generation button using OpenAI gpt-4o-mini
+  - Toggleable seasons and occasions badges
+- Product detail page: New "Duftprofil" card showing all scent information with icons
+- API endpoint: POST /api/admin/generate-description for AI perfume descriptions
+- Uses Replit AI Integrations (no API key required, billed to credits)
+
 ### Complete Redesign (Dec 19, 2024)
 - About page added at /about with company values, story, and statistics
 - AdminNew.tsx deprecated file removed - /admin route now uses rebuilt Admin.tsx

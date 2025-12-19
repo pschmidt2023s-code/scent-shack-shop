@@ -21,6 +21,12 @@ export interface Perfume {
   category: string;
   size: string;
   image: string;
+  description?: string;
+  scentNotes?: string[];
+  inspiredBy?: string;
+  aiDescription?: string;
+  seasons?: string[];
+  occasions?: string[];
   variants: PerfumeVariant[];
 }
 

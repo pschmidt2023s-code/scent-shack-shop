@@ -3,6 +3,12 @@ import { z } from "zod";
 import { storage } from "./storage";
 import { insertUserSchema, insertProductSchema, insertOrderSchema, insertReviewSchema, insertPartnerSchema, insertNewsletterSchema, insertAddressSchema, insertContestEntrySchema } from "../shared/schema";
 import bcrypt from "bcryptjs";
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+});
 
 declare module "express-session" {
   interface SessionData {
@@ -1014,6 +1020,74 @@ Dein Verhalten:
   app.delete("/api/push-subscriptions", requireAuth, async (req, res) => {
     try {
       res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // AI Product Description Generation
+  app.post("/api/admin/generate-description", requireAdmin, async (req, res) => {
+    try {
+      const { productName, brand, scentNotes, inspiredBy, gender, category } = req.body;
+
+      if (!productName) {
+        return res.status(400).json({ error: "Produktname erforderlich" });
+      }
+
+      const notesText = scentNotes?.length ? scentNotes.join(", ") : "nicht angegeben";
+      const inspiredText = inspiredBy || "keine Angabe";
+
+      const prompt = `Du bist ein Experte für Luxusparfüms. Erstelle eine ansprechende deutsche Produktbeschreibung für folgendes Parfüm:
+
+Produktname: ${productName}
+Marke: ${brand || "ALDENAIR"}
+Duftnoten: ${notesText}
+Inspiriert von: ${inspiredText}
+Geschlecht: ${gender || "Unisex"}
+Kategorie: ${category || "Eau de Parfum"}
+
+Erstelle eine JSON-Antwort mit folgender Struktur:
+{
+  "description": "Eine elegante, verkaufsfördernde Beschreibung (2-3 Sätze)",
+  "seasons": ["Array der passenden Jahreszeiten: Frühling, Sommer, Herbst, Winter"],
+  "occasions": ["Array der passenden Anlässe: z.B. Alltag, Büro, Date, Abendveranstaltung, Hochzeit, Sport"],
+  "highlights": ["3 besondere Eigenschaften oder Vorteile dieses Duftes"]
+}
+
+Antworte nur mit validem JSON, kein weiterer Text.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        max_tokens: 500,
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        return res.status(500).json({ error: "Keine Antwort von KI erhalten" });
+      }
+
+      const result = JSON.parse(content);
+      res.json(result);
+    } catch (error: any) {
+      console.error("AI description error:", error);
+      res.status(500).json({ error: error.message || "KI-Beschreibung fehlgeschlagen" });
+    }
+  });
+
+  // Update product with extended fields
+  app.patch("/api/products/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      
+      const updated = await storage.updateProduct(id, updateData);
+      if (!updated) {
+        return res.status(404).json({ error: "Produkt nicht gefunden" });
+      }
+      
+      res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
