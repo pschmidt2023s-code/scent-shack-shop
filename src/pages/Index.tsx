@@ -63,6 +63,80 @@ const Index = () => {
               </p>
             </div>
             
+            {/* Sparsets Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+              <Card className="hover-elevate overflow-visible">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-3 rounded-lg bg-primary/10">
+                      <Sparkles className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">Handverlesene Auswahl</h3>
+                      <p className="text-sm text-muted-foreground">Unsere Bestseller</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link to="/products" data-testid="link-handverlesene-auswahl">
+                      Entdecken
+                      <ArrowRight className="ml-2 w-4 h-4" />
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="hover-elevate overflow-visible border-primary/20 bg-primary/5">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-3 rounded-lg bg-primary/10">
+                      <Gift className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">50ml Sparset</h3>
+                      <p className="text-sm text-muted-foreground">3 oder 5 Flaschen nach Wahl</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Stelle dein individuelles Set aus 50ml Flaschen zusammen und spare bis zu 20%
+                  </p>
+                  <Button className="w-full" asChild>
+                    <Link to="/sample-sets" data-testid="link-sparset-50ml">
+                      Set zusammenstellen
+                      <ArrowRight className="ml-2 w-4 h-4" />
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="hover-elevate overflow-visible border-primary/20 bg-primary/5">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-3 rounded-lg bg-primary/10">
+                      <Percent className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">Probenset</h3>
+                      <p className="text-sm text-muted-foreground">5 Proben nach Wahl</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Wähle 5 Duftproben aus und entdecke deine neuen Lieblingsdüfte
+                  </p>
+                  <Button className="w-full" asChild>
+                    <Link to="/sample-sets" data-testid="link-probenset">
+                      Proben auswählen
+                      <ArrowRight className="ml-2 w-4 h-4" />
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <h3 className="text-2xl font-bold text-foreground text-center mb-8">Unsere Bestseller</h3>
+            <p className="text-muted-foreground text-center mb-8 max-w-xl mx-auto">
+              Premium-Düfte inspiriert von weltbekannten Marken
+            </p>
+            
             <PerfumeGrid />
             
             <div className="text-center mt-12">

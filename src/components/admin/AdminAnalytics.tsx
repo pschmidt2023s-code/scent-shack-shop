@@ -117,11 +117,11 @@ export default function AdminAnalytics() {
         {stats.map((stat, index) => (
           <Card 
             key={index} 
-            className={`bg-slate-900 border-slate-800 ${stat.borderColor}`}
+            className={`${stat.borderColor}`}
             data-testid={`stat-card-${index}`}
           >
             <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between gap-2 mb-4">
                 <div className={`p-2.5 rounded-lg ${stat.bgColor}`}>
                   <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
                 </div>
@@ -138,14 +138,14 @@ export default function AdminAnalytics() {
                   </div>
                 )}
                 {stat.trend === 'neutral' && (
-                  <div className="text-slate-500 text-xs">
+                  <div className="text-muted-foreground text-xs">
                     {stat.change}
                   </div>
                 )}
               </div>
               <div className="space-y-1">
-                <p className="text-2xl font-bold text-white">{stat.value}</p>
-                <p className="text-sm text-slate-400">{stat.title}</p>
+                <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                <p className="text-sm text-muted-foreground">{stat.title}</p>
               </div>
             </CardContent>
           </Card>
@@ -153,26 +153,26 @@ export default function AdminAnalytics() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-slate-900 border-slate-800">
-          <CardHeader className="border-b border-slate-800">
-            <CardTitle className="text-white flex items-center gap-2">
+        <Card>
+          <CardHeader className="border-b">
+            <CardTitle className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-blue-500" />
-              Ubersicht
+              Übersicht
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-4">
-              <div className="flex items-center justify-between py-3 border-b border-slate-800">
-                <span className="text-slate-400">Durchschn. Bestellwert</span>
-                <span className="font-semibold text-white">
+              <div className="flex items-center justify-between gap-2 py-3 border-b">
+                <span className="text-muted-foreground">Durchschn. Bestellwert</span>
+                <span className="font-semibold text-foreground">
                   {analytics.totalOrders > 0 
                     ? `${(analytics.totalRevenue / analytics.totalOrders).toFixed(2)} EUR`
                     : '0.00 EUR'
                   }
                 </span>
               </div>
-              <div className="flex items-center justify-between py-3 border-b border-slate-800">
-                <span className="text-slate-400">Abschlussrate</span>
+              <div className="flex items-center justify-between gap-2 py-3 border-b">
+                <span className="text-muted-foreground">Abschlussrate</span>
                 <span className="font-semibold text-emerald-500">
                   {analytics.totalOrders > 0 
                     ? `${((analytics.completedOrders / analytics.totalOrders) * 100).toFixed(1)}%`
@@ -180,17 +180,17 @@ export default function AdminAnalytics() {
                   }
                 </span>
               </div>
-              <div className="flex items-center justify-between py-3">
-                <span className="text-slate-400">Produkte pro Bestellung</span>
-                <span className="font-semibold text-white">~2.4</span>
+              <div className="flex items-center justify-between gap-2 py-3">
+                <span className="text-muted-foreground">Produkte pro Bestellung</span>
+                <span className="font-semibold text-foreground">~2.4</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900 border-slate-800">
-          <CardHeader className="border-b border-slate-800">
-            <CardTitle className="text-white flex items-center gap-2">
+        <Card>
+          <CardHeader className="border-b">
+            <CardTitle className="flex items-center gap-2">
               <Clock className="w-5 h-5 text-amber-500" />
               Aktionen erforderlich
             </CardTitle>
@@ -198,27 +198,27 @@ export default function AdminAnalytics() {
           <CardContent className="p-6">
             <div className="space-y-3">
               {analytics.pendingOrders > 0 ? (
-                <div className="flex items-center justify-between p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <div className="flex items-center justify-between gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                    <span className="text-white font-medium">{analytics.pendingOrders} ausstehende Bestellungen</span>
+                    <span className="text-foreground font-medium">{analytics.pendingOrders} ausstehende Bestellungen</span>
                   </div>
                   <span className="text-sm text-amber-500">Bearbeiten</span>
                 </div>
               ) : (
-                <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                <div className="flex items-center justify-between gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span className="text-white font-medium">Alle Bestellungen bearbeitet</span>
+                    <span className="text-foreground font-medium">Alle Bestellungen bearbeitet</span>
                   </div>
                 </div>
               )}
-              <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700">
+              <div className="flex items-center justify-between gap-2 p-3 rounded-lg bg-muted border">
                 <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-slate-500" />
-                  <span className="text-slate-300">Produktkatalog aktuell</span>
+                  <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+                  <span className="text-muted-foreground">Produktkatalog aktuell</span>
                 </div>
-                <span className="text-sm text-slate-500">{analytics.totalProducts} Produkte</span>
+                <span className="text-sm text-muted-foreground">{analytics.totalProducts} Produkte</span>
               </div>
             </div>
           </CardContent>
@@ -228,14 +228,14 @@ export default function AdminAnalytics() {
       {/* Performance & Security Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Performance Panel */}
-        <Card className="bg-slate-900 border-slate-800">
-          <CardHeader className="border-b border-slate-800">
-            <CardTitle className="text-white flex items-center justify-between gap-2">
+        <Card>
+          <CardHeader className="border-b">
+            <CardTitle className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-2">
                 <Zap className="w-5 h-5 text-yellow-500" />
                 Performance
               </div>
-              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
                 Optimal
               </Badge>
             </CardTitle>
@@ -243,53 +243,53 @@ export default function AdminAnalytics() {
           <CardContent className="p-6 space-y-6">
             <div className="space-y-4">
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-slate-400" />
-                    <span className="text-sm text-slate-300">Ladezeit (Desktop)</span>
+                    <Globe className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Ladezeit (Desktop)</span>
                   </div>
-                  <span className="text-sm font-medium text-emerald-400">1.2s</span>
+                  <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">1.2s</span>
                 </div>
-                <Progress value={85} className="h-2 bg-slate-800" />
+                <Progress value={85} className="h-2" />
               </div>
               
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-slate-400" />
-                    <span className="text-sm text-slate-300">Ladezeit (Mobile)</span>
+                    <Activity className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Ladezeit (Mobile)</span>
                   </div>
-                  <span className="text-sm font-medium text-yellow-400">2.1s</span>
+                  <span className="text-sm font-medium text-yellow-600 dark:text-yellow-400">2.1s</span>
                 </div>
-                <Progress value={70} className="h-2 bg-slate-800" />
+                <Progress value={70} className="h-2" />
               </div>
               
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2">
-                    <Server className="w-4 h-4 text-slate-400" />
-                    <span className="text-sm text-slate-300">Server-Antwortzeit</span>
+                    <Server className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Server-Antwortzeit</span>
                   </div>
-                  <span className="text-sm font-medium text-emerald-400">45ms</span>
+                  <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">45ms</span>
                 </div>
-                <Progress value={95} className="h-2 bg-slate-800" />
+                <Progress value={95} className="h-2" />
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-800">
-              <h4 className="text-sm font-medium text-white mb-3">Empfehlungen</h4>
+            <div className="pt-4 border-t">
+              <h4 className="text-sm font-medium text-foreground mb-3">Empfehlungen</h4>
               <div className="space-y-2">
                 <div className="flex items-start gap-2 text-sm">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-slate-400">Bilder sind optimiert</span>
+                  <span className="text-muted-foreground">Bilder sind optimiert</span>
                 </div>
                 <div className="flex items-start gap-2 text-sm">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-slate-400">Code-Splitting aktiv</span>
+                  <span className="text-muted-foreground">Code-Splitting aktiv</span>
                 </div>
                 <div className="flex items-start gap-2 text-sm">
                   <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-slate-400">CDN fur statische Assets empfohlen</span>
+                  <span className="text-muted-foreground">CDN für statische Assets empfohlen</span>
                 </div>
               </div>
             </div>
@@ -297,71 +297,71 @@ export default function AdminAnalytics() {
         </Card>
 
         {/* Security Panel */}
-        <Card className="bg-slate-900 border-slate-800">
-          <CardHeader className="border-b border-slate-800">
-            <CardTitle className="text-white flex items-center justify-between gap-2">
+        <Card>
+          <CardHeader className="border-b">
+            <CardTitle className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-blue-500" />
                 Sicherheit
               </div>
-              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
                 Sicher
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6 space-y-6">
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700 text-center">
-                <div className="text-2xl font-bold text-white">SSL</div>
-                <div className="text-xs text-emerald-400 flex items-center justify-center gap-1 mt-1">
+              <div className="p-4 rounded-lg bg-muted border text-center">
+                <div className="text-2xl font-bold text-foreground">SSL</div>
+                <div className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1 mt-1">
                   <Lock className="w-3 h-3" />
                   Aktiv
                 </div>
               </div>
-              <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700 text-center">
-                <div className="text-2xl font-bold text-white">2FA</div>
-                <div className="text-xs text-slate-400 mt-1">Verfugbar</div>
+              <div className="p-4 rounded-lg bg-muted border text-center">
+                <div className="text-2xl font-bold text-foreground">2FA</div>
+                <div className="text-xs text-muted-foreground mt-1">Verfügbar</div>
               </div>
             </div>
 
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <div className="flex items-center justify-between gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <span className="text-sm text-slate-300">HTTPS erzwungen</span>
+                  <span className="text-sm text-muted-foreground">HTTPS erzwungen</span>
                 </div>
-                <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-400 text-xs">Aktiv</Badge>
+                <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs">Aktiv</Badge>
               </div>
               
-              <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <div className="flex items-center justify-between gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <span className="text-sm text-slate-300">Rate Limiting</span>
+                  <span className="text-sm text-muted-foreground">Rate Limiting</span>
                 </div>
-                <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-400 text-xs">Aktiv</Badge>
+                <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs">Aktiv</Badge>
               </div>
               
-              <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <div className="flex items-center justify-between gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <span className="text-sm text-slate-300">Session-Sicherheit</span>
+                  <span className="text-sm text-muted-foreground">Session-Sicherheit</span>
                 </div>
-                <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-400 text-xs">Aktiv</Badge>
+                <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs">Aktiv</Badge>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-800">
-              <h4 className="text-sm font-medium text-white mb-3">Letzte Aktivitaten</h4>
+            <div className="pt-4 border-t">
+              <h4 className="text-sm font-medium text-foreground mb-3">Letzte Aktivitäten</h4>
               <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between text-slate-400">
+                <div className="flex items-center justify-between gap-2 text-muted-foreground">
                   <span>Admin-Login</span>
                   <span className="text-xs">Vor 5 Min.</span>
                 </div>
-                <div className="flex items-center justify-between text-slate-400">
+                <div className="flex items-center justify-between gap-2 text-muted-foreground">
                   <span>Bestellung bearbeitet</span>
                   <span className="text-xs">Vor 12 Min.</span>
                 </div>
-                <div className="flex items-center justify-between text-slate-400">
+                <div className="flex items-center justify-between gap-2 text-muted-foreground">
                   <span>Produkt aktualisiert</span>
                   <span className="text-xs">Vor 1 Std.</span>
                 </div>
