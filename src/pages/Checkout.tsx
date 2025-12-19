@@ -173,9 +173,21 @@ export default function Checkout() {
           throw new Error(error.error || 'Stripe Checkout fehlgeschlagen');
         }
         
-        const { url } = await stripeResponse.json();
+        const responseData = await stripeResponse.json();
+        console.log('Stripe response:', responseData);
+        const { url } = responseData;
         if (url) {
-          window.location.href = url;
+          console.log('Redirecting to Stripe:', url);
+          try {
+            if (window.top && window.top !== window) {
+              window.top.location.href = url;
+            } else {
+              window.location.href = url;
+            }
+          } catch (redirectError) {
+            console.log('Redirect blocked, opening new tab:', redirectError);
+            window.open(url, '_blank');
+          }
           return;
         }
         throw new Error('Keine Checkout-URL erhalten');
