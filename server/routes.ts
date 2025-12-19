@@ -1513,8 +1513,8 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
         payment_method_types: ['card'],
         line_items: lineItems,
         mode: 'payment',
-        success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${baseUrl}/checkout/cancel`,
+        success_url: `${baseUrl}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/checkout-cancel`,
         customer_email: customerEmail,
         metadata: {
           orderId: order.id,
