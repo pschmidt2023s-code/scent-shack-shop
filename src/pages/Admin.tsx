@@ -175,7 +175,8 @@ function StatCard({
   change, 
   changeType = 'neutral',
   icon: Icon,
-  subtitle
+  subtitle,
+  iconColor = 'cyan'
 }: { 
   title: string; 
   value: string; 
@@ -183,36 +184,38 @@ function StatCard({
   changeType?: 'positive' | 'negative' | 'neutral';
   icon: React.ComponentType<{ className?: string }>;
   subtitle?: string;
+  iconColor?: 'cyan' | 'purple' | 'pink' | 'green';
 }) {
   return (
-    <Card data-testid={`stat-card-${title.toLowerCase().replace(/\s/g, '-')}`}>
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold tracking-tight">{value}</p>
-            {change && (
-              <div className="flex items-center gap-1">
-                {changeType === 'positive' && <TrendingUp className="w-4 h-4 text-green-500" />}
-                {changeType === 'negative' && <TrendingDown className="w-4 h-4 text-red-500" />}
-                <span className={cn(
-                  "text-xs font-medium",
-                  changeType === 'positive' && "text-green-500",
-                  changeType === 'negative' && "text-red-500",
-                  changeType === 'neutral' && "text-muted-foreground"
-                )}>
-                  {change}
-                </span>
-              </div>
-            )}
-            {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
-          </div>
-          <div className="p-3 bg-primary/10 rounded-lg">
-            <Icon className="w-5 h-5 text-primary" />
-          </div>
+    <div 
+      className="admin-stat-card rounded-xl p-6"
+      data-testid={`stat-card-${title.toLowerCase().replace(/\s/g, '-')}`}
+    >
+      <div className="flex items-start justify-between">
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{title}</p>
+          <p className="text-3xl font-bold tracking-tight">{value}</p>
+          {change && (
+            <div className="flex items-center gap-1.5">
+              {changeType === 'positive' && <TrendingUp className="w-4 h-4 text-emerald-400" />}
+              {changeType === 'negative' && <TrendingDown className="w-4 h-4 text-red-400" />}
+              <span className={cn(
+                "text-sm font-medium",
+                changeType === 'positive' && "text-emerald-400",
+                changeType === 'negative' && "text-red-400",
+                changeType === 'neutral' && "text-muted-foreground"
+              )}>
+                {change}
+              </span>
+            </div>
+          )}
+          {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
         </div>
-      </CardContent>
-    </Card>
+        <div className={`admin-stat-icon ${iconColor}`}>
+          <Icon className="w-6 h-6" />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -230,13 +233,13 @@ function DashboardOverview({ orders, stats }: { orders: Order[]; stats: Dashboar
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
-        <p className="text-muted-foreground">Willkommen zurück! Hier ist Ihre Übersicht.</p>
+        <h2 className="text-3xl font-bold tracking-tight admin-glow-text">Dashboard</h2>
+        <p className="text-muted-foreground mt-1">Willkommen zurück! Hier ist Ihre Übersicht.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Gesamtumsatz"
           value={`€${stats.totalRevenue.toLocaleString('de-DE', { minimumFractionDigits: 2 })}`}
@@ -244,6 +247,7 @@ function DashboardOverview({ orders, stats }: { orders: Order[]; stats: Dashboar
           changeType={stats.revenueChange >= 0 ? 'positive' : 'negative'}
           icon={DollarSign}
           subtitle="Diesen Monat"
+          iconColor="cyan"
         />
         <StatCard
           title="Bestellungen"
@@ -252,47 +256,50 @@ function DashboardOverview({ orders, stats }: { orders: Order[]; stats: Dashboar
           changeType={stats.ordersChange >= 0 ? 'positive' : 'negative'}
           icon={ShoppingCart}
           subtitle="Diesen Monat"
+          iconColor="purple"
         />
         <StatCard
           title="Kunden"
           value={stats.totalCustomers.toString()}
           icon={Users}
           subtitle="Registrierte Nutzer"
+          iconColor="pink"
         />
         <StatCard
           title="Ausstehend"
           value={stats.pendingOrders.toString()}
           icon={Clock}
           subtitle="Offene Bestellungen"
+          iconColor="green"
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-4 pb-2">
+        <div className="admin-glass rounded-xl overflow-hidden">
+          <div className="flex flex-row items-center justify-between gap-4 p-6 pb-4">
             <div>
-              <CardTitle className="text-base font-semibold">Letzte Bestellungen</CardTitle>
-              <CardDescription>Die neuesten 5 Bestellungen</CardDescription>
+              <h3 className="text-base font-semibold">Letzte Bestellungen</h3>
+              <p className="text-sm text-muted-foreground">Die neuesten 5 Bestellungen</p>
             </div>
             <Button variant="ghost" size="sm" className="gap-1" data-testid="btn-view-all-orders">
               Alle anzeigen <ArrowUpRight className="w-4 h-4" />
             </Button>
-          </CardHeader>
-          <CardContent>
+          </div>
+          <div className="px-6 pb-6">
             {recentOrders.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <ShoppingCart className="w-8 h-8 mx-auto mb-2 opacity-50" />
                 <p>Keine Bestellungen vorhanden</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {recentOrders.map((order) => {
                   const config = statusConfig[order.status] || statusConfig.pending;
                   const StatusIcon = config.icon;
                   return (
-                    <div key={order.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <div key={order.id} className="flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
                       <div className="flex items-center gap-3">
-                        <div className={cn("p-2 rounded-full bg-background", config.color)}>
+                        <div className={cn("p-2.5 rounded-xl", config.color)} style={{ background: 'hsl(215 45% 14% / 0.8)' }}>
                           <StatusIcon className="w-4 h-4" />
                         </div>
                         <div>
@@ -305,7 +312,7 @@ function DashboardOverview({ orders, stats }: { orders: Order[]; stats: Dashboar
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold">
+                        <p className="text-sm font-semibold text-cyan-400">
                           €{order.totalAmount.toFixed(2)}
                         </p>
                         <p className="text-xs text-muted-foreground">
@@ -317,35 +324,43 @@ function DashboardOverview({ orders, stats }: { orders: Order[]; stats: Dashboar
                 })}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Schnellzugriff</CardTitle>
-            <CardDescription>Häufig verwendete Aktionen</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="h-auto py-4 flex-col gap-2" data-testid="btn-quick-new-product">
-                <Package className="w-5 h-5" />
-                <span className="text-xs">Neues Produkt</span>
-              </Button>
-              <Button variant="outline" className="h-auto py-4 flex-col gap-2" data-testid="btn-quick-new-coupon">
-                <Tag className="w-5 h-5" />
-                <span className="text-xs">Neuer Rabattcode</span>
-              </Button>
-              <Button variant="outline" className="h-auto py-4 flex-col gap-2" data-testid="btn-quick-newsletter">
-                <Mail className="w-5 h-5" />
-                <span className="text-xs">Newsletter</span>
-              </Button>
-              <Button variant="outline" className="h-auto py-4 flex-col gap-2" data-testid="btn-quick-analytics">
-                <BarChart3 className="w-5 h-5" />
-                <span className="text-xs">Analytics</span>
-              </Button>
+        <div className="admin-glass rounded-xl overflow-hidden">
+          <div className="p-6 pb-4">
+            <h3 className="text-base font-semibold">Schnellzugriff</h3>
+            <p className="text-sm text-muted-foreground">Häufig verwendete Aktionen</p>
+          </div>
+          <div className="px-6 pb-6">
+            <div className="grid grid-cols-2 gap-4">
+              <button className="admin-stat-card rounded-xl p-5 flex flex-col items-center gap-3 hover:border-cyan-500/30 transition-all group" data-testid="btn-quick-new-product">
+                <div className="admin-stat-icon cyan">
+                  <Package className="w-5 h-5" />
+                </div>
+                <span className="text-sm font-medium group-hover:text-cyan-400 transition-colors">Neues Produkt</span>
+              </button>
+              <button className="admin-stat-card rounded-xl p-5 flex flex-col items-center gap-3 hover:border-purple-500/30 transition-all group" data-testid="btn-quick-new-coupon">
+                <div className="admin-stat-icon purple">
+                  <Tag className="w-5 h-5" />
+                </div>
+                <span className="text-sm font-medium group-hover:text-purple-400 transition-colors">Neuer Rabattcode</span>
+              </button>
+              <button className="admin-stat-card rounded-xl p-5 flex flex-col items-center gap-3 hover:border-pink-500/30 transition-all group" data-testid="btn-quick-newsletter">
+                <div className="admin-stat-icon pink">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <span className="text-sm font-medium group-hover:text-pink-400 transition-colors">Newsletter</span>
+              </button>
+              <button className="admin-stat-card rounded-xl p-5 flex flex-col items-center gap-3 hover:border-green-500/30 transition-all group" data-testid="btn-quick-analytics">
+                <div className="admin-stat-icon green">
+                  <BarChart3 className="w-5 h-5" />
+                </div>
+                <span className="text-sm font-medium group-hover:text-emerald-400 transition-colors">Analytics</span>
+              </button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1044,15 +1059,15 @@ export default function Admin() {
   } as React.CSSProperties;
 
   return (
-    <div className="admin-theme">
+    <div className="admin-theme admin-shell">
       <SidebarProvider style={sidebarStyle}>
-        <div className="flex min-h-screen w-full bg-background text-foreground">
+        <div className="flex min-h-screen w-full">
         <div className="hidden lg:block">
           <AdminSidebarNav activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
         
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <header className="sticky top-0 z-40 admin-header-bar">
             <div className="flex h-14 items-center justify-between gap-4 px-4">
               <div className="flex items-center gap-2">
                 <MobileNav 
