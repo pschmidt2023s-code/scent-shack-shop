@@ -413,6 +413,32 @@ export async function registerRoutes(app: Express) {
         });
       }
       
+      // Send order confirmation email
+      try {
+        const { sendOrderConfirmationEmail } = await import('./email');
+        const emailItems = await Promise.all(validatedItems.map(async (item) => {
+          const variant = await storage.getProductVariant(item.variantId);
+          return {
+            name: variant?.name || 'Produkt',
+            quantity: item.quantity,
+            price: parseFloat(item.totalPrice),
+          };
+        }));
+        
+        await sendOrderConfirmationEmail({
+          orderNumber: order.orderNumber,
+          customerEmail: order.customerEmail || '',
+          customerName: order.customerName || 'Kunde',
+          items: emailItems,
+          totalAmount: parseFloat(order.totalAmount),
+          shippingCost: shippingCost,
+          shippingAddress: req.body.shippingAddressData || {},
+          paymentMethod: order.paymentMethod || 'bank',
+        });
+      } catch (emailError) {
+        console.error('Failed to send order confirmation email:', emailError);
+      }
+      
       res.json(order);
     } catch (error: any) {
       console.error("Order creation error:", error);
