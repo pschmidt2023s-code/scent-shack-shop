@@ -193,8 +193,8 @@ function StatCard({
     >
       <div className="flex items-start justify-between">
         <div className="space-y-3">
-          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{title}</p>
-          <p className="text-3xl font-bold tracking-tight">{value}</p>
+          <p className="text-sm font-medium text-white/70 uppercase tracking-wide">{title}</p>
+          <p className="text-3xl font-bold tracking-tight text-white">{value}</p>
           {change && (
             <div className="flex items-center gap-1.5">
               {changeType === 'positive' && <TrendingUp className="w-4 h-4 text-emerald-400" />}
@@ -203,13 +203,13 @@ function StatCard({
                 "text-sm font-medium",
                 changeType === 'positive' && "text-emerald-400",
                 changeType === 'negative' && "text-red-400",
-                changeType === 'neutral' && "text-muted-foreground"
+                changeType === 'neutral' && "text-white/60"
               )}>
                 {change}
               </span>
             </div>
           )}
-          {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-white/50">{subtitle}</p>}
         </div>
         <div className={`admin-stat-icon ${iconColor}`}>
           <Icon className="w-6 h-6" />
@@ -236,7 +236,7 @@ function DashboardOverview({ orders, stats }: { orders: Order[]; stats: Dashboar
     <div className="space-y-8">
       <div>
         <h2 className="text-3xl font-bold tracking-tight admin-glow-text">Dashboard</h2>
-        <p className="text-muted-foreground mt-1">Willkommen zurück! Hier ist Ihre Übersicht.</p>
+        <p className="text-white/60 mt-1">Willkommen zurück! Hier ist Ihre Übersicht.</p>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
