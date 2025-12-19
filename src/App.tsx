@@ -45,9 +45,31 @@ const About = React.lazy(() => import('@/pages/About'));
 const Cancellation = React.lazy(() => import('@/pages/Cancellation'));
 const SampleSets = React.lazy(() => import('@/pages/SampleSets'));
 
+const defaultQueryFn = async ({ queryKey }: { queryKey: readonly unknown[] }) => {
+  const endpoint = queryKey[0] as string;
+  const response = await fetch(endpoint, {
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || errorData.message || `Request failed: ${response.status}`);
+  }
+  
+  return response.json();
+};
+
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { retry: 1, refetchOnWindowFocus: false, staleTime: 5 * 60 * 1000 },
+    queries: { 
+      queryFn: defaultQueryFn,
+      retry: 1, 
+      refetchOnWindowFocus: false, 
+      staleTime: 5 * 60 * 1000 
+    },
   },
 });
 
