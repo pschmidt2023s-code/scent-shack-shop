@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -50,11 +49,33 @@ export function ContestManagement() {
 
   const fetchEntries = async () => {
     try {
-      // Feature not yet implemented - using empty data
-      setEntries([]);
+      const response = await fetch('/api/admin/contests/entries', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setEntries(data.map((e: any) => {
+          const nameParts = (e.name || '').split(' ');
+          return {
+            id: e.id,
+            first_name: nameParts[0] || '',
+            last_name: nameParts.slice(1).join(' ') || '',
+            email: e.email || '',
+            phone: e.phone || null,
+            birth_date: '',
+            message: '',
+            images: [],
+            is_winner: false,
+            winner_position: null,
+            created_at: e.createdAt || new Date().toISOString(),
+          };
+        }));
+      } else {
+        setEntries([]);
+      }
     } catch (error) {
       console.error('Error fetching contest entries:', error);
-      toast.error('Fehler beim Laden der Einträge');
+      setEntries([]);
     } finally {
       setLoading(false);
     }
@@ -76,7 +97,19 @@ export function ContestManagement() {
 
   const deleteEntry = async (id: string) => {
     if (!confirm('Möchtest du diesen Eintrag wirklich löschen?')) return;
-    toast.success('Eintrag gelöscht');
+    
+    try {
+      const response = await fetch(`/api/admin/contests/entries/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (response.ok) {
+        toast.success('Eintrag gelöscht');
+        fetchEntries();
+      }
+    } catch (error) {
+      toast.error('Löschen fehlgeschlagen');
+    }
   };
 
   const showDetails = (entry: ContestEntry) => {

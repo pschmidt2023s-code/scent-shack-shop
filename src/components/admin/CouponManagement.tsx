@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,94 +13,100 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 interface Coupon {
   id: string;
   code: string;
-  discountType: 'percentage' | 'fixed';
-  discountValue: number;
-  minOrderAmount: number;
+  discountType: string;
+  discountValue: string;
+  minOrderAmount: string;
   maxUses: number | null;
   currentUses: number;
-  validUntil: string | null;
+  expiresAt: string | null;
   isActive: boolean;
 }
 
 export default function CouponManagement() {
   const { toast } = useToast();
-  const [coupons, setCoupons] = useState<Coupon[]>([
-    {
-      id: '1',
-      code: 'WELCOME10',
-      discountType: 'percentage',
-      discountValue: 10,
-      minOrderAmount: 50,
-      maxUses: 100,
-      currentUses: 23,
-      validUntil: '2025-03-31',
-      isActive: true,
-    },
-    {
-      id: '2',
-      code: 'NEUJAHR25',
-      discountType: 'percentage',
-      discountValue: 25,
-      minOrderAmount: 100,
-      maxUses: 50,
-      currentUses: 12,
-      validUntil: '2025-01-31',
-      isActive: true,
-    },
-  ]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [formData, setFormData] = useState({
     code: '',
-    discountType: 'percentage' as 'percentage' | 'fixed',
-    discountValue: 0,
-    minOrderAmount: 0,
+    discountType: 'percentage',
+    discountValue: '0',
+    minOrderAmount: '0',
     maxUses: '',
-    validUntil: '',
+    expiresAt: '',
   });
+
+  useEffect(() => {
+    loadCoupons();
+  }, []);
+
+  const loadCoupons = async () => {
+    try {
+      const response = await fetch('/api/admin/coupons', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCoupons(data);
+      }
+    } catch (error) {
+      console.error('Error loading coupons:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const resetForm = () => {
     setFormData({
       code: '',
       discountType: 'percentage',
-      discountValue: 0,
-      minOrderAmount: 0,
+      discountValue: '0',
+      minOrderAmount: '0',
       maxUses: '',
-      validUntil: '',
+      expiresAt: '',
     });
     setEditingCoupon(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingCoupon) {
-      setCoupons(prev => prev.map(c => 
-        c.id === editingCoupon.id 
-          ? { ...c, ...formData, maxUses: formData.maxUses ? parseInt(formData.maxUses) : null }
-          : c
-      ));
-      toast({
-        title: "Erfolg",
-        description: "Rabattcode aktualisiert",
-      });
-    } else {
-      const newCoupon: Coupon = {
-        id: Date.now().toString(),
-        code: formData.code.toUpperCase(),
-        discountType: formData.discountType,
-        discountValue: formData.discountValue,
-        minOrderAmount: formData.minOrderAmount,
-        maxUses: formData.maxUses ? parseInt(formData.maxUses) : null,
-        currentUses: 0,
-        validUntil: formData.validUntil || null,
-        isActive: true,
-      };
-      setCoupons(prev => [...prev, newCoupon]);
-      toast({
-        title: "Erfolg",
-        description: "Rabattcode erstellt",
-      });
+    const payload = {
+      code: formData.code.toUpperCase(),
+      discountType: formData.discountType,
+      discountValue: formData.discountValue,
+      minOrderAmount: formData.minOrderAmount,
+      maxUses: formData.maxUses ? parseInt(formData.maxUses) : null,
+      expiresAt: formData.expiresAt || null,
+    };
+
+    try {
+      if (editingCoupon) {
+        const response = await fetch(`/api/admin/coupons/${editingCoupon.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload),
+        });
+        if (response.ok) {
+          toast({ title: "Erfolg", description: "Rabattcode aktualisiert" });
+          loadCoupons();
+        }
+      } else {
+        const response = await fetch('/api/admin/coupons', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload),
+        });
+        if (response.ok) {
+          toast({ title: "Erfolg", description: "Rabattcode erstellt" });
+          loadCoupons();
+        }
+      }
+    } catch (error) {
+      toast({ title: "Fehler", description: "Aktion fehlgeschlagen", variant: "destructive" });
     }
     
     setIsDialogOpen(false);
@@ -111,33 +117,59 @@ export default function CouponManagement() {
     setEditingCoupon(coupon);
     setFormData({
       code: coupon.code,
-      discountType: coupon.discountType,
-      discountValue: coupon.discountValue,
-      minOrderAmount: coupon.minOrderAmount,
+      discountType: coupon.discountType || 'percentage',
+      discountValue: coupon.discountValue || '0',
+      minOrderAmount: coupon.minOrderAmount || '0',
       maxUses: coupon.maxUses?.toString() || '',
-      validUntil: coupon.validUntil || '',
+      expiresAt: coupon.expiresAt ? coupon.expiresAt.split('T')[0] : '',
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Rabattcode wirklich löschen?')) return;
-    setCoupons(prev => prev.filter(c => c.id !== id));
-    toast({
-      title: "Erfolg",
-      description: "Rabattcode gelöscht",
-    });
+    
+    try {
+      const response = await fetch(`/api/admin/coupons/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (response.ok) {
+        toast({ title: "Erfolg", description: "Rabattcode gelöscht" });
+        loadCoupons();
+      }
+    } catch (error) {
+      toast({ title: "Fehler", description: "Löschen fehlgeschlagen", variant: "destructive" });
+    }
   };
 
-  const toggleActive = (id: string) => {
-    setCoupons(prev => prev.map(c => 
-      c.id === id ? { ...c, isActive: !c.isActive } : c
-    ));
+  const toggleActive = async (id: string, currentStatus: boolean) => {
+    try {
+      const response = await fetch(`/api/admin/coupons/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ isActive: !currentStatus }),
+      });
+      if (response.ok) {
+        loadCoupons();
+      }
+    } catch (error) {
+      console.error('Toggle failed:', error);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <Tag className="h-6 w-6" />
           <h2 className="text-2xl font-bold">Rabattcodes</h2>
@@ -169,31 +201,27 @@ export default function CouponManagement() {
                   <Label>Rabattart</Label>
                   <Select
                     value={formData.discountType}
-                    onValueChange={(value: 'percentage' | 'fixed') => setFormData({ ...formData, discountType: value })}
+                    onValueChange={(value) => setFormData({ ...formData, discountType: value })}
                   >
                     <SelectTrigger data-testid="select-discount-type">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="percentage">Prozent</SelectItem>
-                      <SelectItem value="fixed">Festbetrag</SelectItem>
+                      <SelectItem value="fixed">Fester Betrag</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>Rabattwert</Label>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      value={formData.discountValue}
-                      onChange={(e) => setFormData({ ...formData, discountValue: parseFloat(e.target.value) || 0 })}
-                      required
-                      data-testid="input-discount-value"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                      {formData.discountType === 'percentage' ? '%' : 'EUR'}
-                    </span>
-                  </div>
+                  <Input
+                    type="number"
+                    value={formData.discountValue}
+                    onChange={(e) => setFormData({ ...formData, discountValue: e.target.value })}
+                    min="0"
+                    required
+                    data-testid="input-discount-value"
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -202,7 +230,8 @@ export default function CouponManagement() {
                   <Input
                     type="number"
                     value={formData.minOrderAmount}
-                    onChange={(e) => setFormData({ ...formData, minOrderAmount: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => setFormData({ ...formData, minOrderAmount: e.target.value })}
+                    min="0"
                     data-testid="input-min-order"
                   />
                 </div>
@@ -221,42 +250,36 @@ export default function CouponManagement() {
                 <Label>Gültig bis</Label>
                 <Input
                   type="date"
-                  value={formData.validUntil}
-                  onChange={(e) => setFormData({ ...formData, validUntil: e.target.value })}
+                  value={formData.expiresAt}
+                  onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
                   data-testid="input-valid-until"
                 />
               </div>
-              <div className="flex gap-2 justify-end pt-4">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Abbrechen
-                </Button>
-                <Button type="submit" data-testid="button-save-coupon">
-                  Speichern
-                </Button>
-              </div>
+              <Button type="submit" className="w-full" data-testid="button-save-coupon">
+                {editingCoupon ? 'Speichern' : 'Erstellen'}
+              </Button>
             </form>
           </DialogContent>
         </Dialog>
       </div>
 
       <Card>
-        <CardContent className="p-0">
+        <CardHeader>
+          <CardTitle>Alle Rabattcodes</CardTitle>
+        </CardHeader>
+        <CardContent>
           {coupons.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Tag className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>Keine Rabattcodes vorhanden</p>
-            </div>
+            <p className="text-muted-foreground text-center py-8">Keine Rabattcodes vorhanden</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Code</TableHead>
                   <TableHead>Rabatt</TableHead>
-                  <TableHead>Mindestbetrag</TableHead>
+                  <TableHead>Mindestbestellwert</TableHead>
                   <TableHead>Nutzungen</TableHead>
-                  <TableHead>Gültig bis</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Aktionen</TableHead>
+                  <TableHead>Aktionen</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -264,45 +287,51 @@ export default function CouponManagement() {
                   <TableRow key={coupon.id} data-testid={`row-coupon-${coupon.id}`}>
                     <TableCell className="font-mono font-bold">{coupon.code}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="flex items-center gap-1 w-fit">
-                        {coupon.discountType === 'percentage' ? (
-                          <><Percent className="w-3 h-3" /> {coupon.discountValue}%</>
-                        ) : (
-                          <><Euro className="w-3 h-3" /> {coupon.discountValue}</>
-                        )}
-                      </Badge>
+                      {coupon.discountType === 'percentage' ? (
+                        <span className="flex items-center gap-1">
+                          <Percent className="w-4 h-4" />
+                          {coupon.discountValue}%
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1">
+                          <Euro className="w-4 h-4" />
+                          {coupon.discountValue}
+                        </span>
+                      )}
                     </TableCell>
-                    <TableCell>{coupon.minOrderAmount} EUR</TableCell>
+                    <TableCell>{parseFloat(coupon.minOrderAmount || '0').toFixed(2)} EUR</TableCell>
                     <TableCell>
-                      {coupon.currentUses} / {coupon.maxUses || 'unbegrenzt'}
+                      {coupon.currentUses || 0} / {coupon.maxUses || '-'}
                     </TableCell>
-                    <TableCell>{coupon.validUntil || 'Kein Limit'}</TableCell>
                     <TableCell>
-                      <Badge
+                      <Badge 
                         variant={coupon.isActive ? 'default' : 'secondary'}
                         className="cursor-pointer"
-                        onClick={() => toggleActive(coupon.id)}
+                        onClick={() => toggleActive(coupon.id, coupon.isActive)}
+                        data-testid={`badge-status-${coupon.id}`}
                       >
                         {coupon.isActive ? 'Aktiv' : 'Inaktiv'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleEdit(coupon)}
-                        data-testid={`button-edit-coupon-${coupon.id}`}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleDelete(coupon.id)}
-                        data-testid={`button-delete-coupon-${coupon.id}`}
-                      >
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEdit(coupon)}
+                          data-testid={`button-edit-${coupon.id}`}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(coupon.id)}
+                          data-testid={`button-delete-${coupon.id}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

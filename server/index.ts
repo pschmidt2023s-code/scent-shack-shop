@@ -15,6 +15,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
@@ -119,6 +121,9 @@ if (!sessionSecret && process.env.NODE_ENV === "production") {
   throw new Error("SESSION_SECRET must be set in production");
 }
 
+const isReplit = !!process.env.REPL_SLUG;
+const isProduction = process.env.NODE_ENV === "production";
+
 app.use(session({
   store: new PgSession({
     pool: pool,
@@ -128,11 +133,12 @@ app.use(session({
   secret: sessionSecret || "dev-secret-change-in-production-" + Math.random().toString(36),
   resave: false,
   saveUninitialized: false,
+  proxy: isReplit || isProduction,
   cookie: {
-    secure: process.env.NODE_ENV === "production",
+    secure: isReplit || isProduction ? "auto" : false,
     httpOnly: true,
     maxAge: 30 * 24 * 60 * 60 * 1000,
-    sameSite: "lax",
+    sameSite: isReplit ? "none" : "lax",
   },
 }));
 

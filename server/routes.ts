@@ -963,6 +963,98 @@ Dein Verhalten:
     }
   });
 
+  // Admin Coupons
+  app.get("/api/admin/coupons", requireAdmin, async (req, res) => {
+    try {
+      const coupons = await storage.getCoupons();
+      res.json(coupons);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/coupons", requireAdmin, async (req, res) => {
+    try {
+      const { code, discountType, discountValue, minOrderAmount, maxUses, expiresAt } = req.body;
+      
+      if (!code || !discountValue) {
+        return res.status(400).json({ error: "Code and discount value are required" });
+      }
+      
+      const validatedData = {
+        code: String(code).toUpperCase(),
+        discountType: discountType === 'fixed' ? 'fixed' : 'percentage',
+        discountValue: String(parseFloat(discountValue) || 0),
+        minOrderAmount: String(parseFloat(minOrderAmount) || 0),
+        maxUses: maxUses ? parseInt(maxUses) : null,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        isActive: true,
+      };
+      
+      const coupon = await storage.createCoupon(validatedData);
+      res.json(coupon);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/admin/coupons/:id", requireAdmin, async (req, res) => {
+    try {
+      const { code, discountType, discountValue, minOrderAmount, maxUses, expiresAt, isActive } = req.body;
+      
+      const validatedData: Record<string, any> = {};
+      if (code !== undefined) validatedData.code = String(code).toUpperCase();
+      if (discountType !== undefined) validatedData.discountType = discountType === 'fixed' ? 'fixed' : 'percentage';
+      if (discountValue !== undefined) validatedData.discountValue = String(parseFloat(discountValue) || 0);
+      if (minOrderAmount !== undefined) validatedData.minOrderAmount = String(parseFloat(minOrderAmount) || 0);
+      if (maxUses !== undefined) validatedData.maxUses = maxUses ? parseInt(maxUses) : null;
+      if (expiresAt !== undefined) validatedData.expiresAt = expiresAt ? new Date(expiresAt) : null;
+      if (isActive !== undefined) validatedData.isActive = Boolean(isActive);
+      
+      const coupon = await storage.updateCoupon(req.params.id, validatedData);
+      res.json(coupon);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/admin/coupons/:id", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteCoupon(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Admin Payback (placeholder - returns empty data for now)
+  app.get("/api/admin/payback", requireAdmin, async (req, res) => {
+    try {
+      res.json({ earnings: [], payouts: [] });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin Contest Entries
+  app.get("/api/admin/contests/entries", requireAdmin, async (req, res) => {
+    try {
+      const entries = await storage.getContestEntries();
+      res.json(entries);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/admin/contests/entries/:id", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteContestEntry(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   // Stock notification endpoint (placeholder - stores in memory for now)
   app.post("/api/stock-notifications", async (req, res) => {
     try {

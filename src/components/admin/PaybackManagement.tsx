@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -43,23 +42,22 @@ export function PaybackManagement({ onUpdate }: PaybackManagementProps = {}) {
 
   const loadData = async () => {
     try {
-      const { data: earningsData } = await supabase
-        .from('payback_earnings')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      const { data: payoutsData } = await supabase
-        .from('payback_payouts')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      setEarnings(earningsData || []);
-      setPayouts(payoutsData || []);
+      const response = await fetch('/api/admin/payback', {
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setEarnings(data.earnings || []);
+        setPayouts(data.payouts || []);
+      } else {
+        setEarnings([]);
+        setPayouts([]);
+      }
     } catch (error) {
       console.error('Error loading data:', error);
-      toast.error('Fehler beim Laden der Daten');
+      setEarnings([]);
+      setPayouts([]);
     } finally {
       setLoading(false);
     }

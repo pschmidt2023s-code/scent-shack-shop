@@ -468,6 +468,52 @@ export class DatabaseStorage implements IStorage {
       .set({ reminderSent: true, reminderSentAt: new Date(), updatedAt: new Date() })
       .where(eq(schema.abandonedCarts.id, id));
   }
+
+  // ==================== COUPONS ====================
+  async getCoupons(): Promise<any[]> {
+    return db.select().from(schema.coupons).orderBy(desc(schema.coupons.createdAt));
+  }
+
+  async getCouponByCode(code: string): Promise<any | undefined> {
+    const [coupon] = await db.select().from(schema.coupons)
+      .where(eq(schema.coupons.code, code.toUpperCase()));
+    return coupon;
+  }
+
+  async createCoupon(data: any): Promise<any> {
+    const [coupon] = await db.insert(schema.coupons)
+      .values({ ...data, code: data.code.toUpperCase() })
+      .returning();
+    return coupon;
+  }
+
+  async updateCoupon(id: string, data: any): Promise<any | undefined> {
+    const [coupon] = await db.update(schema.coupons)
+      .set(data)
+      .where(eq(schema.coupons.id, id))
+      .returning();
+    return coupon;
+  }
+
+  async deleteCoupon(id: string): Promise<boolean> {
+    const result = await db.delete(schema.coupons).where(eq(schema.coupons.id, id));
+    return true;
+  }
+
+  // ==================== CONTEST ENTRIES ====================
+  async getContestEntries(contestId?: string): Promise<any[]> {
+    if (contestId) {
+      return db.select().from(schema.contestEntries)
+        .where(eq(schema.contestEntries.contestId, contestId))
+        .orderBy(desc(schema.contestEntries.createdAt));
+    }
+    return db.select().from(schema.contestEntries).orderBy(desc(schema.contestEntries.createdAt));
+  }
+
+  async deleteContestEntry(id: string): Promise<boolean> {
+    await db.delete(schema.contestEntries).where(eq(schema.contestEntries.id, id));
+    return true;
+  }
 }
 
 export const storage = new DatabaseStorage();

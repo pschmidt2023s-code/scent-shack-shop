@@ -50,8 +50,16 @@ export default function PartnerManagement() {
 
   const loadData = async () => {
     try {
-      // Feature not yet implemented - using empty data
-      setPartners([]);
+      const response = await fetch('/api/partners', {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to load partners');
+      }
+      
+      const data = await response.json();
+      setPartners(data || []);
       setPayouts([]);
     } catch (error) {
       console.error('Error loading data:', error);
