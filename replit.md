@@ -89,6 +89,12 @@ For full functionality, add these secrets:
   - Webhook route registered BEFORE express.json() for raw body access
   - Endpoints: /api/stripe/publishable-key, /api/stripe/create-checkout-session, /api/stripe/session/:sessionId
   - Base URL strategy: Uses REPLIT_DOMAINS or falls back to req.protocol/host
+- **Loyalty & Admin Shipping** (December 19, 2025):
+  - Fixed /api/loyalty endpoint to return real user data (tier calculation based on spending, cashback balance, earnings history)
+  - Added getUserOrders and getUserPaybackEarnings storage functions
+  - Loyalty tiers: bronze (default), silver (>=€50), gold (>=€200), platinum (>=€500)
+  - Admin shipping management endpoints: GET/POST/PATCH/DELETE /api/admin/shipping
+  - Storage functions: createShippingOption, updateShippingOption, deleteShippingOption, getAllShippingOptions
 
 ## User Preferences
 - German language interface

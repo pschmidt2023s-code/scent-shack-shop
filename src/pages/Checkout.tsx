@@ -9,8 +9,9 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
-import { ArrowLeft, CreditCard, Building2, CheckCircle, Truck, Zap } from 'lucide-react';
+import { ArrowLeft, CreditCard, Building2, CheckCircle, Truck, Zap, Percent } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 interface ShippingOption {
@@ -36,6 +37,7 @@ export default function Checkout() {
   const [searchParams] = useSearchParams();
   const { items, total, clearCart } = useCart();
   const { user } = useAuth();
+  const { discount: tierDiscount, roleLabel, isNewsletterSubscriber } = useUserRole();
   
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'bank' | 'card'>('bank');
@@ -72,7 +74,11 @@ export default function Checkout() {
   const shippingCost = selectedShippingOption ? parseFloat(selectedShippingOption.price) : 0;
   const freeShippingThreshold = 50;
   const qualifiesForFreeStandard = checkoutData.totalAmount >= freeShippingThreshold;
-  const finalTotal = checkoutData.finalAmount + (qualifiesForFreeStandard && !selectedShippingOption?.isExpress ? 0 : shippingCost);
+  
+  const tierDiscountAmount = tierDiscount > 0 ? (checkoutData.totalAmount * tierDiscount / 100) : 0;
+  const totalDiscountAmount = checkoutData.discountAmount + tierDiscountAmount;
+  const subtotalAfterDiscount = checkoutData.totalAmount - totalDiscountAmount;
+  const finalTotal = subtotalAfterDiscount + (qualifiesForFreeStandard && !selectedShippingOption?.isExpress ? 0 : shippingCost);
 
   useEffect(() => {
     if (shippingOptions.length > 0 && !selectedShipping) {
@@ -138,6 +144,36 @@ export default function Checkout() {
 
       const actualShippingCost = qualifiesForFreeStandard && !selectedShippingOption?.isExpress ? 0 : shippingCost;
       
+      if (paymentMethod === 'card') {
+        const stripeItems = checkoutData.items.map(item => ({
+          variantId: item.variant?.id || item.selectedVariant,
+          quantity: item.quantity,
+        }));
+        
+        const stripeResponse = await fetch('/api/stripe/create-checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            items: stripeItems,
+            customerEmail: user?.email || guestEmail,
+            shippingAddress: customerData,
+          }),
+        });
+        
+        if (!stripeResponse.ok) {
+          const error = await stripeResponse.json();
+          throw new Error(error.error || 'Stripe Checkout fehlgeschlagen');
+        }
+        
+        const { url } = await stripeResponse.json();
+        if (url) {
+          window.location.href = url;
+          return;
+        }
+        throw new Error('Keine Checkout-URL erhalten');
+      }
+      
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -151,7 +187,7 @@ export default function Checkout() {
           billingAddressData: customerData,
           paymentMethod: paymentMethod,
           referralCode: referralCode || undefined,
-          discountAmount: checkoutData.discountAmount || 0,
+          discountAmount: totalDiscountAmount,
           shippingOptionId: selectedShipping || undefined,
           shippingCost: actualShippingCost,
         }),
@@ -377,12 +413,12 @@ export default function Checkout() {
                     </Label>
                   </div>
 
-                  <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover-elevate opacity-50">
-                    <RadioGroupItem value="card" id="card" disabled />
+                  <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover-elevate">
+                    <RadioGroupItem value="card" id="card" />
                     <Label htmlFor="card" className="flex items-center cursor-pointer w-full">
                       <CreditCard className="mr-3 h-5 w-5" />
-                      <span>Kreditkarte</span>
-                      <Badge variant="outline" className="ml-auto">Bald verfügbar</Badge>
+                      <span>Kreditkarte / Debitkarte</span>
+                      <Badge variant="secondary" className="ml-auto">Stripe</Badge>
                     </Label>
                   </div>
                 </RadioGroup>
@@ -479,6 +515,24 @@ export default function Checkout() {
                     <span>Zwischensumme</span>
                     <span>{checkoutData.totalAmount.toFixed(2)} €</span>
                   </div>
+                  
+                  {tierDiscount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+                      <span className="flex items-center gap-1">
+                        <Percent className="w-3 h-3" />
+                        {roleLabel} Rabatt ({tierDiscount}%)
+                        {isNewsletterSubscriber && ' inkl. Newsletter'}
+                      </span>
+                      <span>-{tierDiscountAmount.toFixed(2)} €</span>
+                    </div>
+                  )}
+                  
+                  {checkoutData.discountAmount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+                      <span>Gutschein Rabatt</span>
+                      <span>-{checkoutData.discountAmount.toFixed(2)} €</span>
+                    </div>
+                  )}
                   
                   <div className="flex justify-between text-sm">
                     <span>

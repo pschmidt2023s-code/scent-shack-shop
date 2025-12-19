@@ -870,11 +870,31 @@ Dein Verhalten:
         return res.status(404).json({ error: "User not found" });
       }
       
+      const earnings = await storage.getUserPaybackEarnings(req.session.userId!);
+      const totalEarnings = earnings
+        .filter(e => e.status === 'completed')
+        .reduce((sum, e) => sum + parseFloat(e.amount), 0);
+      
+      const orders = await storage.getUserOrders(req.session.userId!);
+      const completedOrders = orders.filter(o => o.status === 'completed' || o.status === 'delivered');
+      const totalSpent = completedOrders.reduce((sum, o) => sum + parseFloat(o.totalAmount), 0);
+      
+      let tier = 'bronze';
+      if (totalSpent >= 500) tier = 'platinum';
+      else if (totalSpent >= 200) tier = 'gold';
+      else if (totalSpent >= 50) tier = 'silver';
+      
+      const newsletterSub = await storage.getNewsletterSubscription(user.email);
+      const isNewsletterSubscriber = !!newsletterSub || user.role === 'admin';
+      
       res.json({
-        points: 0,
-        lifetimePoints: 0,
-        tier: "bronze",
-        transactions: [],
+        points: Math.floor(totalEarnings * 100),
+        lifetimePoints: Math.floor(totalEarnings * 100),
+        tier,
+        cashbackBalance: parseFloat(user.paybackBalance || '0'),
+        totalEarnings: parseFloat(user.totalEarnings || '0'),
+        isNewsletterSubscriber,
+        transactions: earnings.slice(0, 10),
       });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -1101,6 +1121,63 @@ Dein Verhalten:
   app.delete("/api/admin/contests/entries/:id", requireAdmin, async (req, res) => {
     try {
       await storage.deleteContestEntry(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Admin Shipping Options
+  app.get("/api/admin/shipping", requireAdmin, async (req, res) => {
+    try {
+      const options = await storage.getAllShippingOptions();
+      res.json(options);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/shipping", requireAdmin, async (req, res) => {
+    try {
+      const { name, description, price, estimatedDays, freeAbove, isActive } = req.body;
+      if (!name || price === undefined) {
+        return res.status(400).json({ error: "Name and price required" });
+      }
+      const option = await storage.createShippingOption({
+        name,
+        description: description || '',
+        price: String(parseFloat(price) || 0),
+        estimatedDays: estimatedDays || '3-5',
+        freeAbove: freeAbove ? String(parseFloat(freeAbove)) : null,
+        isActive: isActive !== false,
+      });
+      res.json(option);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/admin/shipping/:id", requireAdmin, async (req, res) => {
+    try {
+      const { name, description, price, estimatedDays, freeAbove, isActive } = req.body;
+      const validatedData: Record<string, any> = {};
+      if (name !== undefined) validatedData.name = name;
+      if (description !== undefined) validatedData.description = description;
+      if (price !== undefined) validatedData.price = String(parseFloat(price) || 0);
+      if (estimatedDays !== undefined) validatedData.estimatedDays = estimatedDays;
+      if (freeAbove !== undefined) validatedData.freeAbove = freeAbove ? String(parseFloat(freeAbove)) : null;
+      if (isActive !== undefined) validatedData.isActive = Boolean(isActive);
+      
+      const option = await storage.updateShippingOption(req.params.id, validatedData);
+      res.json(option);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/admin/shipping/:id", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteShippingOption(req.params.id);
       res.json({ success: true });
     } catch (error: any) {
       res.status(400).json({ error: error.message });

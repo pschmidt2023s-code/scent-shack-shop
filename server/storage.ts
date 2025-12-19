@@ -16,6 +16,7 @@ import type {
   SampleSet, InsertSampleSet,
   ShippingOption, InsertShippingOption,
   AbandonedCart, InsertAbandonedCart,
+  PaybackEarning,
 } from "../shared/schema";
 
 export interface IStorage {
@@ -74,6 +75,14 @@ export interface IStorage {
 
   generatePartnerCode(): Promise<string>;
   generateOrderNumber(): Promise<string>;
+  
+  getUserOrders(userId: string): Promise<Order[]>;
+  getUserPaybackEarnings(userId: string): Promise<PaybackEarning[]>;
+  
+  getAllShippingOptions(): Promise<ShippingOption[]>;
+  createShippingOption(data: InsertShippingOption): Promise<ShippingOption>;
+  updateShippingOption(id: string, data: Partial<InsertShippingOption>): Promise<ShippingOption | undefined>;
+  deleteShippingOption(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -558,6 +567,45 @@ export class DatabaseStorage implements IStorage {
   async deleteContestEntry(id: string): Promise<boolean> {
     await db.delete(schema.contestEntries).where(eq(schema.contestEntries.id, id));
     return true;
+  }
+
+  // ==================== USER ORDERS & PAYBACK ====================
+  async getUserOrders(userId: string): Promise<Order[]> {
+    return db.select().from(schema.orders)
+      .where(eq(schema.orders.userId, userId))
+      .orderBy(desc(schema.orders.createdAt));
+  }
+
+  async getUserPaybackEarnings(userId: string): Promise<PaybackEarning[]> {
+    return db.select().from(schema.paybackEarnings)
+      .where(eq(schema.paybackEarnings.userId, userId))
+      .orderBy(desc(schema.paybackEarnings.createdAt));
+  }
+
+  // ==================== SHIPPING MANAGEMENT ====================
+  async createShippingOption(data: InsertShippingOption): Promise<ShippingOption> {
+    const [option] = await db.insert(schema.shippingOptions)
+      .values(data)
+      .returning();
+    return option;
+  }
+
+  async updateShippingOption(id: string, data: Partial<InsertShippingOption>): Promise<ShippingOption | undefined> {
+    const [option] = await db.update(schema.shippingOptions)
+      .set(data)
+      .where(eq(schema.shippingOptions.id, id))
+      .returning();
+    return option;
+  }
+
+  async deleteShippingOption(id: string): Promise<boolean> {
+    await db.delete(schema.shippingOptions).where(eq(schema.shippingOptions.id, id));
+    return true;
+  }
+
+  async getAllShippingOptions(): Promise<ShippingOption[]> {
+    return db.select().from(schema.shippingOptions)
+      .orderBy(schema.shippingOptions.price);
   }
 }
 
