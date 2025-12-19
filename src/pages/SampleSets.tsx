@@ -12,6 +12,20 @@ import { Package, Check, Beaker, ShoppingCart, Trash2 } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 
+import mensSampleSet from '@/assets/sample-sets/mens_perfume_sample_set.png';
+import womensSampleSet from '@/assets/sample-sets/womens_perfume_sample_set.png';
+import bestsellerSampleSet from '@/assets/sample-sets/bestseller_perfume_sample_set.png';
+import orientalSampleSet from '@/assets/sample-sets/oriental_perfume_sample_set.png';
+import freshSampleSet from '@/assets/sample-sets/fresh_scents_sample_set.png';
+
+const sampleSetImages: Record<string, string> = {
+  'Herren Probenset': mensSampleSet,
+  'Damen Probenset': womensSampleSet,
+  'Bestseller Probenset': bestsellerSampleSet,
+  'Orientalisches Probenset': orientalSampleSet,
+  'Frische Düfte Probenset': freshSampleSet,
+};
+
 interface SampleSet {
   id: string;
   name: string;
@@ -179,10 +193,19 @@ export default function SampleSets() {
               {sampleSets?.map((set) => (
                 <Card 
                   key={set.id} 
-                  className="hover-elevate cursor-pointer transition-all"
+                  className="hover-elevate cursor-pointer transition-all overflow-hidden"
                   onClick={() => handleSelectSet(set)}
                   data-testid={`card-sample-set-${set.id}`}
                 >
+                  {sampleSetImages[set.name] && (
+                    <div className="relative h-48 overflow-hidden">
+                      <img 
+                        src={sampleSetImages[set.name]} 
+                        alt={set.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Package className="w-5 h-5" />

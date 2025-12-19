@@ -60,13 +60,13 @@ export default function Checkout() {
     queryKey: ['/api/shipping-options'],
   });
 
-  const checkoutData: CheckoutData = location.state?.checkoutData || {
+  const [checkoutData] = useState<CheckoutData>(() => location.state?.checkoutData || {
     items: items,
     totalAmount: total,
     appliedCoupon: null,
     discountAmount: 0,
     finalAmount: total
-  };
+  });
 
   const selectedShippingOption = shippingOptions.find(opt => opt.id === selectedShipping);
   const shippingCost = selectedShippingOption ? parseFloat(selectedShippingOption.price) : 0;
@@ -84,16 +84,17 @@ export default function Checkout() {
   }, [shippingOptions, selectedShipping]);
 
   useEffect(() => {
-    if (checkoutData.items.length === 0 && !orderSuccess) {
-      navigate('/');
-      return;
-    }
-
     const refCode = searchParams.get('ref');
     if (refCode) {
       setReferralCode(refCode);
     }
-  }, [checkoutData.items, navigate, searchParams, orderSuccess]);
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (checkoutData.items.length === 0 && !orderSuccess) {
+      navigate('/');
+    }
+  }, []);
 
   const handleInputChange = (field: string, value: string) => {
     setCustomerData(prev => ({ ...prev, [field]: value }));
