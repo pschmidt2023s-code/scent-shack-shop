@@ -1,6 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { createServer } from "http";
 import ConnectPgSimple from "connect-pg-simple";
 import { registerRoutes } from "./routes";
@@ -12,6 +14,40 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
+
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
+
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
+  message: { error: "Zu viele Anfragen. Bitte versuchen Sie es später erneut." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: "Zu viele Anmeldeversuche. Bitte versuchen Sie es in 15 Minuten erneut." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 100,
+  message: { error: "API-Limit erreicht. Bitte versuchen Sie es später erneut." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use(generalLimiter);
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/register", authLimiter);
+app.use("/api/", apiLimiter);
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",")
@@ -29,6 +65,52 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+const csrfProtection = (req: Request, res: Response, next: NextFunction) => {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    return next();
+  }
+  
+  const origin = req.get('Origin');
+  const referer = req.get('Referer');
+  const host = req.get('Host');
+  
+  if (!origin && !referer) {
+    return next();
+  }
+  
+  const allowedHosts = [
+    'localhost:5000',
+    '127.0.0.1:5000',
+    host,
+  ].filter(Boolean);
+  
+  const isValidOrigin = (url: string | undefined) => {
+    if (!url) return false;
+    try {
+      const parsed = new URL(url);
+      return allowedHosts.some(h => parsed.host === h) || 
+             parsed.host.endsWith('.replit.dev') || 
+             parsed.host.endsWith('.repl.co');
+    } catch {
+      return false;
+    }
+  };
+  
+  if (origin && !isValidOrigin(origin)) {
+    console.warn(`CSRF blocked: Invalid origin ${origin}`);
+    return res.status(403).json({ error: 'Ungültige Anfragequelle' });
+  }
+  
+  if (!origin && referer && !isValidOrigin(referer)) {
+    console.warn(`CSRF blocked: Invalid referer ${referer}`);
+    return res.status(403).json({ error: 'Ungültige Anfragequelle' });
+  }
+  
+  next();
+};
+
+app.use('/api/', csrfProtection);
 
 const PgSession = ConnectPgSimple(session);
 

@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone, MapPin, Cookie } from 'lucide-react';
+import { useCookieConsent } from '@/components/CookieConsent';
 
 export function Footer() {
+  const { openCookieSettings } = useCookieConsent();
+  
   return (
     <footer className="bg-muted/50 border-t border-border mt-16">
       <div className="container mx-auto px-4 py-12">
@@ -58,9 +61,20 @@ export function Footer() {
               <Link to="/terms" className="block text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-terms">
                 AGB
               </Link>
+              <Link to="/widerruf" className="block text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-cancellation">
+                Widerrufsbelehrung
+              </Link>
               <Link to="/imprint" className="block text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-imprint">
                 Impressum
               </Link>
+              <button 
+                onClick={openCookieSettings}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                data-testid="button-cookie-settings-footer"
+              >
+                <Cookie className="w-3.5 h-3.5" />
+                Cookie-Einstellungen
+              </button>
             </div>
           </div>
         </div>

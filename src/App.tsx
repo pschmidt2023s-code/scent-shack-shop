@@ -12,6 +12,7 @@ import { ProductComparison } from '@/components/ProductComparison';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { GlobalGestures } from '@/components/GlobalGestures';
 import { TouchOptimizations } from '@/components/mobile/TouchOptimizations';
+import { CookieConsent } from '@/components/CookieConsent';
 
 const ProductDetail = React.lazy(() => import('@/pages/ProductDetail'));
 const Products = React.lazy(() => import('@/pages/Products'));
@@ -41,6 +42,7 @@ const MobileGesturesDemoPage = React.lazy(() => import('@/pages/MobileGesturesDe
 const LiveSupport = React.lazy(() => import('@/pages/LiveSupport'));
 const BundleConfigurator = React.lazy(() => import('@/pages/BundleConfigurator'));
 const About = React.lazy(() => import('@/pages/About'));
+const Cancellation = React.lazy(() => import('@/pages/Cancellation'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -96,10 +98,12 @@ function App() {
                   <Route path="/mobile-gestures-demo" element={<Suspense fallback={<LoadingSpinner />}><MobileGesturesDemoPage /></Suspense>} />
                   <Route path="/live-support" element={<Suspense fallback={<LoadingSpinner />}><LiveSupport /></Suspense>} />
                   <Route path="/bundle-konfigurator" element={<Suspense fallback={<LoadingSpinner />}><BundleConfigurator /></Suspense>} />
+                  <Route path="/widerruf" element={<Suspense fallback={<LoadingSpinner />}><Cancellation /></Suspense>} />
                   <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><NotFound /></Suspense>} />
                 </Routes>
                   </div>
                   <MobileBottomNav />
+                  <CookieConsent />
                   <Toaster />
                 </Router>
             </ErrorBoundary>

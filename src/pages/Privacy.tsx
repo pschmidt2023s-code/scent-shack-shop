@@ -97,7 +97,20 @@ export default function Privacy() {
                 Diese Seite nutzt aus Gründen der Sicherheit und zum Schutz der Übertragung vertraulicher Inhalte eine SSL-Verschlüsselung. Eine verschlüsselte Verbindung erkennen Sie daran, dass die Adresszeile des Browsers von "http://" auf "https://" wechselt.
               </p>
 
-              <h3 className="text-xl font-semibold text-luxury-black">9. Kontakt</h3>
+              <h3 className="text-xl font-semibold text-luxury-black">9. Einsatz von Künstlicher Intelligenz</h3>
+              <p className="text-luxury-gray">
+                Wir setzen auf unserer Website KI-gestützte Dienste ein, um Ihnen ein verbessertes Einkaufserlebnis zu bieten:
+              </p>
+              <ul className="list-disc pl-6 text-luxury-gray">
+                <li><strong>Produktbeschreibungen:</strong> Einige Produktbeschreibungen werden mithilfe von KI-Technologie (OpenAI) erstellt, um Ihnen detaillierte Informationen zu unseren Düften zu bieten.</li>
+                <li><strong>Chat-Support:</strong> Unser Chat-Assistent nutzt KI, um Ihre Fragen schnell zu beantworten.</li>
+                <li><strong>Duft-Finder:</strong> Personalisierte Empfehlungen basieren auf KI-Algorithmen.</li>
+              </ul>
+              <p className="text-luxury-gray mt-2">
+                Bei der Nutzung dieser Dienste werden keine personenbezogenen Daten an Dritte übermittelt, sofern Sie nicht ausdrücklich eingewilligt haben. Die KI-Verarbeitung erfolgt auf Grundlage unseres berechtigten Interesses (Art. 6 Abs. 1 lit. f DSGVO) zur Verbesserung unserer Dienstleistungen.
+              </p>
+
+              <h3 className="text-xl font-semibold text-luxury-black">10. Kontakt</h3>
               <p className="text-luxury-gray">
                 Bei Fragen zum Datenschutz können Sie sich jederzeit an uns wenden:<br />
                 E-Mail: support@aldenairperfumes.de
