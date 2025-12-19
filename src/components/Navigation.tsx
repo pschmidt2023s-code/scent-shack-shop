@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { User, ChevronDown, LogOut, ShoppingCart, Settings, Search, Menu, X } from "lucide-react";
+import { Link, useLocation } from 'react-router-dom';
+import { User, LogOut, ShoppingCart, Settings, Search, Menu, X, Heart } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AuthModal } from './AuthModal';
 import { CartSidebar } from './CartSidebar';
@@ -14,17 +13,19 @@ import { Input } from '@/components/ui/input';
 const Navigation = () => {
   const { user, signOut } = useAuth();
   const { itemCount } = useCart();
+  const location = useLocation();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      setIsScrolled(window.scrollY > 50);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -45,95 +46,113 @@ const Navigation = () => {
       if (event.key === 'Escape') {
         setShowSearch(false);
         setShowMobileMenu(false);
+        setShowUserMenu(false);
       }
     };
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, []);
 
+  useEffect(() => {
+    setShowMobileMenu(false);
+  }, [location.pathname]);
+
   const navLinks = [
     { to: '/', label: 'Home' },
-    { to: '/products', label: 'Kollektion' },
+    { to: '/products', label: 'Shop' },
     { to: '/about', label: 'Über uns' },
     { to: '/contact', label: 'Kontakt' },
   ];
 
+  const isActive = (path: string) => location.pathname === path;
+
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled 
-          ? 'bg-background/98 backdrop-blur-xl shadow-lg border-b border-border/50' 
-          : 'bg-transparent'
-      }`}>
-        {/* Top Bar - Desktop */}
-        <div className="hidden lg:block border-b border-border/30">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="flex justify-between items-center h-10 text-xs text-muted-foreground">
-              <div className="flex items-center gap-6">
-                <span>Kostenloser Versand ab 50 EUR</span>
-                <span className="text-border">|</span>
-                <span>14 Tage Rückgaberecht</span>
-              </div>
-              <div className="flex items-center gap-4">
-                <DarkModeToggle />
-                {user && <NotificationCenter />}
-              </div>
+      {/* Top Announcement Bar */}
+      <div className="bg-primary text-primary-foreground text-center py-2 text-xs sm:text-sm font-medium">
+        Kostenloser Versand ab 50 EUR | 14 Tage Rückgaberecht
+      </div>
+
+      {/* Main Navigation */}
+      <nav 
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          isScrolled 
+            ? 'bg-background/95 backdrop-blur-lg shadow-md border-b border-border' 
+            : 'bg-background border-b border-border'
+        }`}
+        data-testid="main-navigation"
+      >
+        <div className="max-w-7xl mx-auto px-4 lg:px-8">
+          <div className="flex items-center justify-between h-16 lg:h-20">
+            {/* Left: Mobile Menu + Logo */}
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                data-testid="button-mobile-menu"
+              >
+                {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </Button>
+
+              <Link to="/" className="flex items-center" data-testid="link-home">
+                <span className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-wider text-foreground">
+                  ALDENAIR
+                </span>
+              </Link>
             </div>
-          </div>
-        </div>
 
-        {/* Main Navigation */}
-        <div className="max-w-7xl mx-auto px-4 lg:px-6">
-          <div className="flex justify-between items-center h-16 lg:h-20">
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              data-testid="button-mobile-menu"
-            >
-              {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </Button>
-
-            {/* Logo */}
-            <Link to="/" className="flex items-center" data-testid="link-home">
-              <span className="text-2xl lg:text-3xl font-light tracking-[0.3em] text-foreground">
-                ALDENAIR
-              </span>
-            </Link>
-
-            {/* Desktop Navigation Links */}
+            {/* Center: Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-8">
               {navLinks.map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors tracking-wide"
-                  data-testid={`link-nav-${link.label.toLowerCase()}`}
+                  className={`text-sm font-medium transition-colors relative py-2 ${
+                    isActive(link.to)
+                      ? 'text-primary'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  data-testid={`link-nav-${link.label.toLowerCase().replace(' ', '-')}`}
                 >
                   {link.label}
+                  {isActive(link.to) && (
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+                  )}
                 </Link>
               ))}
             </div>
 
-            {/* Right Actions */}
+            {/* Right: Actions */}
             <div className="flex items-center gap-1 sm:gap-2">
               {/* Search */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowSearch(!showSearch)}
-                className="relative"
                 data-testid="button-search"
               >
                 <Search className="w-5 h-5" />
               </Button>
 
-              {/* Mobile Dark Mode */}
-              <div className="lg:hidden">
-                <DarkModeToggle />
-              </div>
+              {/* Dark Mode Toggle */}
+              <DarkModeToggle />
+
+              {/* Notifications (logged in users) */}
+              {user && <NotificationCenter />}
+
+              {/* Wishlist */}
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                className="hidden sm:flex"
+              >
+                <Link to="/wishlist" data-testid="link-wishlist">
+                  <Heart className="w-5 h-5" />
+                </Link>
+              </Button>
 
               {/* Cart */}
               <Button
@@ -145,7 +164,7 @@ const Navigation = () => {
               >
                 <ShoppingCart className="w-5 h-5" />
                 {itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center bg-primary text-primary-foreground text-xs rounded-full font-medium">
+                  <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center bg-primary text-primary-foreground text-xs rounded-full font-bold">
                     {itemCount > 99 ? '99+' : itemCount}
                   </span>
                 )}
@@ -164,29 +183,29 @@ const Navigation = () => {
                   </Button>
                   {showUserMenu && (
                     <div className="absolute right-0 mt-2 w-56 bg-card border border-border rounded-lg shadow-xl py-2 z-50">
-                      <div className="px-4 py-2 border-b border-border">
-                        <p className="text-sm font-medium text-foreground truncate">
+                      <div className="px-4 py-3 border-b border-border">
+                        <p className="text-sm font-semibold text-foreground truncate">
                           {user.fullName || user.email}
                         </p>
-                        <p className="text-xs text-muted-foreground">{user.email}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                       </div>
                       <Link
                         to="/profile"
-                        className="flex items-center px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
                         onClick={() => setShowUserMenu(false)}
                         data-testid="link-profile"
                       >
-                        <User className="w-4 h-4 mr-3" />
+                        <User className="w-4 h-4" />
                         Mein Profil
                       </Link>
                       {user.role === 'admin' && (
                         <Link
                           to="/admin"
-                          className="flex items-center px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
                           onClick={() => setShowUserMenu(false)}
                           data-testid="link-admin"
                         >
-                          <Settings className="w-4 h-4 mr-3" />
+                          <Settings className="w-4 h-4" />
                           Admin Dashboard
                         </Link>
                       )}
@@ -196,10 +215,10 @@ const Navigation = () => {
                           signOut();
                           setShowUserMenu(false);
                         }}
-                        className="flex items-center w-full text-left px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+                        className="flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm text-destructive hover:bg-muted transition-colors"
                         data-testid="button-logout"
                       >
-                        <LogOut className="w-4 h-4 mr-3" />
+                        <LogOut className="w-4 h-4" />
                         Abmelden
                       </button>
                     </div>
@@ -207,7 +226,7 @@ const Navigation = () => {
                 </div>
               ) : (
                 <AuthModal>
-                  <Button variant="ghost" size="sm" className="hidden sm:flex" data-testid="button-login">
+                  <Button size="sm" data-testid="button-login">
                     Anmelden
                   </Button>
                 </AuthModal>
@@ -216,42 +235,53 @@ const Navigation = () => {
           </div>
         </div>
 
-        {/* Search Bar Overlay */}
+        {/* Search Overlay */}
         {showSearch && (
-          <div className="absolute top-full left-0 right-0 bg-background border-b border-border p-4 shadow-lg">
-            <div className="max-w-2xl mx-auto">
+          <div className="absolute top-full left-0 right-0 bg-background border-b border-border p-4 shadow-lg animate-in slide-in-from-top-2 duration-200">
+            <div className="max-w-2xl mx-auto flex gap-2">
               <Input
                 type="search"
-                placeholder="Suche nach Düften..."
-                className="w-full"
+                placeholder="Suche nach Düften, Marken..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1"
                 autoFocus
                 data-testid="input-search"
               />
+              <Button onClick={() => setShowSearch(false)} variant="ghost" size="icon">
+                <X className="w-5 h-5" />
+              </Button>
             </div>
           </div>
         )}
 
-        {/* Mobile Menu Overlay */}
+        {/* Mobile Menu */}
         {showMobileMenu && (
-          <div className="lg:hidden absolute top-full left-0 right-0 bg-background border-b border-border shadow-xl">
-            <div className="px-4 py-6 space-y-4">
+          <div className="lg:hidden absolute top-full left-0 right-0 bg-background border-b border-border shadow-xl animate-in slide-in-from-top-2 duration-200">
+            <div className="px-4 py-4 space-y-1">
               {navLinks.map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}
-                  className="block py-3 text-lg font-medium text-foreground border-b border-border/50"
+                  className={`block py-3 px-4 rounded-lg text-base font-medium transition-colors ${
+                    isActive(link.to)
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-foreground hover:bg-muted'
+                  }`}
                   onClick={() => setShowMobileMenu(false)}
-                  data-testid={`link-mobile-${link.label.toLowerCase()}`}
+                  data-testid={`link-mobile-${link.label.toLowerCase().replace(' ', '-')}`}
                 >
                   {link.label}
                 </Link>
               ))}
               {!user && (
-                <AuthModal>
-                  <Button className="w-full mt-4" data-testid="button-mobile-login">
-                    Anmelden
-                  </Button>
-                </AuthModal>
+                <div className="pt-4 border-t border-border mt-4">
+                  <AuthModal>
+                    <Button className="w-full" data-testid="button-mobile-login">
+                      Anmelden / Registrieren
+                    </Button>
+                  </AuthModal>
+                </div>
               )}
             </div>
           </div>

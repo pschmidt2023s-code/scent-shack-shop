@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,15 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
-import { AdminLoadingSkeleton, TabContentLoader } from '@/components/LoadingStates';
 import { getPerfumeNameById } from '@/lib/perfume-utils';
+import { Link } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Package, 
   Users, 
   Tag, 
   ShoppingCart, 
-  TrendingUp,
   Settings,
   LogOut,
   ChevronLeft,
@@ -26,21 +25,19 @@ import {
   User,
   Mail,
   Gift,
-  MessageSquare,
   Percent,
   UserCheck,
   Menu,
-  X
+  X,
+  Home,
+  Loader2
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 const CouponManagement = lazy(() => import('@/components/admin/CouponManagement'));
 const UserManagement = lazy(() => import('@/components/admin/UserManagement'));
-const ReturnManagement = lazy(() => import('@/components/admin/ReturnManagement'));
 const PartnerManagement = lazy(() => import('@/components/admin/PartnerManagement'));
 const NewsletterManagement = lazy(() => import('@/components/admin/NewsletterManagement'));
 const PaybackManagement = lazy(() => import('@/components/admin/PaybackManagement'));
-const AdminChatInterface = lazy(() => import('@/components/admin/AdminChatInterface'));
 const ContestManagement = lazy(() => import('@/components/admin/ContestManagement').then(module => ({ default: module.ContestManagement })));
 const ProductManagement = lazy(() => import('@/components/admin/ProductManagement'));
 const AdminAnalytics = lazy(() => import('@/components/admin/AdminAnalytics'));
@@ -84,12 +81,19 @@ const menuItems = [
   { id: 'contest', label: 'Gewinnspiel', icon: Gift },
 ];
 
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    </div>
+  );
+}
+
 export default function Admin() {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -157,12 +161,12 @@ export default function Admin() {
       await loadOrders();
       toast({
         title: "Erfolg",
-        description: "Bestellung geloscht",
+        description: "Bestellung gelöscht",
       });
     } catch (error) {
       toast({
         title: "Fehler",
-        description: "Bestellung konnte nicht geloscht werden",
+        description: "Bestellung konnte nicht gelöscht werden",
         variant: "destructive",
       });
     }
@@ -183,12 +187,12 @@ export default function Admin() {
       await loadOrders();
       toast({
         title: "Erfolg",
-        description: `${selectedOrderIds.length} Bestellung(en) geloscht`,
+        description: `${selectedOrderIds.length} Bestellung(en) gelöscht`,
       });
     } catch (error) {
       toast({
         title: "Fehler",
-        description: "Bestellungen konnten nicht geloscht werden",
+        description: "Bestellungen konnten nicht gelöscht werden",
         variant: "destructive",
       });
     }
@@ -224,18 +228,50 @@ export default function Admin() {
     return <Badge variant={variant}>{label}</Badge>;
   }, []);
 
+  // Loading State
   if (loading) {
-    return <AdminLoadingSkeleton />;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Lade Admin Dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
+  // Not Logged In
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
+            <User className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
             <h2 className="text-xl font-bold mb-2">Anmeldung erforderlich</h2>
-            <p className="text-muted-foreground mb-4">Bitte melden Sie sich an</p>
-            <Button asChild>
+            <p className="text-muted-foreground mb-6">
+              Bitte melden Sie sich an, um auf das Admin Dashboard zuzugreifen.
+            </p>
+            <Button asChild className="w-full">
+              <Link to="/">Zur Startseite</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Not Admin
+  if (user.role !== 'admin') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 text-center">
+            <Settings className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+            <h2 className="text-xl font-bold mb-2">Zugriff verweigert</h2>
+            <p className="text-muted-foreground mb-6">
+              Sie haben keine Berechtigung für das Admin Dashboard.
+            </p>
+            <Button asChild className="w-full">
               <Link to="/">Zur Startseite</Link>
             </Button>
           </CardContent>
@@ -248,64 +284,64 @@ export default function Admin() {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <Suspense fallback={<TabContentLoader />}>
+          <Suspense fallback={<LoadingSpinner />}>
             <AdminAnalytics />
           </Suspense>
         );
       case 'products':
         return (
-          <Suspense fallback={<TabContentLoader />}>
+          <Suspense fallback={<LoadingSpinner />}>
             <ProductManagement />
           </Suspense>
         );
       case 'users':
         return (
-          <Suspense fallback={<TabContentLoader />}>
+          <Suspense fallback={<LoadingSpinner />}>
             <UserManagement />
           </Suspense>
         );
       case 'coupons':
         return (
-          <Suspense fallback={<TabContentLoader />}>
+          <Suspense fallback={<LoadingSpinner />}>
             <CouponManagement />
           </Suspense>
         );
       case 'payback':
         return (
-          <Suspense fallback={<TabContentLoader />}>
+          <Suspense fallback={<LoadingSpinner />}>
             <PaybackManagement />
           </Suspense>
         );
       case 'partners':
         return (
-          <Suspense fallback={<TabContentLoader />}>
+          <Suspense fallback={<LoadingSpinner />}>
             <PartnerManagement />
           </Suspense>
         );
       case 'newsletter':
         return (
-          <Suspense fallback={<TabContentLoader />}>
+          <Suspense fallback={<LoadingSpinner />}>
             <NewsletterManagement />
           </Suspense>
         );
       case 'contest':
         return (
-          <Suspense fallback={<TabContentLoader />}>
+          <Suspense fallback={<LoadingSpinner />}>
             <ContestManagement />
           </Suspense>
         );
       case 'orders':
         return (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold">Bestellungen</h2>
+                <h2 className="text-2xl font-bold text-foreground">Bestellungen</h2>
                 <p className="text-muted-foreground">{orders.length} Bestellungen insgesamt</p>
               </div>
               {selectedOrderIds.length > 0 && (
                 <Button variant="destructive" onClick={bulkDeleteOrders}>
                   <Trash2 className="w-4 h-4 mr-2" />
-                  {selectedOrderIds.length} loschen
+                  {selectedOrderIds.length} löschen
                 </Button>
               )}
             </div>
@@ -317,16 +353,17 @@ export default function Admin() {
                     checked={selectedOrderIds.length === orders.length && orders.length > 0}
                     onCheckedChange={toggleSelectAll}
                   />
-                  <span className="text-sm font-medium">Alle auswahlen</span>
+                  <span className="text-sm font-medium">Alle auswählen</span>
                 </div>
                 
                 <div className="divide-y">
                   {orders.map((order) => (
                     <div key={order.id} className="p-4 hover:bg-muted/30 transition-colors">
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-start gap-4">
                         <Checkbox 
                           checked={selectedOrderIds.includes(order.id)}
                           onCheckedChange={() => toggleOrderSelection(order.id)}
+                          className="mt-1"
                         />
                         <div className="flex-1 grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
                           <div>
@@ -366,15 +403,17 @@ export default function Admin() {
                           <div className="flex items-center gap-2 justify-end">
                             <Dialog>
                               <DialogTrigger asChild>
-                                <Button size="icon" variant="ghost" onClick={() => setSelectedOrder(order)}>
+                                <Button size="icon" variant="ghost">
                                   <Eye className="w-4 h-4" />
                                 </Button>
                               </DialogTrigger>
-                              <DialogContent className="max-w-2xl">
+                              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                                 <DialogHeader>
-                                  <DialogTitle>Bestellung #{order.orderNumber || order.id.slice(-8).toUpperCase()}</DialogTitle>
+                                  <DialogTitle>
+                                    Bestellung #{order.orderNumber || order.id.slice(-8).toUpperCase()}
+                                  </DialogTitle>
                                 </DialogHeader>
-                                <div className="grid grid-cols-2 gap-6 py-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
                                   <div className="space-y-4">
                                     <div>
                                       <h4 className="font-medium mb-2 flex items-center gap-2">
@@ -436,7 +475,11 @@ export default function Admin() {
                                 </div>
                               </DialogContent>
                             </Dialog>
-                            <Button size="icon" variant="ghost" onClick={() => deleteOrder(order.id)}>
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              onClick={() => deleteOrder(order.id)}
+                            >
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </div>
@@ -456,40 +499,47 @@ export default function Admin() {
           </div>
         );
       default:
-        return null;
+        return (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Seite nicht gefunden</p>
+          </div>
+        );
     }
   };
 
   return (
-    <div className="min-h-screen dark bg-slate-950 text-slate-100" style={{ colorScheme: 'dark' }}>
+    <div className="min-h-screen bg-background">
+      {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden" 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden" 
           onClick={() => setMobileMenuOpen(false)} 
         />
       )}
 
-      <div className="flex">
+      <div className="flex min-h-screen">
+        {/* Sidebar */}
         <aside className={`
-          fixed md:relative z-50 
+          fixed lg:sticky top-0 z-50 
           ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
-          md:translate-x-0
-          ${sidebarCollapsed ? 'md:w-16' : 'md:w-64'} 
-          w-64 min-h-screen bg-slate-900 border-r border-slate-800 transition-all duration-300 flex flex-col
+          lg:translate-x-0
+          ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'} 
+          w-64 h-screen bg-card border-r border-border transition-all duration-300 flex flex-col
         `}>
-          <div className="p-4 border-b border-slate-800">
+          {/* Sidebar Header */}
+          <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between">
               {(!sidebarCollapsed || mobileMenuOpen) && (
                 <div>
-                  <h1 className="font-bold text-lg text-white">ALDENAIR</h1>
-                  <p className="text-xs text-slate-400">Admin Panel</p>
+                  <h1 className="font-bold text-lg text-foreground">ALDENAIR</h1>
+                  <p className="text-xs text-muted-foreground">Admin Panel</p>
                 </div>
               )}
               <div className="flex items-center gap-2">
                 <Button 
                   size="icon" 
                   variant="ghost" 
-                  className="text-slate-400 hover:text-white hover:bg-slate-800 md:hidden"
+                  className="lg:hidden"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <X className="w-4 h-4" />
@@ -497,7 +547,7 @@ export default function Admin() {
                 <Button 
                   size="icon" 
                   variant="ghost" 
-                  className="text-slate-400 hover:text-white hover:bg-slate-800 hidden md:flex"
+                  className="hidden lg:flex"
                   onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                 >
                   {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -506,7 +556,8 @@ export default function Admin() {
             </div>
           </div>
 
-          <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
+          {/* Navigation */}
+          <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
             {menuItems.map((item) => (
               <button
                 key={item.id}
@@ -516,10 +567,10 @@ export default function Admin() {
                 }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === item.id 
-                    ? 'bg-blue-600 text-white' 
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
-                data-testid={`nav-${item.id}`}
+                data-testid={`nav-admin-${item.id}`}
               >
                 <item.icon className="w-5 h-5 flex-shrink-0" />
                 {(!sidebarCollapsed || mobileMenuOpen) && <span>{item.label}</span>}
@@ -527,17 +578,18 @@ export default function Admin() {
             ))}
           </nav>
 
-          <div className="p-2 border-t border-slate-800 space-y-1">
+          {/* Sidebar Footer */}
+          <div className="p-3 border-t border-border space-y-1">
             <Link 
               to="/" 
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
-              <Settings className="w-5 h-5" />
+              <Home className="w-5 h-5" />
               {(!sidebarCollapsed || mobileMenuOpen) && <span>Zur Website</span>}
             </Link>
             <button
               onClick={signOut}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors"
             >
               <LogOut className="w-5 h-5" />
               {(!sidebarCollapsed || mobileMenuOpen) && <span>Abmelden</span>}
@@ -545,35 +597,40 @@ export default function Admin() {
           </div>
         </aside>
 
-        <main className="flex-1 min-h-screen w-full">
-          <header className="bg-slate-900/50 border-b border-slate-800 px-4 md:px-6 py-4">
+        {/* Main Content */}
+        <main className="flex-1 min-h-screen">
+          {/* Header */}
+          <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border px-4 lg:px-6 py-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <Button 
                   size="icon" 
                   variant="ghost" 
-                  className="text-slate-400 hover:text-white hover:bg-slate-800 md:hidden"
+                  className="lg:hidden"
                   onClick={() => setMobileMenuOpen(true)}
-                  data-testid="btn-mobile-menu"
+                  data-testid="btn-admin-mobile-menu"
                 >
                   <Menu className="w-5 h-5" />
                 </Button>
                 <div>
-                  <h1 className="text-lg md:text-xl font-bold text-white">
-                    {menuItems.find(m => m.id === activeTab)?.label || 'Dashboard'}
+                  <h1 className="text-lg lg:text-xl font-bold text-foreground">
+                    {menuItems.find(item => item.id === activeTab)?.label || 'Dashboard'}
                   </h1>
-                  <p className="text-xs md:text-sm text-slate-400 hidden sm:block">
-                    Willkommen zuruck, {user.fullName || user.email?.split('@')[0]}
+                  <p className="text-sm text-muted-foreground hidden sm:block">
+                    Willkommen zurück, {user.fullName || user.email}
                   </p>
                 </div>
               </div>
-              <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30">
-                Online
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="hidden sm:flex">
+                  Admin
+                </Badge>
+              </div>
             </div>
           </header>
 
-          <div className="p-4 md:p-6">
+          {/* Content */}
+          <div className="p-4 lg:p-6">
             {renderContent()}
           </div>
         </main>
