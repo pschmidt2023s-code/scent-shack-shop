@@ -2,16 +2,36 @@ import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Package, Users, CreditCard, Eye, MapPin, User, Trash2, CheckSquare, Square } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
-import { AdminLoadingSkeleton, SmoothLoader, TabContentLoader } from '@/components/LoadingStates';
+import { AdminLoadingSkeleton, TabContentLoader } from '@/components/LoadingStates';
+import { getPerfumeNameById } from '@/lib/perfume-utils';
+import { 
+  LayoutDashboard, 
+  Package, 
+  Users, 
+  Tag, 
+  ShoppingCart, 
+  TrendingUp,
+  Settings,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Trash2,
+  MapPin,
+  User,
+  Mail,
+  Gift,
+  MessageSquare,
+  Percent,
+  UserCheck
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-// Lazy load admin components for better performance
 const CouponManagement = lazy(() => import('@/components/admin/CouponManagement'));
 const UserManagement = lazy(() => import('@/components/admin/UserManagement'));
 const ReturnManagement = lazy(() => import('@/components/admin/ReturnManagement'));
@@ -22,7 +42,6 @@ const AdminChatInterface = lazy(() => import('@/components/admin/AdminChatInterf
 const ContestManagement = lazy(() => import('@/components/admin/ContestManagement').then(module => ({ default: module.ContestManagement })));
 const ProductManagement = lazy(() => import('@/components/admin/ProductManagement'));
 const AdminAnalytics = lazy(() => import('@/components/admin/AdminAnalytics'));
-import { getPerfumeNameById } from '@/lib/perfume-utils';
 
 interface Order {
   id: string;
@@ -51,14 +70,27 @@ interface OrderItem {
   totalPrice: number;
 }
 
+const menuItems = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'orders', label: 'Bestellungen', icon: ShoppingCart },
+  { id: 'products', label: 'Produkte', icon: Package },
+  { id: 'users', label: 'Kunden', icon: Users },
+  { id: 'coupons', label: 'Rabattcodes', icon: Tag },
+  { id: 'payback', label: 'Payback', icon: Percent },
+  { id: 'partners', label: 'Partner', icon: UserCheck },
+  { id: 'newsletter', label: 'Newsletter', icon: Mail },
+  { id: 'contest', label: 'Gewinnspiel', icon: Gift },
+];
+
 export default function Admin() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -80,15 +112,10 @@ export default function Admin() {
       setOrders(data || []);
     } catch (error) {
       console.error('Error loading orders:', error);
-      toast({
-        title: "Fehler",
-        description: "Bestellungen konnten nicht geladen werden",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   const updateOrderStatus = useCallback(async (orderId: string, newStatus: string) => {
     try {
@@ -104,10 +131,9 @@ export default function Admin() {
       await loadOrders();
       toast({
         title: "Erfolg",
-        description: "Bestellstatus wurde aktualisiert",
+        description: "Bestellstatus aktualisiert",
       });
     } catch (error) {
-      console.error('Error updating order:', error);
       toast({
         title: "Fehler",
         description: "Bestellstatus konnte nicht aktualisiert werden",
@@ -128,13 +154,12 @@ export default function Admin() {
       await loadOrders();
       toast({
         title: "Erfolg",
-        description: "Bestellung wurde erfolgreich gelöscht",
+        description: "Bestellung geloscht",
       });
     } catch (error) {
-      console.error('Error deleting order:', error);
       toast({
         title: "Fehler",
-        description: "Bestellung konnte nicht gelöscht werden",
+        description: "Bestellung konnte nicht geloscht werden",
         variant: "destructive",
       });
     }
@@ -155,13 +180,12 @@ export default function Admin() {
       await loadOrders();
       toast({
         title: "Erfolg",
-        description: `${selectedOrderIds.length} Bestellung(en) erfolgreich gelöscht`,
+        description: `${selectedOrderIds.length} Bestellung(en) geloscht`,
       });
     } catch (error) {
-      console.error('Error bulk deleting orders:', error);
       toast({
         title: "Fehler",
-        description: "Bestellungen konnten nicht gelöscht werden",
+        description: "Bestellungen konnten nicht geloscht werden",
         variant: "destructive",
       });
     }
@@ -183,21 +207,18 @@ export default function Admin() {
     }
   }, [orders, selectedOrderIds.length]);
 
-  // Memoized components for performance
-  const memoizedOrders = useMemo(() => orders, [orders]);
-  
   const getStatusBadge = useCallback((status: string) => {
-    const variants = {
-       pending: 'secondary',
-       pending_payment: 'outline',
-       processing: 'default',
-       paid: 'default',
-       shipped: 'outline',
-       delivered: 'secondary',
-       cancelled: 'destructive',
-     } as const;
-
-    return <Badge variant={variants[status as keyof typeof variants] || 'secondary'}>{status}</Badge>;
+    const config: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', label: string }> = {
+      pending: { variant: 'secondary', label: 'Ausstehend' },
+      pending_payment: { variant: 'outline', label: 'Zahlung offen' },
+      processing: { variant: 'default', label: 'In Bearbeitung' },
+      paid: { variant: 'default', label: 'Bezahlt' },
+      shipped: { variant: 'outline', label: 'Versendet' },
+      delivered: { variant: 'secondary', label: 'Zugestellt' },
+      cancelled: { variant: 'destructive', label: 'Storniert' },
+    };
+    const { variant, label } = config[status] || { variant: 'secondary' as const, label: status };
+    return <Badge variant={variant}>{label}</Badge>;
   }, []);
 
   if (loading) {
@@ -206,325 +227,318 @@ export default function Admin() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Anmeldung erforderlich</h2>
-          <p className="text-muted-foreground">Bitte melden Sie sich an, um auf das Admin-Dashboard zuzugreifen.</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 text-center">
+            <h2 className="text-xl font-bold mb-2">Anmeldung erforderlich</h2>
+            <p className="text-muted-foreground mb-4">Bitte melden Sie sich an</p>
+            <Button asChild>
+              <Link to="/">Zur Startseite</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return (
+          <Suspense fallback={<TabContentLoader />}>
+            <AdminAnalytics />
+          </Suspense>
+        );
+      case 'products':
+        return (
+          <Suspense fallback={<TabContentLoader />}>
+            <ProductManagement />
+          </Suspense>
+        );
+      case 'users':
+        return (
+          <Suspense fallback={<TabContentLoader />}>
+            <UserManagement />
+          </Suspense>
+        );
+      case 'coupons':
+        return (
+          <Suspense fallback={<TabContentLoader />}>
+            <CouponManagement />
+          </Suspense>
+        );
+      case 'payback':
+        return (
+          <Suspense fallback={<TabContentLoader />}>
+            <PaybackManagement />
+          </Suspense>
+        );
+      case 'partners':
+        return (
+          <Suspense fallback={<TabContentLoader />}>
+            <PartnerManagement />
+          </Suspense>
+        );
+      case 'newsletter':
+        return (
+          <Suspense fallback={<TabContentLoader />}>
+            <NewsletterManagement />
+          </Suspense>
+        );
+      case 'contest':
+        return (
+          <Suspense fallback={<TabContentLoader />}>
+            <ContestManagement />
+          </Suspense>
+        );
+      case 'orders':
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">Bestellungen</h2>
+                <p className="text-muted-foreground">{orders.length} Bestellungen insgesamt</p>
+              </div>
+              {selectedOrderIds.length > 0 && (
+                <Button variant="destructive" onClick={bulkDeleteOrders}>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {selectedOrderIds.length} loschen
+                </Button>
+              )}
+            </div>
 
-  return (
-    <div className="min-h-screen glass animate-fade-in-up">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8 animate-slide-in-left">
-          <h1 className="text-3xl font-bold mb-2 text-gradient-luxury">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Verwalten Sie Bestellungen, Coupons und mehr</p>
-        </div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-6 lg:grid-cols-11 w-full max-w-6xl backdrop-blur-sm bg-card/80 border">
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
-              Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="orders" className="flex items-center gap-2">
-              <Package className="w-4 h-4" />
-              Bestellungen
-            </TabsTrigger>
-            <TabsTrigger value="products" className="flex items-center gap-2">
-              <Package className="w-4 h-4" />
-              Produkte
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Kunden
-            </TabsTrigger>
-            <TabsTrigger value="coupons" className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4" />
-              Coupons
-            </TabsTrigger>
-            <TabsTrigger value="payback" className="flex items-center gap-2">
-              Payback
-            </TabsTrigger>
-            <TabsTrigger value="partners" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
-              <Users className="w-4 h-4 transition-transform duration-200" />
-              Partner
-            </TabsTrigger>
-            <TabsTrigger value="newsletter" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
-              <Users className="w-4 h-4 transition-transform duration-200" />
-              Newsletter
-            </TabsTrigger>
-            <TabsTrigger value="contest" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
-              <Package className="w-4 h-4 transition-transform duration-200" />
-              Gewinnspiel
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
-              <Users className="w-4 h-4 transition-transform duration-200" />
-              Benutzer
-            </TabsTrigger>
-            <TabsTrigger value="products" className="flex items-center gap-2 transition-all duration-300 hover:scale-105">
-              <Package className="w-4 h-4 transition-transform duration-200" />
-              Produkte
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="dashboard" className="space-y-6">
-            <Suspense fallback={<TabContentLoader />}>
-              <AdminAnalytics />
-            </Suspense>
-          </TabsContent>
-
-          <TabsContent value="products" className="space-y-6">
-            <Suspense fallback={<TabContentLoader />}>
-              <ProductManagement />
-            </Suspense>
-          </TabsContent>
-
-          <TabsContent value="chat" className="space-y-6">
-            <Suspense fallback={<TabContentLoader />}>
-              <AdminChatInterface />
-            </Suspense>
-          </TabsContent>
-
-          <TabsContent value="payback" className="space-y-6">
-            <Suspense fallback={<TabContentLoader />}>
-              <PaybackManagement />
-            </Suspense>
-          </TabsContent>
-
-          <TabsContent value="orders" className="space-y-6">
-            <Card className="backdrop-blur-sm bg-card/90 border shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Package className="w-5 h-5" />
-                    Aufgegebene Bestellungen ({memoizedOrders.length})
-                  </div>
-                  {selectedOrderIds.length > 0 && (
-                    <Button 
-                      variant="destructive" 
-                      size="sm"
-                      onClick={bulkDeleteOrders}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      {selectedOrderIds.length} Bestellung(en) löschen
-                    </Button>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2 mb-4 p-2 bg-muted rounded-lg">
+            <Card>
+              <CardContent className="p-0">
+                <div className="flex items-center gap-3 p-4 border-b bg-muted/50">
                   <Checkbox 
                     checked={selectedOrderIds.length === orders.length && orders.length > 0}
                     onCheckedChange={toggleSelectAll}
                   />
-                  <span className="text-sm font-medium">Alle auswählen</span>
+                  <span className="text-sm font-medium">Alle auswahlen</span>
                 </div>
-                <div className="space-y-4">
-                  {memoizedOrders.map((order, index) => (
-                    <div key={order.id} className="border rounded-lg p-4 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Checkbox 
-                            checked={selectedOrderIds.includes(order.id)}
-                            onCheckedChange={() => toggleOrderSelection(order.id)}
-                          />
+                
+                <div className="divide-y">
+                  {orders.map((order) => (
+                    <div key={order.id} className="p-4 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <Checkbox 
+                          checked={selectedOrderIds.includes(order.id)}
+                          onCheckedChange={() => toggleOrderSelection(order.id)}
+                        />
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
                           <div>
-                            <p className="font-semibold">#{order.orderNumber || order.id.slice(-8).toUpperCase()}</p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="font-mono font-semibold text-sm">
+                              #{order.orderNumber || order.id.slice(-8).toUpperCase()}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
                               {new Date(order.createdAt).toLocaleDateString('de-DE')}
                             </p>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">€{order.totalAmount.toFixed(2)}</span>
-                          {getStatusBadge(order.status)}
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Select 
-                          value={order.status} 
-                          onValueChange={(value) => updateOrderStatus(order.id, value)}
-                        >
-                          <SelectTrigger className="w-48">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Ausstehend</SelectItem>
-                            <SelectItem value="pending_payment">Zahlung ausstehend</SelectItem>
-                            <SelectItem value="processing">In Bearbeitung</SelectItem>
-                            <SelectItem value="paid">Bezahlt</SelectItem>
-                            <SelectItem value="shipped">Versendet</SelectItem>
-                            <SelectItem value="delivered">Zugestellt</SelectItem>
-                            <SelectItem value="cancelled">Storniert</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="flex items-center gap-2 mt-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => setSelectedOrder(order)}
+                          <div>
+                            <p className="text-sm truncate">{order.customerName || 'Gast'}</p>
+                            <p className="text-xs text-muted-foreground truncate">{order.customerEmail}</p>
+                          </div>
+                          <div className="font-semibold">
+                            EUR {order.totalAmount.toFixed(2)}
+                          </div>
+                          <div>
+                            <Select 
+                              value={order.status} 
+                              onValueChange={(value) => updateOrderStatus(order.id, value)}
                             >
-                              <Eye className="w-4 h-4 mr-1" />
-                              Details anzeigen
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle>Bestelldetails - #{order.orderNumber || order.id.slice(-8).toUpperCase()}</DialogTitle>
-                            </DialogHeader>
-                            
-                            <div className="space-y-6">
-                              {/* Customer Information */}
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-3">
-                                  <div className="flex items-center gap-2">
-                                    <User className="w-4 h-4" />
-                                    <h3 className="font-medium">Kundeninformationen</h3>
-                                  </div>
-                                  <div className="bg-muted p-3 rounded-lg space-y-2">
-                                    {order.customerName && (
-                                      <p className="text-sm"><strong>Name:</strong> {order.customerName}</p>
-                                    )}
-                                    {order.customerEmail && (
-                                      <p className="text-sm"><strong>E-Mail:</strong> {order.customerEmail}</p>
-                                    )}
-                                    {order.customerPhone && (
-                                      <p className="text-sm"><strong>Telefon:</strong> {order.customerPhone}</p>
-                                    )}
-                                  </div>
-                                </div>
-
-                                <div className="space-y-3">
-                                  <div className="flex items-center gap-2">
-                                    <Package className="w-4 h-4" />
-                                    <h3 className="font-medium">Bestellinformationen</h3>
-                                  </div>
-                                  <div className="bg-muted p-3 rounded-lg space-y-2">
-                                    <p className="text-sm"><strong>Status:</strong> {getStatusBadge(order.status)}</p>
-                                    <p className="text-sm"><strong>Betrag:</strong> €{order.totalAmount.toFixed(2)}</p>
-                                    <p className="text-sm"><strong>Datum:</strong> {new Date(order.createdAt).toLocaleDateString('de-DE')}</p>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Shipping Address */}
-                              {order.shippingAddressData && (
-                                <div className="space-y-3">
-                                  <div className="flex items-center gap-2">
-                                    <MapPin className="w-4 h-4" />
-                                    <h3 className="font-medium">Lieferadresse</h3>
-                                  </div>
-                                  <div className="bg-muted p-3 rounded-lg">
-                                    <div className="text-sm space-y-1">
-                                      <p>{order.shippingAddressData.firstName} {order.shippingAddressData.lastName}</p>
-                                      <p>{order.shippingAddressData.street}</p>
-                                      <p>{order.shippingAddressData.postalCode} {order.shippingAddressData.city}</p>
-                                      <p>{order.shippingAddressData.country}</p>
+                              <SelectTrigger className="h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Ausstehend</SelectItem>
+                                <SelectItem value="pending_payment">Zahlung offen</SelectItem>
+                                <SelectItem value="processing">In Bearbeitung</SelectItem>
+                                <SelectItem value="paid">Bezahlt</SelectItem>
+                                <SelectItem value="shipped">Versendet</SelectItem>
+                                <SelectItem value="delivered">Zugestellt</SelectItem>
+                                <SelectItem value="cancelled">Storniert</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex items-center gap-2 justify-end">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button size="icon" variant="ghost" onClick={() => setSelectedOrder(order)}>
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                  <DialogTitle>Bestellung #{order.orderNumber || order.id.slice(-8).toUpperCase()}</DialogTitle>
+                                </DialogHeader>
+                                <div className="grid grid-cols-2 gap-6 py-4">
+                                  <div className="space-y-4">
+                                    <div>
+                                      <h4 className="font-medium mb-2 flex items-center gap-2">
+                                        <User className="w-4 h-4" /> Kunde
+                                      </h4>
+                                      <div className="bg-muted p-3 rounded-lg text-sm space-y-1">
+                                        <p>{order.customerName || 'N/A'}</p>
+                                        <p className="text-muted-foreground">{order.customerEmail}</p>
+                                        <p className="text-muted-foreground">{order.customerPhone}</p>
+                                      </div>
                                     </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Order Items */}
-                              {order.orderItems && order.orderItems.length > 0 && (
-                                <div className="space-y-3">
-                                  <h3 className="font-medium">Bestellte Artikel</h3>
-                                  <div className="border rounded-lg divide-y">
-                                    {order.orderItems.map((item) => (
-                                      <div key={item.id} className="p-3 flex justify-between items-center">
-                                       <div>
-                                           <p className="font-medium text-sm">
-                                             {item.quantity}x {getPerfumeNameById(item.perfumeId, item.variantId)}
-                                           </p>
-                                           <p className="text-xs text-muted-foreground">
-                                             Einzelpreis: €{item.unitPrice.toFixed(2)}
-                                           </p>
-                                         </div>
-                                        <div className="text-right">
-                                          <p className="font-medium">€{item.totalPrice.toFixed(2)}</p>
-                                          <p className="text-xs text-muted-foreground">{item.quantity}x</p>
+                                    {order.shippingAddressData && (
+                                      <div>
+                                        <h4 className="font-medium mb-2 flex items-center gap-2">
+                                          <MapPin className="w-4 h-4" /> Lieferadresse
+                                        </h4>
+                                        <div className="bg-muted p-3 rounded-lg text-sm space-y-1">
+                                          <p>{order.shippingAddressData.firstName} {order.shippingAddressData.lastName}</p>
+                                          <p>{order.shippingAddressData.street}</p>
+                                          <p>{order.shippingAddressData.postalCode} {order.shippingAddressData.city}</p>
                                         </div>
                                       </div>
-                                    ))}
+                                    )}
+                                  </div>
+                                  <div className="space-y-4">
+                                    <div>
+                                      <h4 className="font-medium mb-2 flex items-center gap-2">
+                                        <Package className="w-4 h-4" /> Bestelldetails
+                                      </h4>
+                                      <div className="bg-muted p-3 rounded-lg text-sm space-y-2">
+                                        <div className="flex justify-between">
+                                          <span>Status</span>
+                                          {getStatusBadge(order.status)}
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span>Summe</span>
+                                          <span className="font-semibold">EUR {order.totalAmount.toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span>Datum</span>
+                                          <span>{new Date(order.createdAt).toLocaleDateString('de-DE')}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    {order.orderItems && order.orderItems.length > 0 && (
+                                      <div>
+                                        <h4 className="font-medium mb-2">Artikel</h4>
+                                        <div className="border rounded-lg divide-y">
+                                          {order.orderItems.map((item) => (
+                                            <div key={item.id} className="p-3 flex justify-between text-sm">
+                                              <span>{item.quantity}x {getPerfumeNameById(item.perfumeId, item.variantId)}</span>
+                                              <span className="font-medium">EUR {item.totalPrice.toFixed(2)}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
-                              )}
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                        
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => deleteOrder(order.id)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Löschen
-                        </Button>
+                              </DialogContent>
+                            </Dialog>
+                            <Button size="icon" variant="ghost" onClick={() => deleteOrder(order.id)}>
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
-                  
-                  {memoizedOrders.length === 0 && (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground">Keine aufgegebenen Bestellungen gefunden.</p>
+                  {orders.length === 0 && (
+                    <div className="p-12 text-center text-muted-foreground">
+                      <ShoppingCart className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Keine Bestellungen vorhanden</p>
                     </div>
                   )}
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
-          <TabsContent value="returns" className="space-y-6 animate-fade-in duration-500">
-            <Suspense fallback={<TabContentLoader />}>
-              <ReturnManagement />
-            </Suspense>
-          </TabsContent>
+  return (
+    <div className="min-h-screen dark bg-slate-950 text-slate-100" style={{ colorScheme: 'dark' }}>
+      <div className="flex">
+        <aside className={`${sidebarCollapsed ? 'w-16' : 'w-64'} min-h-screen bg-slate-900 border-r border-slate-800 transition-all duration-300 flex flex-col`}>
+          <div className="p-4 border-b border-slate-800">
+            <div className="flex items-center justify-between">
+              {!sidebarCollapsed && (
+                <div>
+                  <h1 className="font-bold text-lg text-white">ALDENAIR</h1>
+                  <p className="text-xs text-slate-400">Admin Panel</p>
+                </div>
+              )}
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="text-slate-400 hover:text-white hover:bg-slate-800"
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              >
+                {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+              </Button>
+            </div>
+          </div>
 
-          <TabsContent value="coupons" className="space-y-6 animate-fade-in duration-500">
-            <Suspense fallback={<TabContentLoader />}>
-              <CouponManagement />
-            </Suspense>
-          </TabsContent>
+          <nav className="flex-1 p-2 space-y-1">
+            {menuItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === item.id 
+                    ? 'bg-blue-600 text-white' 
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
+                data-testid={`nav-${item.id}`}
+              >
+                <item.icon className="w-5 h-5 flex-shrink-0" />
+                {!sidebarCollapsed && <span>{item.label}</span>}
+              </button>
+            ))}
+          </nav>
 
-          <TabsContent value="partners" className="space-y-6 animate-fade-in duration-500">
-            <Suspense fallback={<TabContentLoader />}>
-              <PartnerManagement />
-            </Suspense>
-          </TabsContent>
+          <div className="p-2 border-t border-slate-800 space-y-1">
+            <Link 
+              to="/" 
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            >
+              <Settings className="w-5 h-5" />
+              {!sidebarCollapsed && <span>Zur Website</span>}
+            </Link>
+            <button
+              onClick={signOut}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+              {!sidebarCollapsed && <span>Abmelden</span>}
+            </button>
+          </div>
+        </aside>
 
-          <TabsContent value="newsletter" className="space-y-6 animate-fade-in duration-500">
-            <Suspense fallback={<TabContentLoader />}>
-              <NewsletterManagement />
-            </Suspense>
-          </TabsContent>
+        <main className="flex-1 min-h-screen">
+          <header className="bg-slate-900/50 border-b border-slate-800 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-xl font-bold text-white">
+                  {menuItems.find(m => m.id === activeTab)?.label || 'Dashboard'}
+                </h1>
+                <p className="text-sm text-slate-400">
+                  Willkommen zuruck, {user.fullName || user.email?.split('@')[0]}
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30">
+                  Online
+                </Badge>
+              </div>
+            </div>
+          </header>
 
-          <TabsContent value="contest" className="space-y-6 animate-fade-in duration-500">
-            <Suspense fallback={<TabContentLoader />}>
-              <ContestManagement />
-            </Suspense>
-          </TabsContent>
-
-          <TabsContent value="users" className="animate-fade-in duration-500">
-            <Suspense fallback={<TabContentLoader />}>
-              <UserManagement />
-            </Suspense>
-          </TabsContent>
-
-          <TabsContent value="products" className="animate-fade-in duration-500">
-            <Suspense fallback={<TabContentLoader />}>
-              <ProductManagement />
-            </Suspense>
-          </TabsContent>
-        </Tabs>
+          <div className="p-6">
+            {renderContent()}
+          </div>
+        </main>
       </div>
     </div>
   );

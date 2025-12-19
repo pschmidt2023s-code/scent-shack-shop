@@ -1,7 +1,8 @@
 import { useState, useEffect, memo } from 'react';
 import { PerfumeCard } from './PerfumeCard';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package, Filter } from 'lucide-react';
+import { Package, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Perfume } from '@/types/perfume';
 
@@ -90,44 +91,46 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
   });
 
   return (
-    <section className="py-16 md:py-24 bg-muted/30">
+    <section className="py-20 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+            <Sparkles className="w-4 h-4" />
+            Handverlesene Auswahl
+          </div>
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-            Unsere Kollektionen
+            Unsere Bestseller
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Entdecke unsere handverlesene Auswahl an Premium-Düften
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Premium-Düfte inspiriert von weltbekannten Luxusmarken - 
+            hochwertige Qualitat zu fairen Preisen
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 p-4 bg-muted/50 rounded-xl">
           <div className="flex flex-wrap gap-2">
             {categories.map((cat) => (
-              <button
+              <Button
                 key={cat}
+                variant={filter === cat ? 'default' : 'outline'}
+                size="sm"
                 onClick={() => setFilter(cat)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  filter === cat
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-background text-foreground hover:bg-muted border border-border'
-                }`}
                 data-testid={`filter-${cat}`}
               >
-                {cat === 'all' ? 'Alle' : cat}
-              </button>
+                {cat === 'all' ? 'Alle Düfte' : cat}
+              </Button>
             ))}
           </div>
           
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-48" data-testid="select-sort">
-              <Filter className="w-4 h-4 mr-2" />
+            <SelectTrigger className="w-48 bg-background" data-testid="select-sort">
+              <SlidersHorizontal className="w-4 h-4 mr-2" />
               <SelectValue placeholder="Sortieren" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="price-low">Preis aufsteigend</SelectItem>
-              <SelectItem value="price-high">Preis absteigend</SelectItem>
+              <SelectItem value="name">Name A-Z</SelectItem>
+              <SelectItem value="price-low">Preis: Niedrig - Hoch</SelectItem>
+              <SelectItem value="price-high">Preis: Hoch - Niedrig</SelectItem>
               <SelectItem value="rating">Beste Bewertung</SelectItem>
             </SelectContent>
           </Select>
@@ -150,12 +153,15 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-16">
+          <div className="text-center py-20 bg-muted/30 rounded-2xl">
             <Package className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold text-foreground mb-2">Keine Produkte gefunden</h3>
-            <p className="text-muted-foreground">
-              Versuche einen anderen Filter oder schaue später nochmal vorbei.
+            <p className="text-muted-foreground mb-6">
+              Versuche einen anderen Filter oder schaue spater nochmal vorbei.
             </p>
+            <Button onClick={() => setFilter('all')}>
+              Alle Produkte anzeigen
+            </Button>
           </div>
         )}
       </div>

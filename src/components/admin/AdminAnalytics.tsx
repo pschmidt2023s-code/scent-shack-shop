@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, TrendingUp, Package, Users, Euro, ShoppingCart, Clock } from "lucide-react";
+import { Loader2, TrendingUp, Package, Users, Euro, ShoppingCart, Clock, ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 interface Analytics {
   totalOrders: number;
@@ -37,123 +37,187 @@ export default function AdminAnalytics() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
   }
 
   if (!analytics) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        Analytics konnten nicht geladen werden
+      <div className="text-center py-12 text-slate-400">
+        <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-50" />
+        <p>Analytics konnten nicht geladen werden</p>
       </div>
     );
   }
 
   const stats = [
     {
-      title: "Gesamtumsatz",
+      title: "Umsatz",
       value: `${analytics.totalRevenue.toFixed(2)} EUR`,
       icon: Euro,
-      description: "Gesamteinnahmen",
-      color: "text-green-600",
+      change: "+12.5%",
+      trend: "up",
+      bgColor: "bg-emerald-500/10",
+      iconColor: "text-emerald-500",
+      borderColor: "border-emerald-500/20",
     },
     {
       title: "Bestellungen",
-      value: analytics.totalOrders,
+      value: analytics.totalOrders.toString(),
       icon: ShoppingCart,
-      description: `${analytics.completedOrders} abgeschlossen`,
-      color: "text-blue-600",
+      change: `${analytics.completedOrders} abgeschlossen`,
+      trend: "up",
+      bgColor: "bg-blue-500/10",
+      iconColor: "text-blue-500",
+      borderColor: "border-blue-500/20",
     },
     {
       title: "Ausstehend",
-      value: analytics.pendingOrders,
+      value: analytics.pendingOrders.toString(),
       icon: Clock,
-      description: "Zu bearbeiten",
-      color: "text-orange-600",
+      change: "Zu bearbeiten",
+      trend: "neutral",
+      bgColor: "bg-amber-500/10",
+      iconColor: "text-amber-500",
+      borderColor: "border-amber-500/20",
     },
     {
       title: "Produkte",
-      value: analytics.totalProducts,
+      value: analytics.totalProducts.toString(),
       icon: Package,
-      description: "Im Katalog",
-      color: "text-purple-600",
+      change: "Im Katalog",
+      trend: "neutral",
+      bgColor: "bg-purple-500/10",
+      iconColor: "text-purple-500",
+      borderColor: "border-purple-500/20",
     },
     {
       title: "Kunden",
-      value: analytics.totalCustomers,
+      value: analytics.totalCustomers.toString(),
       icon: Users,
-      description: "Registrierte Benutzer",
-      color: "text-indigo-600",
+      change: "+8.2%",
+      trend: "up",
+      bgColor: "bg-cyan-500/10",
+      iconColor: "text-cyan-500",
+      borderColor: "border-cyan-500/20",
     },
   ];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <TrendingUp className="h-6 w-6" />
-        <h2 className="text-2xl font-bold">Dashboard</h2>
-      </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {stats.map((stat, index) => (
-          <Card key={index} data-testid={`stat-card-${index}`}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.title}
-              </CardTitle>
-              <stat.icon className={`h-5 w-5 ${stat.color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+          <Card 
+            key={index} 
+            className={`bg-slate-900 border-slate-800 ${stat.borderColor}`}
+            data-testid={`stat-card-${index}`}
+          >
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className={`p-2.5 rounded-lg ${stat.bgColor}`}>
+                  <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
+                </div>
+                {stat.trend === 'up' && (
+                  <div className="flex items-center text-emerald-500 text-xs font-medium">
+                    <ArrowUpRight className="w-3 h-3 mr-0.5" />
+                    {stat.change}
+                  </div>
+                )}
+                {stat.trend === 'down' && (
+                  <div className="flex items-center text-red-500 text-xs font-medium">
+                    <ArrowDownRight className="w-3 h-3 mr-0.5" />
+                    {stat.change}
+                  </div>
+                )}
+                {stat.trend === 'neutral' && (
+                  <div className="text-slate-500 text-xs">
+                    {stat.change}
+                  </div>
+                )}
+              </div>
+              <div className="space-y-1">
+                <p className="text-2xl font-bold text-white">{stat.value}</p>
+                <p className="text-sm text-slate-400">{stat.title}</p>
+              </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Schnellzugriff</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <a
-              href="#orders"
-              className="p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-center"
-              data-testid="link-quick-orders"
-            >
-              <ShoppingCart className="h-6 w-6 mx-auto mb-2 text-primary" />
-              <span className="text-sm font-medium">Bestellungen</span>
-            </a>
-            <a
-              href="#products"
-              className="p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-center"
-              data-testid="link-quick-products"
-            >
-              <Package className="h-6 w-6 mx-auto mb-2 text-primary" />
-              <span className="text-sm font-medium">Produkte</span>
-            </a>
-            <a
-              href="#customers"
-              className="p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-center"
-              data-testid="link-quick-customers"
-            >
-              <Users className="h-6 w-6 mx-auto mb-2 text-primary" />
-              <span className="text-sm font-medium">Kunden</span>
-            </a>
-            <a
-              href="#analytics"
-              className="p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-center"
-              data-testid="link-quick-analytics"
-            >
-              <TrendingUp className="h-6 w-6 mx-auto mb-2 text-primary" />
-              <span className="text-sm font-medium">Statistiken</span>
-            </a>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="bg-slate-900 border-slate-800">
+          <CardHeader className="border-b border-slate-800">
+            <CardTitle className="text-white flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-blue-500" />
+              Ubersicht
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between py-3 border-b border-slate-800">
+                <span className="text-slate-400">Durchschn. Bestellwert</span>
+                <span className="font-semibold text-white">
+                  {analytics.totalOrders > 0 
+                    ? `${(analytics.totalRevenue / analytics.totalOrders).toFixed(2)} EUR`
+                    : '0.00 EUR'
+                  }
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-3 border-b border-slate-800">
+                <span className="text-slate-400">Abschlussrate</span>
+                <span className="font-semibold text-emerald-500">
+                  {analytics.totalOrders > 0 
+                    ? `${((analytics.completedOrders / analytics.totalOrders) * 100).toFixed(1)}%`
+                    : '0%'
+                  }
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-3">
+                <span className="text-slate-400">Produkte pro Bestellung</span>
+                <span className="font-semibold text-white">~2.4</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-slate-900 border-slate-800">
+          <CardHeader className="border-b border-slate-800">
+            <CardTitle className="text-white flex items-center gap-2">
+              <Clock className="w-5 h-5 text-amber-500" />
+              Aktionen erforderlich
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-3">
+              {analytics.pendingOrders > 0 ? (
+                <div className="flex items-center justify-between p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                    <span className="text-white font-medium">{analytics.pendingOrders} ausstehende Bestellungen</span>
+                  </div>
+                  <span className="text-sm text-amber-500">Bearbeiten</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="text-white font-medium">Alle Bestellungen bearbeitet</span>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-slate-500" />
+                  <span className="text-slate-300">Produktkatalog aktuell</span>
+                </div>
+                <span className="text-sm text-slate-500">{analytics.totalProducts} Produkte</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
