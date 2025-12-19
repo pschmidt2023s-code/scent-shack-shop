@@ -100,7 +100,7 @@ const Index = () => {
                     Stelle dein individuelles Set aus 50ml Flaschen zusammen und spare bis zu 20%
                   </p>
                   <Button className="w-full" asChild>
-                    <Link to="/sample-sets" data-testid="link-sparset-50ml">
+                    <Link to="/bundle-konfigurator" data-testid="link-sparset-50ml">
                       Set zusammenstellen
                       <ArrowRight className="ml-2 w-4 h-4" />
                     </Link>
@@ -123,7 +123,7 @@ const Index = () => {
                     Wähle 5 Duftproben aus und entdecke deine neuen Lieblingsdüfte
                   </p>
                   <Button className="w-full" asChild>
-                    <Link to="/sample-sets" data-testid="link-probenset">
+                    <Link to="/probensets" data-testid="link-probenset">
                       Proben auswählen
                       <ArrowRight className="ml-2 w-4 h-4" />
                     </Link>

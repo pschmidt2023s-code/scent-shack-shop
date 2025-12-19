@@ -136,7 +136,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProductsWithVariants(filters?: { category?: string; search?: string }): Promise<(Product & { variants: ProductVariant[] })[]> {
-    const products = await this.getProducts(filters);
+    let products = await this.getProducts(filters);
+    
+    // If searching, also find products that have matching variants
+    if (filters?.search) {
+      const matchingVariants = await db.select().from(schema.productVariants)
+        .where(ilike(schema.productVariants.name, `%${filters.search}%`));
+      
+      const productIdsFromVariants = [...new Set(matchingVariants.map(v => v.productId).filter((id): id is string => id !== null))];
+      
+      // Get additional products that weren't already found
+      const existingProductIds = new Set(products.map(p => p.id));
+      const additionalProductIds = productIdsFromVariants.filter(id => !existingProductIds.has(id));
+      
+      if (additionalProductIds.length > 0) {
+        const additionalProducts = await Promise.all(
+          additionalProductIds.map(id => this.getProduct(id))
+        );
+        products = [...products, ...additionalProducts.filter((p): p is Product => p !== undefined && p.isActive === true)];
+      }
+    }
+    
     const productsWithVariants = await Promise.all(
       products.map(async (product) => {
         const variants = await this.getProductVariants(product.id);
