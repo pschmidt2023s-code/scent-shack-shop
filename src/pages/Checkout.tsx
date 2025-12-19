@@ -107,8 +107,15 @@ export default function Checkout() {
   };
 
   const validateForm = () => {
-    if (!user && !guestEmail) {
+    const email = user?.email || guestEmail;
+    if (!email) {
       toast.error('Bitte geben Sie eine E-Mail-Adresse an');
+      return false;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Bitte geben Sie eine gültige E-Mail-Adresse ein (z.B. name@beispiel.de)');
       return false;
     }
 
