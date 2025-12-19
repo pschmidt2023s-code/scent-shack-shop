@@ -1,134 +1,62 @@
-
 import { useEffect, useState } from 'react';
 import { useLocation, useSearchParams, Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Package, CreditCard, Building2, Banknote, Home } from 'lucide-react';
+import { CheckCircle, Package, CreditCard, Building2, Banknote, Home, Loader2 } from 'lucide-react';
+
+interface OrderDetails {
+  orderNumber: string;
+  paymentMethod: string;
+  totalAmount: number;
+  customerEmail?: string;
+  bankDetails?: {
+    recipient: string;
+    iban: string;
+    bic: string;
+    purpose: string;
+  };
+}
 
 export default function CheckoutSuccess() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const [orderDetails, setOrderDetails] = useState<any>(null);
-  const [invoiceGenerated, setInvoiceGenerated] = useState(false);
+  const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get order details from state or URL params
-    const stateData = location.state;
-    const paypalSuccess = searchParams.get('paypal') === 'true';
-    const orderFromUrl = searchParams.get('order');
+    const stateData = location.state as OrderDetails | null;
     const sessionId = searchParams.get('session_id');
 
     if (stateData) {
       setOrderDetails(stateData);
-      // Send emails for successful payment
-      sendOrderEmails(stateData.orderNumber, stateData.customerEmail, stateData.customerName);
-    } else if (paypalSuccess && orderFromUrl) {
-      setOrderDetails({
-        orderNumber: orderFromUrl,
-        paymentMethod: 'paypal',
-        totalAmount: 0
-      });
-      // Send emails for PayPal payment
-      fetchOrderAndSendEmails(orderFromUrl);
+      setLoading(false);
     } else if (sessionId) {
-      // Handle Stripe success
-      setOrderDetails({
-        orderNumber: sessionId,
-        paymentMethod: 'card',
-        totalAmount: 0
-      });
-      generateInvoice(sessionId);
-      // Send emails for Stripe payment
-      fetchOrderAndSendEmailsBySessionId(sessionId);
+      verifyStripeSession(sessionId);
+    } else {
+      setLoading(false);
     }
   }, [location.state, searchParams]);
 
-  const fetchOrderAndSendEmails = async (orderNumber: string) => {
+  const verifyStripeSession = async (sessionId: string) => {
     try {
-      const { data: order, error } = await supabase
-        .from('orders')
-        .select('id, customer_email, customer_name')
-        .eq('order_number', orderNumber)
-        .single();
-
-      if (error) throw error;
-      if (order) {
-        sendOrderEmails(order.id, order.customer_email, order.customer_name);
+      const response = await fetch(`/api/stripe/session/${sessionId}`, {
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setOrderDetails({
+          orderNumber: data.orderNumber || sessionId.slice(-8).toUpperCase(),
+          paymentMethod: 'card',
+          totalAmount: (data.amountTotal || 0) / 100,
+          customerEmail: data.customerEmail,
+        });
       }
     } catch (error) {
-      console.error('Error fetching order:', error);
-    }
-  };
-
-  const fetchOrderAndSendEmailsBySessionId = async (sessionId: string) => {
-    try {
-      const { data: order, error } = await supabase
-        .from('orders')
-        .select('id, customer_email, customer_name, order_number')
-        .eq('stripe_session_id', sessionId)
-        .single();
-
-      if (error) throw error;
-      if (order) {
-        sendOrderEmails(order.id, order.customer_email, order.customer_name);
-        setOrderDetails(prev => ({
-          ...prev,
-          orderNumber: order.order_number
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching order:', error);
-    }
-  };
-
-  const sendOrderEmails = async (orderId: string, customerEmail: string, customerName: string) => {
-    try {
-      // Send order confirmation email
-      await supabase.functions.invoke('send-order-confirmation', {
-        body: {
-          orderId,
-          customerEmail,
-          customerName
-        }
-      });
-
-      // Send admin notification email
-      await supabase.functions.invoke('send-admin-notification', {
-        body: {
-          orderId,
-          orderNumber: orderId,
-          customerName,
-          customerEmail,
-          totalAmount: 0,
-          currency: 'eur',
-          paymentMethod: 'stripe'
-        }
-      });
-    } catch (error) {
-      console.error('Error sending emails:', error);
-    }
-  };
-
-  const generateInvoice = async (sessionId: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('send-invoice', {
-        body: { sessionId },
-      });
-
-      if (error) throw error;
-
-      setInvoiceGenerated(true);
-      if (data.orderId) {
-        setOrderDetails(prev => ({
-          ...prev,
-          orderNumber: data.orderId
-        }));
-      }
-    } catch (error) {
-      console.error('Invoice generation error:', error);
-      // Don't show error to user as the payment was successful
+      console.error('Error verifying session:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -180,13 +108,21 @@ export default function CheckoutSuccess() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen glass">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-green-700 mb-2">
+            <h1 className="text-3xl font-bold text-green-700 dark:text-green-500 mb-2">
               Bestellung erfolgreich!
             </h1>
             <p className="text-muted-foreground">
@@ -206,7 +142,7 @@ export default function CheckoutSuccess() {
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Bestellnummer:</span>
                   <span className="font-mono font-medium">
-                    {orderDetails.orderNumber.length > 10 ? 
+                    {orderDetails.orderNumber.length > 20 ? 
                       `#${orderDetails.orderNumber.slice(-8).toUpperCase()}` : 
                       orderDetails.orderNumber}
                   </span>
@@ -215,7 +151,7 @@ export default function CheckoutSuccess() {
                 {orderDetails.totalAmount > 0 && (
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Betrag:</span>
-                    <span className="font-medium">{orderDetails.totalAmount.toFixed(2)}€</span>
+                    <span className="font-medium">{orderDetails.totalAmount.toFixed(2)} EUR</span>
                   </div>
                 )}
 
@@ -231,24 +167,6 @@ export default function CheckoutSuccess() {
                   <span className="text-muted-foreground">Status:</span>
                   {getStatusBadge(orderDetails.paymentMethod)}
                 </div>
-
-                {invoiceGenerated && (
-                  <div className="bg-green-50 p-3 rounded-lg">
-                    <p className="text-sm text-green-800">
-                      ✓ Ihre Rechnung wurde automatisch an Ihre E-Mail-Adresse gesendet.
-                    </p>
-                  </div>
-                )}
-
-                {orderDetails.paymentMethod === 'paypal_me' && (
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-medium mb-2 text-blue-800">PayPal.me Zahlung</h4>
-                    <p className="text-sm text-blue-700">
-                      Bitte schließen Sie die Zahlung in dem geöffneten PayPal.me Tab ab. 
-                      Ihre Bestellung wird nach Zahlungseingang bearbeitet und Sie erhalten eine weitere Bestätigung per E-Mail.
-                    </p>
-                  </div>
-                )}
 
                 {orderDetails.paymentMethod === 'bank' && orderDetails.bankDetails && (
                   <div className="p-4 bg-muted/50 rounded-lg">
@@ -308,14 +226,14 @@ export default function CheckoutSuccess() {
           </div>
 
           <div className="flex gap-4 mt-8">
-            <Button asChild className="flex-1">
+            <Button asChild className="flex-1" data-testid="button-continue-shopping">
               <Link to="/">
                 <Home className="w-4 h-4 mr-2" />
                 Weiter einkaufen
               </Link>
             </Button>
-            <Button variant="outline" asChild className="flex-1">
-              <Link to="/contact">Kontakt</Link>
+            <Button variant="outline" asChild className="flex-1" data-testid="button-contact">
+              <Link to="/kontakt">Kontakt</Link>
             </Button>
           </div>
         </div>

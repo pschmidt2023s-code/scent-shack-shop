@@ -1558,20 +1558,59 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
     }
   });
 
-  // Verify Stripe payment session
+  // Verify Stripe payment session and send confirmation email
   app.get("/api/stripe/session/:sessionId", async (req, res) => {
     try {
       const { sessionId } = req.params;
       const { getUncachableStripeClient } = await import("./stripeClient");
       const stripe = await getUncachableStripeClient();
 
-      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      const session = await stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ['line_items'],
+      });
+      
+      // If payment successful, update order and send email
+      if (session.payment_status === 'paid' && session.metadata?.orderId) {
+        const order = await storage.getOrder(session.metadata.orderId);
+        if (order && order.paymentStatus !== 'completed') {
+          // Update order status
+          await storage.updateOrder(order.id, {
+            paymentStatus: 'completed',
+            status: 'processing',
+          });
+          
+          // Send confirmation email
+          try {
+            const { sendOrderConfirmationEmail } = await import('./email');
+            const emailItems = session.line_items?.data.map((item: any) => ({
+              name: item.description || 'Produkt',
+              quantity: item.quantity || 1,
+              price: (item.amount_total || 0) / 100,
+            })) || [];
+            
+            await sendOrderConfirmationEmail({
+              orderNumber: order.orderNumber,
+              customerEmail: session.customer_email || order.customerEmail || '',
+              customerName: order.customerName || 'Kunde',
+              items: emailItems,
+              totalAmount: (session.amount_total || 0) / 100,
+              shippingCost: 0,
+              shippingAddress: order.shippingAddressData || {},
+              paymentMethod: 'card',
+            });
+            console.log('Order confirmation email sent for Stripe order:', order.orderNumber);
+          } catch (emailError) {
+            console.error('Failed to send order confirmation email:', emailError);
+          }
+        }
+      }
       
       res.json({
         status: session.payment_status,
         customerEmail: session.customer_email,
         amountTotal: session.amount_total,
         currency: session.currency,
+        orderNumber: session.metadata?.orderNumber,
       });
     } catch (error: any) {
       console.error("Session verify error:", error);
