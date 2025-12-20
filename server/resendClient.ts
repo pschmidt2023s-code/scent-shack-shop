@@ -1,9 +1,7 @@
 // Resend email client - uses RESEND_API_KEY environment variable
 import { Resend } from 'resend';
 
-// TEST MODE: Using onboarding@resend.dev (only sends to Resend account email)
-// Switch to 'ALDENAIR <noreply@aldenair.de>' once domain issue is resolved
-const DEFAULT_FROM_EMAIL = 'onboarding@resend.dev';
+const DEFAULT_FROM_EMAIL = 'ALDENAIR <noreply@aldenair.de>';
 
 // Modern email template wrapper with elegant gradient header
 function emailWrapper(content: string, preheader?: string): string {
