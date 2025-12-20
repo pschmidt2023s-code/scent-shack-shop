@@ -1,61 +1,21 @@
-// Resend email client using Replit Connection API
+// Resend email client - uses RESEND_API_KEY environment variable
 import { Resend } from 'resend';
 
-let cachedCredentials: { apiKey: string; fromEmail: string } | null = null;
-let credentialsCacheTime = 0;
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-
-async function getCredentials() {
-  // Return cached credentials if still valid
-  if (cachedCredentials && Date.now() - credentialsCacheTime < CACHE_TTL_MS) {
-    return cachedCredentials;
-  }
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
-  const xReplitToken = process.env.REPL_IDENTITY 
-    ? 'repl ' + process.env.REPL_IDENTITY 
-    : process.env.WEB_REPL_RENEWAL 
-    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
-    : null;
-
-  if (!xReplitToken) {
-    console.error('[Resend] X_REPLIT_TOKEN not found');
-    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
-  }
-
-  console.log('[Resend] Fetching credentials from connector...');
-  const response = await fetch(
-    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=resend',
-    {
-      headers: {
-        'Accept': 'application/json',
-        'X_REPLIT_TOKEN': xReplitToken
-      }
-    }
-  );
-  
-  const data = await response.json();
-  const connSettings = data.items?.[0];
-
-  if (!connSettings || (!connSettings.settings?.api_key)) {
-    console.error('[Resend] Connection not found or missing API key');
-    throw new Error('Resend not connected - check integration settings');
-  }
-  
-  const fromEmail = connSettings.settings.from_email;
-  console.log('[Resend] Credentials loaded, fromEmail:', fromEmail || 'not configured');
-  
-  // Cache the credentials
-  cachedCredentials = { apiKey: connSettings.settings.api_key, fromEmail };
-  credentialsCacheTime = Date.now();
-  
-  return cachedCredentials;
-}
+const DEFAULT_FROM_EMAIL = 'onboarding@resend.dev';
 
 export async function getResendClient() {
-  const { apiKey, fromEmail } = await getCredentials();
+  const apiKey = process.env.RESEND_API_KEY;
+  
+  if (!apiKey) {
+    console.error('[Resend] RESEND_API_KEY not found in environment');
+    throw new Error('RESEND_API_KEY not configured');
+  }
+  
+  console.log('[Resend] Using API key from environment');
+  
   return {
     client: new Resend(apiKey),
-    fromEmail: fromEmail || 'noreply@aldenair.de'
+    fromEmail: DEFAULT_FROM_EMAIL
   };
 }
 
