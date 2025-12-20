@@ -46,6 +46,7 @@ const Cancellation = React.lazy(() => import('@/pages/Cancellation'));
 const SampleSets = React.lazy(() => import('@/pages/SampleSets'));
 const ResetPassword = React.lazy(() => import('@/pages/ResetPassword'));
 const ShippingInfo = React.lazy(() => import('@/pages/ShippingInfo'));
+const OrderTracking = React.lazy(() => import('@/pages/OrderTracking'));
 
 const defaultQueryFn = async ({ queryKey }: { queryKey: readonly unknown[] }) => {
   const endpoint = queryKey[0] as string;
@@ -127,6 +128,7 @@ function App() {
                   <Route path="/widerruf" element={<Suspense fallback={<LoadingSpinner />}><Cancellation /></Suspense>} />
                   <Route path="/probensets" element={<Suspense fallback={<LoadingSpinner />}><SampleSets /></Suspense>} />
                   <Route path="/reset-password" element={<Suspense fallback={<LoadingSpinner />}><ResetPassword /></Suspense>} />
+                  <Route path="/order/:orderId" element={<Suspense fallback={<LoadingSpinner />}><OrderTracking /></Suspense>} />
                   <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><NotFound /></Suspense>} />
                 </Routes>
                   </div>

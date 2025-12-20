@@ -503,6 +503,7 @@ export async function registerRoutes(app: Express) {
         
         const bankSettings = (order.paymentMethod === 'bank' || order.paymentMethod === 'bank_transfer') ? await storage.getBankSettings() : null;
         await sendOrderConfirmationEmail({
+          orderId: order.id,
           orderNumber: order.orderNumber,
           customerEmail: order.customerEmail || '',
           customerName: order.customerName || 'Kunde',
@@ -737,6 +738,7 @@ export async function registerRoutes(app: Express) {
         
         const bankSettings = (paymentMethod === 'bank' || paymentMethod === 'bank_transfer') ? await storage.getBankSettings() : null;
         await sendOrderConfirmationEmail({
+          orderId: order.id,
           orderNumber,
           customerEmail,
           customerName,
@@ -946,6 +948,7 @@ export async function registerRoutes(app: Express) {
         case 'confirmation':
           const bankSettings = (order.paymentMethod === 'bank' || order.paymentMethod === 'bank_transfer') ? await storage.getBankSettings() : null;
           success = await sendOrderConfirmationEmail({
+            orderId: order.id,
             orderNumber,
             customerEmail,
             customerName,
@@ -2118,6 +2121,7 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
                 : { street: '', city: '', postalCode: '' };
               
               const emailResult = await sendOrderConfirmationEmail({
+                orderId: order.id,
                 orderNumber: order.orderNumber,
                 customerEmail: session.customer_email || order.customerEmail || '',
                 customerName: order.customerName || shippingAddr.name || 'Kunde',

@@ -52,11 +52,11 @@ function emailWrapper(content: string, preheader?: string): string {
                     <tr>
                       <td style="text-align:center;">
                         <p style="margin:0 0 12px 0;color:#666666;font-size:13px;font-family:Arial,Helvetica,sans-serif;">
-                          <a href="https://aldenair.de" style="color:#b8860b;text-decoration:none;">Website</a>
+                          <a href="https://aldenairperfumes.de" style="color:#b8860b;text-decoration:none;">Website</a>
                           &nbsp;&nbsp;|&nbsp;&nbsp;
-                          <a href="https://aldenair.de/contact" style="color:#b8860b;text-decoration:none;">Kontakt</a>
+                          <a href="https://aldenairperfumes.de/contact" style="color:#b8860b;text-decoration:none;">Kontakt</a>
                           &nbsp;&nbsp;|&nbsp;&nbsp;
-                          <a href="https://aldenair.de/datenschutz" style="color:#b8860b;text-decoration:none;">Datenschutz</a>
+                          <a href="https://aldenairperfumes.de/datenschutz" style="color:#b8860b;text-decoration:none;">Datenschutz</a>
                         </p>
                         <p style="margin:0;color:#888888;font-size:12px;line-height:1.5;font-family:Arial,Helvetica,sans-serif;">
                           ALDENAIR<br>
@@ -210,6 +210,7 @@ export async function sendPasswordResetEmail(to: string, resetToken: string, bas
 // 2. ORDER CONFIRMATION EMAIL
 // ============================================
 interface OrderEmailData {
+  orderId?: string;
   orderNumber: string;
   customerEmail: string;
   customerName: string;
@@ -308,7 +309,7 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
       ${bankTransferInfo}
       
       <div style="text-align: center; margin-top: 32px;">
-        ${emailButton('Bestellung ansehen', 'https://aldenair.de/orders', 'secondary')}
+        ${emailButton('Bestellung verfolgen', data.orderId ? `https://aldenairperfumes.de/order/${data.orderId}` : 'https://aldenairperfumes.de/profile', 'secondary')}
       </div>
     `;
 
@@ -469,7 +470,7 @@ export async function sendWelcomeEmailWithPassword(
 export async function sendWelcomeEmail(
   customerEmail: string,
   customerName: string,
-  baseUrl: string = 'https://aldenair.de'
+  baseUrl: string = 'https://aldenairperfumes.de'
 ): Promise<boolean> {
   try {
     console.log(`[Resend] Sending welcome email to: ${customerEmail}`);
@@ -562,7 +563,7 @@ export async function sendOrderCancellationEmail(
       </p>
       
       <div style="text-align:center;margin-top:32px;">
-        ${emailButton('Weiter einkaufen', 'https://aldenair.de/products')}
+        ${emailButton('Weiter einkaufen', 'https://aldenairperfumes.de/products')}
       </div>
     `;
 
@@ -619,7 +620,7 @@ export async function sendRefundEmail(
       
       <p style="color:#888888;font-size:14px;line-height:1.6;margin-top:24px;text-align:center;font-family:Arial,Helvetica,sans-serif;">
         Bei Fragen zu Ihrer Rückerstattung kontaktieren Sie uns gerne unter<br>
-        <a href="mailto:support@aldenair.de" style="color:#1a1a1a;text-decoration:none;">support@aldenair.de</a>
+        <a href="mailto:support@aldenairperfumes.de" style="color:#1a1a1a;text-decoration:none;">support@aldenairperfumes.de</a>
       </p>
     `;
 
@@ -681,7 +682,7 @@ export async function sendNewsletterWelcomeEmail(
       </div>
       
       <div style="text-align:center;margin-top:32px;">
-        ${emailButton('Jetzt shoppen', 'https://aldenair.de/products')}
+        ${emailButton('Jetzt shoppen', 'https://aldenairperfumes.de/products')}
       </div>
     `;
 
