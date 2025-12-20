@@ -483,9 +483,9 @@ export async function registerRoutes(app: Express) {
         });
       }
       
-      // Send order confirmation email
+      // Send order confirmation email using Resend
       try {
-        const { sendOrderConfirmationEmail } = await import('./email');
+        const { sendOrderConfirmationEmail } = await import('./resendClient');
         const emailItems = await Promise.all(validatedItems.map(async (item) => {
           const variant = await storage.getProductVariant(item.variantId);
           return {
@@ -1754,9 +1754,9 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
           const emailSent = order.notes?.includes('EMAIL_SENT');
           
           if (!emailSent) {
-            // Send confirmation email
+            // Send confirmation email using Resend
             try {
-              const { sendOrderConfirmationEmail } = await import('./email');
+              const { sendOrderConfirmationEmail } = await import('./resendClient');
               const emailItems = session.line_items?.data.map((item: any) => ({
                 name: item.description || 'Produkt',
                 quantity: item.quantity || 1,
