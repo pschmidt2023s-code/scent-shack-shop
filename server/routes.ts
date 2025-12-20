@@ -3,22 +3,12 @@ import { z } from "zod";
 import { storage } from "./storage";
 import { insertUserSchema, insertProductSchema, insertOrderSchema, insertReviewSchema, insertPartnerSchema, insertNewsletterSchema, insertAddressSchema, insertContestEntrySchema, updateProductSchema, updateOrderSchema, updateUserRoleSchema } from "../shared/schema";
 import bcrypt from "bcryptjs";
-import OpenAI from "openai";
+// Use the OpenAI client from Replit AI Integrations
+import { openai as aiIntegrationsClient } from "./replit_integrations/image/client";
 
-let openai: OpenAI | null = null;
-
-function getOpenAI(): OpenAI | null {
-  if (openai) return openai;
-  const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    console.warn("OpenAI API key not configured - AI features will be disabled");
-    return null;
-  }
-  openai = new OpenAI({
-    apiKey,
-    baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  });
-  return openai;
+function getOpenAI() {
+  // Return the AI Integrations client (always available via Replit)
+  return aiIntegrationsClient;
 }
 
 declare module "express-session" {
