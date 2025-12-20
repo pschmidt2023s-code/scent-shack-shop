@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/contexts/CartContext';
@@ -69,6 +70,7 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'bank' | 'card'>('bank');
   const [selectedShipping, setSelectedShipping] = useState<string>('');
+  const [priorityShipping, setPriorityShipping] = useState(false);
   const [guestEmail, setGuestEmail] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [orderSuccess, setOrderSuccess] = useState(false);
@@ -120,11 +122,13 @@ export default function Checkout() {
   const shippingCost = selectedShippingOption ? parseFloat(selectedShippingOption.price) : 0;
   const freeShippingThreshold = 50;
   const qualifiesForFreeStandard = checkoutData.totalAmount >= freeShippingThreshold;
+  const priorityCost = 2.99;
   
   const tierDiscountAmount = tierDiscount > 0 ? (checkoutData.totalAmount * tierDiscount / 100) : 0;
   const totalDiscountAmount = checkoutData.discountAmount + tierDiscountAmount;
   const subtotalAfterDiscount = checkoutData.totalAmount - totalDiscountAmount;
-  const actualShippingCost = qualifiesForFreeStandard && !selectedShippingOption?.isExpress ? 0 : shippingCost;
+  const baseShippingCost = qualifiesForFreeStandard ? 0 : shippingCost;
+  const actualShippingCost = baseShippingCost + (priorityShipping ? priorityCost : 0);
   const finalTotal = subtotalAfterDiscount + actualShippingCost;
 
   useEffect(() => {
@@ -486,17 +490,22 @@ export default function Checkout() {
           )}
           
           <div className="flex justify-between text-sm">
-            <span>
-              Versand {selectedShippingOption ? `(${selectedShippingOption.name})` : ''}
-            </span>
-            {!selectedShippingOption ? (
-              <span className="text-muted-foreground text-xs">wird beim Checkout berechnet</span>
-            ) : actualShippingCost === 0 ? (
+            <span>Versand (Standardversand)</span>
+            {qualifiesForFreeStandard ? (
               <span className="text-green-600 dark:text-green-400">Kostenlos</span>
             ) : (
-              <span>{actualShippingCost.toFixed(2)} €</span>
+              <span>4,99 €</span>
             )}
           </div>
+          {priorityShipping && (
+            <div className="flex justify-between text-sm">
+              <span className="flex items-center gap-1">
+                <Zap className="w-3 h-3 text-amber-500" />
+                Priority Versand
+              </span>
+              <span>+2,99 €</span>
+            </div>
+          )}
 
           <Separator />
 
@@ -661,48 +670,54 @@ export default function Checkout() {
                 Versandmethode
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <RadioGroup value={selectedShipping} onValueChange={setSelectedShipping}>
-                {shippingOptions.map((option) => {
-                  const isStandard = !option.isExpress;
-                  const isFree = isStandard && qualifiesForFreeStandard;
-                  return (
-                    <div 
-                      key={option.id} 
-                      className={cn(
-                        "flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all",
-                        selectedShipping === option.id ? "border-primary bg-primary/5" : "hover-elevate"
-                      )}
-                      onClick={() => setSelectedShipping(option.id)}
-                    >
-                      <RadioGroupItem value={option.id} id={`shipping-${option.id}`} />
-                      <Label htmlFor={`shipping-${option.id}`} className="flex items-center cursor-pointer w-full">
-                        {option.isExpress ? (
-                          <Zap className="mr-3 h-5 w-5 text-amber-500" />
-                        ) : (
-                          <Truck className="mr-3 h-5 w-5" />
-                        )}
-                        <div className="flex-1">
-                          <span className="font-medium">{option.name}</span>
-                          <p className="text-xs text-muted-foreground">{option.estimatedDays}</p>
-                        </div>
-                        <div className="text-right">
-                          {isFree ? (
-                            <span className="text-green-600 dark:text-green-400 font-medium">Kostenlos</span>
-                          ) : (
-                            <span className="font-medium">{parseFloat(option.price).toFixed(2)} €</span>
-                          )}
-                          {option.isExpress && (
-                            <Badge variant="secondary" className="ml-2">Express</Badge>
-                          )}
-                        </div>
-                      </Label>
-                    </div>
-                  );
-                })}
-              </RadioGroup>
+            <CardContent className="space-y-4">
+              <div className="p-4 border rounded-lg border-primary bg-primary/5">
+                <div className="flex items-center gap-3">
+                  <Truck className="h-5 w-5" />
+                  <div className="flex-1">
+                    <span className="font-medium">Standardversand</span>
+                    <p className="text-xs text-muted-foreground">Lieferung in 3-5 Werktagen</p>
+                  </div>
+                  <div className="text-right">
+                    {qualifiesForFreeStandard ? (
+                      <span className="text-green-600 dark:text-green-400 font-medium">Kostenlos</span>
+                    ) : (
+                      <span className="font-medium">4,99 €</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div 
+                className={cn(
+                  "p-4 border rounded-lg cursor-pointer transition-all",
+                  priorityShipping ? "border-primary bg-primary/5" : "hover-elevate"
+                )}
+                onClick={() => setPriorityShipping(!priorityShipping)}
+              >
+                <div className="flex items-center gap-3">
+                  <Checkbox 
+                    checked={priorityShipping} 
+                    onCheckedChange={(checked) => setPriorityShipping(checked === true)}
+                    id="priority-shipping"
+                  />
+                  <Zap className="h-5 w-5 text-amber-500" />
+                  <div className="flex-1">
+                    <Label htmlFor="priority-shipping" className="font-medium cursor-pointer">
+                      Priority Versand hinzufügen
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Versand noch heute (bei Bestellung bis 16:00 Uhr, sonst am nächsten Werktag)
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-medium">+2,99 €</span>
+                  </div>
+                </div>
+              </div>
+
               {!qualifiesForFreeStandard && (
-                <div className="mt-4 p-3 bg-muted rounded-lg">
+                <div className="p-3 bg-muted rounded-lg">
                   <p className="text-sm text-muted-foreground">
                     Noch {(freeShippingThreshold - checkoutData.totalAmount).toFixed(2)} € bis zum kostenlosen Standardversand
                   </p>
@@ -816,8 +831,13 @@ export default function Checkout() {
                     </Button>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {selectedShippingOption?.name} 
-                    {actualShippingCost === 0 ? ' (Kostenlos)' : ` (${actualShippingCost.toFixed(2)} €)`}
+                    Standardversand {qualifiesForFreeStandard ? '(Kostenlos)' : '(4,99 €)'}
+                    {priorityShipping && (
+                      <span className="flex items-center gap-1 mt-1">
+                        <Zap className="w-3 h-3 text-amber-500" />
+                        + Priority Versand (+2,99 €)
+                      </span>
+                    )}
                   </p>
                 </div>
                 <div className="p-4 bg-muted rounded-lg">
