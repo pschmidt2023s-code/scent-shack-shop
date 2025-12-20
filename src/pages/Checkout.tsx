@@ -227,10 +227,7 @@ export default function Checkout() {
   };
 
   const validateShippingStep = () => {
-    if (!selectedShipping) {
-      toast.error('Bitte wählen Sie eine Versandoption');
-      return false;
-    }
+    // Standardversand is always selected, no validation needed
     return true;
   };
 
