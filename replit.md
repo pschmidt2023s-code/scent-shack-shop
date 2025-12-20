@@ -210,8 +210,14 @@ Complete legal compliance overhaul for German B2C e-commerce (stand: Dezember 20
 - **Admin Order Cancel & Refund** (December 20, 2025):
   - New POST /api/admin/orders/:id/cancel-and-refund endpoint
   - Stripe refund processing for card payments (validates payment_intent exists before refund)
+  - **PayPal automatic refunds**: Iterates all purchase units to find COMPLETED captures, performs full refund
+  - Lazy re-initialization of PayPal controllers if credentials become available after startup
   - Automatic status update to cancelled/refunded
   - Refund confirmation email sent to customer via sendRefundEmail
   - "Stornieren & Erstatten" button in admin order dropdown
-  - Error handling for missing payment reference or Stripe failures
-  - Non-card payments (bank transfer, PayPal) marked as refunded with manual refund note
+  - Error handling for missing payment reference, Stripe/PayPal failures
+  - Bank transfer payments: Marked as refunded with manual refund note
+- **Admin Manual Email Resend** (December 20, 2025):
+  - POST /api/admin/orders/:id/resend-email endpoint with emailType parameter
+  - Dropdown options: Confirmation, Shipping, Cancellation, Refund emails
+  - Admin can resend any email type for any order from the orders list
