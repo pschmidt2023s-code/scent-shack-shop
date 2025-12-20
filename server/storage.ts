@@ -100,6 +100,11 @@ export interface IStorage {
   getPasswordResetToken(token: string): Promise<{ userId: string; expiresAt: Date; usedAt: Date | null } | undefined>;
   markPasswordResetTokenUsed(token: string): Promise<void>;
   updateUserPassword(userId: string, hashedPassword: string): Promise<void>;
+  
+  getChatSessions(): Promise<Array<{ id: string; visitorName: string; visitorEmail: string; status: string; lastMessage: string; createdAt: string; unreadCount: number }>>;
+  getChatMessages(sessionId: string): Promise<Array<{ id: string; sessionId: string; content: string; sender: string; createdAt: string }>>;
+  createChatMessage(data: { sessionId: string; content: string; sender: string }): Promise<{ id: string; sessionId: string; content: string; sender: string; createdAt: string }>;
+  updateChatSessionStatus(sessionId: string, status: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -735,6 +740,85 @@ export class DatabaseStorage implements IStorage {
     await db.update(schema.users)
       .set({ password: hashedPassword, updatedAt: new Date() })
       .where(eq(schema.users.id, userId));
+  }
+
+  // ==================== CHAT SESSIONS ====================
+  async getChatSessions(): Promise<Array<{ id: string; visitorName: string; visitorEmail: string; status: string; lastMessage: string; createdAt: string; unreadCount: number }>> {
+    const sessions = await db.select({
+      id: schema.chatSessions.id,
+      status: schema.chatSessions.status,
+      createdAt: schema.chatSessions.createdAt,
+      userId: schema.chatSessions.userId,
+    }).from(schema.chatSessions)
+      .orderBy(desc(schema.chatSessions.createdAt));
+    
+    const result = await Promise.all(sessions.map(async (session) => {
+      const user = session.userId ? await this.getUser(session.userId) : null;
+      const messages = await db.select().from(schema.chatMessages)
+        .where(eq(schema.chatMessages.sessionId, session.id))
+        .orderBy(desc(schema.chatMessages.createdAt))
+        .limit(1);
+      
+      const unreadMessages = await db.select().from(schema.chatMessages)
+        .where(and(
+          eq(schema.chatMessages.sessionId, session.id),
+          eq(schema.chatMessages.senderType, 'visitor'),
+          eq(schema.chatMessages.status, 'sent')
+        ));
+      
+      return {
+        id: session.id,
+        visitorName: user?.fullName || 'Anonym',
+        visitorEmail: user?.email || 'Keine E-Mail',
+        status: session.status || 'active',
+        lastMessage: messages[0]?.content || '',
+        createdAt: session.createdAt.toISOString(),
+        unreadCount: unreadMessages.length,
+      };
+    }));
+    
+    return result;
+  }
+
+  async getChatMessages(sessionId: string): Promise<Array<{ id: string; sessionId: string; content: string; sender: string; createdAt: string }>> {
+    const messages = await db.select().from(schema.chatMessages)
+      .where(eq(schema.chatMessages.sessionId, sessionId))
+      .orderBy(schema.chatMessages.createdAt);
+    
+    return messages.map(m => ({
+      id: m.id,
+      sessionId: m.sessionId || '',
+      content: m.content,
+      sender: m.senderType === 'admin' ? 'admin' : 'visitor',
+      createdAt: m.createdAt.toISOString(),
+    }));
+  }
+
+  async createChatMessage(data: { sessionId: string; content: string; sender: string }): Promise<{ id: string; sessionId: string; content: string; sender: string; createdAt: string }> {
+    const [message] = await db.insert(schema.chatMessages).values({
+      sessionId: data.sessionId,
+      content: data.content,
+      senderType: data.sender,
+      status: 'sent',
+    }).returning();
+    
+    await db.update(schema.chatSessions)
+      .set({ lastMessageAt: new Date() })
+      .where(eq(schema.chatSessions.id, data.sessionId));
+    
+    return {
+      id: message.id,
+      sessionId: message.sessionId || '',
+      content: message.content,
+      sender: message.senderType === 'admin' ? 'admin' : 'visitor',
+      createdAt: message.createdAt.toISOString(),
+    };
+  }
+
+  async updateChatSessionStatus(sessionId: string, status: string): Promise<void> {
+    await db.update(schema.chatSessions)
+      .set({ status })
+      .where(eq(schema.chatSessions.id, sessionId));
   }
 }
 

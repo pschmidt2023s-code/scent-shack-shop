@@ -57,7 +57,8 @@ import {
   Check,
   Plus,
   Minus,
-  Zap
+  Zap,
+  MessageSquare
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -98,6 +99,8 @@ const PaybackManagement = lazy(() => import('@/components/admin/PaybackManagemen
 const ContestManagement = lazy(() => import('@/components/admin/ContestManagement').then(module => ({ default: module.ContestManagement })));
 const ProductManagement = lazy(() => import('@/components/admin/ProductManagement'));
 const SettingsManagement = lazy(() => import('@/components/admin/SettingsManagement'));
+const AdminAnalytics = lazy(() => import('@/components/admin/AdminAnalytics'));
+const LiveChatManagement = lazy(() => import('@/components/admin/LiveChatManagement'));
 
 interface Order {
   id: string;
@@ -145,6 +148,7 @@ const navGroups = [
     label: 'Übersicht',
     items: [
       { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     ],
   },
   {
@@ -168,6 +172,12 @@ const navGroups = [
     items: [
       { id: 'newsletter', label: 'Newsletter', icon: Mail },
       { id: 'contest', label: 'Gewinnspiel', icon: Gift },
+    ],
+  },
+  {
+    label: 'Support',
+    items: [
+      { id: 'chat', label: 'Live Chat', icon: MessageSquare },
     ],
   },
   {
@@ -2029,6 +2039,18 @@ export default function Admin() {
         return (
           <Suspense fallback={<LoadingSpinner />}>
             <SettingsManagement />
+          </Suspense>
+        );
+      case 'analytics':
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <AdminAnalytics />
+          </Suspense>
+        );
+      case 'chat':
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <LiveChatManagement />
           </Suspense>
         );
       default:

@@ -1186,6 +1186,52 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Admin Live Chat Management - Chat Sessions
+  app.get("/api/admin/chat/sessions", requireAdmin, async (req, res) => {
+    try {
+      const sessions = await storage.getChatSessions();
+      res.json(sessions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/admin/chat/sessions/:sessionId/messages", requireAdmin, async (req, res) => {
+    try {
+      const messages = await storage.getChatMessages(req.params.sessionId);
+      res.json(messages);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/chat/sessions/:sessionId/messages", requireAdmin, async (req, res) => {
+    try {
+      const { content } = req.body;
+      if (!content?.trim()) {
+        return res.status(400).json({ error: "Nachricht erforderlich" });
+      }
+      
+      const message = await storage.createChatMessage({
+        sessionId: req.params.sessionId,
+        content: content.trim(),
+        sender: 'admin',
+      });
+      res.json(message);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/chat/sessions/:sessionId/close", requireAdmin, async (req, res) => {
+    try {
+      await storage.updateChatSessionStatus(req.params.sessionId, 'closed');
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/favorites", requireAuth, async (req, res) => {
     try {
       const favorites = await storage.getFavorites(req.session.userId!);
