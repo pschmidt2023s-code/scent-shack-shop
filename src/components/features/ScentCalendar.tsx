@@ -131,7 +131,7 @@ export function ScentCalendar() {
   };
 
   const handleProductClick = (productId: string) => {
-    navigate(`/products/${productId}`);
+    navigate(`/product/${productId}`);
   };
 
   return (

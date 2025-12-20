@@ -98,7 +98,7 @@ export function ScentStylist() {
   };
 
   const handleViewProduct = (productId: string) => {
-    navigate(`/products/${productId}`);
+    navigate(`/product/${productId}`);
   };
 
   if (showResults) {
