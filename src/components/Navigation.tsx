@@ -89,7 +89,10 @@ const Navigation = () => {
                 variant="ghost"
                 size="icon"
                 className="lg:hidden"
-                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                onClick={() => {
+                  setShowMobileMenu(!showMobileMenu);
+                  if (!showMobileMenu) setShowSearch(false);
+                }}
                 data-testid="button-mobile-menu"
               >
                 {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -129,7 +132,10 @@ const Navigation = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setShowSearch(!showSearch)}
+                onClick={() => {
+                  setShowSearch(!showSearch);
+                  if (!showSearch) setShowMobileMenu(false);
+                }}
                 data-testid="button-search"
               >
                 <Search className="w-5 h-5" />
