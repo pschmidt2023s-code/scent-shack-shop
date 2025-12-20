@@ -900,13 +900,13 @@ export async function registerRoutes(app: Express) {
 
       const orderItems = await storage.getOrderItems(order.id);
       const emailItems = orderItems.map(item => ({
-        name: item.variantName || 'Produkt',
+        name: 'Produkt',
         quantity: item.quantity,
         price: parseFloat(item.unitPrice?.toString() || '0') * item.quantity,
       }));
 
       const shippingAddr = typeof order.shippingAddressData === 'object' && order.shippingAddressData 
-        ? order.shippingAddressData as Record<string, string>
+        ? order.shippingAddressData as { street: string; city: string; postalCode: string; country?: string }
         : { street: '', city: '', postalCode: '' };
 
       const { 
@@ -917,43 +917,48 @@ export async function registerRoutes(app: Express) {
       } = await import('./resendClient');
 
       let success = false;
+      const customerEmail = order.customerEmail || '';
+      const customerName = order.customerName || 'Kunde';
+      const orderNumber = order.orderNumber;
+      
       switch (emailType) {
         case 'confirmation':
           success = await sendOrderConfirmationEmail({
-            orderNumber: order.orderNumber,
-            customerEmail: order.customerEmail || '',
-            customerName: order.customerName || 'Kunde',
+            orderNumber,
+            customerEmail,
+            customerName,
             items: emailItems,
             totalAmount: parseFloat(order.totalAmount?.toString() || '0'),
-            shippingCost: parseFloat(order.shippingCost?.toString() || '0'),
+            shippingCost: 0,
             shippingAddress: shippingAddr,
             paymentMethod: order.paymentMethod || 'bank',
           });
           break;
         case 'shipping':
-          success = await sendShippingNotificationEmail({
-            orderNumber: order.orderNumber,
-            customerEmail: order.customerEmail || '',
-            customerName: order.customerName || 'Kunde',
-            trackingNumber: order.trackingNumber || '',
-            carrier: order.shippingCarrier || 'DHL',
-          });
+          success = await sendShippingNotificationEmail(
+            customerEmail,
+            customerName,
+            orderNumber,
+            order.trackingNumber || undefined,
+            'DHL'
+          );
           break;
         case 'cancellation':
-          success = await sendOrderCancellationEmail({
-            orderNumber: order.orderNumber,
-            customerEmail: order.customerEmail || '',
-            customerName: order.customerName || 'Kunde',
-            reason: 'Auf Kundenwunsch storniert',
-          });
+          success = await sendOrderCancellationEmail(
+            customerEmail,
+            customerName,
+            orderNumber,
+            'Auf Kundenwunsch storniert'
+          );
           break;
         case 'refund':
-          success = await sendRefundEmail({
-            orderNumber: order.orderNumber,
-            customerEmail: order.customerEmail || '',
-            customerName: order.customerName || 'Kunde',
-            refundAmount: parseFloat(order.totalAmount?.toString() || '0'),
-          });
+          success = await sendRefundEmail(
+            customerEmail,
+            customerName,
+            orderNumber,
+            parseFloat(order.totalAmount?.toString() || '0'),
+            order.paymentMethod || 'Überweisung'
+          );
           break;
         default:
           return res.status(400).json({ error: "Ungültiger E-Mail-Typ" });
@@ -1114,6 +1119,29 @@ export async function registerRoutes(app: Express) {
       res.json({ success: true });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Contact form endpoint
+  app.post("/api/contact", async (req, res) => {
+    try {
+      const { name, email, subject, message } = req.body;
+      
+      if (!name || !email || !subject || !message) {
+        return res.status(400).json({ error: "Alle Felder sind erforderlich" });
+      }
+      
+      // Try to send confirmation email via Resend
+      try {
+        const { sendContactFormConfirmationEmail } = await import("./resendClient");
+        await sendContactFormConfirmationEmail(email, name, subject, message);
+      } catch (emailError) {
+        console.warn("Could not send contact confirmation email:", emailError);
+      }
+      
+      res.json({ success: true, message: "Nachricht erfolgreich gesendet" });
+    } catch (error: any) {
+      res.status(500).json({ error: "Fehler beim Senden der Nachricht" });
     }
   });
 

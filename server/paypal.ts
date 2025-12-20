@@ -29,16 +29,18 @@ function initializePayPal() {
     return false;
   }
   
+  // Use PAYPAL_MODE env var to override, otherwise check NODE_ENV
+  // Set PAYPAL_MODE=live to use live credentials in development
+  const paypalMode = process.env.PAYPAL_MODE || (process.env.NODE_ENV === "production" ? "live" : "sandbox");
+  const isLive = paypalMode === "live" || paypalMode === "production";
+  
   client = new Client({
     clientCredentialsAuthCredentials: {
       oAuthClientId: PAYPAL_CLIENT_ID,
       oAuthClientSecret: PAYPAL_CLIENT_SECRET,
     },
     timeout: 0,
-    environment:
-                  process.env.NODE_ENV === "production"
-                    ? Environment.Production
-                    : Environment.Sandbox,
+    environment: isLive ? Environment.Production : Environment.Sandbox,
     logging: {
       logLevel: LogLevel.Info,
       logRequest: {

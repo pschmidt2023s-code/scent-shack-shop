@@ -166,3 +166,13 @@ Newsletter subscribers get an additional 1.5% discount.
 - Backend uses Express with session-based auth
 - Database operations through Drizzle ORM
 - All API endpoints under /api prefix
+
+## Bug Scan & Fixes (December 20, 2025)
+- **PayPal Live Mode Fix**: Added PAYPAL_MODE env variable to enable live credentials in development
+  - Set PAYPAL_MODE=live to use production PayPal API instead of sandbox
+- **Contact Form Endpoint**: Added POST /api/contact with Resend email confirmation
+- **All integrations verified working**:
+  - Stripe: Card payments (sandbox mode, ready for production)
+  - PayPal: Live credentials active
+  - Resend: Transactional emails configured
+  - OpenAI: Using Replit AI Integrations (no API key needed)
