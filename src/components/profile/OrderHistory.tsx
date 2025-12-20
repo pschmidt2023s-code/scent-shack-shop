@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Package, Calendar, Euro, ChevronRight, RotateCcw, FileText } from 'lucide-react';
+import { Package, Calendar, Euro, ChevronRight, RotateCcw, FileText, Loader2 } from 'lucide-react';
 
 interface OrderItem {
   perfumeId: string;
@@ -34,8 +35,10 @@ export function OrderHistory() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [returnReason, setReturnReason] = useState('');
   const [submittingReturn, setSubmittingReturn] = useState(false);
+  const [downloadingInvoice, setDownloadingInvoice] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
@@ -152,6 +155,50 @@ export function OrderHistory() {
     return returnableStatuses.includes(order.status) && orderDate > fourteenDaysAgo;
   };
 
+  const handleViewDetails = (orderId: string) => {
+    navigate(`/order/${orderId}`);
+  };
+
+  const handleDownloadInvoice = async (order: Order) => {
+    const orderNumber = order.orderNumber || order.id;
+    setDownloadingInvoice(order.id);
+    
+    try {
+      const response = await fetch(`/api/orders/${orderNumber}/invoice`, {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || 'Rechnung konnte nicht geladen werden');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Rechnung-${orderNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Rechnung heruntergeladen",
+        description: `Die Rechnung für Bestellung #${orderNumber} wurde heruntergeladen.`,
+      });
+    } catch (error: any) {
+      console.error('Error downloading invoice:', error);
+      toast({
+        title: "Fehler",
+        description: error.message || "Die Rechnung konnte nicht heruntergeladen werden.",
+        variant: "destructive",
+      });
+    } finally {
+      setDownloadingInvoice(null);
+    }
+  };
+
   if (loading) {
     return <div className="text-center p-4">Lade Bestellungen...</div>;
   }
@@ -215,9 +262,15 @@ export function OrderHistory() {
                     variant="outline" 
                     size="sm" 
                     className="flex-1"
+                    onClick={() => handleDownloadInvoice(order)}
+                    disabled={downloadingInvoice === order.id}
                     data-testid={`button-invoice-${order.id}`}
                   >
-                    <FileText className="w-3 h-3 mr-1" />
+                    {downloadingInvoice === order.id ? (
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    ) : (
+                      <FileText className="w-3 h-3 mr-1" />
+                    )}
                     Rechnung
                   </Button>
                   
@@ -293,7 +346,13 @@ export function OrderHistory() {
                     </Dialog>
                   )}
                   
-                  <Button variant="outline" size="sm" className="flex-1" data-testid={`button-details-${order.id}`}>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1" 
+                    onClick={() => handleViewDetails(order.id)}
+                    data-testid={`button-details-${order.id}`}
+                  >
                     <ChevronRight className="w-3 h-3 mr-1" />
                     Details
                   </Button>

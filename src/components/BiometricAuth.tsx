@@ -132,9 +132,14 @@ export function BiometricAuth() {
   if (!isBiometricAvailable) {
     return (
       <Card className="p-4">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Shield className="h-5 w-5" />
-          <p className="text-sm">Biometrische Authentifizierung nicht verfügbar</p>
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Shield className="h-5 w-5" />
+            <p className="text-sm font-medium">Biometrische Authentifizierung nicht verfügbar</p>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Diese Funktion erfordert ein Gerät mit Fingerabdrucksensor oder Face ID und einen unterstützten Browser (Chrome, Safari, Edge).
+          </p>
         </div>
       </Card>
     );
@@ -190,9 +195,9 @@ export function BiometricAuth() {
         )}
 
         <div className="text-xs text-muted-foreground space-y-1">
-          <p>🔒 Sicher und verschlüsselt</p>
-          <p>⚡ Schnelle Anmeldung</p>
-          <p>✨ Funktioniert offline</p>
+          <p className="flex items-center gap-1"><Shield className="w-3 h-3" /> Sicher und verschlüsselt</p>
+          <p className="flex items-center gap-1"><Fingerprint className="w-3 h-3" /> Schnelle Anmeldung</p>
+          <p className="flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Funktioniert offline</p>
         </div>
       </div>
     </Card>
