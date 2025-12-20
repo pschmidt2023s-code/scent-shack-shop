@@ -462,6 +462,11 @@ export async function registerRoutes(app: Express) {
       const shippingCost = parseFloat(req.body.shippingCost) || 0;
       const finalAmount = Math.max(0, calculatedSubtotal - discountAmount + shippingCost);
       
+      // Determine initial status based on payment method
+      // Bank transfer: pending_payment (awaiting payment), send email immediately
+      // Stripe/PayPal: pending (awaiting payment), email sent after successful payment
+      const isBankTransfer = req.body.paymentMethod === "bank" || req.body.paymentMethod === "bank_transfer";
+      
       const orderData = {
         orderNumber,
         partnerId,
@@ -476,7 +481,7 @@ export async function registerRoutes(app: Express) {
         billingAddressData: req.body.billingAddressData,
         paymentMethod: req.body.paymentMethod,
         paymentStatus: "pending",
-        status: req.body.paymentMethod === "bank" ? "pending_payment" : "pending",
+        status: isBankTransfer ? "pending_payment" : "pending",
         notes: req.body.notes,
       };
       
@@ -489,33 +494,39 @@ export async function registerRoutes(app: Express) {
         });
       }
       
-      // Send order confirmation email using Resend
-      try {
-        const { sendOrderConfirmationEmail } = await import('./resendClient');
-        const emailItems = await Promise.all(validatedItems.map(async (item) => {
-          const variant = await storage.getProductVariant(item.variantId);
-          return {
-            name: variant?.name || 'Produkt',
-            quantity: item.quantity,
-            price: parseFloat(item.totalPrice),
-          };
-        }));
-        
-        const bankSettings = (order.paymentMethod === 'bank' || order.paymentMethod === 'bank_transfer') ? await storage.getBankSettings() : null;
-        await sendOrderConfirmationEmail({
-          orderId: order.id,
-          orderNumber: order.orderNumber,
-          customerEmail: order.customerEmail || '',
-          customerName: order.customerName || 'Kunde',
-          items: emailItems,
-          totalAmount: parseFloat(order.totalAmount),
-          shippingCost: shippingCost,
-          shippingAddress: req.body.shippingAddressData || {},
-          paymentMethod: order.paymentMethod || 'bank',
-          bankSettings: bankSettings || undefined,
-        });
-      } catch (emailError) {
-        console.error('Failed to send order confirmation email:', emailError);
+      // Only send confirmation email immediately for bank transfer
+      // For Stripe/PayPal, email is sent after successful payment verification
+      if (isBankTransfer) {
+        try {
+          const { sendOrderConfirmationEmail } = await import('./resendClient');
+          const emailItems = await Promise.all(validatedItems.map(async (item) => {
+            const variant = await storage.getProductVariant(item.variantId);
+            return {
+              name: variant?.name || 'Produkt',
+              quantity: item.quantity,
+              price: parseFloat(item.totalPrice),
+            };
+          }));
+          
+          const bankSettings = await storage.getBankSettings();
+          await sendOrderConfirmationEmail({
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            customerEmail: order.customerEmail || '',
+            customerName: order.customerName || 'Kunde',
+            items: emailItems,
+            totalAmount: parseFloat(order.totalAmount),
+            shippingCost: shippingCost,
+            shippingAddress: req.body.shippingAddressData || {},
+            paymentMethod: order.paymentMethod || 'bank',
+            bankSettings: bankSettings || undefined,
+          });
+          console.log(`[Order] Bank transfer confirmation email sent for order ${orderNumber}`);
+        } catch (emailError) {
+          console.error('Failed to send order confirmation email:', emailError);
+        }
+      } else {
+        console.log(`[Order] ${order.paymentMethod} order created - email will be sent after payment: ${orderNumber}`);
       }
       
       res.json(order);
@@ -3037,5 +3048,79 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
 
   app.post("/api/paypal/order/:orderID/capture", async (req, res) => {
     await capturePaypalOrder(req, res);
+  });
+
+  // PayPal payment completion - update order status and send confirmation email
+  app.post("/api/paypal/order/:paypalOrderId/complete", async (req, res) => {
+    try {
+      const { paypalOrderId } = req.params;
+      const { orderId } = req.body;
+      
+      if (!orderId) {
+        return res.status(400).json({ error: "Order ID is required" });
+      }
+      
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+      
+      // Check if already completed
+      if (order.paymentStatus === 'completed') {
+        return res.json({ success: true, message: "Order already completed" });
+      }
+      
+      // Update order with PayPal order ID and mark as completed/processing
+      await storage.updateOrder(orderId, {
+        paypalOrderId: paypalOrderId,
+        paymentStatus: 'completed',
+        status: 'processing',
+      });
+      
+      // Send confirmation email
+      try {
+        const { sendOrderConfirmationEmail } = await import('./resendClient');
+        const orderItems = await storage.getOrderItems(order.id);
+        
+        const emailItems = await Promise.all(orderItems.map(async (item) => {
+          const variant = item.variantId ? await storage.getProductVariant(item.variantId) : null;
+          return {
+            name: variant?.name || 'Produkt',
+            quantity: item.quantity,
+            price: parseFloat(item.totalPrice),
+          };
+        }));
+        
+        const shippingAddr = typeof order.shippingAddressData === 'object' && order.shippingAddressData 
+          ? order.shippingAddressData as Record<string, string>
+          : {};
+        
+        await sendOrderConfirmationEmail({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          customerEmail: order.customerEmail || '',
+          customerName: order.customerName || 'Kunde',
+          items: emailItems,
+          totalAmount: parseFloat(order.totalAmount),
+          shippingCost: parseFloat(order.shippingCost || '0'),
+          shippingAddress: {
+            street: shippingAddr.street || shippingAddr.line1 || '',
+            city: shippingAddr.city || '',
+            postalCode: shippingAddr.postalCode || shippingAddr.postal_code || '',
+            country: shippingAddr.country || 'Deutschland',
+          },
+          paymentMethod: 'paypal',
+        });
+        
+        console.log(`[PayPal] Confirmation email sent for order ${order.orderNumber}`);
+      } catch (emailError) {
+        console.error('[PayPal] Failed to send confirmation email:', emailError);
+      }
+      
+      res.json({ success: true, message: "Payment completed and confirmation sent" });
+    } catch (error: any) {
+      console.error("[PayPal] Complete order error:", error);
+      res.status(500).json({ error: error.message });
+    }
   });
 }
