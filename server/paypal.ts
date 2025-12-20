@@ -12,6 +12,7 @@ import {
   LogLevel,
   OAuthAuthorizationController,
   OrdersController,
+  PaymentsController,
 } from "@paypal/paypal-server-sdk";
 import { Request, Response } from "express";
 
@@ -22,6 +23,7 @@ const { PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET } = process.env;
 let client: Client | null = null;
 let ordersController: OrdersController | null = null;
 let oAuthAuthorizationController: OAuthAuthorizationController | null = null;
+let paymentsController: PaymentsController | null = null;
 
 function initializePayPal() {
   if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
@@ -54,6 +56,7 @@ function initializePayPal() {
   
   ordersController = new OrdersController(client);
   oAuthAuthorizationController = new OAuthAuthorizationController(client);
+  paymentsController = new PaymentsController(client);
   console.log("[PayPal] Client initialized successfully");
   return true;
 }
@@ -184,5 +187,97 @@ export async function loadPaypalDefault(req: Request, res: Response) {
 
 export function isPayPalEnabled() {
   return isPayPalConfigured;
+}
+
+// Refund a captured PayPal payment
+// If no amount is specified, a full refund is performed based on the capture amount
+export async function refundPaypalPayment(
+  paypalOrderId: string
+): Promise<{ success: boolean; refundId?: string; refundedAmount?: number; error?: string }> {
+  // Try to reinitialize if not configured
+  if (!ordersController || !paymentsController) {
+    const reinitialized = initializePayPal();
+    if (!reinitialized || !ordersController || !paymentsController) {
+      return { success: false, error: 'PayPal nicht konfiguriert. Bitte PayPal-Zugangsdaten prüfen.' };
+    }
+  }
+
+  try {
+    // First, get the order details to find the capture ID and amount
+    const orderResponse = await ordersController.getOrder({ id: paypalOrderId });
+    const orderData = JSON.parse(String(orderResponse.body));
+    
+    // Find the capture details from the order - check all purchase units
+    const purchaseUnits = orderData.purchase_units;
+    if (!purchaseUnits || purchaseUnits.length === 0) {
+      return { success: false, error: 'Keine Kaufeinheiten gefunden' };
+    }
+    
+    // Find a refundable capture (status COMPLETED) across all purchase units
+    let refundableCapture: { id: string; amount: { value: string; currency_code: string } } | null = null;
+    
+    for (const unit of purchaseUnits) {
+      const captures = unit?.payments?.captures;
+      if (!captures) continue;
+      
+      for (const capture of captures) {
+        // Only refund captures with status COMPLETED
+        if (capture.status === 'COMPLETED' && capture.id) {
+          refundableCapture = {
+            id: capture.id,
+            amount: capture.amount,
+          };
+          break;
+        }
+      }
+      if (refundableCapture) break;
+    }
+    
+    if (!refundableCapture) {
+      return { 
+        success: false, 
+        error: 'Keine erstattbare Zahlung gefunden. Zahlung wurde möglicherweise bereits erstattet oder ist noch ausstehend.' 
+      };
+    }
+    
+    const captureId = refundableCapture.id;
+    const captureAmount = refundableCapture.amount;
+    
+    console.log(`[PayPal] Attempting full refund for capture: ${captureId}, amount: ${captureAmount?.value} ${captureAmount?.currency_code}`);
+    
+    // Build refund request - for full refund, don't specify amount
+    // PayPal will refund the entire capture amount
+    const refundRequest: any = {
+      captureId: captureId,
+    };
+    
+    // Execute the refund
+    const refundResponse = await paymentsController.refundCapturedPayment(refundRequest);
+    const refundData = JSON.parse(String(refundResponse.body));
+    
+    const refundedAmount = parseFloat(refundData.amount?.value || captureAmount?.value || '0');
+    console.log(`[PayPal] Refund successful: ${refundData.id}, amount: ${refundedAmount}`);
+    
+    return { 
+      success: true, 
+      refundId: refundData.id,
+      refundedAmount
+    };
+  } catch (error: any) {
+    console.error('[PayPal] Refund failed:', error.message || error);
+    // Try to extract more specific error message
+    let errorMessage = 'PayPal-Rückerstattung fehlgeschlagen';
+    if (error.message) {
+      errorMessage = error.message;
+    } else if (error.body) {
+      try {
+        const errorBody = JSON.parse(String(error.body));
+        errorMessage = errorBody.message || errorBody.details?.[0]?.description || errorMessage;
+      } catch (e) {
+        // Ignore parse error
+      }
+    }
+    return { success: false, error: errorMessage };
+  }
 }
 // <END_EXACT_CODE>

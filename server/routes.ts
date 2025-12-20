@@ -1017,6 +1017,7 @@ export async function registerRoutes(app: Express) {
       const totalAmount = parseFloat(order.totalAmount?.toString() || '0');
       let refundSuccess = false;
       let stripeRefundId: string | null = null;
+      let paypalRefundId: string | null = null;
 
       // If paid by card via Stripe, attempt refund
       if (order.paymentMethod === 'card' && order.stripeSessionId && order.paymentStatus === 'completed') {
@@ -1058,8 +1059,34 @@ export async function registerRoutes(app: Express) {
         // Card payment not yet completed - can cancel without refund
         refundSuccess = true;
         console.log(`[Refund] Card payment not completed, marking as cancelled without Stripe refund`);
+      } else if (order.paymentMethod === 'paypal' && order.paypalOrderId && order.paymentStatus === 'completed') {
+        // PayPal payment - attempt automatic refund (full refund based on capture amount)
+        try {
+          const { refundPaypalPayment } = await import('./paypal');
+          const paypalResult = await refundPaypalPayment(order.paypalOrderId);
+          
+          if (paypalResult.success) {
+            paypalRefundId = paypalResult.refundId || null;
+            refundSuccess = true;
+            console.log(`[PayPal] Refund created: ${paypalRefundId} for order ${orderNumber}, amount: ${paypalResult.refundedAmount}`);
+          } else {
+            console.error('[PayPal] Refund failed:', paypalResult.error);
+            return res.status(400).json({ 
+              error: `PayPal-Rückerstattung fehlgeschlagen: ${paypalResult.error}` 
+            });
+          }
+        } catch (paypalError: any) {
+          console.error('[PayPal] Refund error:', paypalError.message);
+          return res.status(400).json({ 
+            error: `PayPal-Rückerstattung fehlgeschlagen: ${paypalError.message}` 
+          });
+        }
+      } else if (order.paymentMethod === 'paypal' && order.paymentStatus !== 'completed') {
+        // PayPal payment not completed - can cancel without refund
+        refundSuccess = true;
+        console.log(`[Refund] PayPal payment not completed, marking as cancelled without PayPal refund`);
       } else {
-        // Non-card payments (bank transfer, PayPal) - mark as refunded (manual refund needed)
+        // Bank transfer or other - mark as refunded (manual refund needed)
         refundSuccess = true;
         console.log(`[Refund] Non-card payment (${order.paymentMethod}), manual refund may be needed`);
       }
@@ -1071,11 +1098,16 @@ export async function registerRoutes(app: Express) {
         });
       }
 
+      // Build refund notes
+      let refundNote = ` | Storniert und erstattet am ${new Date().toLocaleDateString('de-DE')}`;
+      if (stripeRefundId) refundNote += ` (Stripe Refund: ${stripeRefundId})`;
+      if (paypalRefundId) refundNote += ` (PayPal Refund: ${paypalRefundId})`;
+
       // Update order status
       await storage.updateOrder(order.id, {
         status: 'cancelled',
         paymentStatus: 'refunded',
-        notes: (order.notes || '') + ` | Storniert und erstattet am ${new Date().toLocaleDateString('de-DE')}${stripeRefundId ? ` (Stripe Refund: ${stripeRefundId})` : ''}`
+        notes: (order.notes || '') + refundNote
       });
 
       // Send cancellation/refund email
@@ -1099,6 +1131,7 @@ export async function registerRoutes(app: Express) {
         success: true, 
         message: 'Bestellung storniert und erstattet',
         stripeRefundId,
+        paypalRefundId,
         refundAmount: totalAmount
       });
     } catch (error: any) {
