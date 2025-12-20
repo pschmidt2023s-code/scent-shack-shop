@@ -202,3 +202,8 @@ Complete legal compliance overhaul for German B2C e-commerce (stand: Dezember 20
   - PayPal: Live credentials active
   - Resend: Transactional emails configured
   - OpenAI: Using Replit AI Integrations (no API key needed)
+- **Order Tracking Feature** (December 20, 2025):
+  - New OrderTracking.tsx page with Amazon-style progress bar (4 stages: Bestellt, In Bearbeitung, Versendet, Zugestellt)
+  - Order confirmation emails now include "Bestellung verfolgen" button linking to /order/:orderId
+  - Added orderId parameter to all sendOrderConfirmationEmail calls
+  - Route: /order/:orderId accessible to customers for tracking their orders
