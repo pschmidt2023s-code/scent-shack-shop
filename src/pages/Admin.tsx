@@ -226,7 +226,12 @@ function StatCard({
   );
 }
 
-function DashboardOverview({ orders, stats }: { orders: Order[]; stats: DashboardStats }) {
+function DashboardOverview({ orders, stats, onViewAllOrders, onSelectOrder }: { 
+  orders: Order[]; 
+  stats: DashboardStats;
+  onViewAllOrders: () => void;
+  onSelectOrder: (order: Order) => void;
+}) {
   const recentOrders = orders.slice(0, 5);
   
   const statusConfig: Record<string, { icon: React.ComponentType<{ className?: string }>; color: string; label: string }> = {
@@ -288,7 +293,7 @@ function DashboardOverview({ orders, stats }: { orders: Order[]; stats: Dashboar
               <h3 className="text-base font-semibold text-white">Letzte Bestellungen</h3>
               <p className="text-sm text-white/60">Die neuesten 5 Bestellungen</p>
             </div>
-            <Button variant="ghost" size="sm" className="gap-1" data-testid="btn-view-all-orders">
+            <Button variant="ghost" size="sm" className="gap-1" onClick={onViewAllOrders} data-testid="btn-view-all-orders">
               Alle anzeigen <ArrowUpRight className="w-4 h-4" />
             </Button>
           </div>
@@ -304,7 +309,12 @@ function DashboardOverview({ orders, stats }: { orders: Order[]; stats: Dashboar
                   const config = statusConfig[order.status] || statusConfig.pending;
                   const StatusIcon = config.icon;
                   return (
-                    <div key={order.id} className="flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                    <div 
+                      key={order.id} 
+                      className="flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                      onClick={() => onSelectOrder(order)}
+                      data-testid={`order-item-${order.id}`}
+                    >
                       <div className="flex items-center gap-3">
                         <div className={cn("p-2.5 rounded-xl", config.color)} style={{ background: 'hsl(215 45% 14% / 0.8)' }}>
                           <StatusIcon className="w-4 h-4" />
@@ -370,6 +380,100 @@ function DashboardOverview({ orders, stats }: { orders: Order[]; stats: Dashboar
         </div>
       </div>
     </div>
+  );
+}
+
+function OrderDetailDialog({ order, onClose }: { order: Order | null; onClose: () => void }) {
+  if (!order) return null;
+  
+  const statusConfig: Record<string, { label: string; color: string }> = {
+    pending: { label: 'Ausstehend', color: 'text-yellow-500' },
+    pending_payment: { label: 'Zahlung offen', color: 'text-orange-500' },
+    processing: { label: 'In Bearbeitung', color: 'text-blue-500' },
+    paid: { label: 'Bezahlt', color: 'text-green-500' },
+    shipped: { label: 'Versendet', color: 'text-purple-500' },
+    delivered: { label: 'Zugestellt', color: 'text-green-600' },
+    cancelled: { label: 'Storniert', color: 'text-red-500' },
+    completed: { label: 'Abgeschlossen', color: 'text-emerald-500' },
+  };
+
+  const config = statusConfig[order.status] || statusConfig.pending;
+  const items = order.orderItems || [];
+  const shippingAddress = order.shippingAddressData || {};
+
+  return (
+    <Dialog open={!!order} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            Bestellung #{order.orderNumber || order.id.slice(-8).toUpperCase()}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Kunde</p>
+              <p className="font-medium">{order.customerName || 'Gast'}</p>
+              <p className="text-sm text-muted-foreground">{order.customerEmail}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Status</p>
+              <p className={cn("font-medium", config.color)}>{config.label}</p>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div>
+            <p className="text-sm text-muted-foreground mb-2">Lieferadresse</p>
+            <p className="text-sm">
+              {shippingAddress.street || 'Keine Angabe'}<br />
+              {shippingAddress.zip || ''} {shippingAddress.city || ''}<br />
+              {shippingAddress.country || ''}
+            </p>
+          </div>
+
+          <Separator />
+
+          <div>
+            <p className="text-sm text-muted-foreground mb-2">Bestellte Artikel ({items.length})</p>
+            {items.length > 0 ? (
+              <div className="space-y-2">
+                {items.map((item: OrderItem, index: number) => (
+                  <div key={index} className="flex justify-between items-center p-2 bg-muted/50 rounded-md">
+                    <div>
+                      <p className="text-sm font-medium">Produkt #{item.perfumeId?.slice(-6) || index + 1}</p>
+                      <p className="text-xs text-muted-foreground">Menge: {item.quantity || 1}</p>
+                    </div>
+                    <p className="text-sm font-medium">€{Number(item.totalPrice || 0).toFixed(2)}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Keine Artikel gefunden</p>
+            )}
+          </div>
+
+          <Separator />
+
+          <div className="flex justify-between items-center font-semibold">
+            <span>Gesamtsumme</span>
+            <span className="text-lg text-primary">€{Number(order.totalAmount || 0).toFixed(2)}</span>
+          </div>
+
+          <div className="text-xs text-muted-foreground">
+            Bestellt am {new Date(order.createdAt).toLocaleDateString('de-DE', { 
+              day: '2-digit', 
+              month: '2-digit', 
+              year: 'numeric', 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            })}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -793,6 +897,7 @@ export default function Admin() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
     totalRevenue: 0,
     totalOrders: 0,
@@ -996,7 +1101,20 @@ export default function Admin() {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardOverview orders={orders} stats={stats} />;
+        return (
+          <>
+            <DashboardOverview 
+              orders={orders} 
+              stats={stats} 
+              onViewAllOrders={() => setActiveTab('orders')}
+              onSelectOrder={(order) => setSelectedOrder(order)}
+            />
+            <OrderDetailDialog 
+              order={selectedOrder} 
+              onClose={() => setSelectedOrder(null)} 
+            />
+          </>
+        );
       case 'orders':
         return (
           <OrdersView
