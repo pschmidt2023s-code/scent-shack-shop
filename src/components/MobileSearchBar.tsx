@@ -88,7 +88,7 @@ export function MobileSearchBar() {
   return (
     <div 
       ref={containerRef}
-      className="sticky top-[68px] z-40 md:hidden bg-background/95 backdrop-blur-lg border-b border-border px-4 py-3"
+      className="sticky top-[68px] z-40 md:hidden bg-background border-b border-border px-4 py-2"
     >
       <form onSubmit={handleSubmit} className="relative">
         <div className="relative">
@@ -100,7 +100,7 @@ export function MobileSearchBar() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setIsFocused(true)}
-            className="pl-10 pr-10 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary"
+            className="pl-10 pr-10 h-10 bg-muted border-border"
             data-testid="input-mobile-search"
           />
           {query && (
