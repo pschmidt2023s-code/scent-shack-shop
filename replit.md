@@ -129,6 +129,21 @@ For full functionality, add these secrets:
   - Updated variant table to display name + thumbnail instead of just size
   - Backend routes accept and persist all new variant fields
   - Empty arrays normalized to null for database compatibility
+- **Complete Email System Overhaul** (December 20, 2025):
+  - Modern email template system with dark gradient header and elegant design
+  - Reusable components: emailWrapper(), emailButton(), infoBox()
+  - 9 email types implemented:
+    1. Password Reset (sendPasswordResetEmail)
+    2. Order Confirmation (sendOrderConfirmationEmail)
+    3. Shipping Notification (sendShippingNotificationEmail)
+    4. Welcome with Password (sendWelcomeEmailWithPassword)
+    5. Order Cancellation (sendOrderCancellationEmail) - NEW
+    6. Refund Confirmation (sendRefundEmail) - NEW
+    7. Newsletter Welcome (sendNewsletterWelcomeEmail) - NEW
+    8. Contact Form Confirmation (sendContactFormConfirmationEmail) - NEW
+    9. Review Request (sendReviewRequestEmail) - NEW
+  - Uses RESEND_API_KEY environment variable directly
+  - From address: ALDENAIR <noreply@aldenair.de>
 
 ## Loyalty Tier System
 | Tier     | Min Spend | Discount |
