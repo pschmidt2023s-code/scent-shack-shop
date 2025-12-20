@@ -1,7 +1,7 @@
 // Resend email client - uses RESEND_API_KEY environment variable
 import { Resend } from 'resend';
 
-const DEFAULT_FROM_EMAIL = 'ALDENAIR <noreply@aldenair.de>';
+const DEFAULT_FROM_EMAIL = 'ALDENAIR <noreply@aldenairperfumes.de>';
 
 // Modern email template wrapper with elegant gradient header
 function emailWrapper(content: string, preheader?: string): string {
