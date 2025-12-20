@@ -1,7 +1,7 @@
 // Resend email client - uses RESEND_API_KEY environment variable
 import { Resend } from 'resend';
 
-const DEFAULT_FROM_EMAIL = 'onboarding@resend.dev';
+const DEFAULT_FROM_EMAIL = 'ALDENAIR <noreply@aldenair.de>';
 
 export async function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY;
