@@ -14,12 +14,6 @@ export default defineConfig(({ mode }) => ({
       'Referrer-Policy': 'strict-origin-when-cross-origin',
       'Cache-Control': 'no-cache',
     },
-    proxy: {
-      '/api': {
-        target: 'http://localhost:5000',
-        changeOrigin: true,
-      }
-    }
   },
   plugins: [
     react(),
