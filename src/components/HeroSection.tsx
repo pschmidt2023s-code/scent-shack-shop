@@ -26,9 +26,9 @@ export function HeroSection() {
             </div>
 
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-3 duration-700">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-foreground leading-normal tracking-tight">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-foreground leading-tight tracking-tight">
                 Luxusdüfte, die
-                <span className="block bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent mt-2 pb-1">
+                <span className="block bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent mt-2 pb-4" style={{ lineHeight: '1.3' }}>
                   begeistern
                 </span>
               </h1>
