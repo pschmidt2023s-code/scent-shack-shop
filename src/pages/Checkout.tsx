@@ -489,7 +489,9 @@ export default function Checkout() {
             <span>
               Versand {selectedShippingOption ? `(${selectedShippingOption.name})` : ''}
             </span>
-            {actualShippingCost === 0 ? (
+            {!selectedShippingOption ? (
+              <span className="text-muted-foreground text-xs">wird beim Checkout berechnet</span>
+            ) : actualShippingCost === 0 ? (
               <span className="text-green-600 dark:text-green-400">Kostenlos</span>
             ) : (
               <span>{actualShippingCost.toFixed(2)} €</span>
