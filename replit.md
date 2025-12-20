@@ -104,6 +104,13 @@ For full functionality, add these secrets:
   - Stagger animations for product cards in PerfumeGrid
   - Product card hover effects with lift animation
   - Glass morphism effects optimized for performance
+- **Password Reset Feature** (December 20, 2025):
+  - Added /api/auth/forgot-password endpoint for sending reset emails via Resend
+  - Added /api/auth/reset-password endpoint for setting new password with token validation
+  - Created ResetPassword.tsx page with password strength indicator
+  - Tokens expire after 1 hour and can only be used once
+  - Storage functions: createPasswordResetToken, getPasswordResetToken, markPasswordResetTokenUsed, updateUserPassword
+  - Fixed syntax errors in PayPalTest.tsx, PerfumeFinder.tsx, and Returns.tsx (removed broken Supabase references)
 
 ## Loyalty Tier System
 | Tier     | Min Spend | Discount |

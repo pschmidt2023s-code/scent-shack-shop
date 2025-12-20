@@ -9,9 +9,14 @@ const PayPalTest = () => {
   const testCredentials = async () => {
     setLoading(true);
     try {
+      const response = await fetch('/api/paypal/test-credentials', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await response.json();
       
-      if (error) {
-        setResult({ error: error.message, type: 'error' });
+      if (!response.ok) {
+        setResult({ error: data.error || 'Test failed', type: 'error' });
       } else {
         setResult({ data, type: 'success' });
       }
@@ -33,11 +38,16 @@ const PayPalTest = () => {
         customer_email: "test@example.com"
       };
 
-        body: testData
+      const response = await fetch('/api/paypal/create-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(testData),
       });
+      const data = await response.json();
       
-      if (error) {
-        setResult({ error: error.message, type: 'error' });
+      if (!response.ok) {
+        setResult({ error: data.error || 'Payment test failed', type: 'error' });
       } else {
         setResult({ data, type: 'success' });
       }
@@ -60,6 +70,7 @@ const PayPalTest = () => {
               onClick={testCredentials}
               disabled={loading}
               className="w-full"
+              data-testid="button-test-credentials"
             >
               {loading ? "Testing..." : "Test PayPal Credentials"}
             </Button>
@@ -69,6 +80,7 @@ const PayPalTest = () => {
               disabled={loading}
               variant="outline"
               className="w-full"
+              data-testid="button-test-payment"
             >
               {loading ? "Testing..." : "Test PayPal Payment Creation"}
             </Button>
@@ -80,7 +92,7 @@ const PayPalTest = () => {
                 <h3 className="font-semibold mb-2">
                   {result.type === 'error' ? 'Error:' : 'Success:'}
                 </h3>
-                <pre className="text-sm bg-gray-100 p-3 rounded overflow-auto">
+                <pre className="text-sm bg-muted p-3 rounded overflow-auto">
                   {JSON.stringify(result.error || result.data, null, 2)}
                 </pre>
               </CardContent>

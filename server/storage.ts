@@ -90,6 +90,11 @@ export interface IStorage {
   setShopSetting(key: string, value: any): Promise<ShopSetting>;
   getBankSettings(): Promise<BankSettings | null>;
   setBankSettings(settings: BankSettings): Promise<ShopSetting>;
+  
+  createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<void>;
+  getPasswordResetToken(token: string): Promise<{ userId: string; expiresAt: Date; usedAt: Date | null } | undefined>;
+  markPasswordResetTokenUsed(token: string): Promise<void>;
+  updateUserPassword(userId: string, hashedPassword: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -645,6 +650,33 @@ export class DatabaseStorage implements IStorage {
 
   async setBankSettings(settings: BankSettings): Promise<ShopSetting> {
     return this.setShopSetting('bank_settings', settings);
+  }
+
+  // ==================== PASSWORD RESET ====================
+  async createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<void> {
+    await db.insert(schema.passwordResetTokens).values({
+      userId,
+      token,
+      expiresAt,
+    });
+  }
+
+  async getPasswordResetToken(token: string): Promise<{ userId: string; expiresAt: Date; usedAt: Date | null } | undefined> {
+    const [result] = await db.select().from(schema.passwordResetTokens)
+      .where(eq(schema.passwordResetTokens.token, token));
+    return result;
+  }
+
+  async markPasswordResetTokenUsed(token: string): Promise<void> {
+    await db.update(schema.passwordResetTokens)
+      .set({ usedAt: new Date() })
+      .where(eq(schema.passwordResetTokens.token, token));
+  }
+
+  async updateUserPassword(userId: string, hashedPassword: string): Promise<void> {
+    await db.update(schema.users)
+      .set({ password: hashedPassword, updatedAt: new Date() })
+      .where(eq(schema.users.id, userId));
   }
 }
 

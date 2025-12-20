@@ -44,6 +44,7 @@ const BundleConfigurator = React.lazy(() => import('@/pages/BundleConfigurator')
 const About = React.lazy(() => import('@/pages/About'));
 const Cancellation = React.lazy(() => import('@/pages/Cancellation'));
 const SampleSets = React.lazy(() => import('@/pages/SampleSets'));
+const ResetPassword = React.lazy(() => import('@/pages/ResetPassword'));
 
 const defaultQueryFn = async ({ queryKey }: { queryKey: readonly unknown[] }) => {
   const endpoint = queryKey[0] as string;
@@ -123,6 +124,7 @@ function App() {
                   <Route path="/bundle-konfigurator" element={<Suspense fallback={<LoadingSpinner />}><BundleConfigurator /></Suspense>} />
                   <Route path="/widerruf" element={<Suspense fallback={<LoadingSpinner />}><Cancellation /></Suspense>} />
                   <Route path="/probensets" element={<Suspense fallback={<LoadingSpinner />}><SampleSets /></Suspense>} />
+                  <Route path="/reset-password" element={<Suspense fallback={<LoadingSpinner />}><ResetPassword /></Suspense>} />
                   <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><NotFound /></Suspense>} />
                 </Routes>
                   </div>

@@ -100,25 +100,11 @@ export default function Returns() {
 
   const loadUserOrders = async () => {
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          id,
-          order_number,
-          created_at,
-          total_amount,
-          status,
-          order_items (
-            id,
-            perfume_id,
-            variant_id,
-            quantity
-          )
-        `)
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const response = await fetch('/api/orders', {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to load orders');
+      const data = await response.json();
       setOrders(data || []);
     } catch (error) {
       console.error('Error loading orders:', error);
@@ -134,19 +120,18 @@ export default function Returns() {
 
   const uploadImage = async (file: File): Promise<string | null> => {
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `returns/${fileName}`;
+      const formData = new FormData();
+      formData.append('file', file);
 
-        .from('return-images')
-        .upload(filePath, file);
+      const response = await fetch('/api/upload/return-image', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
 
-      if (uploadError) throw uploadError;
-
-        .from('return-images')
-        .getPublicUrl(filePath);
-
-      return data.publicUrl;
+      if (!response.ok) throw new Error('Upload failed');
+      const data = await response.json();
+      return data.url || null;
     } catch (error) {
       console.error('Error uploading image:', error);
       return null;
@@ -189,17 +174,18 @@ export default function Returns() {
     setIsSubmitting(true);
     
     try {
-      const { error } = await supabase
-        .from('returns')
-        .insert({
-          user_id: user?.id,
-          order_id: data.orderId,
+      const response = await fetch('/api/returns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          orderId: data.orderId,
           reason: data.reason,
           images: uploadedImages,
-          status: 'pending'
-        });
+        }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to submit return');
 
       setIsSubmitted(true);
       toast({

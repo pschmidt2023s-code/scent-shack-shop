@@ -176,6 +176,76 @@ export async function registerRoutes(app: Express) {
     });
   });
 
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ error: "E-Mail erforderlich" });
+      }
+      
+      const user = await storage.getUserByEmail(email);
+      
+      if (user) {
+        const crypto = await import('crypto');
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+        
+        await storage.createPasswordResetToken(user.id, token, expiresAt);
+        
+        const { sendPasswordResetEmail } = await import('./resendClient');
+        const baseUrl = process.env.REPLIT_DOMAINS 
+          ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
+          : `${req.protocol}://${req.get('host')}`;
+        
+        await sendPasswordResetEmail(email, token, baseUrl);
+      }
+      
+      res.json({ success: true, message: "Falls ein Konto existiert, wurde eine E-Mail gesendet." });
+    } catch (error: any) {
+      console.error("Forgot password error:", error);
+      res.json({ success: true, message: "Falls ein Konto existiert, wurde eine E-Mail gesendet." });
+    }
+  });
+
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, password } = req.body;
+      
+      if (!token || !password) {
+        return res.status(400).json({ error: "Token und Passwort erforderlich" });
+      }
+      
+      if (password.length < 8) {
+        return res.status(400).json({ error: "Passwort muss mindestens 8 Zeichen haben" });
+      }
+      
+      const resetToken = await storage.getPasswordResetToken(token);
+      
+      if (!resetToken) {
+        return res.status(400).json({ error: "Ungültiger oder abgelaufener Link" });
+      }
+      
+      if (resetToken.usedAt) {
+        return res.status(400).json({ error: "Dieser Link wurde bereits verwendet" });
+      }
+      
+      if (new Date(resetToken.expiresAt) < new Date()) {
+        return res.status(400).json({ error: "Dieser Link ist abgelaufen" });
+      }
+      
+      const bcrypt = await import('bcryptjs');
+      const hashedPassword = await bcrypt.hash(password, 12);
+      
+      await storage.updateUserPassword(resetToken.userId, hashedPassword);
+      await storage.markPasswordResetTokenUsed(token);
+      
+      res.json({ success: true, message: "Passwort erfolgreich geändert" });
+    } catch (error: any) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ error: "Fehler beim Zurücksetzen des Passworts" });
+    }
+  });
+
   app.get("/api/auth/me", async (req, res) => {
     if (!req.session.userId) {
       return res.json({ user: null });
@@ -1826,10 +1896,10 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
       if (orderItems.length > 0) {
         itemsHtml = orderItems.map(item => `
       <tr>
-        <td>${item.variantName || 'Produkt'}</td>
+        <td>Artikel</td>
         <td>${item.quantity}</td>
-        <td>${parseFloat(item.price).toFixed(2)} EUR</td>
-        <td>${(parseFloat(item.price) * item.quantity).toFixed(2)} EUR</td>
+        <td>${parseFloat(item.unitPrice).toFixed(2)} EUR</td>
+        <td>${parseFloat(item.totalPrice).toFixed(2)} EUR</td>
       </tr>`).join('');
       } else {
         itemsHtml = `

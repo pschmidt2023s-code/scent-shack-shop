@@ -333,6 +333,16 @@ export const abandonedCarts = pgTable("abandoned_carts", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Password Reset Tokens
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Shop Settings (singleton table for store configuration)
 export const shopSettings = pgTable("shop_settings", {
   id: uuid("id").defaultRandom().primaryKey(),

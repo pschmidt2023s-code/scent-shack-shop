@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Sparkles, ArrowRight, ArrowLeft } from "lucide-react";
 import Navigation from "@/components/Navigation";
@@ -125,13 +124,20 @@ const PerfumeFinder = () => {
   const findMatches = async () => {
     setLoading(true);
     try {
-        body: { answers },
+      const response = await fetch('/api/perfume-finder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ answers }),
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to find matches');
+      }
 
-      setMatches(data.matches);
-      setExplanation(data.explanation);
+      const data = await response.json();
+      setMatches(data.matches || []);
+      setExplanation(data.explanation || 'Basierend auf deinen Antworten haben wir folgende Düfte für dich gefunden:');
       setShowResults(true);
     } catch (error: any) {
       console.error("Error finding matches:", error);
