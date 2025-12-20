@@ -54,7 +54,9 @@ import {
   XCircle,
   AlertCircle,
   Truck,
-  Check
+  Check,
+  Plus,
+  Minus
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -480,6 +482,383 @@ function OrderDetailDialog({ order, onClose }: { order: Order | null; onClose: (
   );
 }
 
+interface ProductVariant {
+  id: string;
+  name: string;
+  price: string;
+  productId: string;
+}
+
+interface ProductWithVariants {
+  id: string;
+  name: string;
+  variants: ProductVariant[];
+}
+
+interface OrderItemInput {
+  variantId: string;
+  variantName: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+function CreateOrderDialog({ 
+  open, 
+  onOpenChange, 
+  onSubmit 
+}: { 
+  open: boolean; 
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: any) => Promise<void>;
+}) {
+  const { toast } = useToast();
+  const [customerName, setCustomerName] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [street, setStreet] = useState('');
+  const [city, setCity] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [notes, setNotes] = useState('');
+  const [status, setStatus] = useState('pending');
+  const [paymentMethod, setPaymentMethod] = useState('bank');
+  const [orderItems, setOrderItems] = useState<OrderItemInput[]>([]);
+  const [products, setProducts] = useState<ProductWithVariants[]>([]);
+  const [selectedVariant, setSelectedVariant] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (open) {
+      fetch('/api/admin/products', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => setProducts(data))
+        .catch(console.error);
+    }
+  }, [open]);
+
+  const addItem = () => {
+    if (!selectedVariant) return;
+    
+    let variant: ProductVariant | undefined;
+    for (const product of products) {
+      variant = product.variants.find(v => v.id === selectedVariant);
+      if (variant) break;
+    }
+    
+    if (!variant) return;
+    
+    const existingIndex = orderItems.findIndex(i => i.variantId === selectedVariant);
+    if (existingIndex >= 0) {
+      const updated = [...orderItems];
+      updated[existingIndex].quantity += quantity;
+      setOrderItems(updated);
+    } else {
+      setOrderItems([...orderItems, {
+        variantId: variant.id,
+        variantName: variant.name,
+        quantity,
+        unitPrice: parseFloat(variant.price),
+      }]);
+    }
+    setSelectedVariant('');
+    setQuantity(1);
+  };
+
+  const removeItem = (variantId: string) => {
+    setOrderItems(orderItems.filter(i => i.variantId !== variantId));
+  };
+
+  const subtotal = orderItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+  const shipping = subtotal >= 50 ? 0 : 4.99;
+  const total = subtotal + shipping;
+
+  const handleSubmit = async () => {
+    setError('');
+    
+    // Client-side validation
+    if (!customerName.trim()) {
+      setError('Bitte geben Sie einen Kundennamen ein');
+      return;
+    }
+    if (!customerEmail.trim() || !customerEmail.includes('@')) {
+      setError('Bitte geben Sie eine gültige E-Mail-Adresse ein');
+      return;
+    }
+    if (orderItems.length === 0) {
+      setError('Bitte fügen Sie mindestens einen Artikel hinzu');
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      await onSubmit({
+        customerName,
+        customerEmail,
+        customerPhone,
+        shippingAddress: { street, city, postalCode, country: 'Deutschland' },
+        items: orderItems.map(i => ({ variantId: i.variantId, quantity: i.quantity })),
+        notes,
+        status,
+        paymentMethod,
+      });
+      
+      // Reset form only on success
+      setCustomerName('');
+      setCustomerEmail('');
+      setCustomerPhone('');
+      setStreet('');
+      setCity('');
+      setPostalCode('');
+      setNotes('');
+      setStatus('pending');
+      setPaymentMethod('bank');
+      setOrderItems([]);
+      setError('');
+      onOpenChange(false);
+    } catch (err: any) {
+      // Error is handled by parent with toast, but keep dialog open
+      setError(err.message || 'Bestellung konnte nicht angelegt werden');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Neue Bestellung anlegen</DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6 py-4">
+          <div className="space-y-4">
+            <h3 className="font-semibold">Kundendaten</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="customerName">Name *</Label>
+                <Input
+                  id="customerName"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Max Mustermann"
+                  data-testid="input-order-customer-name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="customerEmail">E-Mail *</Label>
+                <Input
+                  id="customerEmail"
+                  type="email"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  placeholder="kunde@example.com"
+                  data-testid="input-order-customer-email"
+                />
+              </div>
+              <div>
+                <Label htmlFor="customerPhone">Telefon</Label>
+                <Input
+                  id="customerPhone"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder="+49 123 456789"
+                  data-testid="input-order-customer-phone"
+                />
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="font-semibold">Lieferadresse</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="sm:col-span-2">
+                <Label htmlFor="street">Straße & Hausnummer</Label>
+                <Input
+                  id="street"
+                  value={street}
+                  onChange={(e) => setStreet(e.target.value)}
+                  placeholder="Musterstraße 123"
+                  data-testid="input-order-street"
+                />
+              </div>
+              <div>
+                <Label htmlFor="postalCode">PLZ</Label>
+                <Input
+                  id="postalCode"
+                  value={postalCode}
+                  onChange={(e) => setPostalCode(e.target.value)}
+                  placeholder="12345"
+                  data-testid="input-order-postal"
+                />
+              </div>
+              <div>
+                <Label htmlFor="city">Stadt</Label>
+                <Input
+                  id="city"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="Berlin"
+                  data-testid="input-order-city"
+                />
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="font-semibold">Artikel hinzufügen</h3>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Select value={selectedVariant} onValueChange={setSelectedVariant}>
+                <SelectTrigger className="flex-1" data-testid="select-order-variant">
+                  <SelectValue placeholder="Produkt wählen..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {products.map(product => (
+                    product.variants.map(variant => (
+                      <SelectItem key={variant.id} value={variant.id}>
+                        {variant.name} - €{parseFloat(variant.price).toFixed(2)}
+                      </SelectItem>
+                    ))
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  data-testid="btn-order-qty-minus"
+                >
+                  <Minus className="w-4 h-4" />
+                </Button>
+                <span className="w-8 text-center">{quantity}</span>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => setQuantity(quantity + 1)}
+                  data-testid="btn-order-qty-plus"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              <Button onClick={addItem} disabled={!selectedVariant} data-testid="btn-order-add-item">
+                <Plus className="w-4 h-4 mr-2" />
+                Hinzufügen
+              </Button>
+            </div>
+
+            {orderItems.length > 0 && (
+              <div className="space-y-2 bg-muted/50 rounded-md p-3">
+                {orderItems.map((item) => (
+                  <div key={item.variantId} className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <span className="font-medium">{item.variantName}</span>
+                      <span className="text-muted-foreground ml-2">x{item.quantity}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">€{(item.unitPrice * item.quantity).toFixed(2)}</span>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => removeItem(item.variantId)}
+                        data-testid={`btn-remove-item-${item.variantId}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                <Separator />
+                <div className="flex justify-between text-sm">
+                  <span>Zwischensumme</span>
+                  <span>€{subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Versand</span>
+                  <span>{shipping > 0 ? `€${shipping.toFixed(2)}` : 'Kostenlos'}</span>
+                </div>
+                <div className="flex justify-between font-semibold text-primary">
+                  <span>Gesamt</span>
+                  <span>€{total.toFixed(2)}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>Status</Label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger data-testid="select-order-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Ausstehend</SelectItem>
+                  <SelectItem value="pending_payment">Zahlung offen</SelectItem>
+                  <SelectItem value="processing">In Bearbeitung</SelectItem>
+                  <SelectItem value="paid">Bezahlt</SelectItem>
+                  <SelectItem value="shipped">Versendet</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Zahlungsart</Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger data-testid="select-order-payment">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bank">Banküberweisung</SelectItem>
+                  <SelectItem value="card">Kreditkarte</SelectItem>
+                  <SelectItem value="paypal">PayPal</SelectItem>
+                  <SelectItem value="cash">Bar</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="notes">Notizen</Label>
+            <Input
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Interne Notizen zur Bestellung..."
+              data-testid="input-order-notes"
+            />
+          </div>
+        </div>
+
+        {error && (
+          <div className="bg-destructive/10 text-destructive rounded-md p-3 text-sm" data-testid="error-order-create">
+            {error}
+          </div>
+        )}
+
+        <div className="flex justify-end gap-3 pt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="btn-order-cancel">
+            Abbrechen
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={isLoading}
+            data-testid="btn-order-create"
+          >
+            {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
+            Bestellung anlegen
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function OrdersView({ 
   orders, 
   onUpdateStatus, 
@@ -487,7 +866,8 @@ function OrdersView({
   onBulkDelete,
   selectedIds,
   onToggleSelect,
-  onToggleSelectAll
+  onToggleSelectAll,
+  onCreateOrder
 }: { 
   orders: Order[];
   onUpdateStatus: (id: string, status: string) => void;
@@ -496,9 +876,11 @@ function OrdersView({
   selectedIds: string[];
   onToggleSelect: (id: string) => void;
   onToggleSelectAll: () => void;
+  onCreateOrder: (data: any) => Promise<void>;
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = searchQuery === '' || 
@@ -527,17 +909,29 @@ function OrdersView({
 
   return (
     <div className="space-y-6">
+      <CreateOrderDialog 
+        open={createDialogOpen} 
+        onOpenChange={setCreateDialogOpen} 
+        onSubmit={onCreateOrder}
+      />
+      
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Bestellungen</h2>
           <p className="text-muted-foreground">{orders.length} Bestellungen insgesamt</p>
         </div>
-        {selectedIds.length > 0 && (
-          <Button variant="destructive" onClick={onBulkDelete} data-testid="btn-bulk-delete-orders">
-            <Trash2 className="w-4 h-4 mr-2" />
-            {selectedIds.length} löschen
+        <div className="flex gap-2">
+          {selectedIds.length > 0 && (
+            <Button variant="destructive" onClick={onBulkDelete} data-testid="btn-bulk-delete-orders">
+              <Trash2 className="w-4 h-4 mr-2" />
+              {selectedIds.length} löschen
+            </Button>
+          )}
+          <Button onClick={() => setCreateDialogOpen(true)} data-testid="btn-create-order">
+            <Plus className="w-4 h-4 mr-2" />
+            Bestellung anlegen
           </Button>
-        )}
+        </div>
       </div>
 
       <Card>
@@ -1077,6 +1471,32 @@ export default function Admin() {
     }
   }, [selectedOrderIds, loadData, toast]);
 
+  const createOrder = useCallback(async (orderData: any) => {
+    const response = await fetch('/api/admin/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(orderData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      const errorMsg = errorData.error || 'Bestellung konnte nicht angelegt werden';
+      toast({
+        title: "Fehler",
+        description: errorMsg,
+        variant: "destructive",
+      });
+      throw new Error(errorMsg);
+    }
+
+    await loadData();
+    toast({
+      title: "Erfolg",
+      description: "Bestellung wurde angelegt",
+    });
+  }, [loadData, toast]);
+
   const toggleOrderSelection = useCallback((orderId: string) => {
     setSelectedOrderIds(prev => 
       prev.includes(orderId) 
@@ -1175,6 +1595,7 @@ export default function Admin() {
             selectedIds={selectedOrderIds}
             onToggleSelect={toggleOrderSelection}
             onToggleSelectAll={toggleSelectAll}
+            onCreateOrder={createOrder}
           />
         );
       case 'products':

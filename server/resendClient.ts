@@ -1,9 +1,15 @@
 // Resend email client using Replit Connection API
 import { Resend } from 'resend';
 
-let connectionSettings: any;
+let cachedCredentials: { apiKey: string; fromEmail: string } | null = null;
+let credentialsCacheTime = 0;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 async function getCredentials() {
+  // Return cached credentials if still valid
+  if (cachedCredentials && Date.now() - credentialsCacheTime < CACHE_TTL_MS) {
+    return cachedCredentials;
+  }
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY 
     ? 'repl ' + process.env.REPL_IDENTITY 
@@ -12,10 +18,12 @@ async function getCredentials() {
     : null;
 
   if (!xReplitToken) {
+    console.error('[Resend] X_REPLIT_TOKEN not found');
     throw new Error('X_REPLIT_TOKEN not found for repl/depl');
   }
 
-  connectionSettings = await fetch(
+  console.log('[Resend] Fetching credentials from connector...');
+  const response = await fetch(
     'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=resend',
     {
       headers: {
@@ -23,12 +31,24 @@ async function getCredentials() {
         'X_REPLIT_TOKEN': xReplitToken
       }
     }
-  ).then(res => res.json()).then(data => data.items?.[0]);
+  );
+  
+  const data = await response.json();
+  const connSettings = data.items?.[0];
 
-  if (!connectionSettings || (!connectionSettings.settings.api_key)) {
-    throw new Error('Resend not connected');
+  if (!connSettings || (!connSettings.settings?.api_key)) {
+    console.error('[Resend] Connection not found or missing API key');
+    throw new Error('Resend not connected - check integration settings');
   }
-  return { apiKey: connectionSettings.settings.api_key, fromEmail: connectionSettings.settings.from_email };
+  
+  const fromEmail = connSettings.settings.from_email;
+  console.log('[Resend] Credentials loaded, fromEmail:', fromEmail || 'not configured');
+  
+  // Cache the credentials
+  cachedCredentials = { apiKey: connSettings.settings.api_key, fromEmail };
+  credentialsCacheTime = Date.now();
+  
+  return cachedCredentials;
 }
 
 export async function getResendClient() {
@@ -118,7 +138,9 @@ interface OrderEmailData {
 
 export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<boolean> {
   try {
+    console.log('[Resend] Attempting to send order confirmation email to:', data.customerEmail);
     const { client, fromEmail } = await getResendClient();
+    console.log('[Resend] Using fromEmail:', fromEmail);
     
     const itemsHtml = data.items.map(item => `
       <tr>
@@ -140,7 +162,7 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
       </div>
     ` : '';
 
-    await client.emails.send({
+    const result = await client.emails.send({
       from: fromEmail,
       to: [data.customerEmail],
       subject: `Bestellbestätigung ${data.orderNumber} - ALDENAIR`,
@@ -222,10 +244,18 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
       `
     });
     
-    console.log(`Order confirmation email sent to ${data.customerEmail}`);
+    console.log('[Resend] API Response:', JSON.stringify(result, null, 2));
+    
+    if (result.error) {
+      console.error('[Resend] API Error:', result.error);
+      return false;
+    }
+    
+    console.log(`[Resend] Order confirmation email sent successfully to ${data.customerEmail}, id: ${result.data?.id}`);
     return true;
   } catch (error: any) {
-    console.error('Failed to send order confirmation email:', error);
+    console.error('[Resend] Failed to send order confirmation email:', error.message);
+    console.error('[Resend] Full error:', JSON.stringify(error, null, 2));
     return false;
   }
 }

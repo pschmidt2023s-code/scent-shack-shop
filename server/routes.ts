@@ -565,6 +565,105 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Admin create order manually
+  app.post("/api/admin/orders", requireAdmin, async (req, res) => {
+    try {
+      const { customerName, customerEmail, customerPhone, shippingAddress, items, notes, paymentMethod, status } = req.body;
+      
+      if (!customerName || !customerEmail || !items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "Name, E-Mail und mindestens ein Artikel erforderlich" });
+      }
+      
+      // Validate and calculate prices from database
+      let subtotal = 0;
+      const validatedItems: Array<{
+        variantId: string;
+        perfumeId: string;
+        quantity: number;
+        unitPrice: string;
+        totalPrice: string;
+      }> = [];
+      
+      for (const item of items) {
+        if (!item.variantId || !item.quantity || item.quantity < 1) {
+          return res.status(400).json({ error: "Ungültige Artikeldaten" });
+        }
+        
+        const variant = await storage.getProductVariant(item.variantId);
+        if (!variant) {
+          return res.status(400).json({ error: `Variante ${item.variantId} nicht gefunden` });
+        }
+        
+        if (!variant.productId) {
+          return res.status(400).json({ error: `Variante ${variant.name} hat kein zugewiesenes Produkt` });
+        }
+        
+        const unitPrice = parseFloat(variant.price);
+        const totalPrice = unitPrice * item.quantity;
+        subtotal += totalPrice;
+        
+        validatedItems.push({
+          variantId: item.variantId as string,
+          perfumeId: variant.productId,
+          quantity: item.quantity as number,
+          unitPrice: unitPrice.toFixed(2),
+          totalPrice: totalPrice.toFixed(2),
+        });
+      }
+      
+      // Calculate shipping (free over 50€)
+      const shippingCost = subtotal >= 50 ? 0 : 4.99;
+      const finalAmount = subtotal + shippingCost;
+      
+      // Generate order number
+      const orderNumber = await storage.generateOrderNumber();
+      
+      const orderData = {
+        orderNumber,
+        partnerId: null,
+        userId: null,
+        totalAmount: finalAmount.toFixed(2),
+        shippingCost: shippingCost.toFixed(2),
+        currency: "EUR",
+        customerName,
+        customerEmail,
+        customerPhone: customerPhone || null,
+        shippingAddressData: shippingAddress || null,
+        billingAddressData: shippingAddress || null,
+        paymentMethod: paymentMethod || "bank",
+        paymentStatus: status === "paid" || status === "processing" ? "completed" : "pending",
+        status: status || "pending",
+        notes: notes ? `[Admin] ${notes}` : "[Admin] Manuell erstellt",
+      };
+      
+      const order = await storage.createOrder(orderData);
+      
+      const createdItems = [];
+      for (const item of validatedItems) {
+        const createdItem = await storage.createOrderItem({
+          orderId: order.id,
+          ...item,
+        });
+        // Enrich with variant name and convert prices to numbers
+        const variant = await storage.getProductVariant(item.variantId);
+        const product = await storage.getProduct(item.perfumeId);
+        createdItems.push({
+          ...createdItem,
+          unitPrice: parseFloat(String(createdItem.unitPrice)),
+          totalPrice: parseFloat(String(createdItem.totalPrice)),
+          variantName: variant?.name || 'Unbekannte Variante',
+          productName: product?.name || 'Unbekanntes Produkt',
+        });
+      }
+      
+      console.log(`[Admin] Manual order created: ${orderNumber}`);
+      res.json({ ...order, orderItems: createdItems });
+    } catch (error: any) {
+      console.error("Admin order creation error:", error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   // Admin Products Management
   app.get("/api/admin/products", requireAdmin, async (req, res) => {
     try {
