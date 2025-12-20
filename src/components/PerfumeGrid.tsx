@@ -2,7 +2,7 @@ import { useState, useEffect, memo } from 'react';
 import { PerfumeCard } from './PerfumeCard';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { Package, SlidersHorizontal } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Perfume } from '@/types/perfume';
 
@@ -96,10 +96,6 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
     <section className="py-20 bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-            <Sparkles className="w-4 h-4" />
-            Handverlesene Auswahl
-          </div>
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
             Unsere Bestseller
           </h2>

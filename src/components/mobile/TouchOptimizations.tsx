@@ -14,11 +14,19 @@ export function TouchOptimizations() {
     // Prevent double-tap zoom on buttons and interactive elements
     const style = document.createElement('style');
     style.textContent = `
-      button, a, [role="button"], input, textarea, select {
+      button, a, [role="button"] {
         touch-action: manipulation;
         -webkit-tap-highlight-color: transparent !important;
         user-select: none;
         -webkit-user-select: none;
+      }
+      
+      /* Allow text selection in inputs for proper keyboard behavior */
+      input, textarea, select {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent !important;
+        user-select: text;
+        -webkit-user-select: text;
       }
       
       /* Remove all tap highlights and visual feedback */

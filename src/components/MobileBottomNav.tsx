@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Home, Search, ShoppingBag, User, Heart } from 'lucide-react'
+import { Home, ShoppingBag, User, Heart } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useCart } from '@/contexts/CartContext'
@@ -15,12 +15,6 @@ const NAV_ITEMS = [
     label: 'Home',
     href: '/',
     activeHref: '/'
-  },
-  {
-    icon: Search,
-    label: 'Suchen',
-    href: '/products',
-    activeHref: '/products'
   },
   {
     icon: ShoppingBag,
@@ -90,7 +84,7 @@ export function MobileBottomNav() {
         }}
       >
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
-        <div className="grid grid-cols-5 h-16 px-2">
+        <div className="grid grid-cols-4 h-16 px-2">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon
             const isActive = location.pathname === item.activeHref || 

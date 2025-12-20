@@ -1,6 +1,7 @@
 import { HeroSection } from '@/components/HeroSection';
 import { PerfumeGrid } from '@/components/PerfumeGrid';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
+import { MobileSearchBar } from '@/components/MobileSearchBar';
 import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { OrganizationSchema, WebsiteSchema } from '@/components/StructuredData';
@@ -24,6 +25,7 @@ const Index = () => {
       <TouchOptimizations />
       <KeyboardShortcuts />
       <Navigation />
+      <MobileSearchBar />
       
       <main id="main-content" role="main" aria-label="Hauptinhalt">
         <HeroSection />
@@ -64,27 +66,7 @@ const Index = () => {
             </div>
             
             {/* Sparsets Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-              <Card className="hover-elevate overflow-visible">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-3 rounded-lg bg-primary/10">
-                      <Sparkles className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground">Handverlesene Auswahl</h3>
-                      <p className="text-sm text-muted-foreground">Unsere Bestseller</p>
-                    </div>
-                  </div>
-                  <Button variant="outline" className="w-full" asChild>
-                    <Link to="/products" data-testid="link-handverlesene-auswahl">
-                      Entdecken
-                      <ArrowRight className="ml-2 w-4 h-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
               <Card className="hover-elevate overflow-visible border-primary/20 bg-primary/5">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3 mb-4">
