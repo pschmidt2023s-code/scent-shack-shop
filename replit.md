@@ -207,3 +207,11 @@ Complete legal compliance overhaul for German B2C e-commerce (stand: Dezember 20
   - Order confirmation emails now include "Bestellung verfolgen" button linking to /order/:orderId
   - Added orderId parameter to all sendOrderConfirmationEmail calls
   - Route: /order/:orderId accessible to customers for tracking their orders
+- **Admin Order Cancel & Refund** (December 20, 2025):
+  - New POST /api/admin/orders/:id/cancel-and-refund endpoint
+  - Stripe refund processing for card payments (validates payment_intent exists before refund)
+  - Automatic status update to cancelled/refunded
+  - Refund confirmation email sent to customer via sendRefundEmail
+  - "Stornieren & Erstatten" button in admin order dropdown
+  - Error handling for missing payment reference or Stripe failures
+  - Non-card payments (bank transfer, PayPal) marked as refunded with manual refund note
