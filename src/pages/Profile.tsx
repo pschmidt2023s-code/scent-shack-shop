@@ -8,7 +8,7 @@ import AddressManager from '@/components/profile/AddressManager';
 import { OrderHistory } from '@/components/profile/OrderHistory';
 import { PaybackSystem } from '@/components/PaybackSystem';
 import { BiometricAuth } from '@/components/BiometricAuth';
-import { ArrowLeft, User, MapPin, ShoppingBag, Euro } from 'lucide-react';
+import { ArrowLeft, User, MapPin, ShoppingBag, Euro, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
@@ -119,27 +119,30 @@ export default function Profile() {
             </div>
 
             <Tabs defaultValue="profile" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="profile" className="flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  Profil
-                </TabsTrigger>
-                <TabsTrigger value="addresses" className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  Adressen
-                </TabsTrigger>
-                <TabsTrigger value="orders" className="flex items-center gap-2">
-                  <ShoppingBag className="w-4 h-4" />
-                  Bestellungen
-                </TabsTrigger>
-                <TabsTrigger value="payback" className="flex items-center gap-2">
-                  <Euro className="w-4 h-4" />
-                  Payback
-                </TabsTrigger>
-                <TabsTrigger value="security" className="flex items-center gap-2">
-                  🔒 Sicherheit
-                </TabsTrigger>
-              </TabsList>
+              <div className="w-full overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+                <TabsList className="inline-flex w-auto min-w-full md:grid md:w-full md:grid-cols-5 gap-1">
+                  <TabsTrigger value="profile" className="flex items-center gap-2 whitespace-nowrap px-4">
+                    <User className="w-4 h-4 shrink-0" />
+                    <span className="hidden sm:inline">Profil</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="addresses" className="flex items-center gap-2 whitespace-nowrap px-4">
+                    <MapPin className="w-4 h-4 shrink-0" />
+                    <span className="hidden sm:inline">Adressen</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="orders" className="flex items-center gap-2 whitespace-nowrap px-4">
+                    <ShoppingBag className="w-4 h-4 shrink-0" />
+                    <span className="hidden sm:inline">Bestellungen</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="payback" className="flex items-center gap-2 whitespace-nowrap px-4">
+                    <Euro className="w-4 h-4 shrink-0" />
+                    <span className="hidden sm:inline">Payback</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="security" className="flex items-center gap-2 whitespace-nowrap px-4">
+                    <Shield className="w-4 h-4 shrink-0" />
+                    <span className="hidden sm:inline">Sicherheit</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
               <TabsContent value="profile">
                 <ProfileForm />
