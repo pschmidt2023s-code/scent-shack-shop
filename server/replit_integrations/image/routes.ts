@@ -32,9 +32,15 @@ export function registerImageRoutes(app: Express): void {
     }
   });
 
-  // Perfume product image generation endpoint
+  // Perfume product image generation endpoint (admin only)
   app.post("/api/generate-product-image", async (req: Request, res: Response) => {
     try {
+      // Admin authentication check
+      const user = (req as any).session?.user;
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ error: "Nur Administratoren können Bilder generieren" });
+      }
+
       const { 
         productName, 
         category, 
@@ -44,12 +50,24 @@ export function registerImageRoutes(app: Express): void {
         bottleType = "50ml Flakon"
       } = req.body;
 
-      if (!productName) {
-        return res.status(400).json({ error: "Produktname ist erforderlich" });
+      // Input validation
+      if (!productName || typeof productName !== 'string' || productName.length < 1 || productName.length > 100) {
+        return res.status(400).json({ error: "Produktname ist erforderlich (max 100 Zeichen)" });
       }
 
+      // Validate arrays are actually arrays of strings
+      const validateNotes = (notes: any): string[] => {
+        if (!Array.isArray(notes)) return [];
+        return notes.filter((n): n is string => typeof n === 'string').slice(0, 10);
+      };
+
+      // Validate and sanitize notes
+      const validTopNotes = validateNotes(topNotes);
+      const validMiddleNotes = validateNotes(middleNotes);
+      const validBaseNotes = validateNotes(baseNotes);
+
       // Build descriptive prompt for perfume product image
-      const allNotes = [...topNotes, ...middleNotes, ...baseNotes].filter(Boolean);
+      const allNotes = [...validTopNotes, ...validMiddleNotes, ...validBaseNotes].filter(Boolean);
       const notesDescription = allNotes.length > 0 
         ? allNotes.slice(0, 5).join(", ") 
         : "elegant floral and woody";
@@ -79,9 +97,20 @@ export function registerImageRoutes(app: Express): void {
         fs.mkdirSync(imageDir, { recursive: true });
       }
 
-      // Save image with unique filename
-      const filename = `${productName.toLowerCase().replace(/\s+/g, '-')}_${randomUUID().slice(0, 8)}.png`;
+      // Sanitize filename: remove unsafe chars, limit length
+      const sanitizedName = productName
+        .toLowerCase()
+        .replace(/[^a-z0-9äöüß\s-]/gi, '') // Remove special chars except German umlauts
+        .replace(/\s+/g, '-')
+        .slice(0, 50);
+      const filename = `${sanitizedName || 'product'}_${randomUUID().slice(0, 8)}.png`;
       const imagePath = path.join(imageDir, filename);
+      
+      // Verify path is within expected directory (prevent traversal)
+      if (!imagePath.startsWith(imageDir)) {
+        return res.status(400).json({ error: "Ungültiger Dateiname" });
+      }
+      
       fs.writeFileSync(imagePath, imageBuffer);
 
       // Return relative path for frontend usage

@@ -116,6 +116,12 @@ For full functionality, add these secrets:
   - Admin order API: POST /api/admin/orders with server-side price calculation and validation
   - CreateOrderDialog UI: Customer fields, product selector, quantity controls, inline error display
   - Error handling: Toast feedback + dialog stays open on failure for user correction
+- **AI Product Image Generation** (December 20, 2025):
+  - "KI Bild" button in admin ProductManagement form generates perfume product images
+  - Uses OpenAI gpt-image-1 model via Replit AI Integrations (no API key required, billed to credits)
+  - Builds intelligent prompts from product name, category, and fragrance notes
+  - Images saved to attached_assets/generated_images/ with sanitized filenames
+  - Security: Admin-only access, input validation, path traversal prevention
 
 ## Loyalty Tier System
 | Tier     | Min Spend | Discount |

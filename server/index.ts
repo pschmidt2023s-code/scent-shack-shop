@@ -148,6 +148,9 @@ app.post(
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Serve generated images from attached_assets
+app.use('/attached_assets', express.static(path.join(process.cwd(), 'attached_assets')));
+
 const csrfProtection = (req: Request, res: Response, next: NextFunction) => {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
     return next();
