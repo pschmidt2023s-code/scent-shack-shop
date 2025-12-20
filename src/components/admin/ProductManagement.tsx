@@ -154,6 +154,7 @@ export default function ProductManagement() {
   const [showVariantDialog, setShowVariantDialog] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [generatingAI, setGeneratingAI] = useState(false);
+  const [generatingImage, setGeneratingImage] = useState(false);
   const [activeFormTab, setActiveFormTab] = useState("essentials");
 
   const initialProductForm: ProductFormState = {
@@ -203,6 +204,46 @@ export default function ProductManagement() {
       toast.error("Fehler beim Laden der Produkte");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGenerateImage = async () => {
+    if (!productForm.name.trim()) {
+      toast.error("Bitte geben Sie zuerst einen Produktnamen ein");
+      return;
+    }
+
+    try {
+      setGeneratingImage(true);
+      toast.info("KI-Bild wird generiert...", { duration: 10000 });
+
+      const response = await fetch("/api/generate-product-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          productName: productForm.name,
+          category: productForm.category === "herren" ? "Herren" : productForm.category === "damen" ? "Damen" : "Unisex",
+          topNotes: productForm.topNotes,
+          middleNotes: productForm.middleNotes,
+          baseNotes: productForm.baseNotes,
+          bottleType: "50ml Luxus-Flakon",
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Bildgenerierung fehlgeschlagen");
+      }
+
+      const data = await response.json();
+      setProductForm({ ...productForm, image: data.url });
+      toast.success("Produktbild wurde generiert!");
+    } catch (error: any) {
+      console.error("Error generating image:", error);
+      toast.error(error.message || "Fehler bei der Bildgenerierung");
+    } finally {
+      setGeneratingImage(false);
     }
   };
 
@@ -521,11 +562,41 @@ export default function ProductManagement() {
                   </div>
                   <div className="space-y-2">
                     <Label>Bild-URL</Label>
-                    <Input
-                      value={productForm.image}
-                      onChange={(e) => setProductForm({ ...productForm, image: e.target.value })}
-                      placeholder="https://..."
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        value={productForm.image}
+                        onChange={(e) => setProductForm({ ...productForm, image: e.target.value })}
+                        placeholder="https://... oder KI-generiert"
+                        className="flex-1"
+                        data-testid="input-product-image"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleGenerateImage}
+                        disabled={generatingImage || !productForm.name.trim()}
+                        data-testid="btn-generate-image"
+                      >
+                        {generatingImage ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-4 w-4" />
+                        )}
+                        <span className="ml-1 hidden sm:inline">
+                          {generatingImage ? "Generiert..." : "KI Bild"}
+                        </span>
+                      </Button>
+                    </div>
+                    {productForm.image && (
+                      <div className="mt-2 rounded-md border overflow-hidden max-w-32">
+                        <img 
+                          src={productForm.image} 
+                          alt="Vorschau" 
+                          className="w-full h-auto"
+                          onError={(e) => (e.currentTarget.style.display = 'none')}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
