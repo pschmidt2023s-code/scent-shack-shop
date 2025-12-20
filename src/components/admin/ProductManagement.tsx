@@ -10,18 +10,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Package, Save, X, Loader2, Sparkles, ChevronDown, ChevronUp, Droplets, FlaskConical, Layers } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Save, X, Loader2, Sparkles, ChevronDown, ChevronUp, Droplets, FlaskConical, Layers, ImageIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface ProductVariant {
   id: string;
-  perfumeId: string;
-  size: string;
+  productId: string;
+  name: string;
+  size: string | null;
   price: string;
   originalPrice: string | null;
   stock: number;
   sku: string | null;
   isActive: boolean;
+  description: string | null;
+  image: string | null;
+  aiDescription: string | null;
+  topNotes: string[] | null;
+  middleNotes: string[] | null;
+  baseNotes: string[] | null;
+  ingredients: string[] | null;
+  createdAt: string;
 }
 
 interface Product {
@@ -178,13 +187,24 @@ export default function ProductManagement() {
   const [productForm, setProductForm] = useState<ProductFormState>(initialProductForm);
 
   const [variantForm, setVariantForm] = useState({
+    name: "",
     size: "",
     price: "",
     originalPrice: "",
     stock: 0,
     sku: "",
     isActive: true,
+    description: "",
+    image: "",
+    aiDescription: "",
+    topNotes: [] as string[],
+    middleNotes: [] as string[],
+    baseNotes: [] as string[],
+    ingredients: [] as string[],
   });
+  const [activeVariantTab, setActiveVariantTab] = useState("essentials");
+  const [generatingVariantImage, setGeneratingVariantImage] = useState(false);
+  const [generatingVariantAI, setGeneratingVariantAI] = useState(false);
 
   useEffect(() => {
     loadProducts();
@@ -410,13 +430,22 @@ export default function ProductManagement() {
     setSelectedProductId(productId);
     setEditingVariant(variant);
     setVariantForm({
-      size: variant.size,
+      name: variant.name || "",
+      size: variant.size || "",
       price: variant.price,
       originalPrice: variant.originalPrice || "",
       stock: variant.stock,
       sku: variant.sku || "",
       isActive: variant.isActive,
+      description: variant.description || "",
+      image: variant.image || "",
+      aiDescription: variant.aiDescription || "",
+      topNotes: variant.topNotes || [],
+      middleNotes: variant.middleNotes || [],
+      baseNotes: variant.baseNotes || [],
+      ingredients: variant.ingredients || [],
     });
+    setActiveVariantTab("essentials");
     setShowVariantDialog(true);
   };
 
@@ -429,13 +458,22 @@ export default function ProductManagement() {
   const resetVariantForm = () => {
     setEditingVariant(null);
     setVariantForm({
+      name: "",
       size: "",
       price: "",
       originalPrice: "",
       stock: 0,
       sku: "",
       isActive: true,
+      description: "",
+      image: "",
+      aiDescription: "",
+      topNotes: [],
+      middleNotes: [],
+      baseNotes: [],
+      ingredients: [],
     });
+    setActiveVariantTab("essentials");
   };
 
   const toggleSeason = (season: string) => {
@@ -656,14 +694,7 @@ export default function ProductManagement() {
                         onClick={() => {
                           setSelectedProductId(editingProduct.id);
                           setEditingVariant(null);
-                          setVariantForm({
-                            size: "",
-                            price: "",
-                            originalPrice: "",
-                            stock: 0,
-                            sku: "",
-                            isActive: true,
-                          });
+                          resetVariantForm();
                           setShowVariantDialog(true);
                         }}
                         data-testid="btn-add-variant-inline"
@@ -681,9 +712,9 @@ export default function ProductManagement() {
                       <Table>
                         <TableHeader>
                           <TableRow>
+                            <TableHead>Name</TableHead>
                             <TableHead>Größe</TableHead>
                             <TableHead>Preis</TableHead>
-                            <TableHead>UVP</TableHead>
                             <TableHead>Lager</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-right">Aktionen</TableHead>
@@ -692,11 +723,14 @@ export default function ProductManagement() {
                         <TableBody>
                           {editingProduct.variants.map((variant) => (
                             <TableRow key={variant.id}>
-                              <TableCell className="font-medium">{variant.size}</TableCell>
-                              <TableCell>€{parseFloat(variant.price).toFixed(2)}</TableCell>
-                              <TableCell>
-                                {variant.originalPrice ? `€${parseFloat(variant.originalPrice).toFixed(2)}` : '-'}
+                              <TableCell className="font-medium max-w-[200px] truncate">
+                                {variant.name}
+                                {variant.image && (
+                                  <img src={variant.image} alt="" className="w-6 h-6 rounded inline-block ml-2" />
+                                )}
                               </TableCell>
+                              <TableCell>{variant.size || '-'}</TableCell>
+                              <TableCell>€{parseFloat(variant.price).toFixed(2)}</TableCell>
                               <TableCell>{variant.stock}</TableCell>
                               <TableCell>
                                 <Badge variant={variant.isActive ? "default" : "secondary"}>
@@ -708,19 +742,7 @@ export default function ProductManagement() {
                                   <Button
                                     size="icon"
                                     variant="ghost"
-                                    onClick={() => {
-                                      setSelectedProductId(editingProduct.id);
-                                      setEditingVariant(variant);
-                                      setVariantForm({
-                                        size: variant.size,
-                                        price: variant.price,
-                                        originalPrice: variant.originalPrice || "",
-                                        stock: variant.stock,
-                                        sku: variant.sku || "",
-                                        isActive: variant.isActive,
-                                      });
-                                      setShowVariantDialog(true);
-                                    }}
+                                    onClick={() => openEditVariant(variant, editingProduct.id)}
                                     data-testid={`btn-edit-variant-${variant.id}`}
                                   >
                                     <Pencil className="h-4 w-4" />
@@ -1045,75 +1067,280 @@ export default function ProductManagement() {
       ))}
 
       <Dialog open={showVariantDialog} onOpenChange={setShowVariantDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingVariant ? "Variante bearbeiten" : "Neue Variante"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Größe *</Label>
-                <Input
-                  value={variantForm.size}
-                  onChange={(e) => setVariantForm({ ...variantForm, size: e.target.value })}
-                  placeholder="z.B. 50ml"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>SKU</Label>
-                <Input
-                  value={variantForm.sku}
-                  onChange={(e) => setVariantForm({ ...variantForm, sku: e.target.value })}
-                  placeholder="z.B. ALD-001-50"
-                />
-              </div>
-            </div>
+          
+          <Tabs value={activeVariantTab} onValueChange={setActiveVariantTab} className="mt-4">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="essentials">Basis</TabsTrigger>
+              <TabsTrigger value="fragrance">Duftprofil</TabsTrigger>
+              <TabsTrigger value="media">Bild & KI</TabsTrigger>
+              <TabsTrigger value="metadata">Details</TabsTrigger>
+            </TabsList>
 
-            <div className="grid grid-cols-2 gap-4">
+            <TabsContent value="essentials" className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label>Preis (EUR) *</Label>
+                <Label>Varianten-Name *</Label>
                 <Input
-                  type="number"
-                  step="0.01"
-                  value={variantForm.price}
-                  onChange={(e) => setVariantForm({ ...variantForm, price: e.target.value })}
-                  placeholder="0.00"
+                  value={variantForm.name}
+                  onChange={(e) => setVariantForm({ ...variantForm, name: e.target.value })}
+                  placeholder="z.B. ALDENAIR Mystique 50ml"
+                  data-testid="input-variant-name"
                 />
               </div>
-              <div className="space-y-2">
-                <Label>Originalpreis (EUR)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={variantForm.originalPrice}
-                  onChange={(e) => setVariantForm({ ...variantForm, originalPrice: e.target.value })}
-                  placeholder="0.00"
-                />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Größe</Label>
+                  <Input
+                    value={variantForm.size}
+                    onChange={(e) => setVariantForm({ ...variantForm, size: e.target.value })}
+                    placeholder="z.B. 50ml"
+                    data-testid="input-variant-size"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>SKU</Label>
+                  <Input
+                    value={variantForm.sku}
+                    onChange={(e) => setVariantForm({ ...variantForm, sku: e.target.value })}
+                    placeholder="z.B. ALD-001-50"
+                    data-testid="input-variant-sku"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label>Bestand</Label>
-              <Input
-                type="number"
-                value={variantForm.stock}
-                onChange={(e) => setVariantForm({ ...variantForm, stock: parseInt(e.target.value) || 0 })}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Preis (EUR) *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={variantForm.price}
+                    onChange={(e) => setVariantForm({ ...variantForm, price: e.target.value })}
+                    placeholder="0.00"
+                    data-testid="input-variant-price"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>UVP (EUR)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={variantForm.originalPrice}
+                    onChange={(e) => setVariantForm({ ...variantForm, originalPrice: e.target.value })}
+                    placeholder="0.00"
+                    data-testid="input-variant-uvp"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Bestand</Label>
+                  <Input
+                    type="number"
+                    value={variantForm.stock}
+                    onChange={(e) => setVariantForm({ ...variantForm, stock: parseInt(e.target.value) || 0 })}
+                    data-testid="input-variant-stock"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Beschreibung</Label>
+                <Textarea
+                  value={variantForm.description}
+                  onChange={(e) => setVariantForm({ ...variantForm, description: e.target.value })}
+                  placeholder="Optionale Beschreibung für diese Variante..."
+                  rows={3}
+                  data-testid="input-variant-description"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={variantForm.isActive}
+                  onCheckedChange={(checked) => setVariantForm({ ...variantForm, isActive: checked })}
+                />
+                <Label>Variante aktiv</Label>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="fragrance" className="space-y-4 pt-4">
+              <div className="rounded-lg border p-4 bg-muted/30">
+                <h4 className="font-medium mb-4 flex items-center gap-2">
+                  <Layers className="h-4 w-4" />
+                  Duftpyramide
+                </h4>
+                <div className="space-y-4">
+                  <ChipInput
+                    label="Kopfnoten"
+                    values={variantForm.topNotes}
+                    onChange={(notes) => setVariantForm({ ...variantForm, topNotes: notes })}
+                    placeholder="Kopfnote eingeben..."
+                  />
+                  <ChipInput
+                    label="Herznoten"
+                    values={variantForm.middleNotes}
+                    onChange={(notes) => setVariantForm({ ...variantForm, middleNotes: notes })}
+                    placeholder="Herznote eingeben..."
+                  />
+                  <ChipInput
+                    label="Basisnoten"
+                    values={variantForm.baseNotes}
+                    onChange={(notes) => setVariantForm({ ...variantForm, baseNotes: notes })}
+                    placeholder="Basisnote eingeben..."
+                  />
+                </div>
+              </div>
+
+              <ChipInput
+                label="Inhaltsstoffe (INCI)"
+                values={variantForm.ingredients}
+                onChange={(ingredients) => setVariantForm({ ...variantForm, ingredients })}
+                placeholder="Inhaltsstoff eingeben..."
               />
-            </div>
+            </TabsContent>
 
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={variantForm.isActive}
-                onCheckedChange={(checked) => setVariantForm({ ...variantForm, isActive: checked })}
-              />
-              <Label>Variante aktiv</Label>
-            </div>
-          </div>
-          <DialogFooter>
+            <TabsContent value="media" className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label>Bild-URL</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={variantForm.image}
+                    onChange={(e) => setVariantForm({ ...variantForm, image: e.target.value })}
+                    placeholder="https://..."
+                    className="flex-1"
+                    data-testid="input-variant-image"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={async () => {
+                      if (!variantForm.name.trim()) {
+                        toast.error("Bitte geben Sie zuerst einen Varianten-Namen ein");
+                        return;
+                      }
+                      try {
+                        setGeneratingVariantImage(true);
+                        toast.info("KI-Bild wird generiert...", { duration: 10000 });
+                        const response = await fetch("/api/generate-product-image", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          credentials: "include",
+                          body: JSON.stringify({
+                            productName: variantForm.name,
+                            category: editingProduct?.category || "unisex",
+                            topNotes: variantForm.topNotes,
+                            middleNotes: variantForm.middleNotes,
+                            baseNotes: variantForm.baseNotes,
+                            bottleType: variantForm.size || "50ml Luxus-Flakon",
+                          }),
+                        });
+                        if (!response.ok) throw new Error("Bildgenerierung fehlgeschlagen");
+                        const data = await response.json();
+                        setVariantForm({ ...variantForm, image: data.url });
+                        toast.success("Produktbild wurde generiert!");
+                      } catch (error: any) {
+                        console.error("Error generating image:", error);
+                        toast.error(error.message || "Fehler bei der Bildgenerierung");
+                      } finally {
+                        setGeneratingVariantImage(false);
+                      }
+                    }}
+                    disabled={generatingVariantImage}
+                    data-testid="btn-generate-variant-image"
+                  >
+                    {generatingVariantImage ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <ImageIcon className="h-4 w-4" />
+                    )}
+                    <span className="ml-1">KI Bild</span>
+                  </Button>
+                </div>
+                {variantForm.image && (
+                  <div className="mt-2 rounded-md overflow-hidden border w-32 h-32">
+                    <img src={variantForm.image} alt="Vorschau" className="w-full h-full object-cover" />
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>KI-Beschreibung</Label>
+                <Textarea
+                  value={variantForm.aiDescription}
+                  onChange={(e) => setVariantForm({ ...variantForm, aiDescription: e.target.value })}
+                  placeholder="KI-generierte Beschreibung..."
+                  rows={4}
+                  data-testid="input-variant-ai-description"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    if (!variantForm.name.trim()) {
+                      toast.error("Bitte geben Sie zuerst einen Varianten-Namen ein");
+                      return;
+                    }
+                    try {
+                      setGeneratingVariantAI(true);
+                      toast.info("KI-Beschreibung wird generiert...");
+                      const response = await fetch("/api/ai/generate-description", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify({
+                          name: variantForm.name,
+                          category: editingProduct?.category || "unisex",
+                          topNotes: variantForm.topNotes,
+                          middleNotes: variantForm.middleNotes,
+                          baseNotes: variantForm.baseNotes,
+                        }),
+                      });
+                      if (!response.ok) throw new Error("Fehler bei der Textgenerierung");
+                      const data = await response.json();
+                      setVariantForm({ ...variantForm, aiDescription: data.description });
+                      toast.success("Beschreibung generiert!");
+                    } catch (error: any) {
+                      console.error("Error generating description:", error);
+                      toast.error(error.message || "Fehler bei der Textgenerierung");
+                    } finally {
+                      setGeneratingVariantAI(false);
+                    }
+                  }}
+                  disabled={generatingVariantAI}
+                  data-testid="btn-generate-variant-ai"
+                >
+                  {generatingVariantAI ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                  ) : (
+                    <Sparkles className="h-4 w-4 mr-1" />
+                  )}
+                  KI-Text generieren
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="metadata" className="space-y-4 pt-4">
+              <div className="text-sm text-muted-foreground space-y-2">
+                <p>Weitere Metadaten werden vom übergeordneten Produkt geerbt.</p>
+                {editingVariant && (
+                  <div className="mt-4 p-3 rounded-lg bg-muted/50">
+                    <p><strong>Varianten-ID:</strong> {editingVariant.id}</p>
+                    <p><strong>Erstellt:</strong> {new Date(editingVariant.createdAt).toLocaleString("de-DE")}</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setShowVariantDialog(false)}>
               Abbrechen
             </Button>
-            <Button onClick={handleSaveVariant} disabled={saving}>
+            <Button onClick={handleSaveVariant} disabled={saving || !variantForm.name.trim() || !variantForm.price}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
               {editingVariant ? "Speichern" : "Erstellen"}
             </Button>
