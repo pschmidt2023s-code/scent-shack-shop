@@ -50,10 +50,19 @@ export const productVariants = pgTable("product_variants", {
   description: text("description"),
   size: text("size"),
   price: numeric("price").notNull(),
+  originalPrice: numeric("original_price"),
   stock: integer("stock").default(0),
+  sku: text("sku"),
   inStock: boolean("in_stock").default(true),
   inspiredByFragrance: text("inspired_by_fragrance"),
   isActive: boolean("is_active").default(true),
+  // Extended product-like fields
+  image: text("image"),
+  aiDescription: text("ai_description"),
+  topNotes: text("top_notes").array(),
+  middleNotes: text("middle_notes").array(),
+  baseNotes: text("base_notes").array(),
+  ingredients: text("ingredients").array(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
