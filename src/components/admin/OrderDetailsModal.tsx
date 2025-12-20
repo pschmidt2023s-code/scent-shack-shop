@@ -113,7 +113,7 @@ export function OrderDetailsModal({ orderId, open, onOpenChange, onOrderUpdated 
       }
 
       if (isNowShipped && sendShippingEmail && trackingNumber) {
-        const emailResult = await apiRequest(`/admin/orders/${orderId}/send-email`, {
+        const emailResult = await apiRequest(`/admin/orders/${orderId}/resend-email`, {
           method: 'POST',
           body: JSON.stringify({ emailType: 'shipping' }),
         });
@@ -143,7 +143,7 @@ export function OrderDetailsModal({ orderId, open, onOpenChange, onOrderUpdated 
     
     try {
       setSaving(true);
-      const result = await apiRequest(`/admin/orders/${orderId}/send-email`, {
+      const result = await apiRequest(`/admin/orders/${orderId}/resend-email`, {
         method: 'POST',
         body: JSON.stringify({ emailType: 'shipping' }),
       });
