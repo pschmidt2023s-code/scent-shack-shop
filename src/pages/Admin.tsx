@@ -944,7 +944,8 @@ function OrdersView({
   onToggleSelect,
   onToggleSelectAll,
   onCreateOrder,
-  onCancelAndRefund
+  onCancelAndRefund,
+  onResendEmail
 }: { 
   orders: Order[];
   onUpdateStatus: (id: string, status: string) => void;
@@ -955,6 +956,7 @@ function OrdersView({
   onToggleSelectAll: () => void;
   onCreateOrder: (data: any) => Promise<void>;
   onCancelAndRefund: (id: string) => Promise<void>;
+  onResendEmail: (id: string, emailType: string) => Promise<void>;
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -1137,7 +1139,7 @@ function OrdersView({
                                   Details anzeigen
                                 </DropdownMenuItem>
                               </DialogTrigger>
-                              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
                                 <DialogHeader>
                                   <DialogTitle>
                                     Bestellung #{order.orderNumber || order.id.slice(-8).toUpperCase()}
@@ -1293,6 +1295,24 @@ function OrdersView({
                                 </div>
                               </DialogContent>
                             </Dialog>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel className="text-xs text-muted-foreground">E-Mail senden</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => onResendEmail(order.id, 'confirmation')}>
+                              <Mail className="w-4 h-4 mr-2" />
+                              Bestellbestätigung
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onResendEmail(order.id, 'shipping')}>
+                              <Truck className="w-4 h-4 mr-2" />
+                              Versandbenachrichtigung
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onResendEmail(order.id, 'cancellation')}>
+                              <XCircle className="w-4 h-4 mr-2" />
+                              Stornierungsinfo
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onResendEmail(order.id, 'refund')}>
+                              <CreditCard className="w-4 h-4 mr-2" />
+                              Rückerstattungsinfo
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
                               className="text-amber-600 focus:text-amber-600"
@@ -1656,6 +1676,41 @@ export default function Admin() {
     });
   }, [loadData, toast]);
 
+  const resendEmail = useCallback(async (orderId: string, emailType: string) => {
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}/resend-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ emailType }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'E-Mail konnte nicht gesendet werden');
+      }
+
+      const emailLabels: Record<string, string> = {
+        confirmation: 'Bestellbestätigung',
+        shipping: 'Versandbenachrichtigung',
+        cancellation: 'Stornierungsinfo',
+        refund: 'Rückerstattungsinfo',
+      };
+
+      toast({
+        title: "Erfolg",
+        description: `${emailLabels[emailType] || 'E-Mail'} wurde gesendet`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Fehler",
+        description: error.message || "E-Mail konnte nicht gesendet werden",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
+
   const toggleOrderSelection = useCallback((orderId: string) => {
     setSelectedOrderIds(prev => 
       prev.includes(orderId) 
@@ -1757,6 +1812,7 @@ export default function Admin() {
             onToggleSelectAll={toggleSelectAll}
             onCreateOrder={createOrder}
             onCancelAndRefund={cancelAndRefundOrder}
+            onResendEmail={resendEmail}
           />
         );
       case 'products':
