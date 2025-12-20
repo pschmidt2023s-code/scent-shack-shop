@@ -79,12 +79,20 @@ export function ScentCalendar() {
   const [season] = useState(getSeason());
   const [weekDays, setWeekDays] = useState<{ day: string; date: number; product: Product | null; isToday: boolean }[]>([]);
 
-  const { data: products, isLoading } = useQuery<Product[]>({
+  const { data: allProducts, isLoading } = useQuery<Product[]>({
     queryKey: ['/api/products'],
   });
 
-  const todayProduct = products && products.length > 0 
-    ? products[currentDate.getDate() % products.length] 
+  const singlePerfumes = allProducts?.filter(p => {
+    const name = p.name.toLowerCase();
+    const category = (p.category || '').toLowerCase();
+    const isCollection = name.includes('collection') || name.includes('set') || name.includes('sparset') || name.includes('probenset');
+    const isBundleCategory = category.includes('bundle') || category.includes('set') || category.includes('collection');
+    return !isCollection && !isBundleCategory;
+  }) || [];
+
+  const todayProduct = singlePerfumes.length > 0 
+    ? singlePerfumes[currentDate.getDate() % singlePerfumes.length] 
     : null;
 
   const recommendation: DailyRecommendation = {
@@ -93,7 +101,7 @@ export function ScentCalendar() {
   };
 
   useEffect(() => {
-    if (!products) return;
+    if (singlePerfumes.length === 0) return;
 
     const days = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
     const today = currentDate.getDay();
@@ -107,13 +115,13 @@ export function ScentCalendar() {
       week.push({
         day: days[dayIndex],
         date: date.getDate(),
-        product: getProductForDay(products, date.getDate()),
+        product: getProductForDay(singlePerfumes, date.getDate()),
         isToday: i === currentDate.getDay(),
       });
     }
     
     setWeekDays(week);
-  }, [currentDate, products]);
+  }, [currentDate, singlePerfumes]);
 
   const SeasonIcon = seasonConfig[season].icon;
 
