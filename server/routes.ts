@@ -600,6 +600,8 @@ export async function registerRoutes(app: Express) {
               ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
               : `${req.protocol}://${req.get('host')}`;
             await sendWelcomeEmailWithPassword(customerEmail, customerName, randomPassword, baseUrl);
+            // Wait 1.5s to avoid Resend rate limit (2 req/sec) before sending order confirmation
+            await new Promise(resolve => setTimeout(resolve, 1500));
           } catch (emailError: any) {
             console.error('[Admin] Failed to send welcome email:', emailError.message);
           }
