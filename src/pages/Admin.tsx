@@ -539,6 +539,8 @@ function CreateOrderDialog({
   const [status, setStatus] = useState('pending');
   const [paymentMethod, setPaymentMethod] = useState('bank');
   const [discount, setDiscount] = useState('');
+  const [shippingType, setShippingType] = useState<'standard' | 'prio'>('standard');
+  const [createAccount, setCreateAccount] = useState(false);
   const [orderItems, setOrderItems] = useState<OrderItemInput[]>([]);
   const [products, setProducts] = useState<ProductWithVariants[]>([]);
   const [selectedVariant, setSelectedVariant] = useState('');
@@ -589,7 +591,9 @@ function CreateOrderDialog({
 
   const subtotal = orderItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
   const discountAmount = parseFloat(discount) || 0;
-  const shipping = subtotal >= 50 ? 0 : 4.99;
+  const baseShipping = subtotal >= 50 ? 0 : 4.99;
+  const prioExtra = shippingType === 'prio' ? 2.99 : 0;
+  const shipping = baseShipping + prioExtra;
   const total = Math.max(0, subtotal - discountAmount + shipping);
 
   const handleSubmit = async () => {
@@ -621,6 +625,8 @@ function CreateOrderDialog({
         status,
         paymentMethod,
         discount: discountAmount,
+        shippingType,
+        createAccount,
       });
       
       // Reset form only on success
@@ -687,6 +693,17 @@ function CreateOrderDialog({
                   data-testid="input-order-customer-phone"
                 />
               </div>
+            </div>
+            <div className="flex items-center gap-2 mt-3">
+              <Checkbox
+                id="createAccount"
+                checked={createAccount}
+                onCheckedChange={(checked) => setCreateAccount(checked === true)}
+                data-testid="checkbox-create-account"
+              />
+              <Label htmlFor="createAccount" className="text-sm font-normal cursor-pointer">
+                Kundenkonto anlegen (Passwort wird per E-Mail gesendet)
+              </Label>
             </div>
           </div>
 
@@ -823,9 +840,23 @@ function CreateOrderDialog({
                 />
               </div>
             </div>
-            <div className="flex justify-between text-sm">
-              <span>Versand</span>
-              <span>{shipping > 0 ? `€${shipping.toFixed(2)}` : 'Kostenlos (ab €50)'}</span>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-sm">
+                <span>Versandart</span>
+                <Select value={shippingType} onValueChange={(v: 'standard' | 'prio') => setShippingType(v)}>
+                  <SelectTrigger className="w-40 h-8" data-testid="select-shipping-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Standard</SelectItem>
+                    <SelectItem value="prio">Prio (+€2.99)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>Versandkosten</span>
+                <span>{baseShipping > 0 ? `€${baseShipping.toFixed(2)}` : 'Kostenlos'}{prioExtra > 0 ? ` + €${prioExtra.toFixed(2)} Prio` : ''}</span>
+              </div>
             </div>
             <Separator />
             <div className="flex justify-between font-semibold text-primary text-lg">

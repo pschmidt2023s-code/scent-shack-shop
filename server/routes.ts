@@ -558,10 +558,38 @@ export async function registerRoutes(app: Express) {
   // Admin create order manually
   app.post("/api/admin/orders", requireAdmin, async (req, res) => {
     try {
-      const { customerName, customerEmail, customerPhone, shippingAddress, items, notes, paymentMethod, status, discount } = req.body;
+      const { customerName, customerEmail, customerPhone, shippingAddress, items, notes, paymentMethod, status, discount, shippingType, createAccount } = req.body;
       
       if (!customerName || !customerEmail || !items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "Name, E-Mail und mindestens ein Artikel erforderlich" });
+      }
+      
+      // If createAccount is true, create the user account first
+      let userId: string | null = null;
+      if (createAccount) {
+        // Check if user already exists
+        const existingUser = await storage.getUserByEmail(customerEmail);
+        if (existingUser) {
+          userId = existingUser.id;
+        } else {
+          // Generate random password
+          const cryptoModule = await import('crypto');
+          const randomPassword = cryptoModule.randomBytes(8).toString('hex');
+          
+          // Create user account (password is hashed in storage)
+          const newUser = await storage.createUser({
+            email: customerEmail,
+            password: randomPassword,
+            fullName: customerName,
+            role: 'customer',
+            phone: customerPhone || null,
+          });
+          userId = newUser.id;
+          
+          // Log the password generation (in production, would send via email)
+          console.log(`[Admin] Created customer account for ${customerEmail} with temporary password: ${randomPassword}`);
+          // TODO: Send welcome email with password using Resend
+        }
       }
       
       // Validate and calculate prices from database
@@ -601,18 +629,27 @@ export async function registerRoutes(app: Express) {
         });
       }
       
-      // Calculate discount and shipping (free over 50€)
+      // Calculate discount and shipping (free over 50€, +2.99€ for prio)
       const discountAmount = Math.max(0, parseFloat(discount) || 0);
-      const shippingCost = subtotal >= 50 ? 0 : 4.99;
+      const baseShipping = subtotal >= 50 ? 0 : 4.99;
+      const prioExtra = shippingType === 'prio' ? 2.99 : 0;
+      const shippingCost = baseShipping + prioExtra;
       const finalAmount = Math.max(0, subtotal - discountAmount + shippingCost);
       
       // Generate order number
       const orderNumber = await storage.generateOrderNumber();
       
+      // Build notes with discount and shipping info
+      const noteParts: string[] = [];
+      if (notes) noteParts.push(notes);
+      if (discountAmount > 0) noteParts.push(`Rabatt: €${discountAmount.toFixed(2)}`);
+      if (shippingType === 'prio') noteParts.push('Prio-Versand');
+      if (createAccount && !userId) noteParts.push('Konto erstellt');
+      
       const orderData = {
         orderNumber,
         partnerId: null,
-        userId: null,
+        userId,
         totalAmount: finalAmount.toFixed(2),
         shippingCost: shippingCost.toFixed(2),
         currency: "EUR",
@@ -624,9 +661,7 @@ export async function registerRoutes(app: Express) {
         paymentMethod: paymentMethod || "bank",
         paymentStatus: status === "paid" || status === "processing" ? "completed" : "pending",
         status: status || "pending",
-        notes: notes 
-          ? `[Admin] ${notes}${discountAmount > 0 ? ` | Rabatt: €${discountAmount.toFixed(2)}` : ''}`
-          : `[Admin] Manuell erstellt${discountAmount > 0 ? ` | Rabatt: €${discountAmount.toFixed(2)}` : ''}`,
+        notes: `[Admin] ${noteParts.length > 0 ? noteParts.join(' | ') : 'Manuell erstellt'}`,
       };
       
       const order = await storage.createOrder(orderData);
