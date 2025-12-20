@@ -3,11 +3,14 @@ import { z } from "zod";
 import { storage } from "./storage";
 import { insertUserSchema, insertProductSchema, insertOrderSchema, insertReviewSchema, insertPartnerSchema, insertNewsletterSchema, insertAddressSchema, insertContestEntrySchema, updateProductSchema, updateOrderSchema, updateUserRoleSchema } from "../shared/schema";
 import bcrypt from "bcryptjs";
-// Use the OpenAI client from Replit AI Integrations
+// Use the OpenAI client from Replit AI Integrations (may be null if not configured)
 import { openai as aiIntegrationsClient } from "./replit_integrations/image/client";
 
 function getOpenAI() {
-  // Return the AI Integrations client (always available via Replit)
+  // Return the AI Integrations client (may be null if API key not configured)
+  if (!aiIntegrationsClient) {
+    throw new Error("OpenAI not configured - missing API key");
+  }
   return aiIntegrationsClient;
 }
 
