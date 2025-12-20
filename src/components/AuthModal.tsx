@@ -204,104 +204,163 @@ export function AuthModal({ children }: AuthModalProps) {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Anmelden oder Registrieren</DialogTitle>
-        </DialogHeader>
-        
-        <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login" className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              Anmelden
-            </TabsTrigger>
-            <TabsTrigger value="register" className="flex items-center gap-2">
-              <UserPlus className="w-4 h-4" />
-              Registrieren
-            </TabsTrigger>
-          </TabsList>
+      <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 pointer-events-none" />
           
-          <TabsContent value="login" className="space-y-4">
-            <form onSubmit={handleSignIn} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="login-email">E-Mail</Label>
-                <Input
-                  id="login-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+          <div className="relative p-6 pb-4">
+            <DialogHeader className="text-center space-y-2">
+              <div className="mx-auto w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mb-2">
+                <User className="w-6 h-6 text-primary" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="login-password">Passwort</Label>
-                <Input
-                  id="login-password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Anmelden...' : 'Anmelden'}
-              </Button>
-            </form>
-          </TabsContent>
+              <DialogTitle className="text-xl font-semibold">Willkommen bei ALDENAIR</DialogTitle>
+              <p className="text-sm text-muted-foreground">Melden Sie sich an oder erstellen Sie ein Konto</p>
+            </DialogHeader>
+          </div>
           
-          <TabsContent value="register" className="space-y-4">
-            <form onSubmit={handleSignUp} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="register-name">Vollständiger Name</Label>
-                <Input
-                  id="register-name"
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="register-email">E-Mail</Label>
-                <Input
-                  id="register-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="register-password">Passwort</Label>
-                <Input
-                  id="register-password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => handlePasswordChange(e.target.value)}
-                  required
-                  minLength={8}
-                />
-                {password && (
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Shield className="w-3 h-3" />
-                      <span className={`text-xs ${getPasswordStrengthColor()}`}>
-                        Password strength: {passwordStrength}
-                      </span>
-                    </div>
-                    {passwordError && (
-                      <p className="text-xs text-red-600">{passwordError}</p>
-                    )}
+          <Tabs defaultValue="login" className="w-full">
+            <div className="px-6">
+              <TabsList className="grid w-full grid-cols-2 h-12 p-1 bg-muted/50">
+                <TabsTrigger 
+                  value="login" 
+                  className="flex items-center justify-center gap-2 h-10 text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md transition-all"
+                  data-testid="tab-login"
+                >
+                  <User className="w-4 h-4" />
+                  <span>Anmelden</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="register" 
+                  className="flex items-center justify-center gap-2 h-10 text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md transition-all"
+                  data-testid="tab-register"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>Registrieren</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            
+            <TabsContent value="login" className="mt-0 p-6 pt-6">
+              <form onSubmit={handleSignIn} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="login-email" className="text-sm font-medium">E-Mail</Label>
+                  <Input
+                    id="login-email"
+                    type="email"
+                    placeholder="ihre@email.de"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="h-11"
+                    data-testid="input-login-email"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="login-password" className="text-sm font-medium">Passwort</Label>
+                    <button type="button" className="text-xs text-primary hover:underline">
+                      Passwort vergessen?
+                    </button>
                   </div>
-                )}
-              </div>
-              
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Registrieren...' : 'Registrieren'}
-              </Button>
-            </form>
-          </TabsContent>
-        </Tabs>
+                  <Input
+                    id="login-password"
+                    type="password"
+                    placeholder="Ihr Passwort"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="h-11"
+                    data-testid="input-login-password"
+                  />
+                </div>
+                <Button type="submit" className="w-full h-11 text-base font-medium" disabled={loading} data-testid="button-login-submit">
+                  {loading ? 'Anmelden...' : 'Anmelden'}
+                </Button>
+              </form>
+            </TabsContent>
+            
+            <TabsContent value="register" className="mt-0 p-6 pt-6">
+              <form onSubmit={handleSignUp} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="register-name" className="text-sm font-medium">Vollständiger Name</Label>
+                  <Input
+                    id="register-name"
+                    type="text"
+                    placeholder="Max Mustermann"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    className="h-11"
+                    data-testid="input-register-name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-email" className="text-sm font-medium">E-Mail</Label>
+                  <Input
+                    id="register-email"
+                    type="email"
+                    placeholder="ihre@email.de"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="h-11"
+                    data-testid="input-register-email"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-password" className="text-sm font-medium">Passwort</Label>
+                  <Input
+                    id="register-password"
+                    type="password"
+                    placeholder="Mindestens 8 Zeichen"
+                    value={password}
+                    onChange={(e) => handlePasswordChange(e.target.value)}
+                    required
+                    minLength={8}
+                    className="h-11"
+                    data-testid="input-register-password"
+                  />
+                  {password && (
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full transition-all duration-300 ${
+                              passwordStrength === 'strong' ? 'w-full bg-green-500' :
+                              passwordStrength === 'medium' ? 'w-2/3 bg-yellow-500' :
+                              'w-1/3 bg-red-500'
+                            }`}
+                          />
+                        </div>
+                        <span className={`text-xs font-medium ${getPasswordStrengthColor()}`}>
+                          {passwordStrength === 'strong' ? 'Stark' : passwordStrength === 'medium' ? 'Mittel' : 'Schwach'}
+                        </span>
+                      </div>
+                      {passwordError && (
+                        <div className="flex items-start gap-1.5 text-xs text-destructive">
+                          <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                          <span>{passwordError}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                <Button type="submit" className="w-full h-11 text-base font-medium" disabled={loading} data-testid="button-register-submit">
+                  {loading ? 'Registrieren...' : 'Konto erstellen'}
+                </Button>
+                
+                <p className="text-xs text-center text-muted-foreground pt-2">
+                  Mit der Registrierung stimmen Sie unseren{' '}
+                  <a href="/agb" className="text-primary hover:underline">AGB</a>
+                  {' '}und{' '}
+                  <a href="/datenschutz" className="text-primary hover:underline">Datenschutzrichtlinien</a>
+                  {' '}zu.
+                </p>
+              </form>
+            </TabsContent>
+          </Tabs>
+        </div>
       </DialogContent>
       
       <TwoFactorVerification
