@@ -2332,7 +2332,7 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
   </div>
   
   <div class="footer">
-    <p>ALDENAIR GmbH | info@aldenair.de | www.aldenair.de</p>
+    <p>ALDENAIR GmbH | support@aldenairperfumes.de | www.aldenairperfumes.de</p>
     <p>Vielen Dank für Ihren Einkauf!</p>
   </div>
 </body>

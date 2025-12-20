@@ -60,10 +60,10 @@ function emailWrapper(content: string, preheader?: string): string {
                         </p>
                         <p style="margin:0;color:#888888;font-size:12px;line-height:1.5;font-family:Arial,Helvetica,sans-serif;">
                           ALDENAIR<br>
-                          E-Mail: info@aldenair.de
+                          E-Mail: support@aldenairperfumes.de
                         </p>
                         <p style="margin:16px 0 0 0;color:#aaaaaa;font-size:11px;font-family:Arial,Helvetica,sans-serif;">
-                          Diese E-Mail wurde automatisch generiert. Bei Fragen antworten Sie bitte nicht auf diese E-Mail, sondern kontaktieren Sie uns unter info@aldenair.de
+                          Diese E-Mail wurde automatisch generiert. Bei Fragen antworten Sie bitte nicht auf diese E-Mail, sondern kontaktieren Sie uns unter support@aldenairperfumes.de
                         </p>
                       </td>
                     </tr>

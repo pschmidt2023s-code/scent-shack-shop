@@ -88,9 +88,9 @@ export function Footer() {
               © {new Date().getFullYear()} ALDENAIR. Alle Rechte vorbehalten.
             </p>
             <div className="flex items-center gap-6">
-              <a href="mailto:info@aldenair.de" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-email">
+              <a href="mailto:support@aldenairperfumes.de" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-email">
                 <Mail className="w-4 h-4" />
-                info@aldenair.de
+                support@aldenairperfumes.de
               </a>
             </div>
           </div>
