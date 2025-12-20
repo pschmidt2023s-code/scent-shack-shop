@@ -111,6 +111,11 @@ For full functionality, add these secrets:
   - Tokens expire after 1 hour and can only be used once
   - Storage functions: createPasswordResetToken, getPasswordResetToken, markPasswordResetTokenUsed, updateUserPassword
   - Fixed syntax errors in PayPalTest.tsx, PerfumeFinder.tsx, and Returns.tsx (removed broken Supabase references)
+- **Admin Manual Order Creation & Email Improvements** (December 20, 2025):
+  - Resend client: 5-minute credential caching reduces connector fetches, no secret logging
+  - Admin order API: POST /api/admin/orders with server-side price calculation and validation
+  - CreateOrderDialog UI: Customer fields, product selector, quantity controls, inline error display
+  - Error handling: Toast feedback + dialog stays open on failure for user correction
 
 ## Loyalty Tier System
 | Tier     | Min Spend | Discount |
