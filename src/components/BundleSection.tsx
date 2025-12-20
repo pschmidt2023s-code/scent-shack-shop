@@ -21,38 +21,38 @@ interface BundleOption {
 const DEFAULT_BUNDLES: BundleOption[] = [
   {
     id: '5-proben',
-    title: 'Sparkit - 5x Proben',
-    description: 'Stelle dir dein persoenliches Testerset zusammen',
+    title: 'Probenset - 5x 5ml',
+    description: 'Stelle dir dein persönliches Testerset zusammen',
     items: '5x 5ml Proben deiner Wahl',
     price: 29.95,
     originalPrice: 34.75,
     discount: 14,
     image: '/lovable-uploads/dc821e74-0a27-4a45-a347-45a4ae0d55ef.png',
-    link: '/bundle-konfigurator?type=5-proben',
+    link: '/probensets',
     quantity_required: 5
   },
   {
     id: '3-flakons',
-    title: 'Sparkit - 3x 50ml Flakons',
-    description: 'Perfekt zum Kennenlernen verschiedener Duefte',
+    title: 'Sparset - 3x 50ml Flakons',
+    description: 'Perfekt zum Kennenlernen verschiedener Düfte',
     items: '3x 50ml Flakons deiner Wahl',
     price: 129.99,
     originalPrice: 149.97,
     discount: 13,
     image: '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png',
-    link: '/bundle-konfigurator?type=3-flakons',
+    link: '/sparsets',
     quantity_required: 3
   },
   {
     id: '5-flakons',
-    title: 'Sparkit - 5x 50ml Flakons',
-    description: 'Maximale Auswahl fuer echte Duft-Liebhaber',
+    title: 'Sparset - 5x 50ml Flakons',
+    description: 'Maximale Auswahl für echte Duft-Liebhaber',
     items: '5x 50ml Flakons deiner Wahl',
     price: 199.99,
     originalPrice: 249.95,
     discount: 20,
     image: '/lovable-uploads/4d4b973a-754d-424c-86af-d0eeaee701b2.png',
-    link: '/bundle-konfigurator?type=5-flakons',
+    link: '/sparsets',
     quantity_required: 5
   }
 ];
@@ -76,7 +76,7 @@ export function BundleSection() {
             Bundle Angebote
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Kombiniere deine Lieblingsduefte und spare dabei - stelle dir dein persoenliches Set zusammen
+            Kombiniere deine Lieblingsdüfte und spare dabei - stelle dir dein persönliches Set zusammen
           </p>
         </div>
 
