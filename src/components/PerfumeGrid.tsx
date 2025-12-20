@@ -1,15 +1,28 @@
 import { useState, useEffect, memo } from 'react';
-import { PerfumeCard } from './PerfumeCard';
+import { VariantCard } from './VariantCard';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Package, SlidersHorizontal } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Perfume } from '@/types/perfume';
+
+interface FlatVariant {
+  productId: string;
+  variantId: string;
+  productName: string;
+  variantName: string;
+  category: string;
+  price: number;
+  originalPrice?: number;
+  image: string;
+  rating?: number;
+  reviewCount?: number;
+  inStock?: boolean;
+}
 
 export const PerfumeGrid = memo(function PerfumeGrid() {
   const [filter, setFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
-  const [perfumes, setPerfumes] = useState<Perfume[]>([]);
+  const [variants, setVariants] = useState<FlatVariant[]>([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<string[]>(['all']);
 
@@ -29,40 +42,37 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
       const products = await response.json();
 
       if (products && Array.isArray(products)) {
-        const transformedPerfumes: Perfume[] = products
-          .filter((p: any) => {
-            const isTestkit = p.category === 'Testerkits';
-            const isAutoParfum = p.category === 'Auto Perfumes';
-            const isSparkit = p.name?.toLowerCase().includes('sparkit') || 
-                            p.name?.toLowerCase().includes('proben') ||
-                            p.name?.toLowerCase().includes('probe');
-            return p.variants && p.variants.length > 0 && !isTestkit && !isSparkit && !isAutoParfum;
-          })
-          .map((p: any) => ({
-            id: p.id,
-            name: p.name,
-            brand: p.brand,
-            category: p.category,
-            size: p.size,
-            image: p.image || '/placeholder.svg',
-            variants: p.variants.map((v: any, index: number) => ({
-              id: v.id,
-              number: String(index + 1).padStart(3, '0'),
-              name: v.name,
-              description: v.description,
-              price: parseFloat(v.price) || 0,
-              originalPrice: parseFloat(v.originalPrice) || parseFloat(v.price) * 1.2 || 0,
-              inStock: v.inStock ?? true,
-              preorder: v.preorder ?? false,
-              releaseDate: v.releaseDate,
-              rating: v.rating ?? 4.5,
-              reviewCount: v.reviewCount ?? 0,
-            })),
-          }));
-
-        setPerfumes(transformedPerfumes);
+        const flatVariants: FlatVariant[] = [];
         
-        const uniqueCategories = ['all', ...Array.from(new Set(transformedPerfumes.map(p => p.category)))];
+        products.forEach((p: any) => {
+          const isTestkit = p.category === 'Testerkits';
+          const isAutoParfum = p.category === 'Auto Perfumes';
+          const isSparkit = p.name?.toLowerCase().includes('sparkit') || 
+                          p.name?.toLowerCase().includes('proben') ||
+                          p.name?.toLowerCase().includes('probe');
+          
+          if (p.variants && p.variants.length > 0 && !isTestkit && !isSparkit && !isAutoParfum) {
+            p.variants.forEach((v: any) => {
+              flatVariants.push({
+                productId: p.id,
+                variantId: v.id,
+                productName: p.name,
+                variantName: v.name,
+                category: p.category,
+                price: parseFloat(v.price) || 0,
+                originalPrice: parseFloat(v.originalPrice) || undefined,
+                image: v.image || p.image || '/placeholder.svg',
+                rating: v.rating ?? 4.5,
+                reviewCount: v.reviewCount ?? 0,
+                inStock: v.inStock ?? true,
+              });
+            });
+          }
+        });
+
+        setVariants(flatVariants);
+        
+        const uniqueCategories = ['all', ...Array.from(new Set(flatVariants.map(v => v.category)))];
         setCategories(uniqueCategories);
       }
     } catch (error) {
@@ -72,39 +82,28 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
     }
   };
 
-  const filteredPerfumes = perfumes.filter(perfume => 
-    filter === 'all' || perfume.category === filter
+  const filteredVariants = variants.filter(v => 
+    filter === 'all' || v.category === filter
   );
 
-  const sortedPerfumes = [...filteredPerfumes].sort((a, b) => {
+  const sortedVariants = [...filteredVariants].sort((a, b) => {
     switch (sortBy) {
       case 'price-low':
-        return Math.min(...a.variants.map(v => v.price)) - Math.min(...b.variants.map(v => v.price));
+        return a.price - b.price;
       case 'price-high':
-        return Math.max(...b.variants.map(v => v.price)) - Math.max(...a.variants.map(v => v.price));
+        return b.price - a.price;
       case 'rating':
-        const avgRatingA = a.variants.reduce((sum, v) => sum + (v.rating || 0), 0) / a.variants.length;
-        const avgRatingB = b.variants.reduce((sum, v) => sum + (v.rating || 0), 0) / b.variants.length;
-        return avgRatingB - avgRatingA;
+        return (b.rating || 0) - (a.rating || 0);
       case 'name':
       default:
-        return a.name.localeCompare(b.name);
+        return a.variantName.localeCompare(b.variantName);
     }
   });
 
-  return (
-    <section className="py-20 bg-background">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-            Unsere Bestseller
-          </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Premium-Düfte inspiriert von weltbekannten Luxusmarken - 
-            hochwertige Qualitat zu fairen Preisen
-          </p>
-        </div>
+  const displayVariants = sortedVariants.slice(0, 8);
 
+  return (
+    <div>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 p-4 bg-muted/50 rounded-xl">
           <div className="flex flex-wrap gap-2">
             {categories.map((cat) => (
@@ -144,10 +143,10 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
               </div>
             ))}
           </div>
-        ) : sortedPerfumes.length > 0 ? (
+        ) : displayVariants.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-            {sortedPerfumes.map((perfume) => (
-              <PerfumeCard key={perfume.id} perfume={perfume} />
+            {displayVariants.map((variant) => (
+              <VariantCard key={`${variant.productId}-${variant.variantId}`} variant={variant} />
             ))}
           </div>
         ) : (
@@ -162,7 +161,6 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
             </Button>
           </div>
         )}
-      </div>
-    </section>
+    </div>
   );
 });
