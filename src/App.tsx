@@ -45,6 +45,7 @@ const About = React.lazy(() => import('@/pages/About'));
 const Cancellation = React.lazy(() => import('@/pages/Cancellation'));
 const SampleSets = React.lazy(() => import('@/pages/SampleSets'));
 const ResetPassword = React.lazy(() => import('@/pages/ResetPassword'));
+const ShippingInfo = React.lazy(() => import('@/pages/ShippingInfo'));
 
 const defaultQueryFn = async ({ queryKey }: { queryKey: readonly unknown[] }) => {
   const endpoint = queryKey[0] as string;
@@ -107,6 +108,7 @@ function App() {
                   <Route path="/privacy" element={<Suspense fallback={<LoadingSpinner />}><Privacy /></Suspense>} />
                   <Route path="/terms" element={<Suspense fallback={<LoadingSpinner />}><Terms /></Suspense>} />
                   <Route path="/imprint" element={<Suspense fallback={<LoadingSpinner />}><Imprint /></Suspense>} />
+                  <Route path="/versand" element={<Suspense fallback={<LoadingSpinner />}><ShippingInfo /></Suspense>} />
                   <Route path="/partner" element={<Suspense fallback={<LoadingSpinner />}><Partner /></Suspense>} />
                   <Route path="/admin" element={<Suspense fallback={<LoadingSpinner />}><Admin /></Suspense>} />
                   <Route path="/auth" element={<Suspense fallback={<LoadingSpinner />}><Auth /></Suspense>} />

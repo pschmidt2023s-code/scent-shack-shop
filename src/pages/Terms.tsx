@@ -3,145 +3,220 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import Navigation from '@/components/Navigation';
+import { Footer } from '@/components/Footer';
 
 export default function Terms() {
   return (
     <div className="min-h-screen bg-background">
+      <Navigation />
       <div className="container mx-auto py-16 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center mb-8">
             <Link to="/">
-              <Button 
-                variant="luxury" 
-                size="lg" 
-                className="hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-glow"
-              >
+              <Button variant="outline" data-testid="button-back-home">
                 <ArrowLeft className="w-5 h-5 mr-2" />
                 Zurück zur Startseite
               </Button>
             </Link>
           </div>
 
-          <div className="text-center mb-12 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-            <h1 className="text-4xl md:text-5xl font-bold text-luxury-black mb-4 bg-gradient-to-r from-luxury-black via-luxury-gold to-luxury-black bg-clip-text text-transparent">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">
               Allgemeine Geschäftsbedingungen
             </h1>
-            <p className="text-luxury-gray text-lg">
-              Unsere AGB für den Kauf bei ALDENAIR
+            <p className="text-muted-foreground text-lg">
+              AGB für den Einkauf bei ALDENAIR
             </p>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-luxury-black">AGB ALDENAIR</CardTitle>
+              <CardTitle>AGB ALDENAIR</CardTitle>
             </CardHeader>
-            <CardContent className="prose prose-gray max-w-none space-y-6">
-              <h3 className="text-xl font-semibold text-luxury-black">§1 Geltungsbereich</h3>
-              <p className="text-luxury-gray">
-                Diese Allgemeinen Geschäftsbedingungen (AGB) gelten für alle Bestellungen und Verträge zwischen ALDENAIR und dem Kunden über den Online-Shop. Abweichende Bedingungen des Kunden werden nicht anerkannt, es sei denn, wir haben ihrer Geltung ausdrücklich schriftlich zugestimmt.
-              </p>
-
-              <h3 className="text-xl font-semibold text-luxury-black mt-6">Gewinnspiel-Teilnahmebedingungen</h3>
+            <CardContent className="prose prose-gray dark:prose-invert max-w-none space-y-6">
               
-              <h4 className="text-lg font-semibold text-luxury-black mt-4">§12 Teilnahmeberechtigung</h4>
-              <p className="text-luxury-gray">
-                Teilnahmeberechtigt am Gewinnspiel sind ausschließlich Personen, die das 18. Lebensjahr vollendet haben und einen Wohnsitz in Deutschland haben. Die Teilnahme ist nur mit einem registrierten Benutzerkonto möglich. Jede Person darf nur einmal am Gewinnspiel teilnehmen.
+              <h3 className="text-xl font-semibold">§ 1 Geltungsbereich</h3>
+              <p className="text-muted-foreground">
+                (1) Diese Allgemeinen Geschäftsbedingungen (AGB) gelten für alle Bestellungen und Verträge zwischen ALDENAIR (Inhaber: Patric-Maurice Schmidt, BGM.-Scheller-Str. 14, 96215 Lichtenfels) – nachfolgend "Verkäufer" – und dem Kunden – nachfolgend "Käufer" – über den Online-Shop www.aldenairperfumes.de.
+              </p>
+              <p className="text-muted-foreground">
+                (2) Abweichende Bedingungen des Käufers werden nicht anerkannt, es sei denn, der Verkäufer hat ihrer Geltung ausdrücklich schriftlich zugestimmt.
+              </p>
+              <p className="text-muted-foreground">
+                (3) Für die Geschäftsbeziehung zwischen Verkäufer und Käufer gilt die zum Zeitpunkt der Bestellung gültige Fassung der AGB.
               </p>
 
-              <h4 className="text-lg font-semibold text-luxury-black mt-4">§13 Altersverifikation</h4>
-              <p className="text-luxury-gray">
-                Zur Teilnahme am Gewinnspiel ist eine Altersverifikation mittels KI-gestütztem Ausweischeck erforderlich. Teilnehmer müssen ein gültiges Ausweisdokument (Personalausweis, Reisepass oder Führerschein) hochladen. Die hochgeladenen Dokumente werden ausschließlich zur Altersverifikation verwendet und nicht dauerhaft gespeichert. Die Verarbeitung erfolgt gemäß DSGVO.
+              <h3 className="text-xl font-semibold">§ 2 Vertragsschluss</h3>
+              <p className="text-muted-foreground">
+                (1) Die Darstellung der Produkte im Online-Shop stellt kein rechtlich bindendes Angebot, sondern eine Aufforderung zur Bestellung (invitatio ad offerendum) dar.
+              </p>
+              <p className="text-muted-foreground">
+                (2) Mit dem Absenden der Bestellung durch Klick auf den Button "Kostenpflichtig bestellen" gibt der Käufer ein verbindliches Angebot zum Kauf der bestellten Ware ab (§ 312j Abs. 3 BGB).
+              </p>
+              <p className="text-muted-foreground">
+                (3) Der Verkäufer bestätigt den Eingang der Bestellung unverzüglich per E-Mail (Eingangsbestätigung). Diese Eingangsbestätigung stellt noch keine Annahme des Angebots dar.
+              </p>
+              <p className="text-muted-foreground">
+                (4) Der Vertrag kommt zustande durch Versendung der Auftragsbestätigung per E-Mail oder durch Lieferung der Ware.
               </p>
 
-              <h4 className="text-lg font-semibold text-luxury-black mt-4">§14 Teilnahmeablauf</h4>
-              <p className="text-luxury-gray">
-                Die Teilnahme erfolgt durch vollständiges Ausfüllen des Gewinnspiel-Formulars, einschließlich persönlicher Daten, Hochladen des Ausweisdokuments zur Altersverifikation und optional bis zu 3 Bildern. Nach erfolgreicher Übermittlung erhält der Teilnehmer eine Bestätigungs-E-Mail. Unvollständige oder mehrfache Teilnahmen werden nicht berücksichtigt.
+              <h3 className="text-xl font-semibold">§ 3 Preise und Versandkosten</h3>
+              <p className="text-muted-foreground">
+                (1) Alle angegebenen Preise sind Endpreise und enthalten die gesetzliche Mehrwertsteuer (derzeit 19% MwSt.).
+              </p>
+              <p className="text-muted-foreground">
+                (2) Zusätzlich zu den angegebenen Produktpreisen fallen Versandkosten an. Die Höhe der Versandkosten wird dem Käufer vor Abschluss der Bestellung angezeigt:
+              </p>
+              <ul className="list-disc pl-6 text-muted-foreground">
+                <li>Versandkostenfrei ab einem Bestellwert von 50 EUR (Lieferung innerhalb Deutschlands)</li>
+                <li>Bestellungen unter 50 EUR: 4,90 EUR Versandkosten</li>
+                <li>Lieferung in andere EU-Länder: Versandkosten werden im Warenkorb angezeigt</li>
+              </ul>
+              <p className="text-muted-foreground">
+                (3) Es gibt keine versteckten Kosten. Alle Preise sind transparent vor Bestellabschluss ersichtlich.
               </p>
 
-              <h4 className="text-lg font-semibold text-luxury-black mt-4">§15 Gewinnermittlung</h4>
-              <p className="text-luxury-gray">
-                Die Gewinner werden nach Ende des Gewinnspiels per Zufallsgenerator aus allen gültigen Teilnahmen ermittelt. Die Gewinnbenachrichtigung erfolgt per E-Mail an die angegebene E-Mail-Adresse innerhalb von 7 Tagen nach Gewinnermittlung. Der Gewinner muss sich innerhalb von 14 Tagen nach Benachrichtigung zurückmelden, andernfalls verfällt der Gewinnanspruch.
+              <h3 className="text-xl font-semibold">§ 4 Lieferung</h3>
+              <p className="text-muted-foreground">
+                (1) Die Lieferung erfolgt an die vom Käufer angegebene Lieferadresse.
+              </p>
+              <p className="text-muted-foreground">
+                (2) Die Lieferzeit beträgt in der Regel 3-7 Werktage innerhalb Deutschlands. Bei Lieferungen ins Ausland kann die Lieferzeit länger betragen.
+              </p>
+              <p className="text-muted-foreground">
+                (3) Sollte die bestellte Ware nicht verfügbar sein, behält sich der Verkäufer das Recht vor, nicht zu liefern. In diesem Fall wird der Käufer unverzüglich informiert und bereits geleistete Zahlungen werden erstattet.
+              </p>
+              <p className="text-muted-foreground">
+                (4) Der Verkäufer ist zu Teillieferungen berechtigt, soweit dies für den Käufer zumutbar ist.
               </p>
 
-              <h4 className="text-lg font-semibold text-luxury-black mt-4">§16 Gewinne und Auszahlung</h4>
-              <p className="text-luxury-gray">
-                Die konkreten Gewinne werden auf der Gewinnspiel-Seite bekannt gegeben. Eine Barauszahlung des Gewinns ist nicht möglich. Der Rechtsweg ist ausgeschlossen. ALDENAIR behält sich das Recht vor, das Gewinnspiel jederzeit ohne Angabe von Gründen abzubrechen oder zu beenden.
+              <h3 className="text-xl font-semibold">§ 5 Zahlung</h3>
+              <p className="text-muted-foreground">
+                (1) Der Käufer hat folgende Zahlungsmöglichkeiten:
+              </p>
+              <ul className="list-disc pl-6 text-muted-foreground">
+                <li>Kreditkarte (Visa, Mastercard, American Express)</li>
+                <li>PayPal</li>
+                <li>SEPA-Lastschrift</li>
+                <li>Sofortüberweisung (Klarna)</li>
+              </ul>
+              <p className="text-muted-foreground">
+                (2) Die Zahlung erfolgt vor Lieferung der Ware. Der Kaufpreis ist mit Bestellabschluss fällig.
+              </p>
+              <p className="text-muted-foreground">
+                (3) Die Zahlungsabwicklung erfolgt über sichere, verschlüsselte Verbindungen unserer Zahlungsdienstleister (Stripe, PayPal).
               </p>
 
-              <h4 className="text-lg font-semibold text-luxury-black mt-4">§17 Datenschutz beim Gewinnspiel</h4>
-              <p className="text-luxury-gray">
-                Alle im Rahmen des Gewinnspiels erhobenen personenbezogenen Daten werden ausschließlich zur Durchführung des Gewinnspiels verwendet. Die Ausweisdokumente zur Altersverifikation werden nicht gespeichert und nach der Verifikation automatisch gelöscht. Nach Abschluss des Gewinnspiels werden alle Teilnehmerdaten gemäß unserer Datenschutzrichtlinie behandelt und nach den gesetzlichen Aufbewahrungsfristen gelöscht.
+              <h3 className="text-xl font-semibold">§ 6 Widerrufsrecht</h3>
+              <p className="text-muted-foreground">
+                (1) Verbraucher haben ein 14-tägiges Widerrufsrecht gemäß §§ 312g, 355 BGB. Die vollständige Widerrufsbelehrung finden Sie unter{' '}
+                <Link to="/widerruf" className="text-primary hover:underline">Widerrufsbelehrung</Link>.
+              </p>
+              <p className="text-muted-foreground">
+                (2) <strong>Ausschluss des Widerrufsrechts:</strong> Das Widerrufsrecht besteht nicht bei Verträgen zur Lieferung versiegelter Waren, die aus Gründen des Gesundheitsschutzes oder der Hygiene nicht zur Rückgabe geeignet sind, wenn ihre Versiegelung nach der Lieferung entfernt wurde (§ 312g Abs. 2 Nr. 3 BGB). Dies gilt insbesondere für entsiegelte Parfümflakons.
+              </p>
+              <p className="text-muted-foreground">
+                (3) Die Kosten der Rücksendung trägt der Käufer, sofern die gelieferte Ware der bestellten entspricht.
               </p>
 
-              <h4 className="text-lg font-semibold text-luxury-black mt-4">§18 Haftungsausschluss</h4>
-              <p className="text-luxury-gray">
-                ALDENAIR haftet nicht für technische Störungen, die außerhalb unseres Einflussbereichs liegen. Bei Verdacht auf Manipulation, Betrug oder Verstoß gegen die Teilnahmebedingungen behalten wir uns vor, Teilnehmer vom Gewinnspiel auszuschließen.
-              </p>
-              
-              <h3 className="text-xl font-semibold text-luxury-black mt-6">Allgemeine Geschäftsbedingungen</h3>
-              
-              <h3 className="text-xl font-semibold text-luxury-black">§2 Vertragsschluss</h3>
-              <p className="text-luxury-gray">
-                Die Darstellung der Produkte in unserem Online-Shop stellt kein rechtlich bindendes Angebot, sondern einen Katalog dar. Mit der Bestellung geben Sie ein verbindliches Angebot zum Kauf der bestellten Ware ab. Der Vertrag kommt durch unsere Annahme Ihres Angebots zustande, die durch Versendung einer Auftragsbestätigung per E-Mail erfolgt.
+              <h3 className="text-xl font-semibold">§ 7 Eigentumsvorbehalt</h3>
+              <p className="text-muted-foreground">
+                Die gelieferte Ware bleibt bis zur vollständigen Bezahlung Eigentum des Verkäufers.
               </p>
 
-              <h3 className="text-xl font-semibold text-luxury-black">§3 Preise und Versandkosten</h3>
-              <p className="text-luxury-gray">
-                Alle Preise verstehen sich inklusive der gesetzlichen Mehrwertsteuer. Zusätzlich zu den angegebenen Produktpreisen kommen Versandkosten hinzu. Versandkostenfrei liefern wir ab einem Bestellwert von 50€. Bei Bestellungen unter 50€ betragen die Versandkosten 4,90€.
+              <h3 className="text-xl font-semibold">§ 8 Gewährleistung</h3>
+              <p className="text-muted-foreground">
+                (1) Es gelten die gesetzlichen Gewährleistungsrechte gemäß §§ 434 ff. BGB.
+              </p>
+              <p className="text-muted-foreground">
+                (2) Die Gewährleistungsfrist für neue Waren beträgt zwei Jahre ab Ablieferung der Ware.
+              </p>
+              <p className="text-muted-foreground">
+                (3) Mängel sind dem Verkäufer unverzüglich, spätestens jedoch innerhalb von 14 Tagen nach Entdeckung, anzuzeigen.
               </p>
 
-              <h3 className="text-xl font-semibold text-luxury-black">§4 Lieferung</h3>
-              <p className="text-luxury-gray">
-                Die Lieferung erfolgt an die vom Kunden angegebene Adresse. Die Lieferzeit beträgt 3-7 Werktage aufgrund unserer On-Demand-Bestellung. Wir sind berechtigt, Teillieferungen vorzunehmen, sofern dies für den Kunden zumutbar ist.
+              <h3 className="text-xl font-semibold">§ 9 Haftung</h3>
+              <p className="text-muted-foreground">
+                (1) Der Verkäufer haftet unbeschränkt für Schäden aus der Verletzung des Lebens, des Körpers oder der Gesundheit, die auf einer vorsätzlichen oder fahrlässigen Pflichtverletzung des Verkäufers oder seiner gesetzlichen Vertreter oder Erfüllungsgehilfen beruhen.
+              </p>
+              <p className="text-muted-foreground">
+                (2) Für sonstige Schäden haftet der Verkäufer nur bei vorsätzlicher oder grob fahrlässiger Pflichtverletzung sowie bei der Verletzung wesentlicher Vertragspflichten.
+              </p>
+              <p className="text-muted-foreground">
+                (3) Die vorstehenden Haftungsbeschränkungen gelten nicht für Ansprüche aus dem Produkthaftungsgesetz.
               </p>
 
-              <h3 className="text-xl font-semibold text-luxury-black">§5 Zahlung</h3>
-              <p className="text-luxury-gray">
-                Die Zahlung erfolgt wahlweise per Kreditkarte, PayPal, SEPA-Lastschrift oder Sofortüberweisung. Der Kaufpreis wird mit der Bestellung fällig. Bei Lastschriftverfahren erfolgt die Abbuchung nach Versand der Ware.
+              <h3 className="text-xl font-semibold">§ 10 Datenschutz</h3>
+              <p className="text-muted-foreground">
+                Der Schutz Ihrer persönlichen Daten ist uns wichtig. Informationen zur Verarbeitung Ihrer Daten finden Sie in unserer{' '}
+                <Link to="/privacy" className="text-primary hover:underline">Datenschutzerklärung</Link>.
               </p>
 
-              <h3 className="text-xl font-semibold text-luxury-black">§6 Widerrufsrecht</h3>
-              <p className="text-luxury-gray">
-                Sie haben das Recht, binnen 14 Tagen ohne Angabe von Gründen diesen Vertrag zu widerrufen. Die Widerrufsfrist beträgt 14 Tage ab dem Tag, an dem Sie oder ein von Ihnen benannter Dritter die Waren in Besitz genommen haben. Um Ihr Widerrufsrecht auszuüben, müssen Sie uns mittels einer eindeutigen Erklärung über Ihren Entschluss informieren.
+              <h3 className="text-xl font-semibold">§ 11 Online-Streitbeilegung</h3>
+              <p className="text-muted-foreground">
+                Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit:{' '}
+                <a href="https://ec.europa.eu/consumers/odr/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                  https://ec.europa.eu/consumers/odr/
+                </a>
+              </p>
+              <p className="text-muted-foreground">
+                Unsere E-Mail-Adresse: support@aldenairperfumes.de
+              </p>
+              <p className="text-sm text-muted-foreground italic">
+                Hinweis: Die EU-OS-Plattform nimmt ab 20.03.2025 keine neuen Beschwerden mehr an und wird zum 20.07.2025 eingestellt.
+              </p>
+              <p className="text-muted-foreground">
+                Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
               </p>
 
-              <h3 className="text-xl font-semibold text-luxury-black">§7 Widerrufsfolgen</h3>
-              <p className="text-luxury-gray">
-                Wenn Sie diesen Vertrag widerrufen, haben wir Ihnen alle Zahlungen, die wir von Ihnen erhalten haben, unverzüglich und spätestens binnen 14 Tagen zurückzuzahlen. Sie haben die Waren unverzüglich und in jedem Fall spätestens binnen 14 Tagen zurückzusenden. Die Waren müssen in originalverpacktem und unbenutztem Zustand sein.
+              <h3 className="text-xl font-semibold">§ 12 Schlussbestimmungen</h3>
+              <p className="text-muted-foreground">
+                (1) Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts (CISG).
+              </p>
+              <p className="text-muted-foreground">
+                (2) Erfüllungsort ist der Sitz des Verkäufers.
+              </p>
+              <p className="text-muted-foreground">
+                (3) Gerichtsstand für alle Streitigkeiten ist, soweit gesetzlich zulässig, der Sitz des Verkäufers.
+              </p>
+              <p className="text-muted-foreground">
+                (4) Sollten einzelne Bestimmungen dieser AGB unwirksam sein oder werden, bleibt die Wirksamkeit der übrigen Bestimmungen davon unberührt. Anstelle der unwirksamen Bestimmung gilt die gesetzliche Regelung.
               </p>
 
-              <h3 className="text-xl font-semibold text-luxury-black">§8 Gewährleistung</h3>
-              <p className="text-luxury-gray">
-                Es gelten die gesetzlichen Gewährleistungsrechte. Gewährleistungsansprüche verjähren bei neuen Waren in zwei Jahren ab Ablieferung der Ware.
+              <div className="border-t pt-6 mt-8">
+                <h3 className="text-xl font-semibold">Besondere Bedingungen: Gewinnspiele</h3>
+                
+                <h4 className="text-lg font-semibold mt-4">§ G1 Teilnahmeberechtigung</h4>
+                <p className="text-muted-foreground">
+                  Teilnahmeberechtigt an Gewinnspielen sind ausschließlich natürliche Personen, die das 18. Lebensjahr vollendet haben und einen Wohnsitz in Deutschland haben. Jede Person darf nur einmal teilnehmen. Mitarbeiter des Verkäufers und deren Angehörige sind von der Teilnahme ausgeschlossen.
+                </p>
+
+                <h4 className="text-lg font-semibold mt-4">§ G2 Teilnahme und Altersverifikation</h4>
+                <p className="text-muted-foreground">
+                  Die Teilnahme erfolgt durch vollständiges Ausfüllen des Gewinnspiel-Formulars. Zur Teilnahme kann eine Altersverifikation erforderlich sein. Hochgeladene Ausweisdokumente werden ausschließlich zur Altersverifikation verwendet und nicht dauerhaft gespeichert.
+                </p>
+
+                <h4 className="text-lg font-semibold mt-4">§ G3 Gewinnermittlung und Gewinne</h4>
+                <p className="text-muted-foreground">
+                  Die Gewinner werden nach Ende des Gewinnspiels per Zufallsverfahren ermittelt und per E-Mail benachrichtigt. Eine Barauszahlung ist nicht möglich. Der Rechtsweg ist ausgeschlossen. Der Verkäufer behält sich das Recht vor, Gewinnspiele jederzeit zu beenden oder zu ändern.
+                </p>
+              </div>
+
+              <h3 className="text-xl font-semibold">Kontakt</h3>
+              <p className="text-muted-foreground">
+                Bei Fragen zu unseren AGB erreichen Sie uns unter:<br />
+                E-Mail: support@aldenairperfumes.de
               </p>
 
-              <h3 className="text-xl font-semibold text-luxury-black">§9 Haftung</h3>
-              <p className="text-luxury-gray">
-                Wir haften unbeschränkt für Schäden aus der Verletzung des Lebens, des Körpers oder der Gesundheit, die auf einer fahrlässigen Pflichtverletzung von uns oder einer vorsätzlichen oder fahrlässigen Pflichtverletzung unserer gesetzlichen Vertreter oder Erfüllungsgehilfen beruhen.
-              </p>
-
-              <h3 className="text-xl font-semibold text-luxury-black">§10 Datenschutz</h3>
-              <p className="text-luxury-gray">
-                Der Schutz Ihrer persönlichen Daten ist uns wichtig. Einzelheiten zur Verarbeitung Ihrer Daten finden Sie in unserer Datenschutzerklärung.
-              </p>
-
-              <h3 className="text-xl font-semibold text-luxury-black">§11 Schlussbestimmungen</h3>
-              <p className="text-luxury-gray">
-                Es gilt deutsches Recht unter Ausschluss des UN-Kaufrechts. Erfüllungsort und Gerichtsstand ist der Sitz unseres Unternehmens. Sollten einzelne Bestimmungen dieser AGB unwirksam sein, bleibt die Wirksamkeit der übrigen Bestimmungen davon unberührt.
-              </p>
-
-              <h3 className="text-xl font-semibold text-luxury-black">Kontakt</h3>
-              <p className="text-luxury-gray">
-                Bei Fragen zu unseren AGB können Sie uns unter support@aldenairperfumes.de erreichen.
-              </p>
-
-              <p className="text-sm text-luxury-gray mt-8">
-                Stand: Januar 2025
+              <p className="text-sm text-muted-foreground mt-8">
+                Stand: Dezember 2024
               </p>
             </CardContent>
           </Card>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

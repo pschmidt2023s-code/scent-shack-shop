@@ -67,6 +67,9 @@ export function Footer() {
               <Link to="/imprint" className="block text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-imprint">
                 Impressum
               </Link>
+              <Link to="/versand" className="block text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-shipping">
+                Versand und Lieferung
+              </Link>
               <button 
                 onClick={openCookieSettings}
                 className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"

@@ -167,6 +167,28 @@ Newsletter subscribers get an additional 1.5% discount.
 - Database operations through Drizzle ORM
 - All API endpoints under /api prefix
 
+## German E-Commerce Legal Compliance (December 20, 2025)
+Complete legal compliance overhaul for German B2C e-commerce (stand: Dezember 2024):
+
+**Legal Pages Updated:**
+- **Impressum** (src/pages/Imprint.tsx): Updated to § 5 DDG (Digital-Dienste-Gesetz, May 2024), Produktsicherheitsverordnung (EU 2023/988)
+- **Datenschutzerklärung** (src/pages/Privacy.tsx): DSGVO/TDDDG compliant, all third-party processors documented
+- **AGB** (src/pages/Terms.tsx): Restructured with proper legal order, § 312j BGB button solution
+- **Widerrufsbelehrung** (src/pages/Cancellation.tsx): 14-day withdrawal right, hygiene exception for perfumes
+- **Versand und Lieferung** (src/pages/ShippingInfo.tsx): NEW - Batteriegesetz, Verpackungsgesetz/LUCID, WEEE, Produktsicherheitsverordnung
+
+**Checkout Compliance:**
+- Button text: "Kostenpflichtig bestellen" (§ 312j Abs. 3 BGB compliant)
+- All costs transparent before order
+
+**Required Production Actions:**
+1. Replace LUCID placeholder (DE3211234567890123) with real registration number
+2. Add USt-IdNr if revenue threshold met
+3. Configure SPF/DKIM/DMARC DNS records for aldenairperfumes.de in Resend dashboard
+4. Update actual phone number in Impressum
+
+**OS-Link Notice:** EU Online-Streitbeilegung platform closes July 20, 2025
+
 ## Bug Scan & Fixes (December 20, 2025)
 - **PayPal Live Mode Fix**: Added PAYPAL_MODE env variable to enable live credentials in development
   - Set PAYPAL_MODE=live to use production PayPal API instead of sandbox
