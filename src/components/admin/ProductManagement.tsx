@@ -1301,16 +1301,14 @@ export default function ProductManagement() {
                     try {
                       setGeneratingVariantAI(true);
                       toast.info("KI-Beschreibung wird generiert...");
-                      const response = await fetch("/api/ai/generate-description", {
+                      const response = await fetch("/api/admin/generate-description", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         credentials: "include",
                         body: JSON.stringify({
-                          name: variantForm.name,
+                          productName: variantForm.name,
                           category: editingProduct?.category || "unisex",
-                          topNotes: variantForm.topNotes,
-                          middleNotes: variantForm.middleNotes,
-                          baseNotes: variantForm.baseNotes,
+                          scentNotes: [...(variantForm.topNotes || []), ...(variantForm.middleNotes || []), ...(variantForm.baseNotes || [])],
                         }),
                       });
                       if (!response.ok) throw new Error("Fehler bei der Textgenerierung");
