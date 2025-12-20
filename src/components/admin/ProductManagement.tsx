@@ -199,6 +199,14 @@ export default function ProductManagement() {
       if (!response.ok) throw new Error("Failed to load products");
       const data = await response.json();
       setProducts(data || []);
+      
+      // Update editingProduct if the product dialog is still open
+      if (editingProduct) {
+        const updatedProduct = (data || []).find((p: Product) => p.id === editingProduct.id);
+        if (updatedProduct) {
+          setEditingProduct(updatedProduct);
+        }
+      }
     } catch (error) {
       console.error("Error loading products:", error);
       toast.error("Fehler beim Laden der Produkte");
@@ -514,8 +522,9 @@ export default function ProductManagement() {
             </DialogHeader>
             
             <Tabs value={activeFormTab} onValueChange={setActiveFormTab} className="mt-4">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="essentials">Basis</TabsTrigger>
+                <TabsTrigger value="variants">Varianten</TabsTrigger>
                 <TabsTrigger value="fragrance">Duftprofil</TabsTrigger>
                 <TabsTrigger value="metadata">Metadaten</TabsTrigger>
                 <TabsTrigger value="ai">KI-Features</TabsTrigger>
@@ -630,6 +639,109 @@ export default function ProductManagement() {
                   />
                   <Label>Produkt aktiv (im Shop sichtbar)</Label>
                 </div>
+              </TabsContent>
+
+              <TabsContent value="variants" className="space-y-4 pt-4">
+                {!editingProduct ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Speichern Sie zuerst das Produkt, um Varianten hinzuzufügen.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">Produktvarianten</h4>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setSelectedProductId(editingProduct.id);
+                          setEditingVariant(null);
+                          setVariantForm({
+                            size: "",
+                            price: "",
+                            originalPrice: "",
+                            stock: 0,
+                            sku: "",
+                            isActive: true,
+                          });
+                          setShowVariantDialog(true);
+                        }}
+                        data-testid="btn-add-variant-inline"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Variante hinzufügen
+                      </Button>
+                    </div>
+                    
+                    {editingProduct.variants.length === 0 ? (
+                      <div className="text-center py-6 border rounded-lg bg-muted/20">
+                        <p className="text-muted-foreground text-sm">Noch keine Varianten vorhanden</p>
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Größe</TableHead>
+                            <TableHead>Preis</TableHead>
+                            <TableHead>UVP</TableHead>
+                            <TableHead>Lager</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Aktionen</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {editingProduct.variants.map((variant) => (
+                            <TableRow key={variant.id}>
+                              <TableCell className="font-medium">{variant.size}</TableCell>
+                              <TableCell>€{parseFloat(variant.price).toFixed(2)}</TableCell>
+                              <TableCell>
+                                {variant.originalPrice ? `€${parseFloat(variant.originalPrice).toFixed(2)}` : '-'}
+                              </TableCell>
+                              <TableCell>{variant.stock}</TableCell>
+                              <TableCell>
+                                <Badge variant={variant.isActive ? "default" : "secondary"}>
+                                  {variant.isActive ? "Aktiv" : "Inaktiv"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-1">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setSelectedProductId(editingProduct.id);
+                                      setEditingVariant(variant);
+                                      setVariantForm({
+                                        size: variant.size,
+                                        price: variant.price,
+                                        originalPrice: variant.originalPrice || "",
+                                        stock: variant.stock,
+                                        sku: variant.sku || "",
+                                        isActive: variant.isActive,
+                                      });
+                                      setShowVariantDialog(true);
+                                    }}
+                                    data-testid={`btn-edit-variant-${variant.id}`}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => handleDeleteVariant(variant.id)}
+                                    data-testid={`btn-delete-variant-${variant.id}`}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="fragrance" className="space-y-4 pt-4">
