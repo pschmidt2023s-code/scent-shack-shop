@@ -53,6 +53,10 @@ const ProductDetail = () => {
             image: data.image || '/placeholder.svg',
             description: data.description,
             scentNotes: data.scentNotes,
+            topNotes: data.topNotes,
+            middleNotes: data.middleNotes,
+            baseNotes: data.baseNotes,
+            ingredients: data.ingredients,
             inspiredBy: data.inspiredBy,
             aiDescription: data.aiDescription,
             seasons: data.seasons,
@@ -62,6 +66,7 @@ const ProductDetail = () => {
               number: String(index + 1).padStart(3, '0'),
               name: v.name,
               description: v.description,
+              size: v.size,
               price: parseFloat(v.price) || 0,
               originalPrice: parseFloat(v.originalPrice) || parseFloat(v.price) * 1.2 || 0,
               inStock: v.inStock ?? true,
@@ -69,6 +74,12 @@ const ProductDetail = () => {
               releaseDate: v.releaseDate,
               rating: v.rating ?? 4.5,
               reviewCount: v.reviewCount ?? 0,
+              topNotes: v.topNotes,
+              middleNotes: v.middleNotes,
+              baseNotes: v.baseNotes,
+              ingredients: v.ingredients,
+              image: v.image,
+              aiDescription: v.aiDescription,
             })),
           };
           setPerfume(transformed);
@@ -281,7 +292,7 @@ const ProductDetail = () => {
                     </div>
                     <div>
                       <span className="text-muted-foreground">Größe:</span>
-                      <span className="ml-2 font-medium">{perfume.size}</span>
+                      <span className="ml-2 font-medium">{selectedVariant.size || perfume.size || '-'}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Bewertung:</span>
@@ -340,7 +351,19 @@ const ProductDetail = () => {
         </div>
 
         {/* Scent Information Section */}
-        {(perfume.scentNotes?.length || perfume.inspiredBy || perfume.aiDescription || perfume.seasons?.length || perfume.occasions?.length) && (
+        {(() => {
+          // Use variant data if available, otherwise fall back to product data
+          const topNotes = selectedVariant?.topNotes?.length ? selectedVariant.topNotes : perfume.topNotes;
+          const middleNotes = selectedVariant?.middleNotes?.length ? selectedVariant.middleNotes : perfume.middleNotes;
+          const baseNotes = selectedVariant?.baseNotes?.length ? selectedVariant.baseNotes : perfume.baseNotes;
+          const ingredients = selectedVariant?.ingredients?.length ? selectedVariant.ingredients : perfume.ingredients;
+          const aiDescription = selectedVariant?.aiDescription || perfume.aiDescription;
+          const hasNotes = topNotes?.length || middleNotes?.length || baseNotes?.length;
+          const hasScentInfo = hasNotes || perfume.scentNotes?.length || perfume.inspiredBy || aiDescription || perfume.seasons?.length || perfume.occasions?.length || ingredients?.length;
+          
+          if (!hasScentInfo) return null;
+          
+          return (
           <Card className="mb-12" data-testid="card-scent-info">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-6">
@@ -352,14 +375,14 @@ const ProductDetail = () => {
                 {/* Left Column */}
                 <div className="space-y-6">
                   {/* AI Description */}
-                  {perfume.aiDescription && (
+                  {aiDescription && (
                     <div>
                       <h3 className="font-semibold mb-3 flex items-center gap-2">
                         <Award className="w-4 h-4 text-primary" />
                         Beschreibung
                       </h3>
                       <p className="text-muted-foreground leading-relaxed" data-testid="text-ai-description">
-                        {perfume.aiDescription}
+                        {aiDescription}
                       </p>
                     </div>
                   )}
@@ -372,8 +395,44 @@ const ProductDetail = () => {
                     </div>
                   )}
 
-                  {/* Scent Notes */}
-                  {perfume.scentNotes && perfume.scentNotes.length > 0 && (
+                  {/* Fragrance Notes Pyramid */}
+                  {hasNotes && (
+                    <div className="space-y-4">
+                      {topNotes && topNotes.length > 0 && (
+                        <div>
+                          <h4 className="font-medium mb-2 text-sm text-muted-foreground">Kopfnoten</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {topNotes.map((note) => (
+                              <Badge key={note} variant="secondary" className="text-sm">{note}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {middleNotes && middleNotes.length > 0 && (
+                        <div>
+                          <h4 className="font-medium mb-2 text-sm text-muted-foreground">Herznoten</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {middleNotes.map((note) => (
+                              <Badge key={note} variant="secondary" className="text-sm">{note}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {baseNotes && baseNotes.length > 0 && (
+                        <div>
+                          <h4 className="font-medium mb-2 text-sm text-muted-foreground">Basisnoten</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {baseNotes.map((note) => (
+                              <Badge key={note} variant="secondary" className="text-sm">{note}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Legacy Scent Notes (fallback) */}
+                  {!hasNotes && perfume.scentNotes && perfume.scentNotes.length > 0 && (
                     <div>
                       <h3 className="font-semibold mb-3 flex items-center gap-2">
                         <Leaf className="w-4 h-4" />
@@ -383,6 +442,23 @@ const ProductDetail = () => {
                         {perfume.scentNotes.map((note) => (
                           <Badge key={note} variant="secondary" className="text-sm">
                             {note}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Ingredients */}
+                  {ingredients && ingredients.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        <Leaf className="w-4 h-4" />
+                        Inhaltsstoffe
+                      </h3>
+                      <div className="flex flex-wrap gap-2" data-testid="container-ingredients">
+                        {ingredients.map((ingredient) => (
+                          <Badge key={ingredient} variant="outline" className="text-sm">
+                            {ingredient}
                           </Badge>
                         ))}
                       </div>
@@ -435,7 +511,8 @@ const ProductDetail = () => {
               </div>
             </CardContent>
           </Card>
-        )}
+          );
+        })()}
 
         {/* Additional Product Details */}
         <Card className="mb-12">
@@ -444,25 +521,25 @@ const ProductDetail = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="font-semibold mb-2">Allgemeine Informationen</h3>
-                <ul className="space-y-2 text-muted-foreground">
-                  <li><strong>Marke:</strong> {perfume.brand}</li>
-                  <li><strong>Größe:</strong> {perfume.size}</li>
-                  <li><strong>Kategorie:</strong> {perfume.category}</li>
-                  <li><strong>Varianten:</strong> {perfume.variants.length}</li>
-                </ul>
+                <div className="space-y-2 text-muted-foreground">
+                  <p><strong>Marke:</strong> {perfume.brand}</p>
+                  <p><strong>Größe:</strong> {selectedVariant?.size || perfume.size || '-'}</p>
+                  <p><strong>Kategorie:</strong> {perfume.category}</p>
+                  <p><strong>Varianten:</strong> {perfume.variants.length}</p>
+                </div>
               </div>
               {selectedVariant && (
                 <div>
                   <h3 className="font-semibold mb-2">Ausgewählte Variante</h3>
-                  <ul className="space-y-2 text-muted-foreground">
-                    <li><strong>Name:</strong> {selectedVariant.name}</li>
-                    <li><strong>Nummer:</strong> {selectedVariant.number}</li>
+                  <div className="space-y-2 text-muted-foreground">
+                    <p><strong>Name:</strong> {selectedVariant.name}</p>
+                    <p><strong>Nummer:</strong> {selectedVariant.number}</p>
                     {selectedVariant.inspiredBy && (
-                      <li><strong>Riecht wie:</strong> {selectedVariant.inspiredBy}</li>
+                      <p><strong>Riecht wie:</strong> {selectedVariant.inspiredBy}</p>
                     )}
-                    <li><strong>Bewertung:</strong> {variantRating && variantRating.count > 0 ? `${variantRating.rating.toFixed(1)}/5 Sterne` : 'Noch keine Bewertungen'}</li>
-                    <li><strong>Anzahl Bewertungen:</strong> {variantRating?.count || 0}</li>
-                  </ul>
+                    <p><strong>Bewertung:</strong> {variantRating && variantRating.count > 0 ? `${variantRating.rating.toFixed(1)}/5 Sterne` : 'Noch keine Bewertungen'}</p>
+                    <p><strong>Anzahl Bewertungen:</strong> {variantRating?.count || 0}</p>
+                  </div>
                 </div>
               )}
             </div>

@@ -4,6 +4,7 @@ export interface PerfumeVariant {
   number: string;
   name: string;
   description: string;
+  size?: string;
   price: number;
   originalPrice?: number;
   inStock: boolean;
@@ -12,6 +13,12 @@ export interface PerfumeVariant {
   rating?: number;
   reviewCount?: number;
   inspiredBy?: string;
+  image?: string;
+  aiDescription?: string;
+  topNotes?: string[];
+  middleNotes?: string[];
+  baseNotes?: string[];
+  ingredients?: string[];
 }
 
 export interface Perfume {
@@ -23,6 +30,10 @@ export interface Perfume {
   image: string;
   description?: string;
   scentNotes?: string[];
+  topNotes?: string[];
+  middleNotes?: string[];
+  baseNotes?: string[];
+  ingredients?: string[];
   inspiredBy?: string;
   aiDescription?: string;
   seasons?: string[];
