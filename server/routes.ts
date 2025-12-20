@@ -685,6 +685,32 @@ export async function registerRoutes(app: Express) {
       }
       
       console.log(`[Admin] Manual order created: ${orderNumber}`);
+      
+      // Send order confirmation email
+      try {
+        const { sendOrderConfirmationEmail } = await import('./resendClient');
+        const emailItems = createdItems.map(item => ({
+          name: item.variantName,
+          quantity: item.quantity,
+          price: item.unitPrice * item.quantity,
+        }));
+        
+        await sendOrderConfirmationEmail({
+          orderNumber,
+          customerEmail,
+          customerName,
+          items: emailItems,
+          totalAmount: finalAmount,
+          shippingCost,
+          shippingAddress: shippingAddress || { street: '', city: '', postalCode: '' },
+          paymentMethod: paymentMethod || 'bank',
+        });
+        console.log(`[Admin] Order confirmation email sent to ${customerEmail}`);
+      } catch (emailError: any) {
+        console.error('[Admin] Failed to send order confirmation email:', emailError.message);
+        // Don't fail the order creation if email fails
+      }
+      
       res.json({ ...order, orderItems: createdItems });
     } catch (error: any) {
       console.error("Admin order creation error:", error);
