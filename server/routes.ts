@@ -5,6 +5,8 @@ import { insertUserSchema, insertProductSchema, insertOrderSchema, insertReviewS
 import bcrypt from "bcryptjs";
 // Use the OpenAI client from Replit AI Integrations (may be null if not configured)
 import { openai as aiIntegrationsClient } from "./replit_integrations/image/client";
+// PayPal integration
+import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
 
 function getOpenAI() {
   // Return the AI Integrations client (may be null if API key not configured)
@@ -2361,5 +2363,21 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
       console.error("Payback earn error:", error);
       res.status(500).json({ error: "Fehler beim Cashback" });
     }
+  });
+
+  // ==========================================
+  // PAYPAL INTEGRATION ROUTES
+  // ==========================================
+  
+  app.get("/api/paypal/setup", async (req, res) => {
+    await loadPaypalDefault(req, res);
+  });
+
+  app.post("/api/paypal/order", async (req, res) => {
+    await createPaypalOrder(req, res);
+  });
+
+  app.post("/api/paypal/order/:orderID/capture", async (req, res) => {
+    await capturePaypalOrder(req, res);
   });
 }
