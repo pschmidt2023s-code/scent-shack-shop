@@ -440,13 +440,13 @@ function OrderDetailDialog({ order, onClose }: { order: Order | null; onClose: (
             <p className="text-sm text-muted-foreground mb-2">Bestellte Artikel ({items.length})</p>
             {items.length > 0 ? (
               <div className="space-y-2">
-                {items.map((item: OrderItem, index: number) => (
-                  <div key={index} className="flex justify-between items-center p-2 bg-muted/50 rounded-md">
-                    <div>
-                      <p className="text-sm font-medium">Produkt #{item.perfumeId?.slice(-6) || index + 1}</p>
-                      <p className="text-xs text-muted-foreground">Menge: {item.quantity || 1}</p>
+                {items.map((item: OrderItem & { variantName?: string; productName?: string }, index: number) => (
+                  <div key={index} className="flex justify-between items-center p-3 bg-muted/50 rounded-md">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{item.variantName || 'Produkt'}</p>
+                      <p className="text-xs text-muted-foreground">Menge: {item.quantity || 1} x €{Number(item.unitPrice || 0).toFixed(2)}</p>
                     </div>
-                    <p className="text-sm font-medium">€{Number(item.totalPrice || 0).toFixed(2)}</p>
+                    <p className="text-sm font-semibold ml-2">€{Number(item.totalPrice || 0).toFixed(2)}</p>
                   </div>
                 ))}
               </div>

@@ -544,7 +544,22 @@ export async function registerRoutes(app: Express) {
   app.get("/api/admin/orders", requireAdmin, async (req, res) => {
     try {
       const orders = await storage.getOrders();
-      res.json(orders);
+      // Fetch order items with product names for each order
+      const ordersWithItems = await Promise.all(orders.map(async (order) => {
+        const items = await storage.getOrderItems(order.id);
+        // Enrich items with product and variant names
+        const enrichedItems = await Promise.all(items.map(async (item) => {
+          const variant = await storage.getProductVariant(item.variantId);
+          const product = item.perfumeId ? await storage.getProduct(item.perfumeId) : null;
+          return {
+            ...item,
+            variantName: variant?.name || 'Unbekannte Variante',
+            productName: product?.name || 'Unbekanntes Produkt',
+          };
+        }));
+        return { ...order, orderItems: enrichedItems };
+      }));
+      res.json(ordersWithItems);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
