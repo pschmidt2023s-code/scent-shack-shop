@@ -793,37 +793,45 @@ function CreateOrderDialog({
                     </div>
                   </div>
                 ))}
-                <Separator />
-                <div className="flex justify-between text-sm">
-                  <span>Zwischensumme</span>
-                  <span>€{subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span>Rabatt</span>
-                  <div className="flex items-center gap-1">
-                    <span>-€</span>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={discount}
-                      onChange={(e) => setDiscount(e.target.value)}
-                      placeholder="0.00"
-                      className="w-20 h-7 text-right"
-                      data-testid="input-order-discount"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Versand</span>
-                  <span>{shipping > 0 ? `€${shipping.toFixed(2)}` : 'Kostenlos'}</span>
-                </div>
-                <div className="flex justify-between font-semibold text-primary">
-                  <span>Gesamt</span>
-                  <span>€{total.toFixed(2)}</span>
-                </div>
               </div>
             )}
+          </div>
+
+          <Separator />
+
+          {/* Pricing Summary - always visible */}
+          <div className="space-y-3 bg-muted/50 rounded-md p-4">
+            <h3 className="font-semibold">Preisübersicht</h3>
+            <div className="flex justify-between text-sm">
+              <span>Zwischensumme</span>
+              <span>€{subtotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <Label htmlFor="discount">Rabatt</Label>
+              <div className="flex items-center gap-1">
+                <span>-€</span>
+                <Input
+                  id="discount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={discount}
+                  onChange={(e) => setDiscount(e.target.value)}
+                  placeholder="0.00"
+                  className="w-24 h-8 text-right"
+                  data-testid="input-order-discount"
+                />
+              </div>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Versand</span>
+              <span>{shipping > 0 ? `€${shipping.toFixed(2)}` : 'Kostenlos (ab €50)'}</span>
+            </div>
+            <Separator />
+            <div className="flex justify-between font-semibold text-primary text-lg">
+              <span>Gesamt</span>
+              <span>€{total.toFixed(2)}</span>
+            </div>
           </div>
 
           <Separator />
