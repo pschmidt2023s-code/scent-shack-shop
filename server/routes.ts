@@ -577,15 +577,23 @@ export async function registerRoutes(app: Express) {
   // Admin create order manually
   app.post("/api/admin/orders", requireAdmin, async (req, res) => {
     try {
-      const { customerName, customerEmail, customerPhone, shippingAddress, items, notes, paymentMethod, status, discount, shippingType, createAccount } = req.body;
+      const { customerName, customerEmail, customerPhone, shippingAddress, items, notes, paymentMethod, status, discount, shippingType, createAccount, userId: providedUserId } = req.body;
       
       if (!customerName || !customerEmail || !items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "Name, E-Mail und mindestens ein Artikel erforderlich" });
       }
       
-      // If createAccount is true, create the user account first
-      let userId: string | null = null;
-      if (createAccount) {
+      // Use provided userId if passed (existing customer selected), otherwise check if createAccount
+      let userId: string | null = providedUserId || null;
+      
+      // Verify provided userId exists
+      if (userId) {
+        const existingUser = await storage.getUser(userId);
+        if (!existingUser) {
+          return res.status(400).json({ error: "Der ausgewählte Kunde existiert nicht mehr" });
+        }
+        console.log(`[Admin] Linking order to existing customer: ${existingUser.email}`);
+      } else if (createAccount) {
         // Check if user already exists
         const existingUser = await storage.getUserByEmail(customerEmail);
         if (existingUser) {
@@ -903,6 +911,20 @@ export async function registerRoutes(app: Express) {
       }
       await storage.deleteUser(req.params.id);
       res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin Customer Search (for order creation)
+  app.get("/api/admin/customers/search", requireAdmin, async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      if (!query || query.length < 2) {
+        return res.json([]);
+      }
+      const customers = await storage.searchCustomers(query, 10);
+      res.json(customers);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

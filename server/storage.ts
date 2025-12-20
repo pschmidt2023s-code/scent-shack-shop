@@ -28,6 +28,7 @@ export interface IStorage {
   updateUser(id: string, data: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
   getAllUsers(): Promise<User[]>;
+  searchCustomers(query: string, limit?: number): Promise<Array<{ id: string; fullName: string | null; email: string; phone: string | null }>>;
 
   getProducts(filters?: { category?: string; search?: string }): Promise<Product[]>;
   getAllProducts(): Promise<Product[]>;
@@ -131,6 +132,26 @@ export class DatabaseStorage implements IStorage {
   async deleteUser(id: string): Promise<boolean> {
     const result = await db.delete(schema.users).where(eq(schema.users.id, id));
     return true;
+  }
+
+  async searchCustomers(query: string, limit: number = 10): Promise<Array<{ id: string; fullName: string | null; email: string; phone: string | null }>> {
+    const searchTerm = `%${query.toLowerCase()}%`;
+    const results = await db.select({
+      id: schema.users.id,
+      fullName: schema.users.fullName,
+      email: schema.users.email,
+      phone: schema.users.phone,
+    })
+    .from(schema.users)
+    .where(
+      or(
+        ilike(schema.users.email, searchTerm),
+        ilike(schema.users.fullName, searchTerm),
+        ilike(schema.users.phone, searchTerm)
+      )
+    )
+    .limit(limit);
+    return results;
   }
 
   async getProducts(filters?: { category?: string; search?: string }): Promise<Product[]> {

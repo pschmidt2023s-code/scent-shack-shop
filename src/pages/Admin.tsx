@@ -524,6 +524,13 @@ interface OrderItemInput {
   unitPrice: number;
 }
 
+interface CustomerSearchResult {
+  id: string;
+  fullName: string | null;
+  email: string;
+  phone: string | null;
+}
+
 function CreateOrderDialog({ 
   open, 
   onOpenChange, 
@@ -552,6 +559,12 @@ function CreateOrderDialog({
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [customerResults, setCustomerResults] = useState<CustomerSearchResult[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -561,6 +574,50 @@ function CreateOrderDialog({
         .catch(console.error);
     }
   }, [open]);
+
+  useEffect(() => {
+    const searchCustomers = async () => {
+      if (customerSearch.length < 2) {
+        setCustomerResults([]);
+        return;
+      }
+      setIsSearching(true);
+      try {
+        const res = await fetch(`/api/admin/customers/search?q=${encodeURIComponent(customerSearch)}`, {
+          credentials: 'include',
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setCustomerResults(data);
+          setShowResults(true);
+        }
+      } catch (err) {
+        console.error('Customer search error:', err);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const debounce = setTimeout(searchCustomers, 300);
+    return () => clearTimeout(debounce);
+  }, [customerSearch]);
+
+  const selectCustomer = (customer: CustomerSearchResult) => {
+    setSelectedUserId(customer.id);
+    setCustomerName(customer.fullName || '');
+    setCustomerEmail(customer.email);
+    setCustomerPhone(customer.phone || '');
+    setCustomerSearch('');
+    setShowResults(false);
+    setCreateAccount(false);
+  };
+
+  const clearSelectedCustomer = () => {
+    setSelectedUserId(null);
+    setCustomerName('');
+    setCustomerEmail('');
+    setCustomerPhone('');
+  };
 
   const addItem = () => {
     if (!selectedVariant) return;
@@ -632,6 +689,7 @@ function CreateOrderDialog({
         discount: discountAmount,
         shippingType,
         createAccount,
+        userId: selectedUserId,
       });
       
       // Reset form only on success
@@ -647,6 +705,9 @@ function CreateOrderDialog({
       setDiscount('');
       setOrderItems([]);
       setError('');
+      setSelectedUserId(null);
+      setCustomerSearch('');
+      setCustomerResults([]);
       onOpenChange(false);
     } catch (err: any) {
       // Error is handled by parent with toast, but keep dialog open
@@ -666,6 +727,65 @@ function CreateOrderDialog({
         <div className="space-y-6 py-4">
           <div className="space-y-4">
             <h3 className="font-semibold">Kundendaten</h3>
+            
+            {selectedUserId ? (
+              <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <UserCheck className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">Verknüpft mit: {customerName || customerEmail}</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearSelectedCustomer}
+                  data-testid="button-clear-customer"
+                >
+                  <XCircle className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="relative">
+                <Label htmlFor="customerSearch">Bestehenden Kunden suchen</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="customerSearch"
+                    value={customerSearch}
+                    onChange={(e) => setCustomerSearch(e.target.value)}
+                    onFocus={() => customerResults.length > 0 && setShowResults(true)}
+                    placeholder="Name, E-Mail oder Telefon eingeben..."
+                    className="pl-9"
+                    data-testid="input-customer-search"
+                  />
+                  {isSearching && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin" />
+                  )}
+                </div>
+                {showResults && customerResults.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                    {customerResults.map((customer) => (
+                      <button
+                        key={customer.id}
+                        type="button"
+                        className="w-full px-3 py-2 text-left hover:bg-muted flex flex-col"
+                        onClick={() => selectCustomer(customer)}
+                        data-testid={`customer-result-${customer.id}`}
+                      >
+                        <span className="font-medium">{customer.fullName || 'Kein Name'}</span>
+                        <span className="text-xs text-muted-foreground">{customer.email}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {showResults && customerSearch.length >= 2 && customerResults.length === 0 && !isSearching && (
+                  <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg p-3 text-sm text-muted-foreground">
+                    Kein Kunde gefunden
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="customerName">Name *</Label>
@@ -674,6 +794,7 @@ function CreateOrderDialog({
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder="Max Mustermann"
+                  disabled={!!selectedUserId}
                   data-testid="input-order-customer-name"
                 />
               </div>
@@ -685,6 +806,7 @@ function CreateOrderDialog({
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder="kunde@example.com"
+                  disabled={!!selectedUserId}
                   data-testid="input-order-customer-email"
                 />
               </div>
@@ -695,21 +817,24 @@ function CreateOrderDialog({
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
                   placeholder="+49 123 456789"
+                  disabled={!!selectedUserId}
                   data-testid="input-order-customer-phone"
                 />
               </div>
             </div>
-            <div className="flex items-center gap-2 mt-3">
-              <Checkbox
-                id="createAccount"
-                checked={createAccount}
-                onCheckedChange={(checked) => setCreateAccount(checked === true)}
-                data-testid="checkbox-create-account"
-              />
-              <Label htmlFor="createAccount" className="text-sm font-normal cursor-pointer">
-                Kundenkonto anlegen (Passwort wird per E-Mail gesendet)
-              </Label>
-            </div>
+            {!selectedUserId && (
+              <div className="flex items-center gap-2 mt-3">
+                <Checkbox
+                  id="createAccount"
+                  checked={createAccount}
+                  onCheckedChange={(checked) => setCreateAccount(checked === true)}
+                  data-testid="checkbox-create-account"
+                />
+                <Label htmlFor="createAccount" className="text-sm font-normal cursor-pointer">
+                  Kundenkonto anlegen (Passwort wird per E-Mail gesendet)
+                </Label>
+              </div>
+            )}
           </div>
 
           <Separator />
