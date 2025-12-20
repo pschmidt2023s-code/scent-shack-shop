@@ -717,9 +717,9 @@ function OrdersView({
                                       <div>
                                         <h4 className="font-medium mb-2">Artikel</h4>
                                         <div className="border rounded-lg divide-y">
-                                          {order.orderItems.map((item) => (
+                                          {order.orderItems.map((item: OrderItem & { variantName?: string }) => (
                                             <div key={item.id} className="p-3 flex justify-between text-sm">
-                                              <span>{item.quantity}x {getPerfumeNameById(item.perfumeId, item.variantId)}</span>
+                                              <span>{item.quantity}x {item.variantName || 'Produkt'}</span>
                                               <span className="font-medium">€{Number(item.totalPrice || 0).toFixed(2)}</span>
                                             </div>
                                           ))}
