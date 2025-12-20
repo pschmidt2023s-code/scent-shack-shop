@@ -141,6 +141,9 @@ export function OrderDetailsModal({ orderId, open, onOpenChange, onOrderUpdated 
   const handleSendShippingEmail = async () => {
     if (!orderId) return;
     
+    console.log('[Shipping Email] Sending for order:', orderId);
+    console.log('[Shipping Email] Tracking number:', trackingNumber);
+    
     try {
       setSaving(true);
       const result = await apiRequest(`/admin/orders/${orderId}/resend-email`, {
@@ -148,13 +151,15 @@ export function OrderDetailsModal({ orderId, open, onOpenChange, onOrderUpdated 
         body: JSON.stringify({ emailType: 'shipping' }),
       });
       
+      console.log('[Shipping Email] Result:', result);
+      
       if (result.error) {
         throw new Error(result.error);
       }
       
       toast.success('Versandbenachrichtigung gesendet');
     } catch (error) {
-      console.error('Email error:', error);
+      console.error('[Shipping Email] Error:', error);
       toast.error('Fehler beim Senden der E-Mail');
     } finally {
       setSaving(false);
@@ -333,7 +338,7 @@ export function OrderDetailsModal({ orderId, open, onOpenChange, onOrderUpdated 
                 </div>
               )}
               
-              {order.status === 'shipped' && trackingNumber && (
+              {(status === 'shipped' || order.status === 'shipped') && trackingNumber && (
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -342,7 +347,7 @@ export function OrderDetailsModal({ orderId, open, onOpenChange, onOrderUpdated 
                   data-testid="button-resend-shipping-email"
                 >
                   <Mail className="w-4 h-4 mr-2" />
-                  Versandbenachrichtigung erneut senden
+                  Versandbenachrichtigung jetzt senden
                 </Button>
               )}
             </div>

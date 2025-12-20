@@ -910,10 +910,14 @@ export async function registerRoutes(app: Express) {
   app.post("/api/admin/orders/:id/resend-email", requireAdmin, async (req, res) => {
     try {
       const { emailType } = req.body; // 'confirmation', 'shipping', 'cancellation', 'refund'
+      console.log('[Email] Sending email type:', emailType, 'for order:', req.params.id);
+      
       const order = await storage.getOrder(req.params.id);
       if (!order) {
         return res.status(404).json({ error: "Bestellung nicht gefunden" });
       }
+      
+      console.log('[Email] Order found:', order.orderNumber, 'Email:', order.customerEmail, 'Tracking:', order.trackingNumber);
 
       const orderItems = await storage.getOrderItems(order.id);
       const emailItems = orderItems.map(item => ({
@@ -954,6 +958,7 @@ export async function registerRoutes(app: Express) {
           });
           break;
         case 'shipping':
+          console.log('[Email] Sending shipping notification to:', customerEmail);
           success = await sendShippingNotificationEmail(
             customerEmail,
             customerName,
@@ -961,6 +966,7 @@ export async function registerRoutes(app: Express) {
             order.trackingNumber || undefined,
             'DHL'
           );
+          console.log('[Email] Shipping notification result:', success);
           break;
         case 'cancellation':
           success = await sendOrderCancellationEmail(
