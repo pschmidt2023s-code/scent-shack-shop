@@ -56,7 +56,8 @@ import {
   Truck,
   Check,
   Plus,
-  Minus
+  Minus,
+  Zap
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -115,6 +116,10 @@ interface Order {
   billingAddressData?: any;
   orderItems?: OrderItem[];
   trackingNumber?: string;
+  shippingOptionId?: string;
+  shippingOptionName?: string;
+  shippingCost?: number;
+  isExpressShipping?: boolean;
 }
 
 interface OrderItem {
@@ -962,16 +967,41 @@ function OrdersView({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = searchQuery === '' || 
-      order.orderNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customerEmail?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  const now = new Date();
+  const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+
+  const filteredOrders = orders
+    .filter(order => {
+      const matchesSearch = searchQuery === '' || 
+        order.orderNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.customerEmail?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      const aCreatedAt = new Date(a.createdAt);
+      const bCreatedAt = new Date(b.createdAt);
+      const aIsExpress = a.isExpressShipping === true;
+      const bIsExpress = b.isExpressShipping === true;
+      const aIsOld = aCreatedAt < twelveHoursAgo;
+      const bIsOld = bCreatedAt < twelveHoursAgo;
+      
+      // Priority 1: Express shipping always on top
+      if (aIsExpress && !bIsExpress) return -1;
+      if (!aIsExpress && bIsExpress) return 1;
+      
+      // Priority 2: Non-express orders older than 12h come before newer non-express
+      if (!aIsExpress && !bIsExpress) {
+        if (aIsOld && !bIsOld) return -1;
+        if (!aIsOld && bIsOld) return 1;
+      }
+      
+      // Within same priority group, sort by newest first
+      return bCreatedAt.getTime() - aCreatedAt.getTime();
+    });
 
   const getStatusBadge = (status: string) => {
     const config: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', label: string }> = {
@@ -1059,6 +1089,7 @@ function OrdersView({
                   <TableHead>Bestellung</TableHead>
                   <TableHead className="hidden md:table-cell">Kunde</TableHead>
                   <TableHead>Betrag</TableHead>
+                  <TableHead className="hidden lg:table-cell">Versand</TableHead>
                   <TableHead className="hidden sm:table-cell">Status</TableHead>
                   <TableHead className="hidden lg:table-cell">Datum</TableHead>
                   <TableHead className="w-12"></TableHead>
@@ -1067,7 +1098,7 @@ function OrdersView({
               <TableBody>
                 {filteredOrders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       <ShoppingCart className="w-8 h-8 mx-auto mb-2 opacity-50" />
                       Keine Bestellungen gefunden
                     </TableCell>
@@ -1099,6 +1130,18 @@ function OrdersView({
                       </TableCell>
                       <TableCell className="font-semibold">
                         €{Number(order.totalAmount || 0).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {order.isExpressShipping ? (
+                          <Badge variant="default" className="bg-amber-500 text-white">
+                            <Zap className="w-3 h-3 mr-1" />
+                            Express
+                          </Badge>
+                        ) : order.shippingOptionName ? (
+                          <Badge variant="outline">{order.shippingOptionName}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">Standard</span>
+                        )}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
                         <Select 
