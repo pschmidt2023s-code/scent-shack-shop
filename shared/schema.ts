@@ -86,6 +86,10 @@ export const orders = pgTable("orders", {
   partnerId: uuid("partner_id").references(() => partners.id),
   stripeSessionId: text("stripe_session_id"),
   paypalOrderId: text("paypal_order_id"),
+  shippingOptionId: uuid("shipping_option_id"),
+  shippingOptionName: text("shipping_option_name"),
+  shippingCost: numeric("shipping_cost"),
+  isExpressShipping: boolean("is_express_shipping").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
