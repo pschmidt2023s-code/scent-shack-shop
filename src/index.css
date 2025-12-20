@@ -484,14 +484,54 @@
 
   /* Stagger animation for list items */
   .stagger-item {
-    animation: stagger-fade 0.6s ease-out forwards;
+    animation: stagger-fade 0.5s ease-out forwards;
+    opacity: 0;
   }
 
-  .stagger-item:nth-child(1) { animation-delay: 0.1s; }
-  .stagger-item:nth-child(2) { animation-delay: 0.2s; }
-  .stagger-item:nth-child(3) { animation-delay: 0.3s; }
-  .stagger-item:nth-child(4) { animation-delay: 0.4s; }
-  .stagger-item:nth-child(5) { animation-delay: 0.5s; }
+  .stagger-item:nth-child(1) { animation-delay: 0.05s; }
+  .stagger-item:nth-child(2) { animation-delay: 0.1s; }
+  .stagger-item:nth-child(3) { animation-delay: 0.15s; }
+  .stagger-item:nth-child(4) { animation-delay: 0.2s; }
+  .stagger-item:nth-child(5) { animation-delay: 0.25s; }
+  .stagger-item:nth-child(6) { animation-delay: 0.3s; }
+  .stagger-item:nth-child(7) { animation-delay: 0.35s; }
+  .stagger-item:nth-child(8) { animation-delay: 0.4s; }
+  .stagger-item:nth-child(9) { animation-delay: 0.45s; }
+  .stagger-item:nth-child(10) { animation-delay: 0.5s; }
+  .stagger-item:nth-child(11) { animation-delay: 0.55s; }
+  .stagger-item:nth-child(12) { animation-delay: 0.6s; }
+
+  /* Product card hover effects */
+  .product-card {
+    @apply transition-all duration-300 ease-out;
+  }
+  
+  .product-card:hover {
+    @apply shadow-lg;
+    transform: translateY(-4px);
+  }
+  
+  /* Pulse animation for CTAs */
+  @keyframes subtle-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+  }
+  
+  .cta-pulse {
+    animation: subtle-pulse 2s ease-in-out infinite;
+  }
+  
+  /* Gradient animation */
+  @keyframes gradient-flow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  .gradient-animate {
+    background-size: 200% 200%;
+    animation: gradient-flow 4s ease infinite;
+  }
 
   /* Mobile Navigation Enhancements */
   @supports (backdrop-filter: blur(0)) {

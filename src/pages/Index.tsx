@@ -1,5 +1,6 @@
 import { HeroSection } from '@/components/HeroSection';
 import { PerfumeGrid } from '@/components/PerfumeGrid';
+import { TrustSection } from '@/components/TrustSection';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { MobileSearchBar } from '@/components/MobileSearchBar';
 import Navigation from '@/components/Navigation';
@@ -156,6 +157,8 @@ const Index = () => {
           </div>
         </section>
 
+        <TrustSection />
+        
         {/* Newsletter CTA */}
         <section className="py-16 lg:py-20 bg-primary text-primary-foreground">
           <div className="max-w-4xl mx-auto px-4 lg:px-8 text-center">

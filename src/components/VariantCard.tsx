@@ -72,7 +72,7 @@ export function VariantCard({ variant }: VariantCardProps) {
     : 0;
 
   return (
-    <Card className="group glass-card transition-shadow duration-200 overflow-hidden hover:shadow-glow">
+    <Card className="group product-card glass-card overflow-hidden">
       <CardContent className="p-0">
         <div className="relative">
           <Link 

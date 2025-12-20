@@ -145,8 +145,10 @@ export const PerfumeGrid = memo(function PerfumeGrid() {
           </div>
         ) : displayVariants.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-            {displayVariants.map((variant) => (
-              <VariantCard key={`${variant.productId}-${variant.variantId}`} variant={variant} />
+            {displayVariants.map((variant, index) => (
+              <div key={`${variant.productId}-${variant.variantId}`} className="stagger-item">
+                <VariantCard variant={variant} />
+              </div>
             ))}
           </div>
         ) : (
