@@ -2590,6 +2590,11 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
       </tr>`;
       }
       
+      // Calculate tax breakdown (19% MwSt.)
+      const netAmount = totalAmount / 1.19;
+      const taxAmount = totalAmount - netAmount;
+      const shippingCost = parseFloat(order.shippingCost || '0');
+      
       const invoiceHtml = `
 <!DOCTYPE html>
 <html lang="de">
@@ -2597,63 +2602,337 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
   <meta charset="UTF-8">
   <title>Rechnung ${orderNumber}</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
-    .header { text-align: center; margin-bottom: 40px; }
-    .header h1 { color: #333; margin-bottom: 5px; }
-    .header p { color: #666; }
-    .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; }
-    .invoice-details div { width: 45%; }
-    .invoice-details h3 { border-bottom: 2px solid #333; padding-bottom: 5px; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-    th { background-color: #f5f5f5; }
-    .total { font-size: 1.2em; font-weight: bold; text-align: right; }
-    .footer { margin-top: 50px; text-align: center; color: #666; font-size: 0.9em; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body { 
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+      background: #f8f9fa;
+      color: #1a1a1a;
+      line-height: 1.6;
+    }
+    
+    .invoice-container {
+      max-width: 800px;
+      margin: 40px auto;
+      background: white;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+      color: white;
+      padding: 40px;
+      position: relative;
+    }
+    
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #d4a574 0%, #e8c097 50%, #d4a574 100%);
+    }
+    
+    .logo {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      margin-bottom: 4px;
+    }
+    
+    .tagline {
+      font-size: 13px;
+      font-weight: 300;
+      letter-spacing: 2px;
+      opacity: 0.8;
+      text-transform: uppercase;
+    }
+    
+    .invoice-badge {
+      position: absolute;
+      top: 40px;
+      right: 40px;
+      background: rgba(212, 165, 116, 0.15);
+      border: 1px solid rgba(212, 165, 116, 0.3);
+      color: #d4a574;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .content { padding: 40px; }
+    
+    .invoice-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 40px;
+      padding-bottom: 30px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .meta-section h3 {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #888;
+      margin-bottom: 12px;
+    }
+    
+    .meta-section p {
+      font-size: 14px;
+      color: #444;
+      margin-bottom: 4px;
+    }
+    
+    .meta-section .highlight {
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+    
+    .meta-right { text-align: right; }
+    
+    .invoice-number {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+    }
+    
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+    
+    .items-table th {
+      background: #fafafa;
+      padding: 14px 16px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #666;
+      text-align: left;
+      border-bottom: 2px solid #eee;
+    }
+    
+    .items-table th:last-child,
+    .items-table td:last-child {
+      text-align: right;
+    }
+    
+    .items-table td {
+      padding: 16px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 14px;
+    }
+    
+    .items-table tbody tr:hover {
+      background: #fafafa;
+    }
+    
+    .totals {
+      background: #fafafa;
+      border-radius: 8px;
+      padding: 24px;
+      margin-top: 20px;
+    }
+    
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 14px;
+    }
+    
+    .totals-row.subtotal {
+      border-bottom: 1px solid #e0e0e0;
+      margin-bottom: 8px;
+      padding-bottom: 16px;
+    }
+    
+    .totals-row.grand-total {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a1a1a;
+      border-top: 2px solid #d4a574;
+      margin-top: 12px;
+      padding-top: 16px;
+    }
+    
+    .totals-label { color: #666; }
+    .totals-value { font-weight: 500; }
+    
+    .paid-stamp {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #e8f5e9;
+      color: #2e7d32;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+    
+    .paid-stamp::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: #4caf50;
+      border-radius: 50%;
+    }
+    
+    .footer {
+      background: #fafafa;
+      padding: 30px 40px;
+      border-top: 1px solid #eee;
+    }
+    
+    .footer-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    
+    .footer-section h4 {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 8px;
+    }
+    
+    .footer-section p {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 2px;
+    }
+    
+    .thank-you {
+      text-align: center;
+      padding: 30px 40px;
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+      color: white;
+    }
+    
+    .thank-you p {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    
+    .thank-you .signature {
+      margin-top: 12px;
+      font-weight: 600;
+      color: #d4a574;
+    }
+    
+    @media print {
+      body { background: white; }
+      .invoice-container { 
+        box-shadow: none; 
+        margin: 0;
+        border-radius: 0;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>ALDENAIR</h1>
-    <p>Premium Parfums & Düfte</p>
-  </div>
-  
-  <div class="invoice-details">
-    <div>
-      <h3>Rechnungsadresse</h3>
-      <p>${order.customerName || 'Kunde'}</p>
-      <p>${shippingAddr.street || shippingAddr.line1 || ''}</p>
-      <p>${shippingAddr.postalCode || shippingAddr.postal_code || ''} ${shippingAddr.city || ''}</p>
-      <p>${shippingAddr.country || 'Deutschland'}</p>
+  <div class="invoice-container">
+    <div class="header">
+      <div class="logo">ALDENAIR</div>
+      <div class="tagline">Premium Parfums & Luxusdüfte</div>
+      <div class="invoice-badge">Rechnung</div>
     </div>
-    <div>
-      <h3>Rechnungsdetails</h3>
-      <p><strong>Rechnungsnr.:</strong> ${orderNumber}</p>
-      <p><strong>Datum:</strong> ${orderDate}</p>
-      <p><strong>Zahlungsmethode:</strong> ${order.paymentMethod === 'card' ? 'Kreditkarte' : order.paymentMethod === 'paypal' ? 'PayPal' : order.paymentMethod}</p>
-      <p><strong>Status:</strong> Bezahlt</p>
+    
+    <div class="content">
+      <div class="invoice-meta">
+        <div class="meta-section">
+          <h3>Rechnungsempfänger</h3>
+          <p class="highlight">${order.customerName || 'Kunde'}</p>
+          <p>${shippingAddr.street || shippingAddr.line1 || ''}</p>
+          <p>${shippingAddr.postalCode || shippingAddr.postal_code || ''} ${shippingAddr.city || ''}</p>
+          <p>${shippingAddr.country || 'Deutschland'}</p>
+        </div>
+        <div class="meta-section meta-right">
+          <div class="invoice-number">${orderNumber}</div>
+          <p><strong>Rechnungsdatum:</strong> ${orderDate}</p>
+          <p><strong>Zahlungsart:</strong> ${order.paymentMethod === 'card' ? 'Kreditkarte' : order.paymentMethod === 'paypal' ? 'PayPal' : order.paymentMethod === 'bank_transfer' ? 'Überweisung' : order.paymentMethod}</p>
+          <div class="paid-stamp">Bezahlt</div>
+        </div>
+      </div>
+      
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>Artikel</th>
+            <th>Menge</th>
+            <th>Einzelpreis</th>
+            <th>Gesamt</th>
+          </tr>
+        </thead>
+        <tbody>${itemsHtml}
+        </tbody>
+      </table>
+      
+      <div class="totals">
+        <div class="totals-row subtotal">
+          <span class="totals-label">Zwischensumme (netto)</span>
+          <span class="totals-value">${netAmount.toFixed(2)} EUR</span>
+        </div>
+        <div class="totals-row">
+          <span class="totals-label">MwSt. (19%)</span>
+          <span class="totals-value">${taxAmount.toFixed(2)} EUR</span>
+        </div>
+        ${shippingCost > 0 ? `
+        <div class="totals-row">
+          <span class="totals-label">Versandkosten</span>
+          <span class="totals-value">${shippingCost.toFixed(2)} EUR</span>
+        </div>
+        ` : ''}
+        <div class="totals-row grand-total">
+          <span class="totals-label">Gesamtbetrag</span>
+          <span class="totals-value">${totalAmount.toFixed(2)} EUR</span>
+        </div>
+      </div>
     </div>
-  </div>
-  
-  <table>
-    <thead>
-      <tr>
-        <th>Artikel</th>
-        <th>Menge</th>
-        <th>Einzelpreis</th>
-        <th>Gesamt</th>
-      </tr>
-    </thead>
-    <tbody>${itemsHtml}
-    </tbody>
-  </table>
-  
-  <div class="total">
-    <p>Gesamtbetrag: ${totalAmount.toFixed(2)} EUR (inkl. MwSt.)</p>
-  </div>
-  
-  <div class="footer">
-    <p>ALDENAIR GmbH | support@aldenairperfumes.de | www.aldenairperfumes.de</p>
-    <p>Vielen Dank für Ihren Einkauf!</p>
+    
+    <div class="footer">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>Kontakt</h4>
+          <p>support@aldenairperfumes.de</p>
+          <p>www.aldenairperfumes.de</p>
+        </div>
+        <div class="footer-section">
+          <h4>Unternehmen</h4>
+          <p>ALDENAIR GmbH</p>
+          <p>Handelsregister: HRB XXXXX</p>
+        </div>
+        <div class="footer-section">
+          <h4>Zahlungsinformationen</h4>
+          <p>IBAN: DE XX XXXX XXXX XXXX XXXX XX</p>
+          <p>BIC: XXXXXXXXXXX</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="thank-you">
+      <p>Vielen Dank für Ihr Vertrauen und Ihren Einkauf bei ALDENAIR.</p>
+      <p class="signature">Ihr ALDENAIR Team</p>
+    </div>
   </div>
 </body>
 </html>`;
