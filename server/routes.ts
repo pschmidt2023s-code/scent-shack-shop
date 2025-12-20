@@ -539,7 +539,7 @@ export async function registerRoutes(app: Express) {
         const items = await storage.getOrderItems(order.id);
         // Enrich items with product and variant names
         const enrichedItems = await Promise.all(items.map(async (item) => {
-          const variant = await storage.getProductVariant(item.variantId);
+          const variant = item.variantId ? await storage.getProductVariant(item.variantId) : null;
           const product = item.perfumeId ? await storage.getProduct(item.perfumeId) : null;
           return {
             ...item,
@@ -586,9 +586,18 @@ export async function registerRoutes(app: Express) {
           });
           userId = newUser.id;
           
-          // Log the password generation (in production, would send via email)
-          console.log(`[Admin] Created customer account for ${customerEmail} with temporary password: ${randomPassword}`);
-          // TODO: Send welcome email with password using Resend
+          console.log(`[Admin] Created customer account for ${customerEmail}`);
+          
+          // Send welcome email with password
+          try {
+            const { sendWelcomeEmailWithPassword } = await import('./resendClient');
+            const baseUrl = process.env.REPLIT_DOMAINS 
+              ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
+              : `${req.protocol}://${req.get('host')}`;
+            await sendWelcomeEmailWithPassword(customerEmail, customerName, randomPassword, baseUrl);
+          } catch (emailError: any) {
+            console.error('[Admin] Failed to send welcome email:', emailError.message);
+          }
         }
       }
       
@@ -666,7 +675,18 @@ export async function registerRoutes(app: Express) {
       
       const order = await storage.createOrder(orderData);
       
-      const createdItems = [];
+      const createdItems: Array<{
+        id: string;
+        orderId: string | null;
+        variantId: string | null;
+        perfumeId: string | null;
+        quantity: number;
+        unitPrice: number;
+        totalPrice: number;
+        variantName: string;
+        productName: string;
+        createdAt: Date;
+      }> = [];
       for (const item of validatedItems) {
         const createdItem = await storage.createOrderItem({
           orderId: order.id,

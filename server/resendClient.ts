@@ -1,9 +1,7 @@
 // Resend email client - uses RESEND_API_KEY environment variable
 import { Resend } from 'resend';
 
-// Use onboarding@resend.dev for testing (only sends to account email)
-// Change to 'ALDENAIR <noreply@aldenair.de>' once domain is fully verified
-const DEFAULT_FROM_EMAIL = 'onboarding@resend.dev';
+const DEFAULT_FROM_EMAIL = 'ALDENAIR <noreply@aldenair.de>';
 
 export async function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY;
@@ -273,6 +271,81 @@ export async function sendShippingNotificationEmail(
     return true;
   } catch (error: any) {
     console.error('Failed to send shipping notification email:', error);
+    return false;
+  }
+}
+
+export async function sendWelcomeEmailWithPassword(
+  customerEmail: string,
+  customerName: string,
+  temporaryPassword: string,
+  baseUrl: string
+): Promise<boolean> {
+  try {
+    console.log(`[Resend] Sending welcome email with password to: ${customerEmail}`);
+    const { client, fromEmail } = await getResendClient();
+    
+    const result = await client.emails.send({
+      from: fromEmail,
+      to: [customerEmail],
+      subject: 'Willkommen bei ALDENAIR - Ihre Zugangsdaten',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8f9fa; margin: 0; padding: 40px 20px;">
+          <div style="max-width: 480px; margin: 0 auto; background: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 32px;">
+              <h1 style="color: #d97706; font-size: 28px; margin: 0;">ALDENAIR</h1>
+              <p style="color: #6b7280; margin: 8px 0 0 0;">Premium Parfums</p>
+            </div>
+            
+            <h2 style="color: #1f2937; font-size: 20px; margin-bottom: 16px;">Willkommen, ${customerName}!</h2>
+            
+            <p style="color: #4b5563; line-height: 1.6; margin-bottom: 24px;">
+              Wir haben ein Kundenkonto für Sie erstellt. Mit Ihrem Konto können Sie Ihre Bestellungen verfolgen und von exklusiven Vorteilen profitieren.
+            </p>
+            
+            <div style="background: #fef3c7; border-radius: 8px; padding: 20px; margin: 24px 0;">
+              <h3 style="margin: 0 0 12px 0; color: #92400e; font-size: 16px;">Ihre Zugangsdaten</h3>
+              <p style="margin: 4px 0; color: #78350f; font-size: 14px;"><strong>E-Mail:</strong> ${customerEmail}</p>
+              <p style="margin: 4px 0; color: #78350f; font-size: 14px;"><strong>Temporäres Passwort:</strong> ${temporaryPassword}</p>
+            </div>
+            
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${baseUrl}/auth" style="display: inline-block; background: linear-gradient(135deg, #d97706, #ea580c); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+                Jetzt anmelden
+              </a>
+            </div>
+            
+            <p style="color: #6b7280; font-size: 14px; line-height: 1.6;">
+              Bitte ändern Sie Ihr Passwort nach der ersten Anmeldung in Ihrem Kundenkonto.
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+            
+            <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+              Bei Fragen kontaktieren Sie uns unter info@aldenair.de<br>
+              &copy; ${new Date().getFullYear()} ALDENAIR. Alle Rechte vorbehalten.
+            </p>
+          </div>
+        </body>
+        </html>
+      `
+    });
+    
+    if (result.error) {
+      console.error('[Resend] Welcome email error:', result.error);
+      return false;
+    }
+    
+    console.log(`[Resend] Welcome email sent successfully to ${customerEmail}, id: ${result.data?.id}`);
+    return true;
+  } catch (error: any) {
+    console.error('[Resend] Failed to send welcome email:', error.message);
     return false;
   }
 }
