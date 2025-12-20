@@ -821,7 +821,7 @@ export default function Admin() {
         const ordersData = await ordersRes.json();
         setOrders(ordersData || []);
         
-        const totalRevenue = ordersData.reduce((sum: number, o: Order) => sum + o.totalAmount, 0);
+        const totalRevenue = ordersData.reduce((sum: number, o: Order) => sum + Number(o.totalAmount || 0), 0);
         const pendingOrders = ordersData.filter((o: Order) => 
           o.status === 'pending' || o.status === 'pending_payment'
         ).length;
