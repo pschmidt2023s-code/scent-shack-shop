@@ -1,10 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Loader2, Building2, CheckCircle } from "lucide-react";
+
+interface BankSettings {
+  recipient: string;
+  iban: string;
+  bic?: string;
+  bankName?: string;
+}
 
 interface CheckoutModalProps {
   open: boolean;
@@ -17,6 +24,16 @@ export default function CheckoutModal({ open, onOpenChange }: CheckoutModalProps
   const [loading, setLoading] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [bankSettings, setBankSettings] = useState<BankSettings | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      fetch('/api/settings/bank')
+        .then(res => res.json())
+        .then(data => setBankSettings(data))
+        .catch(err => console.error('Failed to fetch bank settings:', err));
+    }
+  }, [open]);
 
   const handleCheckout = async () => {
     if (!user) {
@@ -97,9 +114,10 @@ export default function CheckoutModal({ open, onOpenChange }: CheckoutModalProps
                 Vielen Dank für Ihre Bestellung! Bitte überweisen Sie den Betrag auf folgendes Konto:
               </p>
               <div className="bg-background p-3 rounded border text-sm space-y-1">
-                <p><span className="font-medium">Empfänger:</span> ALDENAIR GmbH</p>
-                <p><span className="font-medium">IBAN:</span> DE89 3704 0044 0532 0130 00</p>
-                <p><span className="font-medium">BIC:</span> COBADEFFXXX</p>
+                <p><span className="font-medium">Empfänger:</span> {bankSettings?.recipient || 'ALDENAIR'}</p>
+                <p><span className="font-medium">IBAN:</span> {bankSettings?.iban || 'Wird geladen...'}</p>
+                {bankSettings?.bic && <p><span className="font-medium">BIC:</span> {bankSettings.bic}</p>}
+                {bankSettings?.bankName && <p><span className="font-medium">Bank:</span> {bankSettings.bankName}</p>}
                 <p><span className="font-medium">Betrag:</span> {total.toFixed(2)} EUR</p>
                 <p><span className="font-medium">Verwendungszweck:</span> {orderNumber}</p>
               </div>

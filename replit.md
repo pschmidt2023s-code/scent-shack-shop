@@ -193,6 +193,10 @@ Complete legal compliance overhaul for German B2C e-commerce (stand: Dezember 20
 - **PayPal Live Mode Fix**: Added PAYPAL_MODE env variable to enable live credentials in development
   - Set PAYPAL_MODE=live to use production PayPal API instead of sandbox
 - **Contact Form Endpoint**: Added POST /api/contact with Resend email confirmation
+- **Dynamic Bank Settings Fix**: Bank details in order confirmation emails and checkout modal now load from database
+  - Previously hardcoded values replaced with API-fetched settings from /api/settings/bank
+  - Supports optional BIC and bank name fields
+  - Admin can update bank details via dashboard and they immediately apply everywhere
 - **All integrations verified working**:
   - Stripe: Card payments (sandbox mode, ready for production)
   - PayPal: Live credentials active

@@ -501,6 +501,7 @@ export async function registerRoutes(app: Express) {
           };
         }));
         
+        const bankSettings = (order.paymentMethod === 'bank' || order.paymentMethod === 'bank_transfer') ? await storage.getBankSettings() : null;
         await sendOrderConfirmationEmail({
           orderNumber: order.orderNumber,
           customerEmail: order.customerEmail || '',
@@ -510,6 +511,7 @@ export async function registerRoutes(app: Express) {
           shippingCost: shippingCost,
           shippingAddress: req.body.shippingAddressData || {},
           paymentMethod: order.paymentMethod || 'bank',
+          bankSettings: bankSettings || undefined,
         });
       } catch (emailError) {
         console.error('Failed to send order confirmation email:', emailError);
@@ -733,6 +735,7 @@ export async function registerRoutes(app: Express) {
           price: item.unitPrice * item.quantity,
         }));
         
+        const bankSettings = (paymentMethod === 'bank' || paymentMethod === 'bank_transfer') ? await storage.getBankSettings() : null;
         await sendOrderConfirmationEmail({
           orderNumber,
           customerEmail,
@@ -742,6 +745,7 @@ export async function registerRoutes(app: Express) {
           shippingCost,
           shippingAddress: shippingAddress || { street: '', city: '', postalCode: '' },
           paymentMethod: paymentMethod || 'bank',
+          bankSettings: bankSettings || undefined,
         });
         console.log(`[Admin] Order confirmation email sent to ${customerEmail}`);
       } catch (emailError: any) {
@@ -936,6 +940,7 @@ export async function registerRoutes(app: Express) {
       
       switch (emailType) {
         case 'confirmation':
+          const bankSettings = (order.paymentMethod === 'bank' || order.paymentMethod === 'bank_transfer') ? await storage.getBankSettings() : null;
           success = await sendOrderConfirmationEmail({
             orderNumber,
             customerEmail,
@@ -945,6 +950,7 @@ export async function registerRoutes(app: Express) {
             shippingCost: 0,
             shippingAddress: shippingAddr,
             paymentMethod: order.paymentMethod || 'bank',
+            bankSettings: bankSettings || undefined,
           });
           break;
         case 'shipping':

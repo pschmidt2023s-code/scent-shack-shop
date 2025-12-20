@@ -218,6 +218,7 @@ interface OrderEmailData {
   shippingCost: number;
   shippingAddress: { street: string; city: string; postalCode: string; country?: string; };
   paymentMethod: string;
+  bankSettings?: { recipient: string; iban: string; bic?: string; bankName?: string; };
 }
 
 export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<boolean> {
@@ -238,15 +239,16 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
     `).join('');
 
     const paymentMethodText = data.paymentMethod === 'card' ? 'Kreditkarte' : 
-                              data.paymentMethod === 'bank' ? 'Banküberweisung' : 
+                              (data.paymentMethod === 'bank' || data.paymentMethod === 'bank_transfer') ? 'Banküberweisung' : 
                               data.paymentMethod === 'paypal' ? 'PayPal' : data.paymentMethod;
 
-    const bankTransferInfo = data.paymentMethod === 'bank' ? infoBox(`
+    const bankTransferInfo = (data.paymentMethod === 'bank' || data.paymentMethod === 'bank_transfer') && data.bankSettings ? infoBox(`
       <h4 style="margin: 0 0 12px 0; color: #92400e; font-size: 15px; font-weight: 600;">Zahlungsinformationen</h4>
       <p style="margin: 0; color: #78350f; font-size: 14px; line-height: 1.6;">
-        <strong>Empfänger:</strong> ALDENAIR GmbH<br>
-        <strong>IBAN:</strong> DE89 3704 0044 0532 0130 00<br>
-        <strong>BIC:</strong> COBADEFFXXX<br>
+        <strong>Empfänger:</strong> ${data.bankSettings.recipient}<br>
+        <strong>IBAN:</strong> ${data.bankSettings.iban}<br>
+        ${data.bankSettings.bic ? `<strong>BIC:</strong> ${data.bankSettings.bic}<br>` : ''}
+        ${data.bankSettings.bankName ? `<strong>Bank:</strong> ${data.bankSettings.bankName}<br>` : ''}
         <strong>Verwendungszweck:</strong> ${data.orderNumber}
       </p>
     `, 'warning') : '';
