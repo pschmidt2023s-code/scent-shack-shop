@@ -3,67 +3,71 @@ import { Resend } from 'resend';
 
 const DEFAULT_FROM_EMAIL = 'ALDENAIR <noreply@aldenairperfumes.de>';
 
-// Modern email template wrapper with elegant gradient header
+// Professional email template - NO emojis, clean business design
 function emailWrapper(content: string, preheader?: string): string {
   return `
     <!DOCTYPE html>
-    <html lang="de">
+    <html lang="de" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="color-scheme" content="light">
-      <meta name="supported-color-schemes" content="light">
-      ${preheader ? `<!--[if !mso]><!--><meta http-equiv="X-UA-Compatible" content="IE=edge"><!--<![endif]--><span style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">${preheader}</span>` : ''}
-      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-      </style>
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="x-apple-disable-message-reformatting">
+      <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
+      <title>ALDENAIR</title>
+      ${preheader ? `<span style="display:none;font-size:1px;color:#fafafa;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">${preheader}</span>` : ''}
+      <!--[if mso]>
+      <noscript>
+        <xml>
+          <o:OfficeDocumentSettings>
+            <o:AllowPNG/>
+            <o:PixelsPerInch>96</o:PixelsPerInch>
+          </o:OfficeDocumentSettings>
+        </xml>
+      </noscript>
+      <![endif]-->
     </head>
-    <body style="margin: 0; padding: 0; background-color: #0f0f0f; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #0f0f0f;">
+    <body style="margin:0;padding:0;background-color:#fafafa;font-family:Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#fafafa;">
         <tr>
-          <td style="padding: 40px 20px;">
-            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 560px; margin: 0 auto;">
-              <!-- Header with gradient -->
+          <td style="padding:32px 16px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:580px;margin:0 auto;background-color:#ffffff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+              <!-- Header -->
               <tr>
-                <td style="background: linear-gradient(135deg, #d97706 0%, #ea580c 50%, #dc2626 100%); border-radius: 16px 16px 0 0; padding: 32px 40px; text-align: center;">
-                  <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 700; letter-spacing: 2px;">ALDENAIR</h1>
-                  <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.85); font-size: 13px; letter-spacing: 1px; text-transform: uppercase;">Premium Parfums</p>
+                <td style="background-color:#1a1a1a;border-radius:8px 8px 0 0;padding:28px 32px;text-align:center;">
+                  <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:700;letter-spacing:3px;font-family:Arial,Helvetica,sans-serif;">ALDENAIR</h1>
+                  <p style="margin:6px 0 0 0;color:#b8860b;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;">Exklusive Parfums</p>
                 </td>
               </tr>
               <!-- Content -->
               <tr>
-                <td style="background-color: #ffffff; padding: 40px; border-radius: 0 0 16px 16px;">
+                <td style="padding:36px 32px;background-color:#ffffff;">
                   ${content}
                 </td>
               </tr>
               <!-- Footer -->
               <tr>
-                <td style="padding: 32px 20px; text-align: center;">
-                  <p style="margin: 0 0 16px 0; color: #737373; font-size: 13px;">
-                    Folgen Sie uns
-                  </p>
-                  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+                <td style="padding:24px 32px;background-color:#f8f8f8;border-top:1px solid #e5e5e5;border-radius:0 0 8px 8px;">
+                  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                     <tr>
-                      <td style="padding: 0 8px;">
-                        <a href="https://instagram.com/aldenair" style="color: #d97706; text-decoration: none; font-size: 14px;">Instagram</a>
-                      </td>
-                      <td style="color: #404040;">|</td>
-                      <td style="padding: 0 8px;">
-                        <a href="https://facebook.com/aldenair" style="color: #d97706; text-decoration: none; font-size: 14px;">Facebook</a>
-                      </td>
-                      <td style="color: #404040;">|</td>
-                      <td style="padding: 0 8px;">
-                        <a href="https://tiktok.com/@aldenair" style="color: #d97706; text-decoration: none; font-size: 14px;">TikTok</a>
+                      <td style="text-align:center;">
+                        <p style="margin:0 0 12px 0;color:#666666;font-size:13px;font-family:Arial,Helvetica,sans-serif;">
+                          <a href="https://aldenair.de" style="color:#b8860b;text-decoration:none;">Website</a>
+                          &nbsp;&nbsp;|&nbsp;&nbsp;
+                          <a href="https://aldenair.de/contact" style="color:#b8860b;text-decoration:none;">Kontakt</a>
+                          &nbsp;&nbsp;|&nbsp;&nbsp;
+                          <a href="https://aldenair.de/datenschutz" style="color:#b8860b;text-decoration:none;">Datenschutz</a>
+                        </p>
+                        <p style="margin:0;color:#888888;font-size:12px;line-height:1.5;font-family:Arial,Helvetica,sans-serif;">
+                          ALDENAIR<br>
+                          E-Mail: info@aldenair.de
+                        </p>
+                        <p style="margin:16px 0 0 0;color:#aaaaaa;font-size:11px;font-family:Arial,Helvetica,sans-serif;">
+                          Diese E-Mail wurde automatisch generiert. Bei Fragen antworten Sie bitte nicht auf diese E-Mail, sondern kontaktieren Sie uns unter info@aldenair.de
+                        </p>
                       </td>
                     </tr>
                   </table>
-                  <p style="margin: 24px 0 0 0; color: #525252; font-size: 12px; line-height: 1.6;">
-                    ALDENAIR GmbH<br>
-                    Bei Fragen: <a href="mailto:info@aldenair.de" style="color: #d97706; text-decoration: none;">info@aldenair.de</a>
-                  </p>
-                  <p style="margin: 16px 0 0 0; color: #737373; font-size: 11px;">
-                    &copy; ${new Date().getFullYear()} ALDENAIR. Alle Rechte vorbehalten.
-                  </p>
                 </td>
               </tr>
             </table>
@@ -75,36 +79,40 @@ function emailWrapper(content: string, preheader?: string): string {
   `;
 }
 
-// Modern button component
+// Professional button component - no gradients for better compatibility
 function emailButton(text: string, href: string, variant: 'primary' | 'secondary' = 'primary'): string {
   const styles = variant === 'primary' 
-    ? 'background: linear-gradient(135deg, #d97706, #ea580c); color: #ffffff;'
-    : 'background: transparent; color: #d97706; border: 2px solid #d97706;';
+    ? 'background-color:#1a1a1a;color:#ffffff;'
+    : 'background-color:#ffffff;color:#1a1a1a;border:1px solid #d1d1d1;';
   
   return `
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto;">
       <tr>
-        <td style="${styles} padding: 16px 36px; border-radius: 8px; text-align: center;">
-          <a href="${href}" style="color: inherit; text-decoration: none; font-weight: 600; font-size: 15px; display: inline-block;">${text}</a>
+        <td style="${styles}padding:14px 32px;border-radius:6px;text-align:center;font-family:Arial,Helvetica,sans-serif;">
+          <a href="${href}" style="color:inherit;text-decoration:none;font-weight:600;font-size:14px;display:inline-block;">${text}</a>
         </td>
       </tr>
     </table>
   `;
 }
 
-// Info box component
+// Professional info box component
 function infoBox(content: string, variant: 'warning' | 'success' | 'info' = 'info'): string {
   const colors = {
-    warning: { bg: '#fef3c7', border: '#fbbf24', text: '#92400e' },
-    success: { bg: '#d1fae5', border: '#34d399', text: '#065f46' },
-    info: { bg: '#eff6ff', border: '#3b82f6', text: '#1e40af' }
+    warning: { bg: '#fffbeb', border: '#d97706' },
+    success: { bg: '#f0fdf4', border: '#22c55e' },
+    info: { bg: '#f0f9ff', border: '#0284c7' }
   };
   const c = colors[variant];
   
   return `
-    <div style="background: ${c.bg}; border-left: 4px solid ${c.border}; border-radius: 0 8px 8px 0; padding: 20px; margin: 24px 0;">
-      ${content}
-    </div>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:20px 0;">
+      <tr>
+        <td style="background-color:${c.bg};border-left:3px solid ${c.border};padding:16px 20px;border-radius:0 6px 6px 0;">
+          ${content}
+        </td>
+      </tr>
+    </table>
   `;
 }
 
@@ -161,30 +169,26 @@ export async function sendPasswordResetEmail(to: string, resetToken: string, bas
     const resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
     
     const content = `
-      <div style="text-align: center; margin-bottom: 32px;">
-        <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-          <span style="font-size: 28px;">&#128274;</span>
-        </div>
-        <h2 style="margin: 0; color: #171717; font-size: 24px; font-weight: 600;">Passwort zurücksetzen</h2>
-      </div>
+      <h2 style="margin:0 0 24px 0;color:#1a1a1a;font-size:22px;font-weight:600;text-align:center;font-family:Arial,Helvetica,sans-serif;">Passwort zurücksetzen</h2>
       
-      <p style="color: #404040; font-size: 15px; line-height: 1.7; margin: 0 0 24px 0; text-align: center;">
+      <p style="color:#404040;font-size:15px;line-height:1.7;margin:0 0 24px 0;font-family:Arial,Helvetica,sans-serif;">
+        Guten Tag,<br><br>
         Sie haben angefordert, Ihr Passwort zurückzusetzen. Klicken Sie auf den Button unten, um ein neues Passwort zu erstellen.
       </p>
       
-      <div style="text-align: center; margin: 32px 0;">
+      <div style="text-align:center;margin:32px 0;">
         ${emailButton('Passwort zurücksetzen', resetLink)}
       </div>
       
       ${infoBox(`
-        <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.6;">
-          <strong>Hinweis:</strong> Dieser Link ist nur 1 Stunde gültig. Falls Sie diese Anfrage nicht gestellt haben, können Sie diese E-Mail ignorieren.
+        <p style="margin:0;color:#92400e;font-size:14px;line-height:1.6;font-family:Arial,Helvetica,sans-serif;">
+          <strong>Wichtig:</strong> Dieser Link ist nur 1 Stunde gültig. Falls Sie diese Anfrage nicht gestellt haben, können Sie diese E-Mail ignorieren.
         </p>
       `, 'warning')}
       
-      <p style="color: #737373; font-size: 13px; text-align: center; margin-top: 24px;">
+      <p style="color:#888888;font-size:12px;text-align:center;margin-top:24px;font-family:Arial,Helvetica,sans-serif;">
         Link funktioniert nicht? Kopieren Sie diese URL:<br>
-        <span style="color: #d97706; word-break: break-all;">${resetLink}</span>
+        <span style="color:#1a1a1a;word-break:break-all;">${resetLink}</span>
       </p>
     `;
 
@@ -248,16 +252,11 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
     `, 'warning') : '';
 
     const content = `
-      <div style="text-align: center; margin-bottom: 32px;">
-        <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #d1fae5, #a7f3d0); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-          <span style="font-size: 28px;">&#10003;</span>
-        </div>
-        <h2 style="margin: 0; color: #171717; font-size: 24px; font-weight: 600;">Vielen Dank für Ihre Bestellung!</h2>
-        <p style="margin: 8px 0 0 0; color: #737373; font-size: 14px;">Bestellnummer: <strong style="color: #d97706;">${data.orderNumber}</strong></p>
-      </div>
+      <h2 style="margin:0 0 8px 0;color:#1a1a1a;font-size:22px;font-weight:600;text-align:center;font-family:Arial,Helvetica,sans-serif;">Vielen Dank für Ihre Bestellung</h2>
+      <p style="margin:0 0 24px 0;color:#666666;font-size:14px;text-align:center;font-family:Arial,Helvetica,sans-serif;">Bestellnummer: <strong style="color:#1a1a1a;">${data.orderNumber}</strong></p>
       
-      <p style="color: #404040; font-size: 15px; line-height: 1.7; margin: 0 0 32px 0;">
-        Hallo ${data.customerName},<br><br>
+      <p style="color:#404040;font-size:15px;line-height:1.7;margin:0 0 32px 0;font-family:Arial,Helvetica,sans-serif;">
+        Guten Tag ${data.customerName},<br><br>
         wir haben Ihre Bestellung erhalten und werden sie schnellstmöglich bearbeiten. Sie erhalten eine weitere E-Mail, sobald Ihre Bestellung versandt wurde.
       </p>
       
@@ -353,17 +352,12 @@ export async function sendShippingNotificationEmail(
     ` : '';
     
     const content = `
-      <div style="text-align: center; margin-bottom: 32px;">
-        <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #dbeafe, #bfdbfe); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-          <span style="font-size: 28px;">&#128230;</span>
-        </div>
-        <h2 style="margin: 0; color: #171717; font-size: 24px; font-weight: 600;">Ihre Bestellung ist unterwegs!</h2>
-        <p style="margin: 8px 0 0 0; color: #737373; font-size: 14px;">Bestellung: <strong style="color: #d97706;">${orderNumber}</strong></p>
-      </div>
+      <h2 style="margin:0 0 8px 0;color:#1a1a1a;font-size:22px;font-weight:600;text-align:center;font-family:Arial,Helvetica,sans-serif;">Ihre Bestellung ist unterwegs</h2>
+      <p style="margin:0 0 24px 0;color:#666666;font-size:14px;text-align:center;font-family:Arial,Helvetica,sans-serif;">Bestellung: <strong style="color:#1a1a1a;">${orderNumber}</strong></p>
       
-      <p style="color: #404040; font-size: 15px; line-height: 1.7; margin: 0 0 24px 0; text-align: center;">
-        Hallo ${customerName},<br><br>
-        Gute Nachrichten! Ihre Bestellung wurde versandt und ist auf dem Weg zu Ihnen.
+      <p style="color:#404040;font-size:15px;line-height:1.7;margin:0 0 24px 0;font-family:Arial,Helvetica,sans-serif;">
+        Guten Tag ${customerName},<br><br>
+        Gute Nachrichten: Ihre Bestellung wurde versandt und ist auf dem Weg zu Ihnen.
       </p>
       
       ${trackingInfo}
@@ -409,35 +403,22 @@ export async function sendWelcomeEmailWithPassword(
     const { client, fromEmail } = await getResendClient();
     
     const content = `
-      <div style="text-align: center; margin-bottom: 32px;">
-        <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-          <span style="font-size: 28px;">&#127881;</span>
-        </div>
-        <h2 style="margin: 0; color: #171717; font-size: 24px; font-weight: 600;">Willkommen bei ALDENAIR!</h2>
-      </div>
+      <h2 style="margin:0 0 24px 0;color:#1a1a1a;font-size:22px;font-weight:600;text-align:center;font-family:Arial,Helvetica,sans-serif;">Willkommen bei ALDENAIR</h2>
       
-      <p style="color: #404040; font-size: 15px; line-height: 1.7; margin: 0 0 24px 0;">
-        Hallo ${customerName},<br><br>
-        wir freuen uns, Sie in der ALDENAIR Familie begrüssen zu dürfen! Wir haben ein Kundenkonto für Sie erstellt, mit dem Sie Ihre Bestellungen verfolgen und exklusive Vorteile geniessen können.
+      <p style="color:#404040;font-size:15px;line-height:1.7;margin:0 0 24px 0;font-family:Arial,Helvetica,sans-serif;">
+        Guten Tag ${customerName},<br><br>
+        wir freuen uns, Sie bei ALDENAIR begrüssen zu dürfen. Wir haben ein Kundenkonto für Sie erstellt, mit dem Sie Ihre Bestellungen verfolgen und exklusive Vorteile geniessen können.
       </p>
       
-      <div style="background: linear-gradient(135deg, #fefce8, #fef3c7); border-radius: 12px; padding: 24px; margin: 24px 0;">
-        <h3 style="margin: 0 0 16px 0; color: #92400e; font-size: 16px; font-weight: 600; text-align: center;">Ihre Zugangsdaten</h3>
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-          <tr>
-            <td style="padding: 8px 0;">
-              <p style="margin: 0; color: #78350f; font-size: 13px;">E-Mail-Adresse</p>
-              <p style="margin: 4px 0 0 0; color: #171717; font-size: 15px; font-weight: 600;">${customerEmail}</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0;">
-              <p style="margin: 0; color: #78350f; font-size: 13px;">Temporäres Passwort</p>
-              <p style="margin: 4px 0 0 0; color: #171717; font-size: 18px; font-weight: 700; font-family: monospace; background: #fff; padding: 8px 12px; border-radius: 6px; display: inline-block;">${temporaryPassword}</p>
-            </td>
-          </tr>
-        </table>
-      </div>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f8f8f8;border-radius:6px;margin:24px 0;">
+        <tr><td style="padding:20px;">
+          <h3 style="margin:0 0 16px 0;color:#1a1a1a;font-size:15px;font-weight:600;font-family:Arial,Helvetica,sans-serif;">Ihre Zugangsdaten</h3>
+          <p style="margin:0 0 8px 0;color:#666666;font-size:13px;font-family:Arial,Helvetica,sans-serif;">E-Mail-Adresse</p>
+          <p style="margin:0 0 16px 0;color:#1a1a1a;font-size:15px;font-weight:600;font-family:Arial,Helvetica,sans-serif;">${customerEmail}</p>
+          <p style="margin:0 0 8px 0;color:#666666;font-size:13px;font-family:Arial,Helvetica,sans-serif;">Temporäres Passwort</p>
+          <p style="margin:0;color:#1a1a1a;font-size:16px;font-weight:700;font-family:monospace;background:#ffffff;padding:10px 14px;border-radius:4px;display:inline-block;border:1px solid #e5e5e5;">${temporaryPassword}</p>
+        </td></tr>
+      </table>
       
       ${infoBox(`
         <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.6;">
@@ -493,27 +474,22 @@ export async function sendWelcomeEmail(
     const { client, fromEmail } = await getResendClient();
     
     const content = `
-      <div style="text-align: center; margin-bottom: 32px;">
-        <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-          <span style="font-size: 28px;">&#127881;</span>
-        </div>
-        <h2 style="margin: 0; color: #171717; font-size: 24px; font-weight: 600;">Willkommen bei ALDENAIR!</h2>
-      </div>
+      <h2 style="margin:0 0 24px 0;color:#1a1a1a;font-size:22px;font-weight:600;text-align:center;font-family:Arial,Helvetica,sans-serif;">Willkommen bei ALDENAIR</h2>
       
-      <p style="color: #404040; font-size: 15px; line-height: 1.7; margin: 0 0 24px 0;">
-        Hallo ${customerName || 'lieber Kunde'},<br><br>
-        vielen Dank für Ihre Registrierung bei ALDENAIR! Wir freuen uns sehr, Sie in unserer Parfum-Community begrüssen zu dürfen.
+      <p style="color:#404040;font-size:15px;line-height:1.7;margin:0 0 24px 0;font-family:Arial,Helvetica,sans-serif;">
+        Guten Tag ${customerName || 'lieber Kunde'},<br><br>
+        vielen Dank für Ihre Registrierung bei ALDENAIR. Wir freuen uns, Sie in unserer Parfum-Community begrüssen zu dürfen.
       </p>
       
       ${infoBox(`
-        <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.6;">
+        <p style="margin:0;color:#0284c7;font-size:14px;line-height:1.6;font-family:Arial,Helvetica,sans-serif;">
           Sie können sich jetzt jederzeit mit Ihrer E-Mail-Adresse <strong>${customerEmail}</strong> anmelden.
         </p>
       `, 'info')}
       
-      <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
-        <h4 style="margin: 0 0 16px 0; color: #171717; font-size: 15px; font-weight: 600;">Ihre Vorteile als Kunde:</h4>
-        <ul style="margin: 0; padding: 0 0 0 20px; color: #404040; font-size: 14px; line-height: 2;">
+      <div style="margin-top:32px;padding-top:24px;border-top:1px solid #e5e5e5;">
+        <h4 style="margin:0 0 16px 0;color:#1a1a1a;font-size:15px;font-weight:600;font-family:Arial,Helvetica,sans-serif;">Ihre Vorteile als Kunde:</h4>
+        <ul style="margin:0;padding:0 0 0 20px;color:#404040;font-size:14px;line-height:2;font-family:Arial,Helvetica,sans-serif;">
           <li>Exklusive Rabatte und Angebote</li>
           <li>Bestellhistorie und Sendungsverfolgung</li>
           <li>Treuepunkte sammeln und einlösen</li>
@@ -521,7 +497,7 @@ export async function sendWelcomeEmail(
         </ul>
       </div>
       
-      <div style="text-align: center; margin-top: 32px;">
+      <div style="text-align:center;margin-top:32px;">
         ${emailButton('Jetzt shoppen', `${baseUrl}/products`)}
       </div>
     `;
@@ -568,27 +544,22 @@ export async function sendOrderCancellationEmail(
     ` : '';
     
     const content = `
-      <div style="text-align: center; margin-bottom: 32px;">
-        <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #fee2e2, #fecaca); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-          <span style="font-size: 28px;">&#10006;</span>
-        </div>
-        <h2 style="margin: 0; color: #171717; font-size: 24px; font-weight: 600;">Bestellung storniert</h2>
-        <p style="margin: 8px 0 0 0; color: #737373; font-size: 14px;">Bestellung: <strong style="color: #d97706;">${orderNumber}</strong></p>
-      </div>
+      <h2 style="margin:0 0 8px 0;color:#1a1a1a;font-size:22px;font-weight:600;text-align:center;font-family:Arial,Helvetica,sans-serif;">Bestellung storniert</h2>
+      <p style="margin:0 0 24px 0;color:#666666;font-size:14px;text-align:center;font-family:Arial,Helvetica,sans-serif;">Bestellung: <strong style="color:#1a1a1a;">${orderNumber}</strong></p>
       
-      <p style="color: #404040; font-size: 15px; line-height: 1.7; margin: 0 0 24px 0;">
-        Hallo ${customerName},<br><br>
+      <p style="color:#404040;font-size:15px;line-height:1.7;margin:0 0 24px 0;font-family:Arial,Helvetica,sans-serif;">
+        Guten Tag ${customerName},<br><br>
         wir bestätigen hiermit, dass Ihre Bestellung storniert wurde.
         ${reason ? `<br><br><strong>Grund:</strong> ${reason}` : ''}
       </p>
       
       ${refundInfo}
       
-      <p style="color: #404040; font-size: 15px; line-height: 1.7; margin: 24px 0;">
+      <p style="color:#404040;font-size:15px;line-height:1.7;margin:24px 0;font-family:Arial,Helvetica,sans-serif;">
         Es tut uns leid, dass es diesmal nicht geklappt hat. Wir hoffen, Sie bald wieder bei uns begrüssen zu dürfen.
       </p>
       
-      <div style="text-align: center; margin-top: 32px;">
+      <div style="text-align:center;margin-top:32px;">
         ${emailButton('Weiter einkaufen', 'https://aldenair.de/products')}
       </div>
     `;
@@ -622,34 +593,31 @@ export async function sendRefundEmail(
     const { client, fromEmail } = await getResendClient();
     
     const content = `
-      <div style="text-align: center; margin-bottom: 32px;">
-        <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #d1fae5, #a7f3d0); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-          <span style="font-size: 28px;">&#128176;</span>
-        </div>
-        <h2 style="margin: 0; color: #171717; font-size: 24px; font-weight: 600;">Rückerstattung veranlasst</h2>
-        <p style="margin: 8px 0 0 0; color: #737373; font-size: 14px;">Bestellung: <strong style="color: #d97706;">${orderNumber}</strong></p>
-      </div>
+      <h2 style="margin:0 0 8px 0;color:#1a1a1a;font-size:22px;font-weight:600;text-align:center;font-family:Arial,Helvetica,sans-serif;">Rückerstattung veranlasst</h2>
+      <p style="margin:0 0 24px 0;color:#666666;font-size:14px;text-align:center;font-family:Arial,Helvetica,sans-serif;">Bestellung: <strong style="color:#1a1a1a;">${orderNumber}</strong></p>
       
-      <p style="color: #404040; font-size: 15px; line-height: 1.7; margin: 0 0 24px 0;">
-        Hallo ${customerName},<br><br>
+      <p style="color:#404040;font-size:15px;line-height:1.7;margin:0 0 24px 0;font-family:Arial,Helvetica,sans-serif;">
+        Guten Tag ${customerName},<br><br>
         wir haben Ihre Rückerstattung veranlasst. Hier sind die Details:
       </p>
       
-      <div style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center;">
-        <p style="margin: 0; color: #065f46; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Rückerstattungsbetrag</p>
-        <p style="margin: 12px 0; color: #059669; font-size: 32px; font-weight: 700;">${refundAmount.toFixed(2)} EUR</p>
-        <p style="margin: 0; color: #065f46; font-size: 14px;">via ${refundMethod}</p>
-      </div>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f0fdf4;border-radius:6px;margin:24px 0;">
+        <tr><td style="padding:24px;text-align:center;">
+          <p style="margin:0;color:#065f46;font-size:13px;text-transform:uppercase;letter-spacing:1px;font-family:Arial,Helvetica,sans-serif;">Rückerstattungsbetrag</p>
+          <p style="margin:12px 0;color:#059669;font-size:28px;font-weight:700;font-family:Arial,Helvetica,sans-serif;">${refundAmount.toFixed(2)} EUR</p>
+          <p style="margin:0;color:#065f46;font-size:14px;font-family:Arial,Helvetica,sans-serif;">via ${refundMethod}</p>
+        </td></tr>
+      </table>
       
       ${infoBox(`
-        <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.6;">
+        <p style="margin:0;color:#0284c7;font-size:14px;line-height:1.6;font-family:Arial,Helvetica,sans-serif;">
           <strong>Bearbeitungszeit:</strong> Die Rückerstattung wird innerhalb von 5-7 Werktagen auf Ihrem Konto gutgeschrieben. Bei Kreditkartenzahlungen kann es je nach Bank etwas länger dauern.
         </p>
       `, 'info')}
       
-      <p style="color: #737373; font-size: 14px; line-height: 1.6; margin-top: 24px; text-align: center;">
+      <p style="color:#888888;font-size:14px;line-height:1.6;margin-top:24px;text-align:center;font-family:Arial,Helvetica,sans-serif;">
         Bei Fragen zu Ihrer Rückerstattung kontaktieren Sie uns gerne unter<br>
-        <a href="mailto:support@aldenair.de" style="color: #d97706; text-decoration: none;">support@aldenair.de</a>
+        <a href="mailto:support@aldenair.de" style="color:#1a1a1a;text-decoration:none;">support@aldenair.de</a>
       </p>
     `;
 
@@ -681,29 +649,28 @@ export async function sendNewsletterWelcomeEmail(
     const greeting = firstName ? `Hallo ${firstName}` : 'Hallo';
     
     const content = `
-      <div style="text-align: center; margin-bottom: 32px;">
-        <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-          <span style="font-size: 28px;">&#128140;</span>
-        </div>
-        <h2 style="margin: 0; color: #171717; font-size: 24px; font-weight: 600;">Willkommen im Newsletter!</h2>
-      </div>
+      <h2 style="margin:0 0 24px 0;color:#1a1a1a;font-size:22px;font-weight:600;text-align:center;font-family:Arial,Helvetica,sans-serif;">Willkommen im Newsletter</h2>
       
-      <p style="color: #404040; font-size: 15px; line-height: 1.7; margin: 0 0 24px 0;">
+      <p style="color:#404040;font-size:15px;line-height:1.7;margin:0 0 24px 0;font-family:Arial,Helvetica,sans-serif;">
         ${greeting},<br><br>
-        vielen Dank für Ihre Anmeldung zu unserem Newsletter! Ab jetzt erhalten Sie exklusive Einblicke in die Welt der Düfte.
+        vielen Dank für Ihre Anmeldung zu unserem Newsletter. Ab jetzt erhalten Sie exklusive Einblicke in die Welt der Düfte.
       </p>
       
-      <div style="background: linear-gradient(135deg, #fefce8, #fef3c7); border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center;">
-        <h3 style="margin: 0 0 8px 0; color: #92400e; font-size: 20px; font-weight: 700;">10% Rabatt</h3>
-        <p style="margin: 0 0 16px 0; color: #78350f; font-size: 14px;">auf Ihre nächste Bestellung</p>
-        <div style="background: #fff; border: 2px dashed #d97706; border-radius: 8px; padding: 12px 24px; display: inline-block;">
-          <p style="margin: 0; color: #d97706; font-size: 20px; font-weight: 700; font-family: monospace;">WELCOME10</p>
-        </div>
-      </div>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#fffbeb;border-radius:6px;margin:24px 0;">
+        <tr><td style="padding:24px;text-align:center;">
+          <h3 style="margin:0 0 8px 0;color:#92400e;font-size:18px;font-weight:700;font-family:Arial,Helvetica,sans-serif;">10% Rabatt</h3>
+          <p style="margin:0 0 16px 0;color:#78350f;font-size:14px;font-family:Arial,Helvetica,sans-serif;">auf Ihre nächste Bestellung</p>
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto;">
+            <tr><td style="background:#ffffff;border:2px dashed #d97706;border-radius:6px;padding:12px 24px;">
+              <p style="margin:0;color:#d97706;font-size:18px;font-weight:700;font-family:monospace;">WELCOME10</p>
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
       
-      <div style="margin-top: 32px;">
-        <h4 style="margin: 0 0 16px 0; color: #171717; font-size: 15px; font-weight: 600;">Das erwartet Sie:</h4>
-        <ul style="margin: 0; padding: 0 0 0 20px; color: #404040; font-size: 14px; line-height: 2;">
+      <div style="margin-top:32px;">
+        <h4 style="margin:0 0 16px 0;color:#1a1a1a;font-size:15px;font-weight:600;font-family:Arial,Helvetica,sans-serif;">Das erwartet Sie:</h4>
+        <ul style="margin:0;padding:0 0 0 20px;color:#404040;font-size:14px;line-height:2;font-family:Arial,Helvetica,sans-serif;">
           <li>Exklusive Rabattcodes und Aktionen</li>
           <li>Neuheiten vor allen anderen</li>
           <li>Tipps rund um Parfum und Pflege</li>
@@ -711,7 +678,7 @@ export async function sendNewsletterWelcomeEmail(
         </ul>
       </div>
       
-      <div style="text-align: center; margin-top: 32px;">
+      <div style="text-align:center;margin-top:32px;">
         ${emailButton('Jetzt shoppen', 'https://aldenair.de/products')}
       </div>
     `;
@@ -744,26 +711,23 @@ export async function sendContactFormConfirmationEmail(
     const { client, fromEmail } = await getResendClient();
     
     const content = `
-      <div style="text-align: center; margin-bottom: 32px;">
-        <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #dbeafe, #bfdbfe); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-          <span style="font-size: 28px;">&#128172;</span>
-        </div>
-        <h2 style="margin: 0; color: #171717; font-size: 24px; font-weight: 600;">Nachricht erhalten!</h2>
-      </div>
+      <h2 style="margin:0 0 24px 0;color:#1a1a1a;font-size:22px;font-weight:600;text-align:center;font-family:Arial,Helvetica,sans-serif;">Nachricht erhalten</h2>
       
-      <p style="color: #404040; font-size: 15px; line-height: 1.7; margin: 0 0 24px 0;">
-        Hallo ${name},<br><br>
-        vielen Dank für Ihre Nachricht! Wir haben Ihre Anfrage erhalten und werden uns schnellstmöglich bei Ihnen melden.
+      <p style="color:#404040;font-size:15px;line-height:1.7;margin:0 0 24px 0;font-family:Arial,Helvetica,sans-serif;">
+        Guten Tag ${name},<br><br>
+        vielen Dank für Ihre Nachricht. Wir haben Ihre Anfrage erhalten und werden uns schnellstmöglich bei Ihnen melden.
       </p>
       
-      <div style="background: #fafafa; border-radius: 12px; padding: 24px; margin: 24px 0;">
-        <h4 style="margin: 0 0 16px 0; color: #737373; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Ihre Nachricht</h4>
-        <p style="margin: 0 0 8px 0; color: #171717; font-size: 15px; font-weight: 600;">${subject}</p>
-        <p style="margin: 0; color: #404040; font-size: 14px; line-height: 1.7; white-space: pre-wrap;">${message}</p>
-      </div>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f8f8f8;border-radius:6px;margin:24px 0;">
+        <tr><td style="padding:20px;">
+          <h4 style="margin:0 0 12px 0;color:#888888;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-family:Arial,Helvetica,sans-serif;">Ihre Nachricht</h4>
+          <p style="margin:0 0 8px 0;color:#1a1a1a;font-size:15px;font-weight:600;font-family:Arial,Helvetica,sans-serif;">${subject}</p>
+          <p style="margin:0;color:#404040;font-size:14px;line-height:1.7;white-space:pre-wrap;font-family:Arial,Helvetica,sans-serif;">${message}</p>
+        </td></tr>
+      </table>
       
       ${infoBox(`
-        <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.6;">
+        <p style="margin:0;color:#0284c7;font-size:14px;line-height:1.6;font-family:Arial,Helvetica,sans-serif;">
           <strong>Antwortzeit:</strong> Wir antworten in der Regel innerhalb von 24 Stunden (Werktags).
         </p>
       `, 'info')}
@@ -805,32 +769,29 @@ export async function sendReviewRequestEmail(
     `).join('');
     
     const content = `
-      <div style="text-align: center; margin-bottom: 32px;">
-        <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-          <span style="font-size: 28px;">&#11088;</span>
-        </div>
-        <h2 style="margin: 0; color: #171717; font-size: 24px; font-weight: 600;">Wie gefällt Ihnen Ihr Duft?</h2>
-      </div>
+      <h2 style="margin:0 0 24px 0;color:#1a1a1a;font-size:22px;font-weight:600;text-align:center;font-family:Arial,Helvetica,sans-serif;">Wie gefällt Ihnen Ihr Duft?</h2>
       
-      <p style="color: #404040; font-size: 15px; line-height: 1.7; margin: 0 0 24px 0; text-align: center;">
-        Hallo ${customerName},<br><br>
-        wir hoffen, Sie geniessen Ihre neuen Düfte! Ihre Meinung ist uns wichtig - teilen Sie Ihre Erfahrung mit anderen Duftliebhabern.
+      <p style="color:#404040;font-size:15px;line-height:1.7;margin:0 0 24px 0;text-align:center;font-family:Arial,Helvetica,sans-serif;">
+        Guten Tag ${customerName},<br><br>
+        wir hoffen, Sie geniessen Ihre neuen Düfte. Ihre Meinung ist uns wichtig - teilen Sie Ihre Erfahrung mit anderen Duftliebhabern.
       </p>
       
-      <div style="text-align: center; margin: 24px 0;">
+      <div style="text-align:center;margin:24px 0;">
         ${productsHtml}
       </div>
       
-      <div style="background: linear-gradient(135deg, #fefce8, #fef3c7); border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center;">
-        <p style="margin: 0; color: #92400e; font-size: 14px;">Als Dankeschön für Ihre Bewertung erhalten Sie</p>
-        <p style="margin: 8px 0; color: #d97706; font-size: 24px; font-weight: 700;">50 Treuepunkte</p>
-      </div>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#fffbeb;border-radius:6px;margin:24px 0;">
+        <tr><td style="padding:24px;text-align:center;">
+          <p style="margin:0;color:#92400e;font-size:14px;font-family:Arial,Helvetica,sans-serif;">Als Dankeschön für Ihre Bewertung erhalten Sie</p>
+          <p style="margin:8px 0;color:#d97706;font-size:22px;font-weight:700;font-family:Arial,Helvetica,sans-serif;">50 Treuepunkte</p>
+        </td></tr>
+      </table>
       
-      <div style="text-align: center; margin-top: 32px;">
+      <div style="text-align:center;margin-top:32px;">
         ${emailButton('Jetzt bewerten', `${baseUrl}/orders`)}
       </div>
       
-      <p style="color: #737373; font-size: 13px; text-align: center; margin-top: 24px;">
+      <p style="color:#888888;font-size:13px;text-align:center;margin-top:24px;font-family:Arial,Helvetica,sans-serif;">
         Bestellnummer: ${orderNumber}
       </p>
     `;
