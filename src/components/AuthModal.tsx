@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { User, UserPlus, AlertCircle, Shield } from 'lucide-react';
+import { User, UserPlus, AlertCircle, Shield, ArrowLeft, Mail } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { sanitizeInput, validatePasswordStrength, validateEmail } from '@/lib/validation';
 import { authRateLimiter } from '@/lib/security';
@@ -31,8 +31,50 @@ export function AuthModal({ children }: AuthModalProps) {
   const [showTwoFactorVerification, setShowTwoFactorVerification] = useState(false);
   const [mfaChallengeId, setMfaChallengeId] = useState('');
   const [setup2FAAfterSignup, setSetup2FAAfterSignup] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const sanitizedEmail = sanitizeInput(email);
+    const emailValidation = validateEmail(sanitizedEmail);
+    
+    if (!emailValidation.isValid) {
+      toast({
+        title: "Ungültige E-Mail",
+        description: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: sanitizedEmail }),
+      });
+      
+      setResetEmailSent(true);
+      toast({
+        title: "E-Mail gesendet",
+        description: "Falls ein Konto mit dieser E-Mail existiert, erhalten Sie eine Nachricht mit weiteren Anweisungen.",
+      });
+    } catch (error) {
+      toast({
+        title: "E-Mail gesendet",
+        description: "Falls ein Konto mit dieser E-Mail existiert, erhalten Sie eine Nachricht mit weiteren Anweisungen.",
+      });
+      setResetEmailSent(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,6 +221,8 @@ export function AuthModal({ children }: AuthModalProps) {
     setShowTwoFactorSetup(false);
     setShowTwoFactorVerification(false);
     setMfaChallengeId('');
+    setShowForgotPassword(false);
+    setResetEmailSent(false);
   };
 
   const handlePasswordChange = (value: string) => {
@@ -208,6 +252,70 @@ export function AuthModal({ children }: AuthModalProps) {
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 pointer-events-none" />
           
+          {showForgotPassword ? (
+            <div className="relative p-6">
+              <button 
+                type="button"
+                onClick={() => { setShowForgotPassword(false); setResetEmailSent(false); }}
+                className="absolute top-6 left-6 p-2 rounded-full hover:bg-muted transition-colors"
+                data-testid="button-back-to-login"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              
+              <DialogHeader className="text-center space-y-2 pt-8">
+                <div className="mx-auto w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mb-2">
+                  <Mail className="w-6 h-6 text-primary" />
+                </div>
+                <DialogTitle className="text-xl font-semibold">
+                  {resetEmailSent ? 'E-Mail gesendet' : 'Passwort zurücksetzen'}
+                </DialogTitle>
+                <p className="text-sm text-muted-foreground">
+                  {resetEmailSent 
+                    ? 'Prüfen Sie Ihren Posteingang für weitere Anweisungen.' 
+                    : 'Geben Sie Ihre E-Mail-Adresse ein, um Ihr Passwort zurückzusetzen.'
+                  }
+                </p>
+              </DialogHeader>
+              
+              {resetEmailSent ? (
+                <div className="mt-6 space-y-4">
+                  <div className="p-4 bg-green-50 dark:bg-green-950/30 rounded-lg text-center">
+                    <p className="text-sm text-green-700 dark:text-green-300">
+                      Falls ein Konto mit dieser E-Mail existiert, erhalten Sie in Kürze eine Nachricht mit Anweisungen zum Zurücksetzen Ihres Passworts.
+                    </p>
+                  </div>
+                  <Button 
+                    className="w-full h-11"
+                    onClick={() => { setShowForgotPassword(false); setResetEmailSent(false); }}
+                    data-testid="button-back-to-login-after-reset"
+                  >
+                    Zurück zur Anmeldung
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={handleForgotPassword} className="mt-6 space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="reset-email" className="text-sm font-medium">E-Mail-Adresse</Label>
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      placeholder="ihre@email.de"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="h-11"
+                      data-testid="input-reset-email"
+                    />
+                  </div>
+                  <Button type="submit" className="w-full h-11 text-base font-medium" disabled={loading} data-testid="button-reset-submit">
+                    {loading ? 'Wird gesendet...' : 'Link senden'}
+                  </Button>
+                </form>
+              )}
+            </div>
+          ) : (
+          <>
           <div className="relative p-6 pb-4">
             <DialogHeader className="text-center space-y-2">
               <div className="mx-auto w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mb-2">
@@ -272,7 +380,12 @@ export function AuthModal({ children }: AuthModalProps) {
                   {loading ? 'Anmelden...' : 'Anmelden'}
                 </Button>
                 <div className="text-center">
-                  <button type="button" className="text-sm text-primary hover:underline">
+                  <button 
+                    type="button" 
+                    className="text-sm text-primary hover:underline"
+                    onClick={() => setShowForgotPassword(true)}
+                    data-testid="button-forgot-password"
+                  >
                     Passwort oder E-Mail vergessen?
                   </button>
                 </div>
@@ -360,6 +473,8 @@ export function AuthModal({ children }: AuthModalProps) {
               </form>
             </TabsContent>
           </Tabs>
+          </>
+          )}
         </div>
       </DialogContent>
       
