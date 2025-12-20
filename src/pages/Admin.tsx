@@ -320,7 +320,7 @@ function DashboardOverview({ orders, stats }: { orders: Order[]; stats: Dashboar
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-semibold text-cyan-400">
-                          €{order.totalAmount.toFixed(2)}
+                          €{Number(order.totalAmount || 0).toFixed(2)}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {new Date(order.createdAt).toLocaleDateString('de-DE')}
@@ -517,7 +517,7 @@ function OrdersView({
                         </div>
                       </TableCell>
                       <TableCell className="font-semibold">
-                        €{order.totalAmount.toFixed(2)}
+                        €{Number(order.totalAmount || 0).toFixed(2)}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
                         <Select 
@@ -601,7 +601,7 @@ function OrdersView({
                                         </div>
                                         <div className="flex justify-between">
                                           <span>Summe</span>
-                                          <span className="font-semibold">€{order.totalAmount.toFixed(2)}</span>
+                                          <span className="font-semibold">€{Number(order.totalAmount || 0).toFixed(2)}</span>
                                         </div>
                                         <div className="flex justify-between">
                                           <span>Datum</span>
@@ -616,7 +616,7 @@ function OrdersView({
                                           {order.orderItems.map((item) => (
                                             <div key={item.id} className="p-3 flex justify-between text-sm">
                                               <span>{item.quantity}x {getPerfumeNameById(item.perfumeId, item.variantId)}</span>
-                                              <span className="font-medium">€{item.totalPrice.toFixed(2)}</span>
+                                              <span className="font-medium">€{Number(item.totalPrice || 0).toFixed(2)}</span>
                                             </div>
                                           ))}
                                         </div>
