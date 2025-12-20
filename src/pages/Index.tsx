@@ -2,7 +2,6 @@ import { HeroSection } from '@/components/HeroSection';
 import { PerfumeGrid } from '@/components/PerfumeGrid';
 import { TrustSection } from '@/components/TrustSection';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
-import { MobileSearchBar } from '@/components/MobileSearchBar';
 import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { OrganizationSchema, WebsiteSchema } from '@/components/StructuredData';
@@ -26,7 +25,6 @@ const Index = () => {
       <TouchOptimizations />
       <KeyboardShortcuts />
       <Navigation />
-      <MobileSearchBar />
       
       <main id="main-content" role="main" aria-label="Hauptinhalt">
         <HeroSection />
