@@ -122,6 +122,13 @@ For full functionality, add these secrets:
   - Builds intelligent prompts from product name, category, and fragrance notes
   - Images saved to attached_assets/generated_images/ with sanitized filenames
   - Security: Admin-only access, input validation, path traversal prevention
+- **Variant Sub-Product Enhancement** (December 20, 2025):
+  - Extended productVariants schema with full product-level attributes: name, image, aiDescription, topNotes, middleNotes, baseNotes, ingredients, originalPrice, sku
+  - Redesigned variant management dialog with 4-tab interface (Basis, Duftprofil, Bild & KI, Details)
+  - AI image and description generation for individual variants
+  - Updated variant table to display name + thumbnail instead of just size
+  - Backend routes accept and persist all new variant fields
+  - Empty arrays normalized to null for database compatibility
 
 ## Loyalty Tier System
 | Tier     | Min Spend | Discount |

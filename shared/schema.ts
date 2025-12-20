@@ -447,13 +447,21 @@ export const insertProductSchema = z.object({
 export const insertProductVariantSchema = z.object({
   productId: z.string().uuid().optional(),
   name: z.string().min(1),
-  description: z.string().optional(),
-  size: z.string().optional(),
+  description: z.string().optional().nullable(),
+  size: z.string().optional().nullable(),
   price: z.string(),
+  originalPrice: z.string().optional().nullable(),
   stock: z.number().optional(),
+  sku: z.string().optional().nullable(),
   inStock: z.boolean().optional(),
-  inspiredByFragrance: z.string().optional(),
+  inspiredByFragrance: z.string().optional().nullable(),
   isActive: z.boolean().optional(),
+  image: z.string().optional().nullable(),
+  aiDescription: z.string().optional().nullable(),
+  topNotes: z.array(z.string()).optional().nullable(),
+  middleNotes: z.array(z.string()).optional().nullable(),
+  baseNotes: z.array(z.string()).optional().nullable(),
+  ingredients: z.array(z.string()).optional().nullable(),
 });
 
 export const insertOrderSchema = z.object({

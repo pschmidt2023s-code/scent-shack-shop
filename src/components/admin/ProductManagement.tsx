@@ -351,15 +351,29 @@ export default function ProductManagement() {
         : `/api/products/${selectedProductId}/variants`;
       const method = editingVariant ? "PATCH" : "POST";
 
+      // Convert empty arrays to null for database compatibility
+      const normalizeArray = (arr: string[] | undefined) => 
+        arr && arr.length > 0 ? arr : null;
+
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          ...variantForm,
+          name: variantForm.name,
+          size: variantForm.size || null,
           price: variantForm.price,
           originalPrice: variantForm.originalPrice || null,
           stock: parseInt(variantForm.stock.toString()),
+          sku: variantForm.sku || null,
+          isActive: variantForm.isActive,
+          description: variantForm.description || null,
+          image: variantForm.image || null,
+          aiDescription: variantForm.aiDescription || null,
+          topNotes: normalizeArray(variantForm.topNotes),
+          middleNotes: normalizeArray(variantForm.middleNotes),
+          baseNotes: normalizeArray(variantForm.baseNotes),
+          ingredients: normalizeArray(variantForm.ingredients),
         }),
       });
 

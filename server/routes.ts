@@ -675,14 +675,28 @@ export async function registerRoutes(app: Express) {
 
   // Admin Variants Management
   const variantSchema = z.object({
-    size: z.string().min(1),
+    name: z.string().optional().nullable(),
+    size: z.string().optional().nullable(),
     price: z.union([z.string(), z.number()]).transform(v => String(v)),
     originalPrice: z.union([z.string(), z.number(), z.null()]).optional().transform(v => v ? String(v) : null),
     stock: z.union([z.string(), z.number()]).transform(v => Number(v)),
     sku: z.string().optional().nullable(),
     isActive: z.boolean().default(true),
-    name: z.string().optional(),
+    description: z.string().optional().nullable(),
+    image: z.string().optional().nullable(),
+    aiDescription: z.string().optional().nullable(),
+    topNotes: z.array(z.string()).optional().nullable(),
+    middleNotes: z.array(z.string()).optional().nullable(),
+    baseNotes: z.array(z.string()).optional().nullable(),
+    ingredients: z.array(z.string()).optional().nullable(),
   });
+
+  // Allowed variant fields for updates
+  const allowedVariantFields = [
+    'name', 'size', 'price', 'originalPrice', 'stock', 'sku', 'isActive',
+    'description', 'image', 'aiDescription', 'topNotes', 'middleNotes', 
+    'baseNotes', 'ingredients'
+  ];
 
   app.post("/api/products/:productId/variants", requireAdmin, async (req, res) => {
     try {
@@ -692,11 +706,20 @@ export async function registerRoutes(app: Express) {
       }
       const variant = await storage.createProductVariant({
         productId: req.params.productId,
-        name: parsed.data.name || parsed.data.size,
-        size: parsed.data.size,
+        name: parsed.data.name || parsed.data.size || "Variante",
+        size: parsed.data.size || null,
         price: parsed.data.price,
+        originalPrice: parsed.data.originalPrice,
         stock: parsed.data.stock,
+        sku: parsed.data.sku,
         isActive: parsed.data.isActive,
+        description: parsed.data.description,
+        image: parsed.data.image,
+        aiDescription: parsed.data.aiDescription,
+        topNotes: parsed.data.topNotes,
+        middleNotes: parsed.data.middleNotes,
+        baseNotes: parsed.data.baseNotes,
+        ingredients: parsed.data.ingredients,
       });
       res.json(variant);
     } catch (error: any) {
@@ -710,12 +733,14 @@ export async function registerRoutes(app: Express) {
       if (!parsed.success) {
         return res.status(400).json({ error: "Invalid variant data", details: parsed.error.issues });
       }
+      
+      // Only allow specific fields
       const updateData: any = {};
-      if (parsed.data.size !== undefined) updateData.size = parsed.data.size;
-      if (parsed.data.price !== undefined) updateData.price = parsed.data.price;
-      if (parsed.data.stock !== undefined) updateData.stock = parsed.data.stock;
-      if (parsed.data.isActive !== undefined) updateData.isActive = parsed.data.isActive;
-      if (parsed.data.name !== undefined) updateData.name = parsed.data.name;
+      for (const field of allowedVariantFields) {
+        if ((parsed.data as any)[field] !== undefined) {
+          updateData[field] = (parsed.data as any)[field];
+        }
+      }
 
       const variant = await storage.updateProductVariant(req.params.id, updateData);
       if (!variant) {
