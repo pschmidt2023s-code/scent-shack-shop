@@ -538,6 +538,7 @@ function CreateOrderDialog({
   const [notes, setNotes] = useState('');
   const [status, setStatus] = useState('pending');
   const [paymentMethod, setPaymentMethod] = useState('bank');
+  const [discount, setDiscount] = useState('');
   const [orderItems, setOrderItems] = useState<OrderItemInput[]>([]);
   const [products, setProducts] = useState<ProductWithVariants[]>([]);
   const [selectedVariant, setSelectedVariant] = useState('');
@@ -587,8 +588,9 @@ function CreateOrderDialog({
   };
 
   const subtotal = orderItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+  const discountAmount = parseFloat(discount) || 0;
   const shipping = subtotal >= 50 ? 0 : 4.99;
-  const total = subtotal + shipping;
+  const total = Math.max(0, subtotal - discountAmount + shipping);
 
   const handleSubmit = async () => {
     setError('');
@@ -618,6 +620,7 @@ function CreateOrderDialog({
         notes,
         status,
         paymentMethod,
+        discount: discountAmount,
       });
       
       // Reset form only on success
@@ -630,6 +633,7 @@ function CreateOrderDialog({
       setNotes('');
       setStatus('pending');
       setPaymentMethod('bank');
+      setDiscount('');
       setOrderItems([]);
       setError('');
       onOpenChange(false);
@@ -793,6 +797,22 @@ function CreateOrderDialog({
                 <div className="flex justify-between text-sm">
                   <span>Zwischensumme</span>
                   <span>€{subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span>Rabatt</span>
+                  <div className="flex items-center gap-1">
+                    <span>-€</span>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={discount}
+                      onChange={(e) => setDiscount(e.target.value)}
+                      placeholder="0.00"
+                      className="w-20 h-7 text-right"
+                      data-testid="input-order-discount"
+                    />
+                  </div>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Versand</span>

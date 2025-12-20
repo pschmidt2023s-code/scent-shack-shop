@@ -558,7 +558,7 @@ export async function registerRoutes(app: Express) {
   // Admin create order manually
   app.post("/api/admin/orders", requireAdmin, async (req, res) => {
     try {
-      const { customerName, customerEmail, customerPhone, shippingAddress, items, notes, paymentMethod, status } = req.body;
+      const { customerName, customerEmail, customerPhone, shippingAddress, items, notes, paymentMethod, status, discount } = req.body;
       
       if (!customerName || !customerEmail || !items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "Name, E-Mail und mindestens ein Artikel erforderlich" });
@@ -601,9 +601,10 @@ export async function registerRoutes(app: Express) {
         });
       }
       
-      // Calculate shipping (free over 50€)
+      // Calculate discount and shipping (free over 50€)
+      const discountAmount = Math.max(0, parseFloat(discount) || 0);
       const shippingCost = subtotal >= 50 ? 0 : 4.99;
-      const finalAmount = subtotal + shippingCost;
+      const finalAmount = Math.max(0, subtotal - discountAmount + shippingCost);
       
       // Generate order number
       const orderNumber = await storage.generateOrderNumber();
@@ -623,7 +624,9 @@ export async function registerRoutes(app: Express) {
         paymentMethod: paymentMethod || "bank",
         paymentStatus: status === "paid" || status === "processing" ? "completed" : "pending",
         status: status || "pending",
-        notes: notes ? `[Admin] ${notes}` : "[Admin] Manuell erstellt",
+        notes: notes 
+          ? `[Admin] ${notes}${discountAmount > 0 ? ` | Rabatt: €${discountAmount.toFixed(2)}` : ''}`
+          : `[Admin] Manuell erstellt${discountAmount > 0 ? ` | Rabatt: €${discountAmount.toFixed(2)}` : ''}`,
       };
       
       const order = await storage.createOrder(orderData);
