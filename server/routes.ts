@@ -2590,9 +2590,7 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
       </tr>`;
       }
       
-      // Calculate tax breakdown (19% MwSt.)
-      const netAmount = totalAmount / 1.19;
-      const taxAmount = totalAmount - netAmount;
+      // Kleinunternehmer nach § 19 UStG - keine MwSt.
       const shippingCost = parseFloat(order.shippingCost || '0');
       
       const invoiceHtml = `
@@ -2773,6 +2771,17 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
     .totals-label { color: #666; }
     .totals-value { font-weight: 500; }
     
+    .tax-notice {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #856404;
+      font-style: italic;
+    }
+    
     .paid-stamp {
       display: inline-flex;
       align-items: center;
@@ -2889,12 +2898,12 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
       
       <div class="totals">
         <div class="totals-row subtotal">
-          <span class="totals-label">Zwischensumme (netto)</span>
-          <span class="totals-value">${netAmount.toFixed(2)} EUR</span>
+          <span class="totals-label">Zwischensumme</span>
+          <span class="totals-value">${totalAmount.toFixed(2)} EUR</span>
         </div>
         <div class="totals-row">
-          <span class="totals-label">MwSt. (19%)</span>
-          <span class="totals-value">${taxAmount.toFixed(2)} EUR</span>
+          <span class="totals-label">MwSt. (0%)</span>
+          <span class="totals-value">0,00 EUR</span>
         </div>
         ${shippingCost > 0 ? `
         <div class="totals-row">
@@ -2905,6 +2914,9 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
         <div class="totals-row grand-total">
           <span class="totals-label">Gesamtbetrag</span>
           <span class="totals-value">${totalAmount.toFixed(2)} EUR</span>
+        </div>
+        <div class="tax-notice">
+          Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).
         </div>
       </div>
     </div>
