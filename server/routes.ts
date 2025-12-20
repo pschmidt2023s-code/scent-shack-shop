@@ -1726,4 +1726,260 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
       res.status(500).json({ error: error.message });
     }
   });
+
+  // Product Recommendations API
+  app.get("/api/products/:id/recommendations", async (req, res) => {
+    try {
+      const productId = req.params.id;
+      const product = await storage.getProduct(productId);
+      
+      if (!product) {
+        return res.status(404).json({ error: "Produkt nicht gefunden" });
+      }
+      
+      // Get all products
+      const allProducts = await storage.getProducts();
+      
+      // Filter out current product and get products from same category
+      const sameCategoryProducts = allProducts
+        .filter(p => p.id !== productId && p.category === product.category && p.isActive)
+        .slice(0, 2);
+      
+      // Get products from different categories
+      const otherProducts = allProducts
+        .filter(p => p.id !== productId && p.category !== product.category && p.isActive)
+        .slice(0, 2);
+      
+      const recommendations = [...sameCategoryProducts, ...otherProducts].slice(0, 4);
+      
+      // Use AI to enhance recommendations if available
+      const ai = getOpenAI();
+      if (ai && recommendations.length > 0) {
+        try {
+          const response = await ai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [{
+              role: "system",
+              content: "Du bist ein Parfüm-Experte. Generiere eine kurze (max 50 Wörter) Empfehlung warum diese Düfte zusammenpassen könnten."
+            }, {
+              role: "user", 
+              content: `Basierend auf ${product.name} (${product.category}), erkläre kurz warum ${recommendations.map(r => r.name).join(', ')} gute Ergänzungen sind.`
+            }],
+            max_tokens: 100,
+          });
+          
+          res.json({
+            recommendations,
+            aiInsight: response.choices[0]?.message?.content || null,
+          });
+        } catch {
+          res.json({ recommendations, aiInsight: null });
+        }
+      } else {
+        res.json({ recommendations, aiInsight: null });
+      }
+    } catch (error: any) {
+      console.error("Recommendations error:", error);
+      res.status(500).json({ error: "Fehler beim Laden der Empfehlungen" });
+    }
+  });
+
+  // Invoice Download API
+  app.get("/api/orders/:orderNumber/invoice", requireAuth, async (req, res) => {
+    try {
+      const { orderNumber } = req.params;
+      const order = await storage.getOrderByNumber(orderNumber);
+      
+      if (!order) {
+        return res.status(404).json({ error: "Bestellung nicht gefunden" });
+      }
+      
+      // Verify user owns this order
+      if (order.userId !== req.session.userId) {
+        const user = await storage.getUser(req.session.userId!);
+        if (user?.role !== 'admin') {
+          return res.status(403).json({ error: "Keine Berechtigung" });
+        }
+      }
+      
+      // Only allow invoice download for completed orders
+      if (order.paymentStatus !== 'completed') {
+        return res.status(400).json({ error: "Rechnung nur für bezahlte Bestellungen verfügbar" });
+      }
+      
+      // Get order items for detailed invoice
+      const orderItems = await storage.getOrderItems(order.id);
+      
+      // Generate HTML invoice
+      const shippingAddr = typeof order.shippingAddressData === 'object' && order.shippingAddressData 
+        ? order.shippingAddressData as Record<string, string>
+        : { street: '', city: '', postalCode: '', country: 'Deutschland' };
+      
+      const invoiceDate = new Date().toLocaleDateString('de-DE');
+      const orderDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString('de-DE') : invoiceDate;
+      
+      // Use correct field names from schema
+      const totalAmount = parseFloat(order.totalAmount || '0');
+      
+      // Generate items HTML - either from orderItems or fallback to total
+      let itemsHtml = '';
+      if (orderItems.length > 0) {
+        itemsHtml = orderItems.map(item => `
+      <tr>
+        <td>${item.variantName || 'Produkt'}</td>
+        <td>${item.quantity}</td>
+        <td>${parseFloat(item.price).toFixed(2)} EUR</td>
+        <td>${(parseFloat(item.price) * item.quantity).toFixed(2)} EUR</td>
+      </tr>`).join('');
+      } else {
+        itemsHtml = `
+      <tr>
+        <td>Bestellung ${orderNumber}</td>
+        <td>1</td>
+        <td>${totalAmount.toFixed(2)} EUR</td>
+        <td>${totalAmount.toFixed(2)} EUR</td>
+      </tr>`;
+      }
+      
+      const invoiceHtml = `
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Rechnung ${orderNumber}</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 40px; }
+    .header h1 { color: #333; margin-bottom: 5px; }
+    .header p { color: #666; }
+    .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; }
+    .invoice-details div { width: 45%; }
+    .invoice-details h3 { border-bottom: 2px solid #333; padding-bottom: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background-color: #f5f5f5; }
+    .total { font-size: 1.2em; font-weight: bold; text-align: right; }
+    .footer { margin-top: 50px; text-align: center; color: #666; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>ALDENAIR</h1>
+    <p>Premium Parfums & Düfte</p>
+  </div>
+  
+  <div class="invoice-details">
+    <div>
+      <h3>Rechnungsadresse</h3>
+      <p>${order.customerName || 'Kunde'}</p>
+      <p>${shippingAddr.street || shippingAddr.line1 || ''}</p>
+      <p>${shippingAddr.postalCode || shippingAddr.postal_code || ''} ${shippingAddr.city || ''}</p>
+      <p>${shippingAddr.country || 'Deutschland'}</p>
+    </div>
+    <div>
+      <h3>Rechnungsdetails</h3>
+      <p><strong>Rechnungsnr.:</strong> ${orderNumber}</p>
+      <p><strong>Datum:</strong> ${orderDate}</p>
+      <p><strong>Zahlungsmethode:</strong> ${order.paymentMethod === 'card' ? 'Kreditkarte' : order.paymentMethod === 'paypal' ? 'PayPal' : order.paymentMethod}</p>
+      <p><strong>Status:</strong> Bezahlt</p>
+    </div>
+  </div>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>Artikel</th>
+        <th>Menge</th>
+        <th>Einzelpreis</th>
+        <th>Gesamt</th>
+      </tr>
+    </thead>
+    <tbody>${itemsHtml}
+    </tbody>
+  </table>
+  
+  <div class="total">
+    <p>Gesamtbetrag: ${totalAmount.toFixed(2)} EUR (inkl. MwSt.)</p>
+  </div>
+  
+  <div class="footer">
+    <p>ALDENAIR GmbH | info@aldenair.de | www.aldenair.de</p>
+    <p>Vielen Dank für Ihren Einkauf!</p>
+  </div>
+</body>
+</html>`;
+      
+      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Content-Disposition', `attachment; filename="Rechnung-${orderNumber}.html"`);
+      res.send(invoiceHtml);
+    } catch (error: any) {
+      console.error("Invoice error:", error);
+      res.status(500).json({ error: "Fehler beim Erstellen der Rechnung" });
+    }
+  });
+
+  // Payback Earning - award points after order completion
+  app.post("/api/payback/earn", requireAuth, async (req, res) => {
+    try {
+      const { orderId } = req.body;
+      const userId = req.session.userId!;
+      
+      if (!orderId) {
+        return res.status(400).json({ error: "Bestell-ID fehlt" });
+      }
+      
+      // Fetch the order and validate ownership
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ error: "Bestellung nicht gefunden" });
+      }
+      
+      // Verify user owns this order
+      if (order.userId !== userId) {
+        return res.status(403).json({ error: "Keine Berechtigung für diese Bestellung" });
+      }
+      
+      // Only award cashback for completed payments
+      if (order.paymentStatus !== 'completed') {
+        return res.status(400).json({ error: "Cashback nur für bezahlte Bestellungen verfügbar" });
+      }
+      
+      // Check if cashback was already awarded (use notes field to track)
+      if (order.notes?.includes('CASHBACK_AWARDED')) {
+        return res.status(400).json({ error: "Cashback wurde bereits gutgeschrieben" });
+      }
+      
+      // Calculate cashback (2% of order total) from actual order data
+      const cashbackRate = 0.02;
+      const orderTotal = parseFloat(order.totalAmount || '0');
+      const earnedAmount = orderTotal * cashbackRate;
+      
+      // Update user's payback balance
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "Benutzer nicht gefunden" });
+      }
+      
+      const currentBalance = parseFloat(user.paybackBalance || '0');
+      const newBalance = currentBalance + earnedAmount;
+      
+      // Update user balance and mark order as credited
+      await storage.updateUser(userId, {
+        paybackBalance: newBalance.toFixed(2),
+      });
+      
+      await storage.updateOrder(orderId, {
+        notes: (order.notes || '') + ' CASHBACK_AWARDED',
+      });
+      
+      res.json({
+        earned: earnedAmount.toFixed(2),
+        newBalance: newBalance.toFixed(2),
+        message: `Sie haben ${earnedAmount.toFixed(2)} EUR Cashback verdient!`,
+      });
+    } catch (error: any) {
+      console.error("Payback earn error:", error);
+      res.status(500).json({ error: "Fehler beim Cashback" });
+    }
+  });
 }

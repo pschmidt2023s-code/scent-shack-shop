@@ -74,7 +74,7 @@ const authLimiter = rateLimit({
 
 const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
-  max: 100,
+  max: isProduction ? 100 : 500,
   message: { error: "API-Limit erreicht. Bitte versuchen Sie es später erneut." },
   standardHeaders: true,
   legacyHeaders: false,
