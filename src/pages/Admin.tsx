@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/co
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { getPerfumeNameById } from '@/lib/perfume-utils';
@@ -52,7 +53,8 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
-  Truck
+  Truck,
+  Check
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -110,6 +112,7 @@ interface Order {
   shippingAddressData?: any;
   billingAddressData?: any;
   orderItems?: OrderItem[];
+  trackingNumber?: string;
 }
 
 interface OrderItem {
@@ -698,11 +701,58 @@ function OrdersView({
                                       <h4 className="font-medium mb-2 flex items-center gap-2">
                                         <Package className="w-4 h-4" /> Bestelldetails
                                       </h4>
-                                      <div className="bg-muted p-3 rounded-lg text-sm space-y-2">
-                                        <div className="flex justify-between">
-                                          <span>Status</span>
-                                          {getStatusBadge(order.status)}
+                                      <div className="bg-muted p-3 rounded-lg text-sm space-y-3">
+                                        <div className="space-y-2">
+                                          <Label className="text-xs text-muted-foreground">Status ändern</Label>
+                                          <Select 
+                                            value={order.status} 
+                                            onValueChange={(value) => onUpdateStatus(order.id, value)}
+                                          >
+                                            <SelectTrigger className="h-9" data-testid={`dialog-select-status-${order.id}`}>
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="pending">Ausstehend</SelectItem>
+                                              <SelectItem value="pending_payment">Zahlung offen</SelectItem>
+                                              <SelectItem value="processing">In Bearbeitung</SelectItem>
+                                              <SelectItem value="paid">Bezahlt</SelectItem>
+                                              <SelectItem value="shipped">Versendet</SelectItem>
+                                              <SelectItem value="delivered">Zugestellt</SelectItem>
+                                              <SelectItem value="cancelled">Storniert</SelectItem>
+                                            </SelectContent>
+                                          </Select>
                                         </div>
+                                        <div className="space-y-2">
+                                          <Label className="text-xs text-muted-foreground">Sendungsnummer</Label>
+                                          <div className="flex gap-2">
+                                            <Input 
+                                              placeholder="z.B. 1234567890"
+                                              defaultValue={order.trackingNumber || ''}
+                                              id={`tracking-${order.id}`}
+                                              data-testid={`input-tracking-${order.id}`}
+                                            />
+                                            <Button 
+                                              size="sm"
+                                              onClick={() => {
+                                                const input = document.getElementById(`tracking-${order.id}`) as HTMLInputElement;
+                                                if (input) {
+                                                  fetch(`/api/orders/${order.id}`, {
+                                                    method: 'PATCH',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    credentials: 'include',
+                                                    body: JSON.stringify({ trackingNumber: input.value })
+                                                  }).then(() => {
+                                                    window.location.reload();
+                                                  });
+                                                }
+                                              }}
+                                              data-testid={`btn-save-tracking-${order.id}`}
+                                            >
+                                              <Check className="w-4 h-4" />
+                                            </Button>
+                                          </div>
+                                        </div>
+                                        <Separator className="my-2" />
                                         <div className="flex justify-between">
                                           <span>Summe</span>
                                           <span className="font-semibold">€{Number(order.totalAmount || 0).toFixed(2)}</span>
