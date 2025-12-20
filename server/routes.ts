@@ -871,6 +871,100 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.delete("/api/admin/users/:id", requireAdmin, async (req, res) => {
+    try {
+      // Don't allow deleting yourself
+      if (req.params.id === req.session.userId) {
+        return res.status(400).json({ error: "Sie können Ihren eigenen Account nicht löschen" });
+      }
+      await storage.deleteUser(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Resend email endpoints
+  app.post("/api/admin/orders/:id/resend-email", requireAdmin, async (req, res) => {
+    try {
+      const { emailType } = req.body; // 'confirmation', 'shipping', 'cancellation', 'refund'
+      const order = await storage.getOrder(req.params.id);
+      if (!order) {
+        return res.status(404).json({ error: "Bestellung nicht gefunden" });
+      }
+
+      const orderItems = await storage.getOrderItems(order.id);
+      const emailItems = orderItems.map(item => ({
+        name: item.variantName || 'Produkt',
+        quantity: item.quantity,
+        price: parseFloat(item.unitPrice?.toString() || '0') * item.quantity,
+      }));
+
+      const shippingAddr = typeof order.shippingAddressData === 'object' && order.shippingAddressData 
+        ? order.shippingAddressData as Record<string, string>
+        : { street: '', city: '', postalCode: '' };
+
+      const { 
+        sendOrderConfirmationEmail, 
+        sendShippingNotificationEmail, 
+        sendOrderCancellationEmail, 
+        sendRefundEmail 
+      } = await import('./resendClient');
+
+      let success = false;
+      switch (emailType) {
+        case 'confirmation':
+          success = await sendOrderConfirmationEmail({
+            orderNumber: order.orderNumber,
+            customerEmail: order.customerEmail || '',
+            customerName: order.customerName || 'Kunde',
+            items: emailItems,
+            totalAmount: parseFloat(order.totalAmount?.toString() || '0'),
+            shippingCost: parseFloat(order.shippingCost?.toString() || '0'),
+            shippingAddress: shippingAddr,
+            paymentMethod: order.paymentMethod || 'bank',
+          });
+          break;
+        case 'shipping':
+          success = await sendShippingNotificationEmail({
+            orderNumber: order.orderNumber,
+            customerEmail: order.customerEmail || '',
+            customerName: order.customerName || 'Kunde',
+            trackingNumber: order.trackingNumber || '',
+            carrier: order.shippingCarrier || 'DHL',
+          });
+          break;
+        case 'cancellation':
+          success = await sendOrderCancellationEmail({
+            orderNumber: order.orderNumber,
+            customerEmail: order.customerEmail || '',
+            customerName: order.customerName || 'Kunde',
+            reason: 'Auf Kundenwunsch storniert',
+          });
+          break;
+        case 'refund':
+          success = await sendRefundEmail({
+            orderNumber: order.orderNumber,
+            customerEmail: order.customerEmail || '',
+            customerName: order.customerName || 'Kunde',
+            refundAmount: parseFloat(order.totalAmount?.toString() || '0'),
+          });
+          break;
+        default:
+          return res.status(400).json({ error: "Ungültiger E-Mail-Typ" });
+      }
+
+      if (success) {
+        res.json({ success: true, message: 'E-Mail erfolgreich gesendet' });
+      } else {
+        res.status(500).json({ error: 'E-Mail konnte nicht gesendet werden' });
+      }
+    } catch (error: any) {
+      console.error('Resend email error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Admin Analytics
   app.get("/api/admin/analytics", requireAdmin, async (req, res) => {
     try {
