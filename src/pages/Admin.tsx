@@ -943,7 +943,8 @@ function OrdersView({
   selectedIds,
   onToggleSelect,
   onToggleSelectAll,
-  onCreateOrder
+  onCreateOrder,
+  onCancelAndRefund
 }: { 
   orders: Order[];
   onUpdateStatus: (id: string, status: string) => void;
@@ -953,6 +954,7 @@ function OrdersView({
   onToggleSelect: (id: string) => void;
   onToggleSelectAll: () => void;
   onCreateOrder: (data: any) => Promise<void>;
+  onCancelAndRefund: (id: string) => Promise<void>;
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -1291,6 +1293,19 @@ function OrdersView({
                                 </div>
                               </DialogContent>
                             </Dialog>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-amber-600 focus:text-amber-600"
+                              onClick={() => {
+                                if (confirm(`Bestellung ${order.orderNumber} wirklich stornieren und erstatten? Der Kunde erhält eine E-Mail.`)) {
+                                  onCancelAndRefund(order.id);
+                                }
+                              }}
+                              disabled={order.status === 'cancelled'}
+                            >
+                              <XCircle className="w-4 h-4 mr-2" />
+                              Stornieren & Erstatten
+                            </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="text-destructive focus:text-destructive"
                               onClick={() => onDelete(order.id)}
@@ -1588,6 +1603,33 @@ export default function Admin() {
     }
   }, [selectedOrderIds, loadData, toast]);
 
+  const cancelAndRefundOrder = useCallback(async (orderId: string) => {
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}/cancel-and-refund`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Stornierung fehlgeschlagen');
+      }
+
+      await loadData();
+      toast({
+        title: "Erfolg",
+        description: `Bestellung storniert und ${data.refundAmount?.toFixed(2) || '0.00'} EUR erstattet. Kunde wurde per E-Mail informiert.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Fehler",
+        description: error.message || "Stornierung fehlgeschlagen",
+        variant: "destructive",
+      });
+    }
+  }, [loadData, toast]);
+
   const createOrder = useCallback(async (orderData: any) => {
     const response = await fetch('/api/admin/orders', {
       method: 'POST',
@@ -1714,6 +1756,7 @@ export default function Admin() {
             onToggleSelect={toggleOrderSelection}
             onToggleSelectAll={toggleSelectAll}
             onCreateOrder={createOrder}
+            onCancelAndRefund={cancelAndRefundOrder}
           />
         );
       case 'products':

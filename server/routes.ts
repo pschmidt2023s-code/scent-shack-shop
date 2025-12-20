@@ -1003,6 +1003,110 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Cancel and refund order (with Stripe refund if applicable)
+  app.post("/api/admin/orders/:id/cancel-and-refund", requireAdmin, async (req, res) => {
+    try {
+      const order = await storage.getOrder(req.params.id);
+      if (!order) {
+        return res.status(404).json({ error: "Bestellung nicht gefunden" });
+      }
+
+      const customerEmail = order.customerEmail || '';
+      const customerName = order.customerName || 'Kunde';
+      const orderNumber = order.orderNumber;
+      const totalAmount = parseFloat(order.totalAmount?.toString() || '0');
+      let refundSuccess = false;
+      let stripeRefundId: string | null = null;
+
+      // If paid by card via Stripe, attempt refund
+      if (order.paymentMethod === 'card' && order.stripeSessionId && order.paymentStatus === 'completed') {
+        try {
+          const { getUncachableStripeClient } = await import('./stripeClient');
+          const stripe = await getUncachableStripeClient();
+          
+          // Get payment intent from session
+          const session = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
+          
+          if (session.payment_intent) {
+            const paymentIntentId = typeof session.payment_intent === 'string' 
+              ? session.payment_intent 
+              : session.payment_intent.id;
+            
+            // Create refund
+            const refund = await stripe.refunds.create({
+              payment_intent: paymentIntentId,
+              reason: 'requested_by_customer',
+            });
+            
+            stripeRefundId = refund.id;
+            refundSuccess = true;
+            console.log(`[Stripe] Refund created: ${refund.id} for order ${orderNumber}`);
+          } else {
+            // No payment intent found - cannot refund
+            console.error('[Stripe] No payment_intent found for session:', order.stripeSessionId);
+            return res.status(400).json({ 
+              error: 'Stripe-Rückerstattung nicht möglich: Keine Zahlungsreferenz gefunden' 
+            });
+          }
+        } catch (stripeError: any) {
+          console.error('[Stripe] Refund failed:', stripeError.message);
+          return res.status(400).json({ 
+            error: `Stripe-Rückerstattung fehlgeschlagen: ${stripeError.message}` 
+          });
+        }
+      } else if (order.paymentMethod === 'card' && order.paymentStatus !== 'completed') {
+        // Card payment not yet completed - can cancel without refund
+        refundSuccess = true;
+        console.log(`[Refund] Card payment not completed, marking as cancelled without Stripe refund`);
+      } else {
+        // Non-card payments (bank transfer, PayPal) - mark as refunded (manual refund needed)
+        refundSuccess = true;
+        console.log(`[Refund] Non-card payment (${order.paymentMethod}), manual refund may be needed`);
+      }
+
+      // Verify refund was successful before updating
+      if (!refundSuccess) {
+        return res.status(400).json({ 
+          error: 'Rückerstattung konnte nicht verarbeitet werden' 
+        });
+      }
+
+      // Update order status
+      await storage.updateOrder(order.id, {
+        status: 'cancelled',
+        paymentStatus: 'refunded',
+        notes: (order.notes || '') + ` | Storniert und erstattet am ${new Date().toLocaleDateString('de-DE')}${stripeRefundId ? ` (Stripe Refund: ${stripeRefundId})` : ''}`
+      });
+
+      // Send cancellation/refund email
+      try {
+        const { sendRefundEmail } = await import('./resendClient');
+        await sendRefundEmail(
+          customerEmail,
+          customerName,
+          orderNumber,
+          totalAmount,
+          order.paymentMethod === 'card' ? 'Kreditkarte' : 
+            order.paymentMethod === 'paypal' ? 'PayPal' : 'Banküberweisung'
+        );
+        console.log(`[Email] Refund confirmation sent to ${customerEmail}`);
+      } catch (emailError: any) {
+        console.error('[Email] Failed to send refund email:', emailError.message);
+        // Don't fail the operation if email fails
+      }
+
+      res.json({ 
+        success: true, 
+        message: 'Bestellung storniert und erstattet',
+        stripeRefundId,
+        refundAmount: totalAmount
+      });
+    } catch (error: any) {
+      console.error('Cancel and refund error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Admin Analytics
   app.get("/api/admin/analytics", requireAdmin, async (req, res) => {
     try {
