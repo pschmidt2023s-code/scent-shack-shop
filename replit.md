@@ -221,3 +221,8 @@ Complete legal compliance overhaul for German B2C e-commerce (stand: Dezember 20
   - POST /api/admin/orders/:id/resend-email endpoint with emailType parameter
   - Dropdown options: Confirmation, Shipping, Cancellation, Refund emails
   - Admin can resend any email type for any order from the orders list
+- **Order Shipping Display & Priority Sorting** (December 20, 2025):
+  - Added shippingOptionId, shippingOptionName, shippingCost, isExpressShipping fields to orders schema
+  - New "Versand" column in admin OrdersView showing Express (amber badge with Zap icon) or Standard
+  - Smart order sorting: Express orders first, then orders older than 12 hours, then newest first
+  - Helps prioritize urgent shipments in the admin dashboard
