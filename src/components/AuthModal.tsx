@@ -256,12 +256,7 @@ export function AuthModal({ children }: AuthModalProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="login-password" className="text-sm font-medium">Passwort</Label>
-                    <button type="button" className="text-xs text-primary hover:underline">
-                      Passwort vergessen?
-                    </button>
-                  </div>
+                  <Label htmlFor="login-password" className="text-sm font-medium">Passwort</Label>
                   <Input
                     id="login-password"
                     type="password"
@@ -276,6 +271,11 @@ export function AuthModal({ children }: AuthModalProps) {
                 <Button type="submit" className="w-full h-11 text-base font-medium" disabled={loading} data-testid="button-login-submit">
                   {loading ? 'Anmelden...' : 'Anmelden'}
                 </Button>
+                <div className="text-center">
+                  <button type="button" className="text-sm text-primary hover:underline">
+                    Passwort oder E-Mail vergessen?
+                  </button>
+                </div>
               </form>
             </TabsContent>
             

@@ -98,6 +98,16 @@ export default function Checkout() {
     queryKey: ['/api/settings/bank'],
   });
 
+  const { data: savedAddresses = [] } = useQuery<any[]>({
+    queryKey: ['/api/addresses'],
+    enabled: !!user,
+  });
+
+  const { data: userProfile } = useQuery<any>({
+    queryKey: ['/api/profile'],
+    enabled: !!user,
+  });
+
   const [checkoutData] = useState<CheckoutData>(() => location.state?.checkoutData || {
     items: items,
     totalAmount: total,
@@ -144,6 +154,35 @@ export default function Checkout() {
       setCustomerData(prev => ({ ...prev, email: user.email }));
     }
   }, [user]);
+
+  useEffect(() => {
+    if (user && savedAddresses.length > 0) {
+      const defaultAddress = savedAddresses.find((addr: any) => addr.isDefault) || savedAddresses[0];
+      if (defaultAddress) {
+        setCustomerData(prev => ({
+          ...prev,
+          firstName: defaultAddress.firstName || prev.firstName,
+          lastName: defaultAddress.lastName || prev.lastName,
+          street: defaultAddress.street || prev.street,
+          city: defaultAddress.city || prev.city,
+          postalCode: defaultAddress.postalCode || prev.postalCode,
+          country: defaultAddress.country || prev.country,
+          phone: defaultAddress.phone || prev.phone,
+        }));
+      }
+    }
+  }, [user, savedAddresses]);
+
+  useEffect(() => {
+    if (userProfile && !savedAddresses.length) {
+      setCustomerData(prev => ({
+        ...prev,
+        firstName: userProfile.firstName || prev.firstName,
+        lastName: userProfile.lastName || prev.lastName,
+        phone: userProfile.phone || prev.phone,
+      }));
+    }
+  }, [userProfile, savedAddresses.length]);
 
   const handleInputChange = (field: string, value: string) => {
     setCustomerData(prev => ({ ...prev, [field]: value }));
