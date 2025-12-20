@@ -1,11 +1,13 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Heart, ShoppingCart, Star } from 'lucide-react';
+import { Heart, ShoppingCart, Star, Check } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useCart } from '@/contexts/CartContext';
+import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { OptimizedImage } from './OptimizedImage';
+import { useState } from 'react';
 
 interface VariantData {
   productId: string;
@@ -28,6 +30,8 @@ interface VariantCardProps {
 export function VariantCard({ variant }: VariantCardProps) {
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
   const { addToCart } = useCart();
+  const { toast } = useToast();
+  const [justAdded, setJustAdded] = useState(false);
 
   const isInFavorites = isFavorite(variant.productId, variant.variantId);
 
@@ -64,6 +68,12 @@ export function VariantCard({ variant }: VariantCardProps) {
         preorder: false 
       }
     );
+    setJustAdded(true);
+    toast({
+      title: "Hinzugefügt",
+      description: `${variant.variantName} wurde zum Warenkorb hinzugefügt.`,
+    });
+    setTimeout(() => setJustAdded(false), 1500);
   };
 
   const hasDiscount = variant.originalPrice && variant.originalPrice > variant.price;
@@ -86,13 +96,13 @@ export function VariantCard({ variant }: VariantCardProps) {
             />
           </Link>
           
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="absolute top-2 right-2">
             <Button
-              size="sm"
+              size="icon"
               variant="secondary"
-              className="h-8 w-8 p-0"
               onClick={handleWishlistToggle}
               aria-label={isInFavorites ? 'Von Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+              data-testid={`btn-wishlist-${variant.variantId}`}
             >
               <Heart 
                 className={`w-4 h-4 ${isInFavorites ? 'fill-red-500 text-red-500' : ''}`} 
@@ -164,8 +174,10 @@ export function VariantCard({ variant }: VariantCardProps) {
               size="icon"
               onClick={handleQuickAdd}
               aria-label="In den Warenkorb"
+              className={justAdded ? 'bg-green-600 hover:bg-green-700' : ''}
+              data-testid={`btn-quick-add-${variant.variantId}`}
             >
-              <ShoppingCart className="w-4 h-4" />
+              {justAdded ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
             </Button>
           </div>
         </div>

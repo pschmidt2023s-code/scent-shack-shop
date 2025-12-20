@@ -1,13 +1,15 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Heart, ShoppingCart } from 'lucide-react';
+import { Heart, ShoppingCart, Check } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useCart } from '@/contexts/CartContext';
+import { useToast } from '@/hooks/use-toast';
 import { Perfume } from '@/types/perfume';
 import { Link } from 'react-router-dom';
 import { OptimizedImage } from './OptimizedImage';
+import { useState } from 'react';
 
 interface PerfumeCardProps {
   perfume: Perfume;
@@ -17,6 +19,8 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
   const { discount, roleLabel, loading, isNewsletterSubscriber } = useUserRole();
   const { addToCart } = useCart();
+  const { toast } = useToast();
+  const [justAdded, setJustAdded] = useState(false);
 
   // Use first variant for display
   const displayVariant = perfume.variants[0];
@@ -45,6 +49,12 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
     e.preventDefault();
     e.stopPropagation();
     addToCart(perfume, displayVariant);
+    setJustAdded(true);
+    toast({
+      title: "Hinzugefügt",
+      description: `${displayVariant.name} wurde zum Warenkorb hinzugefügt.`,
+    });
+    setTimeout(() => setJustAdded(false), 1500);
   };
 
   // Display collection name based on category
@@ -71,14 +81,14 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
           </Link>
           
           {/* Wishlist Button */}
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="absolute top-2 right-2">
             <Button
-              size="sm"
+              size="icon"
               variant="secondary"
-              className="h-8 w-8 p-0"
               onClick={handleWishlistToggle}
               aria-label={isInFavorites ? `${collectionName} von Favoriten entfernen` : `${collectionName} zu Favoriten hinzufügen`}
               title={isInFavorites ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+              data-testid={`btn-wishlist-${perfume.id}`}
             >
               <Heart 
                 className={`w-4 h-4 ${isInFavorites ? 'fill-red-500 text-red-500' : ''}`} 
@@ -133,8 +143,9 @@ export function PerfumeCard({ perfume }: PerfumeCardProps) {
               onClick={handleQuickAdd}
               aria-label={`${collectionName} in den Warenkorb`}
               data-testid={`btn-quick-add-${perfume.id}`}
+              className={justAdded ? 'bg-green-600 hover:bg-green-700' : ''}
             >
-              <ShoppingCart className="w-4 h-4" />
+              {justAdded ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
             </Button>
           </div>
         </div>
