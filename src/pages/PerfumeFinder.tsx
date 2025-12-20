@@ -11,11 +11,19 @@ import Navigation from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 
 interface PerfumeMatch {
+  id: string;
   name: string;
   category: string;
   description: string;
   confidence: number;
   notes: string[];
+  image?: string;
+  variants?: Array<{
+    id: string;
+    name: string;
+    price: string;
+    size: string;
+  }>;
 }
 
 const questions = [
@@ -23,48 +31,49 @@ const questions = [
     id: "occasion",
     question: "Für welchen Anlass suchst du einen Duft?",
     options: [
-      { value: "daily", label: "Alltag & Büro" },
-      { value: "evening", label: "Abendveranstaltung" },
-      { value: "sport", label: "Sport & Freizeit" },
-      { value: "special", label: "Besondere Anlässe" },
+      { value: "daily", label: "Alltag & Büro", description: "Für den täglichen Gebrauch im Berufsleben" },
+      { value: "date", label: "Date & Romantik", description: "Verführerische Düfte für besondere Momente" },
+      { value: "business", label: "Business & Meeting", description: "Professionelle, seriöse Düfte" },
+      { value: "evening", label: "Abend & Party", description: "Ausdrucksstarke Düfte für Events" },
+      { value: "sport", label: "Sport & Freizeit", description: "Leichte, erfrischende Düfte" },
     ],
   },
   {
     id: "intensity",
     question: "Welche Duft-Intensität bevorzugst du?",
     options: [
-      { value: "light", label: "Leicht & Frisch" },
-      { value: "medium", label: "Mittlere Intensität" },
-      { value: "strong", label: "Stark & Ausdrucksvoll" },
+      { value: "light", label: "Leicht & Frisch", description: "Subtil, nicht aufdringlich" },
+      { value: "medium", label: "Mittlere Intensität", description: "Ausgewogen und vielseitig" },
+      { value: "strong", label: "Stark & Ausdrucksvoll", description: "Präsent und langanhaltend" },
     ],
   },
   {
     id: "season",
     question: "Für welche Jahreszeit?",
     options: [
-      { value: "spring", label: "Frühling" },
-      { value: "summer", label: "Sommer" },
-      { value: "autumn", label: "Herbst" },
-      { value: "winter", label: "Winter" },
-      { value: "all", label: "Ganzjährig" },
+      { value: "spring", label: "Frühling", description: "Blumig und erneuernd" },
+      { value: "summer", label: "Sommer", description: "Leicht und erfrischend" },
+      { value: "autumn", label: "Herbst", description: "Warm und würzig" },
+      { value: "winter", label: "Winter", description: "Schwer und gemütlich" },
+      { value: "all", label: "Ganzjährig", description: "Vielseitig einsetzbar" },
     ],
   },
   {
     id: "gender",
     question: "Für wen ist der Duft?",
     options: [
-      { value: "male", label: "Herren" },
-      { value: "female", label: "Damen" },
-      { value: "unisex", label: "Unisex" },
+      { value: "male", label: "Herren", description: "Maskuline Düfte" },
+      { value: "female", label: "Damen", description: "Feminine Düfte" },
+      { value: "unisex", label: "Unisex", description: "Für alle geeignet" },
     ],
   },
   {
     id: "priceRange",
     question: "Welcher Preisbereich?",
     options: [
-      { value: "budget", label: "Bis 30€" },
-      { value: "mid", label: "30€ - 70€" },
-      { value: "premium", label: "Über 70€" },
+      { value: "budget", label: "Bis 30€", description: "Proben und kleine Sets" },
+      { value: "mid", label: "30€ - 70€", description: "50ml Flakons" },
+      { value: "premium", label: "Über 70€", description: "Premium Sets und Bundles" },
     ],
   },
 ];
@@ -166,30 +175,58 @@ const PerfumeFinder = () => {
 
             <div className="grid gap-6 md:grid-cols-2">
               {matches.map((match, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow">
+                <Card key={index} className="hover:shadow-lg transition-shadow overflow-hidden">
+                  {match.image && (
+                    <div className="relative h-40 overflow-hidden">
+                      <img 
+                        src={match.image} 
+                        alt={match.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-bold">
+                        {match.confidence}% Match
+                      </div>
+                    </div>
+                  )}
                   <CardHeader>
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-2">
                       <div>
-                        <CardTitle>{match.name}</CardTitle>
+                        <CardTitle className="text-lg">{match.name}</CardTitle>
                         <CardDescription>{match.category}</CardDescription>
                       </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary">{match.confidence}%</div>
-                        <div className="text-xs text-muted-foreground">Match</div>
-                      </div>
+                      {!match.image && (
+                        <div className="text-right">
+                          <div className="text-xl font-bold text-primary">{match.confidence}%</div>
+                          <div className="text-xs text-muted-foreground">Match</div>
+                        </div>
+                      )}
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-sm mb-4">{match.description}</p>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {match.notes.map((note, i) => (
-                        <span key={i} className="px-2 py-1 bg-primary/10 rounded-full text-xs">
-                          {note}
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground line-clamp-2">{match.description}</p>
+                    {match.notes && match.notes.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {match.notes.slice(0, 4).map((note, i) => (
+                          <span key={i} className="px-2 py-1 bg-primary/10 rounded-full text-xs">
+                            {note}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {match.variants && match.variants.length > 0 && (
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Ab </span>
+                        <span className="font-bold text-primary">
+                          {Math.min(...match.variants.map(v => parseFloat(v.price))).toFixed(2)}
                         </span>
-                      ))}
-                    </div>
-                    <Button className="w-full" onClick={() => navigate("/products")}>
-                      Jetzt entdecken
+                      </div>
+                    )}
+                    <Button 
+                      className="w-full" 
+                      onClick={() => navigate(`/product/${match.id}`)}
+                      data-testid={`button-view-product-${match.id}`}
+                    >
+                      Produkt ansehen
                     </Button>
                   </CardContent>
                 </Card>
@@ -270,7 +307,12 @@ const PerfumeFinder = () => {
                     >
                       <RadioGroupItem value={option.value} id={option.value} />
                       <Label htmlFor={option.value} className="flex-1 cursor-pointer">
-                        {option.label}
+                        <span className="font-medium">{option.label}</span>
+                        {'description' in option && option.description && (
+                          <span className="block text-xs text-muted-foreground mt-1">
+                            {option.description}
+                          </span>
+                        )}
                       </Label>
                     </div>
                   ))}

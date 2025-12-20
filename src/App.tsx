@@ -44,6 +44,7 @@ const BundleConfigurator = React.lazy(() => import('@/pages/BundleConfigurator')
 const About = React.lazy(() => import('@/pages/About'));
 const Cancellation = React.lazy(() => import('@/pages/Cancellation'));
 const SampleSets = React.lazy(() => import('@/pages/SampleSets'));
+const Sparsets = React.lazy(() => import('@/pages/Sparsets'));
 const ResetPassword = React.lazy(() => import('@/pages/ResetPassword'));
 const ShippingInfo = React.lazy(() => import('@/pages/ShippingInfo'));
 const OrderTracking = React.lazy(() => import('@/pages/OrderTracking'));
@@ -127,6 +128,7 @@ function App() {
                   <Route path="/bundle-konfigurator" element={<Suspense fallback={<LoadingSpinner />}><BundleConfigurator /></Suspense>} />
                   <Route path="/widerruf" element={<Suspense fallback={<LoadingSpinner />}><Cancellation /></Suspense>} />
                   <Route path="/probensets" element={<Suspense fallback={<LoadingSpinner />}><SampleSets /></Suspense>} />
+                  <Route path="/sparsets" element={<Suspense fallback={<LoadingSpinner />}><Sparsets /></Suspense>} />
                   <Route path="/reset-password" element={<Suspense fallback={<LoadingSpinner />}><ResetPassword /></Suspense>} />
                   <Route path="/order/:orderId" element={<Suspense fallback={<LoadingSpinner />}><OrderTracking /></Suspense>} />
                   <Route path="*" element={<Suspense fallback={<LoadingSpinner />}><NotFound /></Suspense>} />

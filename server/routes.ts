@@ -1195,6 +1195,111 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.post("/api/perfume-finder", async (req, res) => {
+    try {
+      const { answers } = req.body;
+      const products = await storage.getProductsWithVariants();
+      
+      const matchScores: Map<string, number> = new Map();
+      
+      for (const product of products) {
+        let score = 50;
+        
+        if (answers.gender) {
+          const gender = product.gender?.toLowerCase();
+          if (answers.gender === 'male' && (gender === 'herren' || gender === 'male' || gender === 'maennlich')) {
+            score += 15;
+          } else if (answers.gender === 'female' && (gender === 'damen' || gender === 'female' || gender === 'weiblich')) {
+            score += 15;
+          } else if (answers.gender === 'unisex' && (gender === 'unisex' || !gender)) {
+            score += 10;
+          }
+        }
+        
+        if (answers.intensity) {
+          const category = product.category?.toLowerCase() || '';
+          if (answers.intensity === 'light' && (category.includes('frisch') || category.includes('tester'))) {
+            score += 10;
+          } else if (answers.intensity === 'strong' && (category.includes('50ml') || category.includes('prestige'))) {
+            score += 10;
+          } else if (answers.intensity === 'medium') {
+            score += 5;
+          }
+        }
+        
+        if (answers.notes?.length > 0 && product.scentNotes) {
+          const productNotes = product.scentNotes.map((n: string) => n.toLowerCase());
+          const matchedNotes = answers.notes.filter((n: string) => 
+            productNotes.some((pn: string) => pn.includes(n) || n.includes(pn))
+          );
+          score += matchedNotes.length * 8;
+        }
+        
+        if (answers.occasion) {
+          if (answers.occasion === 'date' || answers.occasion === 'evening') {
+            if (product.description?.toLowerCase().includes('verfuehr') || 
+                product.description?.toLowerCase().includes('romantisch') ||
+                product.description?.toLowerCase().includes('sinnlich')) {
+              score += 12;
+            }
+          } else if (answers.occasion === 'business' || answers.occasion === 'daily') {
+            if (product.description?.toLowerCase().includes('elegant') || 
+                product.description?.toLowerCase().includes('professionell') ||
+                product.description?.toLowerCase().includes('dezent')) {
+              score += 12;
+            }
+          } else if (answers.occasion === 'sport') {
+            if (product.description?.toLowerCase().includes('frisch') || 
+                product.description?.toLowerCase().includes('aktiv') ||
+                product.description?.toLowerCase().includes('leicht')) {
+              score += 12;
+            }
+          }
+        }
+        
+        if (answers.priceRange && product.variants?.length) {
+          const minPrice = Math.min(...product.variants.map((v: any) => parseFloat(v.price) || 0));
+          if (answers.priceRange === 'budget' && minPrice <= 30) {
+            score += 15;
+          } else if (answers.priceRange === 'mid' && minPrice > 30 && minPrice <= 70) {
+            score += 15;
+          } else if (answers.priceRange === 'premium' && minPrice > 70) {
+            score += 15;
+          }
+        }
+        
+        matchScores.set(product.id, Math.min(score, 98));
+      }
+      
+      const sortedProducts = products
+        .map(p => ({ 
+          ...p, 
+          confidence: matchScores.get(p.id) || 50 
+        }))
+        .sort((a, b) => b.confidence - a.confidence)
+        .slice(0, 5);
+      
+      const matches = sortedProducts.map(product => ({
+        id: product.id,
+        name: product.name,
+        category: product.category || 'Parfum',
+        description: product.description || product.aiDescription || 'Ein exklusiver Duft aus unserer Kollektion.',
+        confidence: product.confidence,
+        notes: product.scentNotes || product.topNotes || [],
+        image: product.image,
+        variants: product.variants?.slice(0, 2) || [],
+      }));
+      
+      res.json({
+        matches,
+        explanation: 'Basierend auf Ihren Praeferenzen haben wir diese Duefte aus unserem Sortiment fuer Sie ausgewaehlt:',
+      });
+    } catch (error: any) {
+      console.error("Perfume finder error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/partners", requireAdmin, async (req, res) => {
     try {
       const partners = await storage.getPartners();
