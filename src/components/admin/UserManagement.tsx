@@ -2,8 +2,20 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { User, Shield, ShieldCheck } from 'lucide-react';
+import { User, Shield, ShieldCheck, Trash2, Loader2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface UserProfile {
   id: string;
@@ -18,6 +30,8 @@ export default function UserManagement() {
   const { toast } = useToast();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     loadUsers();
@@ -44,6 +58,68 @@ export default function UserManagement() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateUserRole = async (userId: string, newRole: string) => {
+    setUpdatingUserId(userId);
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ role: newRole }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Fehler beim Aktualisieren');
+      }
+
+      setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
+      toast({
+        title: "Erfolg",
+        description: `Rolle wurde zu "${newRole === 'admin' ? 'Admin' : 'Benutzer'}" geändert`,
+      });
+    } catch (error: any) {
+      console.error('Error updating user role:', error);
+      toast({
+        title: "Fehler",
+        description: error.message || "Rolle konnte nicht geändert werden",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const deleteUser = async (userId: string) => {
+    setDeletingUserId(userId);
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Fehler beim Löschen');
+      }
+
+      setUsers(users.filter(u => u.id !== userId));
+      toast({
+        title: "Erfolg",
+        description: "Benutzer wurde gelöscht",
+      });
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Fehler",
+        description: error.message || "Benutzer konnte nicht gelöscht werden",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingUserId(null);
     }
   };
 
@@ -99,8 +175,65 @@ export default function UserManagement() {
                       Registriert: {new Date(user.createdAt).toLocaleDateString('de-DE')}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {getRoleBadge(user.role || 'user')}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="hidden sm:block">
+                      {getRoleBadge(user.role || 'user')}
+                    </div>
+                    <Select
+                      value={user.role || 'user'}
+                      onValueChange={(value) => updateUserRole(user.id, value)}
+                      disabled={updatingUserId === user.id}
+                    >
+                      <SelectTrigger 
+                        className="w-[130px]" 
+                        data-testid={`select-role-${user.id}`}
+                      >
+                        {updatingUserId === user.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <SelectValue placeholder="Rolle wählen" />
+                        )}
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">Benutzer</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="destructive" 
+                          size="icon"
+                          disabled={deletingUserId === user.id}
+                          data-testid={`button-delete-user-${user.id}`}
+                        >
+                          {deletingUserId === user.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Benutzer löschen?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Möchten Sie den Benutzer "{user.fullName || user.email}" wirklich löschen? 
+                            Diese Aktion kann nicht rückgängig gemacht werden.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteUser(user.id)}
+                            className="bg-destructive text-destructive-foreground"
+                          >
+                            Löschen
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ))}
