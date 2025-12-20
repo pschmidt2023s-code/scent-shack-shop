@@ -231,11 +231,12 @@ function StatCard({
   );
 }
 
-function DashboardOverview({ orders, stats, onViewAllOrders, onSelectOrder }: { 
+function DashboardOverview({ orders, stats, onViewAllOrders, onSelectOrder, onNavigate }: { 
   orders: Order[]; 
   stats: DashboardStats;
   onViewAllOrders: () => void;
   onSelectOrder: (order: Order) => void;
+  onNavigate: (tab: string) => void;
 }) {
   const recentOrders = orders.slice(0, 5);
   
@@ -356,25 +357,41 @@ function DashboardOverview({ orders, stats, onViewAllOrders, onSelectOrder }: {
           </div>
           <div className="px-6 pb-6">
             <div className="grid grid-cols-2 gap-4">
-              <button className="admin-stat-card rounded-xl p-5 flex flex-col items-center gap-3 hover:border-cyan-500/30 transition-all group" data-testid="btn-quick-new-product">
+              <button 
+                onClick={() => onNavigate('products')}
+                className="admin-stat-card rounded-xl p-5 flex flex-col items-center gap-3 hover:border-cyan-500/30 transition-all group" 
+                data-testid="btn-quick-new-product"
+              >
                 <div className="admin-stat-icon cyan">
                   <Package className="w-5 h-5" />
                 </div>
                 <span className="text-sm font-medium text-white/90 group-hover:text-cyan-400 transition-colors">Neues Produkt</span>
               </button>
-              <button className="admin-stat-card rounded-xl p-5 flex flex-col items-center gap-3 hover:border-purple-500/30 transition-all group" data-testid="btn-quick-new-coupon">
+              <button 
+                onClick={() => onNavigate('coupons')}
+                className="admin-stat-card rounded-xl p-5 flex flex-col items-center gap-3 hover:border-purple-500/30 transition-all group" 
+                data-testid="btn-quick-new-coupon"
+              >
                 <div className="admin-stat-icon purple">
                   <Tag className="w-5 h-5" />
                 </div>
                 <span className="text-sm font-medium text-white/90 group-hover:text-purple-400 transition-colors">Neuer Rabattcode</span>
               </button>
-              <button className="admin-stat-card rounded-xl p-5 flex flex-col items-center gap-3 hover:border-pink-500/30 transition-all group" data-testid="btn-quick-newsletter">
+              <button 
+                onClick={() => onNavigate('newsletter')}
+                className="admin-stat-card rounded-xl p-5 flex flex-col items-center gap-3 hover:border-pink-500/30 transition-all group" 
+                data-testid="btn-quick-newsletter"
+              >
                 <div className="admin-stat-icon pink">
                   <Mail className="w-5 h-5" />
                 </div>
                 <span className="text-sm font-medium text-white/90 group-hover:text-pink-400 transition-colors">Newsletter</span>
               </button>
-              <button className="admin-stat-card rounded-xl p-5 flex flex-col items-center gap-3 hover:border-green-500/30 transition-all group" data-testid="btn-quick-analytics">
+              <button 
+                onClick={() => onNavigate('settings')}
+                className="admin-stat-card rounded-xl p-5 flex flex-col items-center gap-3 hover:border-green-500/30 transition-all group" 
+                data-testid="btn-quick-analytics"
+              >
                 <div className="admin-stat-icon green">
                   <BarChart3 className="w-5 h-5" />
                 </div>
@@ -1578,6 +1595,7 @@ export default function Admin() {
               stats={stats} 
               onViewAllOrders={() => setActiveTab('orders')}
               onSelectOrder={(order) => setSelectedOrder(order)}
+              onNavigate={(tab) => setActiveTab(tab)}
             />
             <OrderDetailDialog 
               order={selectedOrder} 

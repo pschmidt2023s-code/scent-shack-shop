@@ -28,7 +28,9 @@ export interface IStorage {
   updateUser(id: string, data: Partial<InsertUser>): Promise<User | undefined>;
 
   getProducts(filters?: { category?: string; search?: string }): Promise<Product[]>;
+  getAllProducts(): Promise<Product[]>;
   getProductsWithVariants(filters?: { category?: string; search?: string }): Promise<(Product & { variants: ProductVariant[] })[]>;
+  getAllProductsWithVariants(): Promise<(Product & { variants: ProductVariant[] })[]>;
   getProduct(id: string): Promise<Product | undefined>;
   getProductWithVariants(id: string): Promise<(Product & { variants: ProductVariant[] }) | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
@@ -143,6 +145,10 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(schema.products).where(and(...conditions));
   }
 
+  async getAllProducts(): Promise<Product[]> {
+    return db.select().from(schema.products);
+  }
+
   async getProduct(id: string): Promise<Product | undefined> {
     const [product] = await db.select().from(schema.products).where(eq(schema.products.id, id));
     return product;
@@ -206,6 +212,30 @@ export class DatabaseStorage implements IStorage {
     }
     
     // Map products with their variants using the lookup
+    return products.map(product => ({
+      ...product,
+      variants: variantsByProductId.get(product.id) || [],
+    }));
+  }
+
+  async getAllProductsWithVariants(): Promise<(Product & { variants: ProductVariant[] })[]> {
+    const products = await this.getAllProducts();
+    if (products.length === 0) return [];
+    
+    const productIds = products.map(p => p.id);
+    const allVariants = await db.select()
+      .from(schema.productVariants)
+      .where(inArray(schema.productVariants.productId, productIds));
+    
+    const variantsByProductId = new Map<string, ProductVariant[]>();
+    for (const variant of allVariants) {
+      if (variant.productId) {
+        const existing = variantsByProductId.get(variant.productId) || [];
+        existing.push(variant);
+        variantsByProductId.set(variant.productId, existing);
+      }
+    }
+    
     return products.map(product => ({
       ...product,
       variants: variantsByProductId.get(product.id) || [],

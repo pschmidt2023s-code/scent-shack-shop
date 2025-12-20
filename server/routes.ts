@@ -654,10 +654,10 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  // Admin Products Management
+  // Admin Products Management - includes ALL products (visible and hidden)
   app.get("/api/admin/products", requireAdmin, async (req, res) => {
     try {
-      const products = await storage.getProductsWithVariants();
+      const products = await storage.getAllProductsWithVariants();
       res.json(products);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
