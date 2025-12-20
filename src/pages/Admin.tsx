@@ -1201,26 +1201,67 @@ function OrdersView({
                                               id={`tracking-${order.id}`}
                                               data-testid={`input-tracking-${order.id}`}
                                             />
-                                            <Button 
-                                              size="sm"
-                                              onClick={() => {
-                                                const input = document.getElementById(`tracking-${order.id}`) as HTMLInputElement;
-                                                if (input) {
-                                                  fetch(`/api/orders/${order.id}`, {
+                                          </div>
+                                          <div className="flex items-center gap-2 mt-2">
+                                            <input 
+                                              type="checkbox" 
+                                              id={`send-email-${order.id}`}
+                                              defaultChecked={true}
+                                              className="rounded"
+                                              data-testid={`checkbox-send-email-${order.id}`}
+                                            />
+                                            <Label htmlFor={`send-email-${order.id}`} className="text-xs cursor-pointer">
+                                              Versandbenachrichtigung per E-Mail senden
+                                            </Label>
+                                          </div>
+                                          <Button 
+                                            size="sm"
+                                            className="w-full mt-2"
+                                            onClick={async () => {
+                                              const input = document.getElementById(`tracking-${order.id}`) as HTMLInputElement;
+                                              const checkbox = document.getElementById(`send-email-${order.id}`) as HTMLInputElement;
+                                              if (input && input.value) {
+                                                try {
+                                                  await fetch(`/api/orders/${order.id}`, {
                                                     method: 'PATCH',
                                                     headers: { 'Content-Type': 'application/json' },
                                                     credentials: 'include',
-                                                    body: JSON.stringify({ trackingNumber: input.value })
-                                                  }).then(() => {
-                                                    window.location.reload();
+                                                    body: JSON.stringify({ 
+                                                      trackingNumber: input.value,
+                                                      status: 'shipped'
+                                                    })
                                                   });
+                                                  
+                                                  if (checkbox?.checked) {
+                                                    const emailRes = await fetch(`/api/admin/orders/${order.id}/resend-email`, {
+                                                      method: 'POST',
+                                                      headers: { 'Content-Type': 'application/json' },
+                                                      credentials: 'include',
+                                                      body: JSON.stringify({ emailType: 'shipping' })
+                                                    });
+                                                    const emailData = await emailRes.json();
+                                                    if (emailRes.ok) {
+                                                      alert('Tracking-Nummer gespeichert und E-Mail gesendet!');
+                                                    } else {
+                                                      alert('Tracking-Nummer gespeichert, aber E-Mail-Fehler: ' + (emailData.error || 'Unbekannt'));
+                                                    }
+                                                  } else {
+                                                    alert('Tracking-Nummer gespeichert!');
+                                                  }
+                                                  window.location.reload();
+                                                } catch (err) {
+                                                  console.error('Error:', err);
+                                                  alert('Fehler beim Speichern');
                                                 }
-                                              }}
-                                              data-testid={`btn-save-tracking-${order.id}`}
-                                            >
-                                              <Check className="w-4 h-4" />
-                                            </Button>
-                                          </div>
+                                              } else {
+                                                alert('Bitte Sendungsnummer eingeben');
+                                              }
+                                            }}
+                                            data-testid={`btn-save-tracking-${order.id}`}
+                                          >
+                                            <Truck className="w-4 h-4 mr-2" />
+                                            Versenden und speichern
+                                          </Button>
                                         </div>
                                         <Separator className="my-2" />
                                         <div className="flex justify-between">
