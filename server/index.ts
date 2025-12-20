@@ -6,6 +6,7 @@ import rateLimit from "express-rate-limit";
 import { createServer } from "http";
 import ConnectPgSimple from "connect-pg-simple";
 import { registerRoutes } from "./routes";
+import { registerImageRoutes } from "./replit_integrations/image";
 import { pool } from "./db";
 import { setupVite, serveStatic } from "./vite";
 import path from "path";
@@ -304,6 +305,7 @@ async function initStripe() {
 (async () => {
   await initStripe();
   await registerRoutes(app);
+  registerImageRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
