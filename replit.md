@@ -95,6 +95,25 @@ For full functionality, add these secrets:
   - Loyalty tiers: bronze (default), silver (>=€50), gold (>=€200), platinum (>=€500)
   - Admin shipping management endpoints: GET/POST/PATCH/DELETE /api/admin/shipping
   - Storage functions: createShippingOption, updateShippingOption, deleteShippingOption, getAllShippingOptions
+- **Design Overhaul & Loyalty System Enhancement** (December 20, 2025):
+  - New warm color palette: Primary amber/orange (hsl 25 85% 55%), accent gold (hsl 35 90% 58%)
+  - Tier-based discount system: Bronze 0%, Silver 3%, Gold 5%, Platinum 8% + 1.5% newsletter bonus
+  - Enhanced useUserRole hook with tier, tierLabel, tierDiscount, cashbackBalance, nextTier properties
+  - Modernized HeroSection with gradient animations, tier display for logged-in users
+  - Added TrustSection component with social proof elements
+  - Stagger animations for product cards in PerfumeGrid
+  - Product card hover effects with lift animation
+  - Glass morphism effects optimized for performance
+
+## Loyalty Tier System
+| Tier     | Min Spend | Discount |
+|----------|-----------|----------|
+| Bronze   | 0 EUR     | 0%       |
+| Silver   | 50 EUR    | 3%       |
+| Gold     | 200 EUR   | 5%       |
+| Platinum | 500 EUR   | 8%       |
+
+Newsletter subscribers get an additional 1.5% discount.
 
 ## User Preferences
 - German language interface
