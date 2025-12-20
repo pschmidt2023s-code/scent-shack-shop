@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
 
 const PayPalTest = () => {
   const [result, setResult] = useState<any>(null);
@@ -10,7 +9,6 @@ const PayPalTest = () => {
   const testCredentials = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('test-paypal-credentials');
       
       if (error) {
         setResult({ error: error.message, type: 'error' });
@@ -35,7 +33,6 @@ const PayPalTest = () => {
         customer_email: "test@example.com"
       };
 
-      const { data, error } = await supabase.functions.invoke('create-paypal-payment', {
         body: testData
       });
       

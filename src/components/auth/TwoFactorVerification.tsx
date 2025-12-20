@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { Shield, Smartphone } from 'lucide-react';
 
 interface TwoFactorVerificationProps {
@@ -37,7 +36,6 @@ export function TwoFactorVerification({
 
     try {
       setLoading(true);
-      const { error } = await supabase.auth.mfa.verify({
         factorId: challengeId,
         challengeId: challengeId,
         code: verificationCode

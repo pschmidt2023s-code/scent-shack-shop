@@ -2,7 +2,6 @@
  * Enhanced Session Monitoring and Security
  */
 
-import { supabase } from '@/integrations/supabase/client';
 
 interface SessionMonitorConfig {
   warningTimeoutMs: number; // When to show warning before expiry
@@ -98,7 +97,6 @@ class SessionMonitor {
 
   private async checkSupabaseSession(): Promise<void> {
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error || !session) {
         console.warn('Invalid Supabase session detected');
@@ -163,7 +161,6 @@ class SecurityEventMonitor {
     console.error('Security lockdown triggered due to suspicious activity');
     
     // Force logout
-    supabase.auth.signOut().then(() => {
       window.location.href = '/auth?reason=security_lockdown';
     });
   }

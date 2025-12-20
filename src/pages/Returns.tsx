@@ -13,7 +13,6 @@ import { Package, ArrowLeft, CheckCircle, Loader2, Upload, X } from 'lucide-reac
 import { toast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 
 // For authenticated users
 const authenticatedReturnSchema = z.object({
@@ -139,13 +138,11 @@ export default function Returns() {
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `returns/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
         .from('return-images')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage
         .from('return-images')
         .getPublicUrl(filePath);
 

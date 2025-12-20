@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -121,7 +120,6 @@ export default function ReturnManagement() {
       // Send email notification
       const returnItem = returns.find(r => r.id === returnId);
       if (returnItem) {
-        const { error: emailError } = await supabase.functions.invoke('send-return-notification', {
           body: {
             returnId,
             action,

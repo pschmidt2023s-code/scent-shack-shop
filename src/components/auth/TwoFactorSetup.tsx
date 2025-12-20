@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { Shield, Copy, Check, Smartphone } from 'lucide-react';
 
 interface TwoFactorSetupProps {
@@ -39,7 +38,6 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Get fresh session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       console.log('Current session for 2FA setup:', session);
       
       if (sessionError) {
@@ -59,7 +57,6 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
       
       let enrollResult;
       try {
-        enrollResult = await supabase.auth.mfa.enroll({
           factorType: 'totp',
           friendlyName: uniqueName
         });
@@ -78,7 +75,6 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
           for (const factor of userFactors) {
             try {
               console.log('Removing factor from user object:', factor.id);
-              await supabase.auth.mfa.unenroll({ factorId: factor.id });
             } catch (err) {
               console.warn('Could not remove factor via user object:', err);
             }
@@ -86,12 +82,10 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
           
           // Also try listFactors approach
           try {
-            const { data: factorsList } = await supabase.auth.mfa.listFactors();
             if (factorsList?.totp) {
               for (const factor of factorsList.totp) {
                 try {
                   console.log('Removing factor from listFactors:', factor.id);
-                  await supabase.auth.mfa.unenroll({ factorId: factor.id });
                 } catch (err) {
                   console.warn('Could not remove factor via listFactors:', err);
                 }
@@ -102,14 +96,12 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
           }
           
           // Force session refresh
-          await supabase.auth.refreshSession();
           
           // Wait and try again
           await new Promise(resolve => setTimeout(resolve, 2000));
           
           // Try enrollment again with different name
           const retryName = `totp_retry_${Date.now()}`;
-          enrollResult = await supabase.auth.mfa.enroll({
             factorType: 'totp',
             friendlyName: retryName
           });
@@ -192,7 +184,6 @@ export function TwoFactorSetup({ open, onClose, onSetupComplete }: TwoFactorSetu
 
     try {
       setLoading(true);
-      const { data, error } = await supabase.auth.mfa.challengeAndVerify({
         factorId,
         code: verificationCode
       });

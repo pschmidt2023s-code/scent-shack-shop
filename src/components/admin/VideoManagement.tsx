@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Play, Trash2, Eye } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -60,8 +59,6 @@ export function VideoManagement() {
       setLoading(true);
 
       const [videosRes, productsRes] = await Promise.all([
-        supabase.from('product_videos').select('*').order('created_at', { ascending: false }),
-        supabase.from('products').select('id, name, brand'),
       ]);
 
       if (videosRes.data) setVideos(videosRes.data);
@@ -81,7 +78,6 @@ export function VideoManagement() {
     }
 
     try {
-      const { error } = await supabase.from('product_videos').insert({
         product_id: formData.productId,
         video_url: formData.videoUrl,
         title: formData.title || 'Produktvideo',
@@ -103,7 +99,6 @@ export function VideoManagement() {
     if (!confirm('Video wirklich löschen?')) return;
 
     try {
-      const { error } = await supabase.from('product_videos').delete().eq('id', id);
 
       if (error) throw error;
       toast.success('Video gelöscht');

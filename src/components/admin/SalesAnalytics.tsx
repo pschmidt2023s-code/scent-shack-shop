@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users, Package } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { OrderDetailsModal } from './OrderDetailsModal';

@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Shield, ShieldCheck, ShieldOff, Settings, AlertTriangle } from 'lucide-react';
 import { TwoFactorSetup } from './TwoFactorSetup';
@@ -41,7 +40,6 @@ export function TwoFactorManagement() {
       for (const factor of mfaFactors) {
         try {
           console.log('Removing factor:', factor.id);
-          const { error: unenrollError } = await supabase.auth.mfa.unenroll({
             factorId: factor.id
           });
           
@@ -61,7 +59,6 @@ export function TwoFactorManagement() {
       });
       
       // Force refresh user data
-      await supabase.auth.refreshSession();
       
     } catch (error: any) {
       console.error('Error cleaning up factors:', error);
@@ -78,7 +75,6 @@ export function TwoFactorManagement() {
   const disableTwoFactor = async (factorId: string) => {
     try {
       setDisabling(true);
-      const { error } = await supabase.auth.mfa.unenroll({
         factorId
       });
 
@@ -90,7 +86,6 @@ export function TwoFactorManagement() {
       });
       
       // Force refresh user data
-      await supabase.auth.refreshSession();
     } catch (error: any) {
       console.error('Error disabling 2FA:', error);
       toast({
@@ -105,7 +100,6 @@ export function TwoFactorManagement() {
 
   const handleSetupComplete = () => {
     // Force refresh user data
-    supabase.auth.refreshSession();
     toast({
       title: "2FA aktiviert",
       description: "Zwei-Faktor-Authentifizierung wurde erfolgreich eingerichtet.",

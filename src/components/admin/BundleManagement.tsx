@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, Package, TrendingUp } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -90,7 +89,6 @@ export function BundleManagement() {
     if (!confirm('Bundle wirklich löschen?')) return;
 
     try {
-      const { error } = await supabase.from('bundle_products').delete().eq('id', id);
 
       if (error) throw error;
       toast.success('Bundle gelöscht');

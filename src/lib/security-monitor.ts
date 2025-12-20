@@ -1,7 +1,6 @@
 /**
  * Enhanced security monitoring and audit logging
  */
-import { supabase } from '@/integrations/supabase/client';
 
 export interface SecurityEvent {
   userId?: string;

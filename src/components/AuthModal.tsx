@@ -31,34 +31,8 @@ export function AuthModal({ children }: AuthModalProps) {
   const [showTwoFactorVerification, setShowTwoFactorVerification] = useState(false);
   const [mfaChallengeId, setMfaChallengeId] = useState('');
   const [setup2FAAfterSignup, setSetup2FAAfterSignup] = useState(false);
-  const { signIn, signUp, supabaseConnected } = useAuth();
+  const { signIn, signUp } = useAuth();
   const { toast } = useToast();
-
-  if (!supabaseConnected) {
-    return (
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          {children}
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-amber-500" />
-              Supabase Verbindung erforderlich
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Um die Anmelde- und Registrierungsfunktion zu nutzen, muss Ihr Projekt mit Supabase verbunden sein.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Klicken Sie auf den grünen Supabase-Button oben rechts, um die Verbindung herzustellen.
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();

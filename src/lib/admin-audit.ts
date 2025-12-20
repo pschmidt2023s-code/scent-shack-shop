@@ -2,7 +2,6 @@
  * Enhanced audit logging for admin actions
  */
 
-import { supabase } from '@/integrations/supabase/client';
 
 export interface AdminAuditLog {
   admin_id: string;

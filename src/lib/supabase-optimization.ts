@@ -1,5 +1,4 @@
 // Supabase optimization utilities for performance and cost reduction
-import { supabase } from '@/integrations/supabase/client';
 
 // Cache store for database queries to reduce repeated requests
 const queryCache = new Map<string, { data: any; timestamp: number; ttl: number }>();
@@ -112,7 +111,6 @@ export async function optimizedUpload(
   }
   
   // Set cache control headers for better CDN performance
-  const { data, error } = await supabase.storage
     .from(bucket)
     .upload(path, file, {
       cacheControl: '31536000', // 1 year cache for static assets
@@ -131,7 +129,6 @@ export function getOptimizedImageUrl(
   bucket: string,
   path: string
 ): string {
-  const { data } = supabase.storage
     .from(bucket)
     .getPublicUrl(path);
     
@@ -144,13 +141,11 @@ export function getOptimizedImageUrl(
 export const batchOperations = {
   // Insert multiple records in one operation
   insertMultiple: async <T>(table: string, records: T[]) => {
-    return await (supabase.from as any)(table).insert(records);
   },
   
   // Update multiple records with different conditions
   updateMultiple: async (table: string, updates: Array<{ id: string; data: any }>) => {
     const promises = updates.map(({ id, data }) =>
-      (supabase.from as any)(table).update(data).eq('id', id)
     );
     return await Promise.all(promises);
   }

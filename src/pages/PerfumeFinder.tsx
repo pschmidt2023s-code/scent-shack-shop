@@ -125,7 +125,6 @@ const PerfumeFinder = () => {
   const findMatches = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("perfume-matcher-ai", {
         body: { answers },
       });
 
