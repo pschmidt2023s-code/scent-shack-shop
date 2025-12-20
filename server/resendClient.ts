@@ -481,6 +481,72 @@ export async function sendWelcomeEmailWithPassword(
 }
 
 // ============================================
+// 4b. SIMPLE WELCOME EMAIL (for self-registration)
+// ============================================
+export async function sendWelcomeEmail(
+  customerEmail: string,
+  customerName: string,
+  baseUrl: string = 'https://aldenair.de'
+): Promise<boolean> {
+  try {
+    console.log(`[Resend] Sending welcome email to: ${customerEmail}`);
+    const { client, fromEmail } = await getResendClient();
+    
+    const content = `
+      <div style="text-align: center; margin-bottom: 32px;">
+        <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+          <span style="font-size: 28px;">&#127881;</span>
+        </div>
+        <h2 style="margin: 0; color: #171717; font-size: 24px; font-weight: 600;">Willkommen bei ALDENAIR!</h2>
+      </div>
+      
+      <p style="color: #404040; font-size: 15px; line-height: 1.7; margin: 0 0 24px 0;">
+        Hallo ${customerName || 'lieber Kunde'},<br><br>
+        vielen Dank für Ihre Registrierung bei ALDENAIR! Wir freuen uns sehr, Sie in unserer Parfum-Community begrüssen zu dürfen.
+      </p>
+      
+      ${infoBox(`
+        <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.6;">
+          Sie können sich jetzt jederzeit mit Ihrer E-Mail-Adresse <strong>${customerEmail}</strong> anmelden.
+        </p>
+      `, 'info')}
+      
+      <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+        <h4 style="margin: 0 0 16px 0; color: #171717; font-size: 15px; font-weight: 600;">Ihre Vorteile als Kunde:</h4>
+        <ul style="margin: 0; padding: 0 0 0 20px; color: #404040; font-size: 14px; line-height: 2;">
+          <li>Exklusive Rabatte und Angebote</li>
+          <li>Bestellhistorie und Sendungsverfolgung</li>
+          <li>Treuepunkte sammeln und einlösen</li>
+          <li>Schnellerer Checkout</li>
+        </ul>
+      </div>
+      
+      <div style="text-align: center; margin-top: 32px;">
+        ${emailButton('Jetzt shoppen', `${baseUrl}/products`)}
+      </div>
+    `;
+
+    const result = await client.emails.send({
+      from: fromEmail,
+      to: [customerEmail],
+      subject: 'Willkommen bei ALDENAIR!',
+      html: emailWrapper(content, 'Ihr ALDENAIR Konto wurde erstellt')
+    });
+    
+    if (result.error) {
+      console.error('[Resend] Welcome email error:', result.error);
+      return false;
+    }
+    
+    console.log(`[Resend] Welcome email sent successfully to ${customerEmail}, id: ${result.data?.id}`);
+    return true;
+  } catch (error: any) {
+    console.error('[Resend] Failed to send welcome email:', error.message);
+    return false;
+  }
+}
+
+// ============================================
 // 5. ORDER CANCELLATION EMAIL (NEU)
 // ============================================
 export async function sendOrderCancellationEmail(

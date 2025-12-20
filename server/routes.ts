@@ -94,6 +94,17 @@ export async function registerRoutes(app: Express) {
         role: user.role || undefined,
       };
       
+      // Send welcome email (non-blocking)
+      try {
+        const { sendWelcomeEmail } = await import('./resendClient');
+        const baseUrl = process.env.REPLIT_DOMAINS 
+          ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
+          : 'https://aldenair.de';
+        await sendWelcomeEmail(user.email, user.fullName || 'Kunde', baseUrl);
+      } catch (emailError: any) {
+        console.error('[Register] Failed to send welcome email:', emailError.message);
+      }
+      
       res.json({ 
         user: { 
           id: user.id, 
