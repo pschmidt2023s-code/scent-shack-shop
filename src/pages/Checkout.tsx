@@ -439,347 +439,6 @@ export default function Checkout() {
     </div>
   );
 
-  const ContactStep = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Mail className="w-5 h-5" />
-          Kontaktdaten
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {user ? (
-          <div className="p-4 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground">Angemeldet als</p>
-            <p className="font-medium">{user.email}</p>
-          </div>
-        ) : (
-          <div>
-            <Label htmlFor="guestEmail">E-Mail-Adresse *</Label>
-            <Input
-              id="guestEmail"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              value={guestEmail}
-              onChange={(e) => setGuestEmail(e.target.value)}
-              placeholder="ihre@email.de"
-              data-testid="input-email"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Bestellbestätigung wird an diese Adresse gesendet
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-
-  const AddressStep = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MapPin className="w-5 h-5" />
-          Lieferadresse
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="firstName">Vorname *</Label>
-              <Input
-                id="firstName"
-                type="text"
-                autoComplete="given-name"
-                value={customerData.firstName}
-                onChange={(e) => handleInputChange('firstName', e.target.value)}
-                data-testid="input-firstname"
-              />
-            </div>
-            <div>
-              <Label htmlFor="lastName">Nachname *</Label>
-              <Input
-                id="lastName"
-                type="text"
-                autoComplete="family-name"
-                value={customerData.lastName}
-                onChange={(e) => handleInputChange('lastName', e.target.value)}
-                data-testid="input-lastname"
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="street">Straße & Hausnummer *</Label>
-            <Input
-              id="street"
-              type="text"
-              autoComplete="street-address"
-              value={customerData.street}
-              onChange={(e) => handleInputChange('street', e.target.value)}
-              data-testid="input-street"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="postalCode">PLZ *</Label>
-              <Input
-                id="postalCode"
-                type="text"
-                inputMode="numeric"
-                autoComplete="postal-code"
-                value={customerData.postalCode}
-                onChange={(e) => handleInputChange('postalCode', e.target.value)}
-                data-testid="input-postalcode"
-              />
-            </div>
-            <div>
-              <Label htmlFor="city">Stadt *</Label>
-              <Input
-                id="city"
-                type="text"
-                autoComplete="address-level2"
-                value={customerData.city}
-                onChange={(e) => handleInputChange('city', e.target.value)}
-                data-testid="input-city"
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="phone">Telefon (optional)</Label>
-            <Input
-              id="phone"
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              value={customerData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
-              data-testid="input-phone"
-            />
-          </div>
-        </form>
-      </CardContent>
-    </Card>
-  );
-
-  const ShippingStep = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Truck className="w-5 h-5" />
-          Versandmethode
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <RadioGroup value={selectedShipping} onValueChange={setSelectedShipping}>
-          {shippingOptions.map((option) => {
-            const isStandard = !option.isExpress;
-            const isFree = isStandard && qualifiesForFreeStandard;
-            return (
-              <div 
-                key={option.id} 
-                className={cn(
-                  "flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all",
-                  selectedShipping === option.id ? "border-primary bg-primary/5" : "hover-elevate"
-                )}
-                onClick={() => setSelectedShipping(option.id)}
-              >
-                <RadioGroupItem value={option.id} id={`shipping-${option.id}`} />
-                <Label htmlFor={`shipping-${option.id}`} className="flex items-center cursor-pointer w-full">
-                  {option.isExpress ? (
-                    <Zap className="mr-3 h-5 w-5 text-amber-500" />
-                  ) : (
-                    <Truck className="mr-3 h-5 w-5" />
-                  )}
-                  <div className="flex-1">
-                    <span className="font-medium">{option.name}</span>
-                    <p className="text-xs text-muted-foreground">{option.estimatedDays}</p>
-                  </div>
-                  <div className="text-right">
-                    {isFree ? (
-                      <span className="text-green-600 dark:text-green-400 font-medium">Kostenlos</span>
-                    ) : (
-                      <span className="font-medium">{parseFloat(option.price).toFixed(2)} €</span>
-                    )}
-                    {option.isExpress && (
-                      <Badge variant="secondary" className="ml-2">Express</Badge>
-                    )}
-                  </div>
-                </Label>
-              </div>
-            );
-          })}
-        </RadioGroup>
-        
-        {!qualifiesForFreeStandard && (
-          <div className="mt-4 p-3 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground">
-              Noch {(freeShippingThreshold - checkoutData.totalAmount).toFixed(2)} € bis zum kostenlosen Standardversand
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-
-  const PaymentStep = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CreditCard className="w-5 h-5" />
-          Zahlungsmethode
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <RadioGroup value={paymentMethod} onValueChange={(value: any) => setPaymentMethod(value)}>
-          <div 
-            className={cn(
-              "flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all",
-              paymentMethod === 'bank' ? "border-primary bg-primary/5" : "hover-elevate"
-            )}
-            onClick={() => setPaymentMethod('bank')}
-          >
-            <RadioGroupItem value="bank" id="bank" />
-            <Label htmlFor="bank" className="flex items-center cursor-pointer w-full">
-              <Building2 className="mr-3 h-5 w-5" />
-              <div className="flex-1">
-                <span className="font-medium">Banküberweisung (Vorkasse)</span>
-                <p className="text-xs text-muted-foreground">Bezahlen Sie sicher per Überweisung</p>
-              </div>
-            </Label>
-          </div>
-
-          <div 
-            className={cn(
-              "flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all",
-              paymentMethod === 'card' ? "border-primary bg-primary/5" : "hover-elevate"
-            )}
-            onClick={() => setPaymentMethod('card')}
-          >
-            <RadioGroupItem value="card" id="card" />
-            <Label htmlFor="card" className="flex items-center cursor-pointer w-full">
-              <CreditCard className="mr-3 h-5 w-5" />
-              <div className="flex-1">
-                <span className="font-medium">Kreditkarte / Debitkarte</span>
-                <p className="text-xs text-muted-foreground">Sichere Zahlung via Stripe</p>
-              </div>
-              <Badge variant="secondary">Stripe</Badge>
-            </Label>
-          </div>
-        </RadioGroup>
-        
-        {paymentMethod === 'bank' && (
-          <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-950/50 rounded-lg border border-amber-200 dark:border-amber-800">
-            <p className="text-sm text-amber-900 dark:text-amber-100">
-              Nach Abschluss der Bestellung erhalten Sie die Bankdaten zur Überweisung. Ihre Bestellung wird nach Zahlungseingang versendet.
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-
-  const ReviewStep = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Package className="w-5 h-5" />
-          Bestellung prüfen
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="p-4 bg-muted rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                Kontakt
-              </h4>
-              <Button variant="ghost" size="sm" onClick={() => goToStep('contact')}>
-                <Edit2 className="w-3 h-3" />
-              </Button>
-            </div>
-            <p className="text-sm text-muted-foreground">{user?.email || guestEmail}</p>
-          </div>
-
-          <div className="p-4 bg-muted rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                Lieferadresse
-              </h4>
-              <Button variant="ghost" size="sm" onClick={() => goToStep('address')}>
-                <Edit2 className="w-3 h-3" />
-              </Button>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {customerData.firstName} {customerData.lastName}<br />
-              {customerData.street}<br />
-              {customerData.postalCode} {customerData.city}
-            </p>
-          </div>
-
-          <div className="p-4 bg-muted rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium flex items-center gap-2">
-                <Truck className="w-4 h-4" />
-                Versand
-              </h4>
-              <Button variant="ghost" size="sm" onClick={() => goToStep('shipping')}>
-                <Edit2 className="w-3 h-3" />
-              </Button>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {selectedShippingOption?.name} 
-              {actualShippingCost === 0 ? ' (Kostenlos)' : ` (${actualShippingCost.toFixed(2)} €)`}
-            </p>
-          </div>
-
-          <div className="p-4 bg-muted rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium flex items-center gap-2">
-                <CreditCard className="w-4 h-4" />
-                Zahlung
-              </h4>
-              <Button variant="ghost" size="sm" onClick={() => goToStep('payment')}>
-                <Edit2 className="w-3 h-3" />
-              </Button>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {paymentMethod === 'bank' ? 'Banküberweisung (Vorkasse)' : 'Kreditkarte / Debitkarte'}
-            </p>
-          </div>
-        </div>
-
-        <Separator />
-
-        <div>
-          <h4 className="font-medium mb-4 flex items-center gap-2">
-            <ShoppingBag className="w-4 h-4" />
-            Artikel ({checkoutData.items.length})
-          </h4>
-          <div className="space-y-3">
-            {checkoutData.items.map((item, index) => (
-              <div key={index} className="flex justify-between items-center gap-4 p-3 bg-muted/50 rounded-lg">
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{item.perfume?.name || item.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {item.variant?.name || item.selectedVariant} x {item.quantity}
-                  </p>
-                </div>
-                <p className="font-medium text-sm whitespace-nowrap">
-                  {((item.variant?.price || item.price) * item.quantity).toFixed(2)} €
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
 
   const OrderSummary = () => (
     <Card className="lg:sticky lg:top-8">
@@ -868,11 +527,337 @@ export default function Checkout() {
 
   const renderCurrentStep = () => {
     switch (currentStep) {
-      case 'contact': return <ContactStep />;
-      case 'address': return <AddressStep />;
-      case 'shipping': return <ShippingStep />;
-      case 'payment': return <PaymentStep />;
-      case 'review': return <ReviewStep />;
+      case 'contact': 
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="w-5 h-5" />
+                Kontaktdaten
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {user ? (
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">Angemeldet als</p>
+                  <p className="font-medium">{user.email}</p>
+                </div>
+              ) : (
+                <div>
+                  <Label htmlFor="guestEmail">E-Mail-Adresse *</Label>
+                  <Input
+                    id="guestEmail"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    value={guestEmail}
+                    onChange={(e) => setGuestEmail(e.target.value)}
+                    placeholder="ihre@email.de"
+                    data-testid="input-email"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Bestellbestätigung wird an diese Adresse gesendet
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      case 'address': 
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                Lieferadresse
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="firstName">Vorname *</Label>
+                    <Input
+                      id="firstName"
+                      type="text"
+                      autoComplete="given-name"
+                      value={customerData.firstName}
+                      onChange={(e) => handleInputChange('firstName', e.target.value)}
+                      data-testid="input-firstname"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="lastName">Nachname *</Label>
+                    <Input
+                      id="lastName"
+                      type="text"
+                      autoComplete="family-name"
+                      value={customerData.lastName}
+                      onChange={(e) => handleInputChange('lastName', e.target.value)}
+                      data-testid="input-lastname"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="street">Straße & Hausnummer *</Label>
+                  <Input
+                    id="street"
+                    type="text"
+                    autoComplete="street-address"
+                    value={customerData.street}
+                    onChange={(e) => handleInputChange('street', e.target.value)}
+                    data-testid="input-street"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="postalCode">PLZ *</Label>
+                    <Input
+                      id="postalCode"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="postal-code"
+                      value={customerData.postalCode}
+                      onChange={(e) => handleInputChange('postalCode', e.target.value)}
+                      data-testid="input-postalcode"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="city">Stadt *</Label>
+                    <Input
+                      id="city"
+                      type="text"
+                      autoComplete="address-level2"
+                      value={customerData.city}
+                      onChange={(e) => handleInputChange('city', e.target.value)}
+                      data-testid="input-city"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="phone">Telefon (optional)</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    value={customerData.phone}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    data-testid="input-phone"
+                  />
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        );
+      case 'shipping': 
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Truck className="w-5 h-5" />
+                Versandmethode
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RadioGroup value={selectedShipping} onValueChange={setSelectedShipping}>
+                {shippingOptions.map((option) => {
+                  const isStandard = !option.isExpress;
+                  const isFree = isStandard && qualifiesForFreeStandard;
+                  return (
+                    <div 
+                      key={option.id} 
+                      className={cn(
+                        "flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all",
+                        selectedShipping === option.id ? "border-primary bg-primary/5" : "hover-elevate"
+                      )}
+                      onClick={() => setSelectedShipping(option.id)}
+                    >
+                      <RadioGroupItem value={option.id} id={`shipping-${option.id}`} />
+                      <Label htmlFor={`shipping-${option.id}`} className="flex items-center cursor-pointer w-full">
+                        {option.isExpress ? (
+                          <Zap className="mr-3 h-5 w-5 text-amber-500" />
+                        ) : (
+                          <Truck className="mr-3 h-5 w-5" />
+                        )}
+                        <div className="flex-1">
+                          <span className="font-medium">{option.name}</span>
+                          <p className="text-xs text-muted-foreground">{option.estimatedDays}</p>
+                        </div>
+                        <div className="text-right">
+                          {isFree ? (
+                            <span className="text-green-600 dark:text-green-400 font-medium">Kostenlos</span>
+                          ) : (
+                            <span className="font-medium">{parseFloat(option.price).toFixed(2)} €</span>
+                          )}
+                          {option.isExpress && (
+                            <Badge variant="secondary" className="ml-2">Express</Badge>
+                          )}
+                        </div>
+                      </Label>
+                    </div>
+                  );
+                })}
+              </RadioGroup>
+              {!qualifiesForFreeStandard && (
+                <div className="mt-4 p-3 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    Noch {(freeShippingThreshold - checkoutData.totalAmount).toFixed(2)} € bis zum kostenlosen Standardversand
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      case 'payment': 
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5" />
+                Zahlungsmethode
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RadioGroup value={paymentMethod} onValueChange={(value: any) => setPaymentMethod(value)}>
+                <div 
+                  className={cn(
+                    "flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all",
+                    paymentMethod === 'bank' ? "border-primary bg-primary/5" : "hover-elevate"
+                  )}
+                  onClick={() => setPaymentMethod('bank')}
+                >
+                  <RadioGroupItem value="bank" id="bank" />
+                  <Label htmlFor="bank" className="flex items-center cursor-pointer w-full">
+                    <Building2 className="mr-3 h-5 w-5" />
+                    <div className="flex-1">
+                      <span className="font-medium">Banküberweisung (Vorkasse)</span>
+                      <p className="text-xs text-muted-foreground">Bezahlen Sie sicher per Überweisung</p>
+                    </div>
+                  </Label>
+                </div>
+                <div 
+                  className={cn(
+                    "flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all",
+                    paymentMethod === 'card' ? "border-primary bg-primary/5" : "hover-elevate"
+                  )}
+                  onClick={() => setPaymentMethod('card')}
+                >
+                  <RadioGroupItem value="card" id="card" />
+                  <Label htmlFor="card" className="flex items-center cursor-pointer w-full">
+                    <CreditCard className="mr-3 h-5 w-5" />
+                    <div className="flex-1">
+                      <span className="font-medium">Kreditkarte / Debitkarte</span>
+                      <p className="text-xs text-muted-foreground">Sichere Zahlung via Stripe</p>
+                    </div>
+                    <Badge variant="secondary">Stripe</Badge>
+                  </Label>
+                </div>
+              </RadioGroup>
+              {paymentMethod === 'bank' && (
+                <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-950/50 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <p className="text-sm text-amber-900 dark:text-amber-100">
+                    Nach Abschluss der Bestellung erhalten Sie die Bankdaten zur Überweisung. Ihre Bestellung wird nach Zahlungseingang versendet.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      case 'review': 
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                Bestellung prüfen
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="p-4 bg-muted rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <Mail className="w-4 h-4" />
+                      Kontakt
+                    </h4>
+                    <Button variant="ghost" size="sm" onClick={() => goToStep('contact')}>
+                      <Edit2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{user?.email || guestEmail}</p>
+                </div>
+                <div className="p-4 bg-muted rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      Lieferadresse
+                    </h4>
+                    <Button variant="ghost" size="sm" onClick={() => goToStep('address')}>
+                      <Edit2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {customerData.firstName} {customerData.lastName}<br />
+                    {customerData.street}<br />
+                    {customerData.postalCode} {customerData.city}
+                  </p>
+                </div>
+                <div className="p-4 bg-muted rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <Truck className="w-4 h-4" />
+                      Versand
+                    </h4>
+                    <Button variant="ghost" size="sm" onClick={() => goToStep('shipping')}>
+                      <Edit2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedShippingOption?.name} 
+                    {actualShippingCost === 0 ? ' (Kostenlos)' : ` (${actualShippingCost.toFixed(2)} €)`}
+                  </p>
+                </div>
+                <div className="p-4 bg-muted rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <CreditCard className="w-4 h-4" />
+                      Zahlung
+                    </h4>
+                    <Button variant="ghost" size="sm" onClick={() => goToStep('payment')}>
+                      <Edit2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {paymentMethod === 'bank' ? 'Banküberweisung (Vorkasse)' : 'Kreditkarte / Debitkarte'}
+                  </p>
+                </div>
+              </div>
+              <Separator />
+              <div>
+                <h4 className="font-medium mb-4 flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4" />
+                  Artikel ({checkoutData.items.length})
+                </h4>
+                <div className="space-y-3">
+                  {checkoutData.items.map((item, index) => (
+                    <div key={index} className="flex justify-between items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{item.perfume?.name || item.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.variant?.name || item.selectedVariant} x {item.quantity}
+                        </p>
+                      </div>
+                      <p className="font-medium text-sm whitespace-nowrap">
+                        {((item.variant?.price || item.price) * item.quantity).toFixed(2)} €
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
       default: return null;
     }
   };
