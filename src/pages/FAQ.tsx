@@ -12,15 +12,19 @@ const faqData = [
     questions: [
       {
         question: "Wie lange dauert die Lieferung?",
-        answer: "Die Lieferzeit beträgt 3-7 Werktage innerhalb Deutschlands. Sie erhalten eine Versandbestätigung mit Tracking-Informationen per E-Mail."
+        answer: "Die Lieferzeit beträgt 3-5 Werktage innerhalb Deutschlands mit unserem Standardversand. Sie erhalten eine Versandbestätigung mit Tracking-Informationen per E-Mail."
+      },
+      {
+        question: "Was kostet der Versand?",
+        answer: "Der Standardversand kostet 4,99€ innerhalb Deutschlands. Ab einem Bestellwert von 50€ ist der Standardversand kostenlos!"
+      },
+      {
+        question: "Was ist Priority Versand?",
+        answer: "Mit Priority Versand (+2,99€) wird Ihre Bestellung noch am selben Tag versendet, wenn Sie bis 16:00 Uhr bestellen. Bei Bestellungen nach 16:00 Uhr erfolgt der Versand am nächsten Werktag. So erhalten Sie Ihre Ware schneller!"
       },
       {
         question: "In welche Länder liefern Sie?",
         answer: "Wir liefern innerhalb Deutschlands und in alle EU-Länder. Für EU-Lieferungen berechnen wir 15,99€ Versandkosten."
-      },
-      {
-        question: "Fallen Versandkosten an?",
-        answer: "Innerhalb Deutschlands liefern wir immer versandkostenfrei. Für EU-Länder berechnen wir 15,99€ Versandkosten."
       },
       {
         question: "Kann ich meine Bestellung verfolgen?",
