@@ -638,10 +638,13 @@ export async function registerRoutes(app: Express) {
           const cryptoModule = await import('crypto');
           const randomPassword = cryptoModule.randomBytes(8).toString('hex');
           
-          // Create user account (password is hashed in storage)
+          // Hash password before storing (bcrypt with cost factor 12)
+          const hashedPassword = await bcrypt.hash(randomPassword, 12);
+          
+          // Create user account with hashed password
           const newUser = await storage.createUser({
             email: customerEmail,
-            password: randomPassword,
+            password: hashedPassword,
             fullName: customerName,
             role: 'customer',
             phone: customerPhone || null,
