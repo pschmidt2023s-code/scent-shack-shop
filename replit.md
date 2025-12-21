@@ -58,3 +58,25 @@ The platform is built with a clear separation of concerns, featuring a React + V
 - **bcrypt:** Password hashing library.
 - **Zod:** Schema validation library.
 - **Shadcn UI:** UI component library used for Admin Dashboard.
+
+## Data Backup & Restoration
+A database backup script is available at `server/data-backup.sql` containing:
+- **Products:** ALDENAIR 111, 632, 888 with full details (notes, ingredients, seasons, occasions)
+- **Variants:** 50 ML (€59.99) and 5 ML Probe (€9.99) for each product
+- **AI-generated images** for 5ml sample bottles
+
+To restore data after switching AI or fresh setup:
+```bash
+psql $DATABASE_URL < server/data-backup.sql
+```
+
+## Current Product Catalog
+| Product | Inspired By | Price (50ML) | Price (5ML) |
+|---------|-------------|--------------|-------------|
+| ALDENAIR 111 | Sauvage Elixir® | €59.99 | €9.99 |
+| ALDENAIR 632 | Imagination® | €59.99 | €9.99 |
+| ALDENAIR 888 | Ombre Nomade® | €59.99 | €9.99 |
+
+## Admin Credentials
+- **Email:** admin@aldenair.de
+- **Password:** Admin123!
