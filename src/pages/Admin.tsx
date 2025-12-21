@@ -590,6 +590,7 @@ function CreateOrderDialog({
   const [discount, setDiscount] = useState('');
   const [shippingType, setShippingType] = useState<'standard' | 'prio'>('standard');
   const [createAccount, setCreateAccount] = useState(false);
+  const [skipEmail, setSkipEmail] = useState(false);
   const [orderItems, setOrderItems] = useState<OrderItemInput[]>([]);
   const [products, setProducts] = useState<ProductWithVariants[]>([]);
   const [selectedVariant, setSelectedVariant] = useState('');
@@ -692,6 +693,7 @@ function CreateOrderDialog({
     setCustomerSearch('');
     setShowResults(false);
     setCreateAccount(false);
+    setSkipEmail(false);
   };
 
   const clearSelectedCustomer = () => {
@@ -850,6 +852,7 @@ function CreateOrderDialog({
         discount: discountAmount,
         shippingType,
         createAccount,
+        skipEmail,
         userId: selectedUserId,
       });
       
@@ -996,6 +999,17 @@ function CreateOrderDialog({
                 </Label>
               </div>
             )}
+            <div className="flex items-center gap-2 mt-3">
+              <Checkbox
+                id="skipEmail"
+                checked={skipEmail}
+                onCheckedChange={(checked) => setSkipEmail(checked === true)}
+                data-testid="checkbox-skip-email"
+              />
+              <Label htmlFor="skipEmail" className="text-sm font-normal cursor-pointer">
+                Keine Bestellbestätigung per E-Mail senden
+              </Label>
+            </div>
           </div>
 
           <Separator />

@@ -579,7 +579,14 @@ export async function registerRoutes(app: Express) {
         }));
         
         // Get user data if userId exists
-        let userData = null;
+        let userData: {
+          id: string;
+          email: string;
+          fullName: string | null;
+          phone: string | null;
+          paybackBalance: string | null;
+          createdAt: Date;
+        } | null = null;
         if (order.userId) {
           const user = await storage.getUser(order.userId);
           if (user) {
@@ -605,7 +612,7 @@ export async function registerRoutes(app: Express) {
   // Admin create order manually
   app.post("/api/admin/orders", requireAdmin, async (req, res) => {
     try {
-      const { customerName, customerEmail, customerPhone, shippingAddress, items, notes, paymentMethod, status, discount, shippingType, createAccount, userId: providedUserId } = req.body;
+      const { customerName, customerEmail, customerPhone, shippingAddress, items, notes, paymentMethod, status, discount, shippingType, createAccount, userId: providedUserId, skipEmail } = req.body;
       
       if (!customerName || !customerEmail || !items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "Name, E-Mail und mindestens ein Artikel erforderlich" });
@@ -765,32 +772,36 @@ export async function registerRoutes(app: Express) {
       
       console.log(`[Admin] Manual order created: ${orderNumber}`);
       
-      // Send order confirmation email
-      try {
-        const { sendOrderConfirmationEmail } = await import('./resendClient');
-        const emailItems = createdItems.map(item => ({
-          name: item.variantName,
-          quantity: item.quantity,
-          price: item.unitPrice * item.quantity,
-        }));
-        
-        const bankSettings = (paymentMethod === 'bank' || paymentMethod === 'bank_transfer') ? await storage.getBankSettings() : null;
-        await sendOrderConfirmationEmail({
-          orderId: order.id,
-          orderNumber,
-          customerEmail,
-          customerName,
-          items: emailItems,
-          totalAmount: finalAmount,
-          shippingCost,
-          shippingAddress: shippingAddress || { street: '', city: '', postalCode: '' },
-          paymentMethod: paymentMethod || 'bank',
-          bankSettings: bankSettings || undefined,
-        });
-        console.log(`[Admin] Order confirmation email sent to ${customerEmail}`);
-      } catch (emailError: any) {
-        console.error('[Admin] Failed to send order confirmation email:', emailError.message);
-        // Don't fail the order creation if email fails
+      // Send order confirmation email (unless skipEmail is true)
+      if (!skipEmail) {
+        try {
+          const { sendOrderConfirmationEmail } = await import('./resendClient');
+          const emailItems = createdItems.map(item => ({
+            name: item.variantName,
+            quantity: item.quantity,
+            price: item.unitPrice * item.quantity,
+          }));
+          
+          const bankSettings = (paymentMethod === 'bank' || paymentMethod === 'bank_transfer') ? await storage.getBankSettings() : null;
+          await sendOrderConfirmationEmail({
+            orderId: order.id,
+            orderNumber,
+            customerEmail,
+            customerName,
+            items: emailItems,
+            totalAmount: finalAmount,
+            shippingCost,
+            shippingAddress: shippingAddress || { street: '', city: '', postalCode: '' },
+            paymentMethod: paymentMethod || 'bank',
+            bankSettings: bankSettings || undefined,
+          });
+          console.log(`[Admin] Order confirmation email sent to ${customerEmail}`);
+        } catch (emailError: any) {
+          console.error('[Admin] Failed to send order confirmation email:', emailError.message);
+          // Don't fail the order creation if email fails
+        }
+      } else {
+        console.log(`[Admin] Skipping order confirmation email for ${orderNumber} (skipEmail=true)`);
       }
       
       res.json({ ...order, orderItems: createdItems });
