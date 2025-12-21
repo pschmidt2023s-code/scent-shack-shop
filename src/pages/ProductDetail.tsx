@@ -20,6 +20,8 @@ import { ProductReviews } from '@/components/ProductReviews';
 import { Perfume, PerfumeVariant } from '@/types/perfume';
 import { WhatsAppCommerce } from '@/components/WhatsAppCommerce';
 import { ARProductViewer } from '@/components/ARProductViewer';
+import { SubscriptionButton } from '@/components/SubscriptionButton';
+import { useQuery } from '@tanstack/react-query';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -30,6 +32,10 @@ const ProductDetail = () => {
   const [perfume, setPerfume] = useState<Perfume | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedVariant, setSelectedVariant] = useState<PerfumeVariant | null>(null);
+  
+  const { data: user } = useQuery<{ id: string; email: string } | null>({
+    queryKey: ['/api/user'],
+  });
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -347,6 +353,18 @@ const ProductDetail = () => {
                 </Dialog>
               )}
             </div>
+
+            {/* Subscription Option */}
+            {selectedVariant && selectedVariant.inStock && (
+              <div className="pt-2">
+                <SubscriptionButton
+                  variantId={selectedVariant.id}
+                  variantName={selectedVariant.name}
+                  price={selectedVariant.price}
+                  isLoggedIn={!!user}
+                />
+              </div>
+            )}
           </div>
         </div>
 

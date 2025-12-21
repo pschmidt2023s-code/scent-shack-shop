@@ -3767,4 +3767,55 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
       res.status(500).json({ error: error.message });
     }
   });
+
+  // Admin: Get all subscriptions
+  app.get("/api/admin/subscriptions", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const subscriptions = await storage.getAllSubscriptions();
+      res.json(subscriptions);
+    } catch (error: any) {
+      console.error("Admin get subscriptions error:", error);
+      res.status(500).json({ error: "Fehler beim Laden der Abos" });
+    }
+  });
+
+  // Admin: Update any subscription (with validation)
+  const adminSubscriptionUpdateSchema = z.object({
+    status: z.enum(['active', 'paused', 'cancelled']).optional(),
+    frequency: z.enum(['monthly', 'bimonthly', 'quarterly']).optional(),
+    quantity: z.number().int().min(1).max(10).optional(),
+  });
+
+  app.patch("/api/admin/subscriptions/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const validation = adminSubscriptionUpdateSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.errors[0].message });
+      }
+
+      const subscription = await storage.getSubscription(req.params.id);
+      if (!subscription) {
+        return res.status(404).json({ error: "Abo nicht gefunden" });
+      }
+      const updated = await storage.updateSubscription(req.params.id, validation.data);
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Admin update subscription error:", error);
+      res.status(500).json({ error: "Abo konnte nicht aktualisiert werden" });
+    }
+  });
+
+  // Admin: Cancel any subscription
+  app.delete("/api/admin/subscriptions/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const subscription = await storage.getSubscription(req.params.id);
+      if (!subscription) {
+        return res.status(404).json({ error: "Abo nicht gefunden" });
+      }
+      await storage.cancelSubscription(req.params.id);
+      res.json({ success: true, message: "Abo gekündigt" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 }

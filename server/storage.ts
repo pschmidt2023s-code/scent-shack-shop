@@ -139,6 +139,7 @@ export interface IStorage {
   // Subscriptions
   createSubscription(userId: string, data: schema.InsertSubscription): Promise<schema.Subscription>;
   getUserSubscriptions(userId: string): Promise<schema.Subscription[]>;
+  getAllSubscriptions(): Promise<schema.Subscription[]>;
   getSubscription(id: string): Promise<schema.Subscription | undefined>;
   updateSubscription(id: string, data: Partial<schema.InsertSubscription & { status: string }>): Promise<schema.Subscription | undefined>;
   cancelSubscription(id: string): Promise<boolean>;
@@ -1106,6 +1107,11 @@ export class DatabaseStorage implements IStorage {
   async getUserSubscriptions(userId: string): Promise<schema.Subscription[]> {
     return db.select().from(schema.subscriptions)
       .where(eq(schema.subscriptions.userId, userId))
+      .orderBy(desc(schema.subscriptions.createdAt));
+  }
+
+  async getAllSubscriptions(): Promise<schema.Subscription[]> {
+    return db.select().from(schema.subscriptions)
       .orderBy(desc(schema.subscriptions.createdAt));
   }
 

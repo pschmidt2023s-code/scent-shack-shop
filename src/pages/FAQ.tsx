@@ -129,6 +129,35 @@ const faqData = [
     ]
   },
   {
+    category: "Duft-Abo",
+    questions: [
+      {
+        question: "Wie funktioniert das Duft-Abo?",
+        answer: "Mit unserem Duft-Abo erhalten Sie Ihren Lieblingsduft automatisch in regelmäßigen Abständen geliefert. Sie sparen dabei 15% auf jede Lieferung und der Versand ist immer kostenlos. Sie können zwischen monatlicher, zweimonatlicher oder vierteljährlicher Lieferung wählen."
+      },
+      {
+        question: "Wie schließe ich ein Abo ab?",
+        answer: "Auf der Produktseite finden Sie neben dem Warenkorb-Button einen 'Abo (15% sparen)'-Button. Klicken Sie darauf, wählen Sie Ihre gewünschte Lieferfrequenz und Menge, und bestätigen Sie das Abo. Sie müssen dafür eingeloggt sein."
+      },
+      {
+        question: "Kann ich mein Abo jederzeit kündigen?",
+        answer: "Ja, Sie können Ihr Abo jederzeit in Ihrem Profil unter 'Meine Abos' kündigen oder pausieren. Es gibt keine Mindestlaufzeit und keine Kündigungsfristen."
+      },
+      {
+        question: "Kann ich die Lieferfrequenz ändern?",
+        answer: "Ja, Sie können die Lieferfrequenz jederzeit in Ihrem Profil ändern. Die Änderung gilt ab der nächsten geplanten Lieferung."
+      },
+      {
+        question: "Wann wird mein Abo geliefert?",
+        answer: "Die erste Lieferung erfolgt entsprechend der gewählten Frequenz (z.B. nach 1 Monat bei monatlichem Abo). In Ihrem Profil sehen Sie das Datum der nächsten Lieferung."
+      },
+      {
+        question: "Welche Zahlungsmethode wird für das Abo verwendet?",
+        answer: "Die Zahlung für jede Abo-Lieferung erfolgt automatisch zum Zeitpunkt der Lieferung. Sie können Ihre bevorzugte Zahlungsmethode in Ihrem Profil hinterlegen."
+      }
+    ]
+  },
+  {
     category: "Konto & Service",
     questions: [
       {

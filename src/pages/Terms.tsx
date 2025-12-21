@@ -185,6 +185,45 @@ export default function Terms() {
               </p>
 
               <div className="border-t pt-6 mt-8">
+                <h3 className="text-xl font-semibold">Besondere Bedingungen: Duft-Abonnements</h3>
+                
+                <h4 className="text-lg font-semibold mt-4">§ A1 Gegenstand des Abonnements</h4>
+                <p className="text-muted-foreground">
+                  (1) Der Verkäufer bietet dem Käufer die Möglichkeit, Parfümprodukte im Rahmen eines Abonnements zu beziehen. Das Abonnement umfasst die regelmäßige Lieferung des gewählten Produkts in der gewählten Frequenz (monatlich, alle zwei Monate oder vierteljährlich).
+                </p>
+                <p className="text-muted-foreground">
+                  (2) Abonnenten erhalten einen Rabatt von 15% auf den regulären Produktpreis sowie kostenlosen Versand für alle Abo-Lieferungen.
+                </p>
+
+                <h4 className="text-lg font-semibold mt-4">§ A2 Vertragsschluss und Laufzeit</h4>
+                <p className="text-muted-foreground">
+                  (1) Das Abonnement kommt durch Bestätigung des Abonnement-Formulars im Online-Shop zustande. Es besteht keine Mindestlaufzeit.
+                </p>
+                <p className="text-muted-foreground">
+                  (2) Der Käufer kann das Abonnement jederzeit über sein Kundenkonto pausieren oder kündigen. Die Kündigung wird wirksam vor der nächsten geplanten Lieferung, sofern diese noch nicht in Bearbeitung ist.
+                </p>
+
+                <h4 className="text-lg font-semibold mt-4">§ A3 Zahlung und Lieferung</h4>
+                <p className="text-muted-foreground">
+                  (1) Die Zahlung erfolgt automatisch zum Zeitpunkt jeder Lieferung über die im Kundenkonto hinterlegte Zahlungsmethode.
+                </p>
+                <p className="text-muted-foreground">
+                  (2) Der Käufer wird vor jeder Lieferung per E-Mail über die bevorstehende Abbuchung informiert.
+                </p>
+                <p className="text-muted-foreground">
+                  (3) Kann die Zahlung nicht durchgeführt werden, wird der Käufer benachrichtigt und die Lieferung ausgesetzt, bis die Zahlung erfolgt ist.
+                </p>
+
+                <h4 className="text-lg font-semibold mt-4">§ A4 Änderungen und Kündigungsrecht</h4>
+                <p className="text-muted-foreground">
+                  (1) Der Käufer kann jederzeit über sein Kundenkonto die Lieferfrequenz, die Menge oder das Produkt ändern. Änderungen gelten ab der nächsten geplanten Lieferung.
+                </p>
+                <p className="text-muted-foreground">
+                  (2) Das gesetzliche Widerrufsrecht gemäß § 6 dieser AGB gilt auch für einzelne Abo-Lieferungen. Bereits versendete Lieferungen können gemäß den allgemeinen Rückgabebedingungen retourniert werden.
+                </p>
+              </div>
+
+              <div className="border-t pt-6 mt-8">
                 <h3 className="text-xl font-semibold">Besondere Bedingungen: Gewinnspiele</h3>
                 
                 <h4 className="text-lg font-semibold mt-4">§ G1 Teilnahmeberechtigung</h4>

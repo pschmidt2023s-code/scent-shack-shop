@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -75,43 +75,37 @@ function getProductForDay(products: Product[], dayIndex: number): Product | null
 
 export function ScentCalendar() {
   const navigate = useNavigate();
-  const [currentDate] = useState(new Date());
-  const [season] = useState(getSeason());
+  const currentDate = useMemo(() => new Date(), []);
+  const season = useMemo(() => getSeason(), []);
   const [weekDays, setWeekDays] = useState<{ day: string; date: number; product: Product | null; isToday: boolean }[]>([]);
 
   const { data: allProducts, isLoading } = useQuery<Product[]>({
     queryKey: ['/api/products'],
   });
 
-  const singlePerfumes = allProducts?.filter(p => {
-    const name = p.name.toLowerCase();
-    const category = (p.category || '').toLowerCase();
-    const isCollection = name.includes('collection') || name.includes('set') || name.includes('sparset') || name.includes('probenset');
-    const isBundleCategory = category.includes('bundle') || category.includes('set') || category.includes('collection');
-    return !isCollection && !isBundleCategory;
-  }) || [];
-
-  const todayProduct = singlePerfumes.length > 0 
-    ? singlePerfumes[currentDate.getDate() % singlePerfumes.length] 
-    : null;
-
-  const recommendation: DailyRecommendation = {
-    product: todayProduct,
-    ...seasonReasons[season],
-  };
-
-  useEffect(() => {
-    if (!allProducts || allProducts.length === 0) return;
-
-    const perfumes = allProducts.filter(p => {
+  const singlePerfumes = useMemo(() => {
+    if (!allProducts) return [];
+    return allProducts.filter(p => {
       const name = p.name.toLowerCase();
       const category = (p.category || '').toLowerCase();
       const isCollection = name.includes('collection') || name.includes('set') || name.includes('sparset') || name.includes('probenset');
       const isBundleCategory = category.includes('bundle') || category.includes('set') || category.includes('collection');
       return !isCollection && !isBundleCategory;
     });
+  }, [allProducts]);
 
-    if (perfumes.length === 0) return;
+  const todayProduct = useMemo(() => {
+    if (singlePerfumes.length === 0) return null;
+    return singlePerfumes[currentDate.getDate() % singlePerfumes.length];
+  }, [singlePerfumes, currentDate]);
+
+  const recommendation: DailyRecommendation = useMemo(() => ({
+    product: todayProduct,
+    ...seasonReasons[season],
+  }), [todayProduct, season]);
+
+  useEffect(() => {
+    if (singlePerfumes.length === 0) return;
 
     const days = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
     const today = currentDate.getDay();
@@ -125,13 +119,13 @@ export function ScentCalendar() {
       week.push({
         day: days[dayIndex],
         date: date.getDate(),
-        product: getProductForDay(perfumes, date.getDate()),
+        product: getProductForDay(singlePerfumes, date.getDate()),
         isToday: i === currentDate.getDay(),
       });
     }
     
     setWeekDays(week);
-  }, [currentDate, allProducts]);
+  }, [currentDate, singlePerfumes]);
 
   const SeasonIcon = seasonConfig[season].icon;
 
