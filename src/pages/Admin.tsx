@@ -544,11 +544,21 @@ interface ProductWithVariants {
   variants: ProductVariant[];
 }
 
+interface SelectedFragrance {
+  variantId: string;
+  variantName: string;
+  productName: string;
+}
+
 interface OrderItemInput {
+  key: string; // Unique key for React rendering and item management
   variantId: string;
   variantName: string;
   quantity: number;
   unitPrice: number;
+  customizationData?: {
+    selectedFragrances: SelectedFragrance[];
+  };
 }
 
 interface CustomerSearchResult {
@@ -592,6 +602,51 @@ function CreateOrderDialog({
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  
+  // Bundle fragrance selection
+  const [showBundleDialog, setShowBundleDialog] = useState(false);
+  const [pendingBundleVariant, setPendingBundleVariant] = useState<ProductVariant | null>(null);
+  const [pendingBundleQuantity, setPendingBundleQuantity] = useState<number | null>(null); // Fragrances required per bundle
+  const [bundlesToAdd, setBundlesToAdd] = useState<number>(1); // Number of bundles being added
+  const [currentBundleIndex, setCurrentBundleIndex] = useState<number>(1); // Which bundle we're configuring
+  const [selectedFragrances, setSelectedFragrances] = useState<SelectedFragrance[]>([]);
+  const [pendingBundles, setPendingBundles] = useState<OrderItemInput[]>([]); // Collect bundles before adding all
+
+  // Helper to detect if a variant is a bundle/sample set
+  const isBundleVariant = (variantName: string): number | null => {
+    const lowerName = variantName.toLowerCase();
+    // Check for sample sets (Probenset) - 5x5ml or 3x5ml
+    if (lowerName.includes('5er') || lowerName.includes('5x')) return 5;
+    if (lowerName.includes('3er') || lowerName.includes('3x')) return 3;
+    if (lowerName.includes('probenset') || lowerName.includes('sample set')) {
+      if (lowerName.includes('5')) return 5;
+      if (lowerName.includes('3')) return 3;
+      return 5; // Default
+    }
+    // Check for sparsets (bundle sets)
+    if (lowerName.includes('sparset') || lowerName.includes('bundle')) {
+      if (lowerName.includes('5')) return 5;
+      if (lowerName.includes('3')) return 3;
+    }
+    return null;
+  };
+
+  // Get all 5ml sample variants for fragrance selection
+  const getSampleVariants = () => {
+    const samples: Array<{variantId: string; variantName: string; productName: string}> = [];
+    for (const product of products) {
+      for (const variant of product.variants) {
+        if (variant.name.toLowerCase().includes('5ml') || variant.name.toLowerCase().includes('probe')) {
+          samples.push({
+            variantId: variant.id,
+            variantName: variant.name,
+            productName: product.name,
+          });
+        }
+      }
+    }
+    return samples;
+  };
 
   useEffect(() => {
     if (open) {
@@ -646,6 +701,9 @@ function CreateOrderDialog({
     setCustomerPhone('');
   };
 
+  // Generate unique key for order items
+  const generateItemKey = () => `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
   const addItem = () => {
     if (!selectedVariant) return;
     
@@ -657,13 +715,29 @@ function CreateOrderDialog({
     
     if (!variant) return;
     
-    const existingIndex = orderItems.findIndex(i => i.variantId === selectedVariant);
+    // Check if this is a bundle variant
+    const requiredCount = isBundleVariant(variant.name);
+    if (requiredCount && requiredCount > 0) {
+      // Open bundle selection dialog - each bundle needs its own fragrance selection
+      setPendingBundleVariant(variant);
+      setPendingBundleQuantity(requiredCount);
+      setBundlesToAdd(quantity); // How many bundles to add
+      setCurrentBundleIndex(1); // Start with first bundle
+      setPendingBundles([]); // Clear pending bundles
+      setSelectedFragrances([]);
+      setShowBundleDialog(true);
+      return;
+    }
+    
+    // Regular item - can merge quantities if same variant
+    const existingIndex = orderItems.findIndex(i => i.variantId === selectedVariant && !i.customizationData);
     if (existingIndex >= 0) {
       const updated = [...orderItems];
       updated[existingIndex].quantity += quantity;
       setOrderItems(updated);
     } else {
       setOrderItems([...orderItems, {
+        key: generateItemKey(),
         variantId: variant.id,
         variantName: variant.name,
         quantity,
@@ -674,8 +748,64 @@ function CreateOrderDialog({
     setQuantity(1);
   };
 
-  const removeItem = (variantId: string) => {
-    setOrderItems(orderItems.filter(i => i.variantId !== variantId));
+  const addBundleWithFragrances = () => {
+    if (!pendingBundleVariant || !pendingBundleQuantity) return;
+    if (selectedFragrances.length !== pendingBundleQuantity) {
+      toast({
+        title: 'Auswahl unvollständig',
+        description: `Bitte wählen Sie ${pendingBundleQuantity} Düfte aus.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Create the current bundle entry
+    const newBundle: OrderItemInput = {
+      key: generateItemKey(),
+      variantId: pendingBundleVariant.id,
+      variantName: pendingBundleVariant.name,
+      quantity: 1, // Always 1 per bundle entry - each with unique fragrances
+      unitPrice: parseFloat(pendingBundleVariant.price),
+      customizationData: {
+        selectedFragrances: [...selectedFragrances],
+      },
+    };
+    
+    // Check if there are more bundles to configure
+    if (currentBundleIndex < bundlesToAdd) {
+      // Save this bundle and move to next
+      setPendingBundles([...pendingBundles, newBundle]);
+      setCurrentBundleIndex(currentBundleIndex + 1);
+      setSelectedFragrances([]); // Clear for next bundle selection
+    } else {
+      // All bundles configured - add all to order
+      const allBundles = [...pendingBundles, newBundle];
+      setOrderItems([...orderItems, ...allBundles]);
+      
+      // Reset
+      setShowBundleDialog(false);
+      setPendingBundleVariant(null);
+      setPendingBundleQuantity(null);
+      setBundlesToAdd(1);
+      setCurrentBundleIndex(1);
+      setPendingBundles([]);
+      setSelectedFragrances([]);
+      setSelectedVariant('');
+      setQuantity(1);
+    }
+  };
+
+  const toggleFragranceSelection = (frag: SelectedFragrance) => {
+    const isSelected = selectedFragrances.some(f => f.variantId === frag.variantId);
+    if (isSelected) {
+      setSelectedFragrances(selectedFragrances.filter(f => f.variantId !== frag.variantId));
+    } else if (selectedFragrances.length < (pendingBundleQuantity || 0)) {
+      setSelectedFragrances([...selectedFragrances, frag]);
+    }
+  };
+
+  const removeItem = (key: string) => {
+    setOrderItems(orderItems.filter(i => i.key !== key));
   };
 
   const subtotal = orderItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
@@ -709,7 +839,11 @@ function CreateOrderDialog({
         customerEmail,
         customerPhone,
         shippingAddress: { street, city, postalCode, country: 'Deutschland' },
-        items: orderItems.map(i => ({ variantId: i.variantId, quantity: i.quantity })),
+        items: orderItems.map(i => ({ 
+          variantId: i.variantId, 
+          quantity: i.quantity,
+          customizationData: i.customizationData 
+        })),
         notes,
         status,
         paymentMethod,
@@ -949,22 +1083,32 @@ function CreateOrderDialog({
             {orderItems.length > 0 && (
               <div className="space-y-2 bg-muted/50 rounded-md p-3">
                 {orderItems.map((item) => (
-                  <div key={item.variantId} className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <span className="font-medium">{item.variantName}</span>
-                      <span className="text-muted-foreground ml-2">x{item.quantity}</span>
+                  <div key={item.key} className="border-b border-border/50 last:border-0 pb-2 last:pb-0">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <span className="font-medium">{item.variantName}</span>
+                        <span className="text-muted-foreground ml-2">x{item.quantity}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">{(item.unitPrice * item.quantity).toFixed(2)}</span>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => removeItem(item.key)}
+                          data-testid={`btn-remove-item-${item.key}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">€{(item.unitPrice * item.quantity).toFixed(2)}</span>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => removeItem(item.variantId)}
-                        data-testid={`btn-remove-item-${item.variantId}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    {item.customizationData?.selectedFragrances && item.customizationData.selectedFragrances.length > 0 && (
+                      <div className="mt-1 pl-3 border-l-2 border-primary/30">
+                        <p className="text-xs text-muted-foreground">Ausgewählte Düfte:</p>
+                        {item.customizationData.selectedFragrances.map((f, idx) => (
+                          <p key={f.variantId} className="text-xs text-muted-foreground">{idx + 1}. {f.variantName}</p>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -1088,6 +1232,88 @@ function CreateOrderDialog({
           </Button>
         </div>
       </DialogContent>
+
+      {/* Bundle Fragrance Selection Dialog */}
+      <Dialog open={showBundleDialog} onOpenChange={setShowBundleDialog}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto" aria-describedby={undefined}>
+          <DialogHeader>
+            <DialogTitle>Düfte auswählen</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {bundlesToAdd > 1 && (
+              <div className="flex items-center justify-between p-2 bg-primary/10 rounded-md">
+                <span className="text-sm font-medium">Bundle {currentBundleIndex} von {bundlesToAdd}</span>
+                <Badge variant="default">{pendingBundles.length} konfiguriert</Badge>
+              </div>
+            )}
+            <p className="text-sm text-muted-foreground">
+              Wählen Sie {pendingBundleQuantity} Düfte für: <span className="font-medium">{pendingBundleVariant?.name}</span>
+            </p>
+            <div className="text-sm">
+              Ausgewählt: <Badge variant="outline">{selectedFragrances.length} / {pendingBundleQuantity}</Badge>
+            </div>
+            <ScrollArea className="h-[300px] border rounded-md p-2">
+              <div className="space-y-1">
+                {getSampleVariants().map((frag) => {
+                  const isSelected = selectedFragrances.some(f => f.variantId === frag.variantId);
+                  return (
+                    <div
+                      key={frag.variantId}
+                      className={cn(
+                        "flex items-center gap-2 p-2 rounded-md cursor-pointer hover-elevate",
+                        isSelected && "bg-primary/10 border border-primary/30"
+                      )}
+                      onClick={() => toggleFragranceSelection(frag)}
+                      data-testid={`frag-select-${frag.variantId}`}
+                    >
+                      <Checkbox checked={isSelected} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{frag.variantName}</p>
+                        <p className="text-xs text-muted-foreground truncate">{frag.productName}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+            {selectedFragrances.length > 0 && (
+              <div className="p-2 bg-muted rounded-md">
+                <p className="text-xs font-medium mb-1">Ausgewählte Düfte:</p>
+                {selectedFragrances.map((f, idx) => (
+                  <p key={f.variantId} className="text-xs text-muted-foreground">{idx + 1}. {f.variantName}</p>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => {
+              setShowBundleDialog(false);
+              setPendingBundles([]);
+              setBundlesToAdd(1);
+              setCurrentBundleIndex(1);
+            }} data-testid="btn-bundle-cancel">
+              Abbrechen
+            </Button>
+            <Button 
+              onClick={addBundleWithFragrances}
+              disabled={selectedFragrances.length !== pendingBundleQuantity}
+              data-testid="btn-bundle-confirm"
+            >
+              {currentBundleIndex < bundlesToAdd ? (
+                <>
+                  <ChevronRight className="w-4 h-4 mr-2" />
+                  Weiter ({currentBundleIndex}/{bundlesToAdd})
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Hinzufügen
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
