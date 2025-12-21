@@ -382,6 +382,99 @@ export const shopSettings = pgTable("shop_settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Wishlist Shares (shareable wishlist links)
+export const wishlistShares = pgTable("wishlist_shares", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  shareCode: text("share_code").notNull().unique(),
+  title: text("title"),
+  message: text("message"),
+  isActive: boolean("is_active").default(true),
+  viewCount: integer("view_count").default(0),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Review Photos
+export const reviewPhotos = pgTable("review_photos", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  reviewId: uuid("review_id").references(() => reviews.id, { onDelete: "cascade" }).notNull(),
+  imageUrl: text("image_url").notNull(),
+  caption: text("caption"),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Gift Options (for orders)
+export const giftOptions = pgTable("gift_options", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orderId: uuid("order_id").references(() => orders.id, { onDelete: "cascade" }).notNull(),
+  isGift: boolean("is_gift").default(false),
+  giftWrapping: boolean("gift_wrapping").default(false),
+  giftWrappingPrice: numeric("gift_wrapping_price").default("4.99"),
+  recipientName: text("recipient_name"),
+  recipientEmail: text("recipient_email"),
+  giftMessage: text("gift_message"),
+  sendGiftNotification: boolean("send_gift_notification").default(false),
+  notificationDate: timestamp("notification_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Refill Program
+export const refillBottles = pgTable("refill_bottles", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  bottleCode: text("bottle_code").notNull().unique(),
+  variantId: uuid("variant_id").references(() => productVariants.id),
+  size: text("size").notNull(),
+  purchasedAt: timestamp("purchased_at").defaultNow().notNull(),
+  lastRefillAt: timestamp("last_refill_at"),
+  refillCount: integer("refill_count").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const refillOrders = pgTable("refill_orders", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  bottleId: uuid("bottle_id").references(() => refillBottles.id).notNull(),
+  variantId: uuid("variant_id").references(() => productVariants.id).notNull(),
+  orderId: uuid("order_id").references(() => orders.id),
+  status: text("status").default("pending"),
+  refillPrice: numeric("refill_price").notNull(),
+  discountPercent: numeric("discount_percent").default("20"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Subscription Service
+export const subscriptions = pgTable("subscriptions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  variantId: uuid("variant_id").references(() => productVariants.id).notNull(),
+  status: text("status").default("active"), // active, paused, cancelled
+  frequency: text("frequency").notNull(), // monthly, bimonthly, quarterly
+  quantity: integer("quantity").default(1),
+  discountPercent: numeric("discount_percent").default("15"),
+  nextDeliveryDate: timestamp("next_delivery_date"),
+  lastDeliveryDate: timestamp("last_delivery_date"),
+  deliveryCount: integer("delivery_count").default(0),
+  shippingAddressId: uuid("shipping_address_id").references(() => addresses.id),
+  paymentMethod: text("payment_method"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const subscriptionDeliveries = pgTable("subscription_deliveries", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  subscriptionId: uuid("subscription_id").references(() => subscriptions.id, { onDelete: "cascade" }).notNull(),
+  orderId: uuid("order_id").references(() => orders.id),
+  scheduledDate: timestamp("scheduled_date").notNull(),
+  deliveredDate: timestamp("delivered_date"),
+  status: text("status").default("scheduled"), // scheduled, processing, delivered, skipped
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
   reviews: many(reviews),
@@ -603,6 +696,63 @@ export const insertLoyaltyTransactionSchema = z.object({
   description: z.string().optional(),
 });
 
+// Wishlist Share Schema
+export const insertWishlistShareSchema = z.object({
+  title: z.string().optional(),
+  message: z.string().optional(),
+  expiresAt: z.string().optional(),
+});
+
+// Review Photo Schema
+export const insertReviewPhotoSchema = z.object({
+  reviewId: z.string().uuid(),
+  imageUrl: z.string().url(),
+  caption: z.string().optional(),
+  sortOrder: z.number().int().optional(),
+});
+
+// Gift Options Schema
+export const insertGiftOptionsSchema = z.object({
+  orderId: z.string().uuid(),
+  isGift: z.boolean().optional(),
+  giftWrapping: z.boolean().optional(),
+  recipientName: z.string().optional(),
+  recipientEmail: z.string().email().optional(),
+  giftMessage: z.string().max(500).optional(),
+  sendGiftNotification: z.boolean().optional(),
+  notificationDate: z.string().optional(),
+});
+
+// Refill Bottle Schema
+export const insertRefillBottleSchema = z.object({
+  variantId: z.string().uuid().optional(),
+  size: z.string(),
+});
+
+// Refill Order Schema
+export const insertRefillOrderSchema = z.object({
+  bottleId: z.string().uuid(),
+  variantId: z.string().uuid(),
+  refillPrice: z.string(),
+  discountPercent: z.string().optional(),
+});
+
+// Subscription Schema
+export const insertSubscriptionSchema = z.object({
+  variantId: z.string().uuid(),
+  frequency: z.enum(['monthly', 'bimonthly', 'quarterly']),
+  quantity: z.number().int().min(1).optional(),
+  shippingAddressId: z.string().uuid().optional(),
+  paymentMethod: z.string().optional(),
+});
+
+// Stock Notification Schema
+export const insertStockNotificationSchema = z.object({
+  productId: z.string().uuid().optional(),
+  variantId: z.string().uuid().optional(),
+  email: z.string().email().optional(),
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Product = typeof products.$inferSelect;
@@ -702,3 +852,20 @@ export type UpdateProduct = z.infer<typeof updateProductSchema>;
 export type UpdateProductVariant = z.infer<typeof updateProductVariantSchema>;
 export type UpdateOrder = z.infer<typeof updateOrderSchema>;
 export type UpdateUser = z.infer<typeof updateUserSchema>;
+
+// New feature types
+export type WishlistShare = typeof wishlistShares.$inferSelect;
+export type InsertWishlistShare = z.infer<typeof insertWishlistShareSchema>;
+export type ReviewPhoto = typeof reviewPhotos.$inferSelect;
+export type InsertReviewPhoto = z.infer<typeof insertReviewPhotoSchema>;
+export type GiftOption = typeof giftOptions.$inferSelect;
+export type InsertGiftOption = z.infer<typeof insertGiftOptionsSchema>;
+export type RefillBottle = typeof refillBottles.$inferSelect;
+export type InsertRefillBottle = z.infer<typeof insertRefillBottleSchema>;
+export type RefillOrder = typeof refillOrders.$inferSelect;
+export type InsertRefillOrder = z.infer<typeof insertRefillOrderSchema>;
+export type Subscription = typeof subscriptions.$inferSelect;
+export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
+export type SubscriptionDelivery = typeof subscriptionDeliveries.$inferSelect;
+export type StockNotification = typeof stockNotifications.$inferSelect;
+export type InsertStockNotification = z.infer<typeof insertStockNotificationSchema>;
