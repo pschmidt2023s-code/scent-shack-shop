@@ -30,37 +30,28 @@ export function SalesAnalytics() {
     try {
       setLoading(true);
       
-      // Fetch orders
-      const { data: orders, error: ordersError } = await supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const [ordersRes, productsRes] = await Promise.all([
+        fetch('/api/admin/orders', { credentials: 'include' }),
+        fetch('/api/products', { credentials: 'include' })
+      ]);
+      
+      const orders = ordersRes.ok ? await ordersRes.json() : [];
+      const products = productsRes.ok ? await productsRes.json() : [];
 
-      if (ordersError) throw ordersError;
-
-      // Calculate metrics
-      const totalRevenue = orders?.reduce((sum, order) => sum + order.total_amount, 0) || 0;
+      const totalRevenue = orders?.reduce((sum: number, order: any) => sum + parseFloat(order.totalAmount || 0), 0) || 0;
       const totalOrders = orders?.length || 0;
       
-      // Get unique customers
-      const uniqueCustomers = new Set(orders?.map(o => o.customer_email).filter(Boolean));
+      const uniqueCustomers = new Set(orders?.map((o: any) => o.customerEmail).filter(Boolean));
       const totalCustomers = uniqueCustomers.size;
 
-      // Get products count
-      const { count: productsCount } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true });
-
-      // Calculate growth (mock data for now - would need historical data)
       const revenueGrowth = 12.5;
       const ordersGrowth = 8.3;
 
-      // Get recent orders
-      const recentOrders = orders?.slice(0, 5).map(order => ({
-        id: order.order_number || order.id,
+      const recentOrders = orders?.slice(0, 5).map((order: any) => ({
+        id: order.orderNumber || order.id,
         orderId: order.id,
-        total: order.total_amount,
-        date: new Date(order.created_at).toLocaleDateString('de-DE'),
+        total: parseFloat(order.totalAmount || 0),
+        date: new Date(order.createdAt).toLocaleDateString('de-DE'),
         status: order.status,
       })) || [];
 
@@ -68,7 +59,7 @@ export function SalesAnalytics() {
         totalRevenue,
         totalOrders,
         totalCustomers,
-        totalProducts: productsCount || 0,
+        totalProducts: products?.length || 0,
         revenueGrowth,
         ordersGrowth,
         topProducts: [],
@@ -83,76 +74,71 @@ export function SalesAnalytics() {
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-32" />
-          ))}
-        </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} className="p-6">
+            <Skeleton className="h-4 w-24 mb-2" />
+            <Skeleton className="h-8 w-32" />
+          </Card>
+        ))}
       </div>
     );
   }
 
-  if (!data) return null;
+  if (!data) {
+    return <div className="text-center text-muted-foreground">Fehler beim Laden der Daten</div>;
+  }
 
   const stats = [
     {
-      label: 'Gesamtumsatz',
+      title: 'Gesamtumsatz',
       value: `€${data.totalRevenue.toFixed(2)}`,
       change: data.revenueGrowth,
       icon: DollarSign,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
     },
     {
-      label: 'Bestellungen',
+      title: 'Bestellungen',
       value: data.totalOrders.toString(),
       change: data.ordersGrowth,
       icon: ShoppingCart,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
     },
     {
-      label: 'Kunden',
+      title: 'Kunden',
       value: data.totalCustomers.toString(),
-      change: 15.2,
+      change: 5.2,
       icon: Users,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
     },
     {
-      label: 'Produkte',
+      title: 'Produkte',
       value: data.totalProducts.toString(),
       change: 0,
       icon: Package,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100',
     },
   ];
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <Card key={stat.label} className="p-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat, index) => (
+          <Card key={index} className="p-6">
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
+              <div>
+                <p className="text-sm text-muted-foreground">{stat.title}</p>
                 <p className="text-2xl font-bold">{stat.value}</p>
               </div>
-              <div className={`w-12 h-12 rounded-full ${stat.bgColor} flex items-center justify-center`}>
-                <stat.icon className={`w-6 h-6 ${stat.color}`} />
+              <div className={`p-2 rounded-full ${stat.change >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
+                <stat.icon className={`h-5 w-5 ${stat.change >= 0 ? 'text-green-600' : 'text-red-600'}`} />
               </div>
             </div>
             {stat.change !== 0 && (
-              <div className="flex items-center gap-1 mt-2">
-                {stat.change > 0 ? (
-                  <TrendingUp className="w-4 h-4 text-green-600" />
+              <div className="flex items-center mt-2">
+                {stat.change >= 0 ? (
+                  <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
                 ) : (
-                  <TrendingDown className="w-4 h-4 text-red-600" />
+                  <TrendingDown className="h-4 w-4 text-red-600 mr-1" />
                 )}
-                <span className={`text-sm ${stat.change > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {Math.abs(stat.change)}% vs. letzter Monat
+                <span className={`text-sm ${stat.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {Math.abs(stat.change)}%
                 </span>
               </div>
             )}
@@ -162,23 +148,32 @@ export function SalesAnalytics() {
 
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Letzte Bestellungen</h3>
-        <div className="space-y-3">
+        <div className="space-y-2">
           {data.recentOrders.map((order) => (
-            <div 
-              key={order.id} 
-              className="flex items-center justify-between py-2 border-b last:border-0 cursor-pointer hover:bg-muted/50 px-2 rounded transition-colors"
-              onClick={() => {
-                setSelectedOrderId(order.orderId);
-                setShowOrderModal(true);
-              }}
-            >
+            <div key={order.id} className="flex items-center justify-between py-2 border-b last:border-0">
               <div>
                 <p className="font-medium">#{order.id}</p>
                 <p className="text-sm text-muted-foreground">{order.date}</p>
               </div>
-              <div className="text-right">
-                <p className="font-semibold">€{order.total.toFixed(2)}</p>
-                <p className="text-sm text-muted-foreground">{order.status}</p>
+              <div className="flex items-center gap-4">
+                <span className={`px-2 py-1 rounded text-xs ${
+                  order.status === 'paid' ? 'bg-green-100 text-green-800' :
+                  order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {order.status}
+                </span>
+                <span className="font-semibold">€{order.total.toFixed(2)}</span>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    setSelectedOrderId(order.orderId);
+                    setShowOrderModal(true);
+                  }}
+                >
+                  Details
+                </Button>
               </div>
             </div>
           ))}
@@ -189,7 +184,6 @@ export function SalesAnalytics() {
         orderId={selectedOrderId}
         open={showOrderModal}
         onOpenChange={setShowOrderModal}
-        onOrderUpdated={fetchAnalytics}
       />
     </div>
   );

@@ -16,12 +16,11 @@ import { Edit2, Save, X, Search } from 'lucide-react';
 interface ProductVariant {
   id: string;
   name: string;
-  product_id: string;
-  variant_number: string;
-  price: number;
-  cashback_percentage: number;
-  in_stock: boolean;
-  products?: {
+  productId: string;
+  price: string;
+  cashbackPercentage: number;
+  inStock: boolean;
+  product?: {
     name: string;
     brand: string;
     category: string;
@@ -51,22 +50,16 @@ export function ProductCashbackSettings({ onUpdate }: ProductCashbackSettingsPro
   const loadVariants = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('product_variants')
-        .select(`
-          *,
-          products(name, brand, category)
-        `)
-        .order('product_id');
+      const response = await fetch('/api/admin/variants', {
+        credentials: 'include',
+      });
 
-      if (error) throw error;
-
-      const variantsWithProducts = (data || []).map((variant: any) => ({
-        ...variant,
-        products: variant.products || { name: 'Unbekannt', brand: 'Unbekannt', category: 'Unbekannt' }
-      }));
-
-      setVariants(variantsWithProducts);
+      if (response.ok) {
+        const data = await response.json();
+        setVariants(data || []);
+      } else {
+        setVariants([]);
+      }
     } catch (error) {
       console.error('Error loading variants:', error);
       toast.error('Fehler beim Laden der Produkte');
@@ -84,16 +77,15 @@ export function ProductCashbackSettings({ onUpdate }: ProductCashbackSettingsPro
     const query = searchQuery.toLowerCase();
     const filtered = variants.filter(v => 
       v.name.toLowerCase().includes(query) ||
-      v.products?.name.toLowerCase().includes(query) ||
-      v.products?.brand.toLowerCase().includes(query) ||
-      v.variant_number.toLowerCase().includes(query)
+      v.product?.name?.toLowerCase().includes(query) ||
+      v.product?.brand?.toLowerCase().includes(query)
     );
     setFilteredVariants(filtered);
   };
 
   const startEdit = (variant: ProductVariant) => {
     setEditingId(variant.id);
-    setEditValue(Number(variant.cashback_percentage) || 5.0);
+    setEditValue(Number(variant.cashbackPercentage) || 5.0);
   };
 
   const cancelEdit = () => {
@@ -103,18 +95,19 @@ export function ProductCashbackSettings({ onUpdate }: ProductCashbackSettingsPro
 
   const saveEdit = async (variantId: string) => {
     try {
-      // Validierung
       if (editValue < 0 || editValue > 100) {
         toast.error('Cashback-Prozentsatz muss zwischen 0% und 100% liegen');
         return;
       }
 
-      const { error } = await supabase
-        .from('product_variants')
-        .update({ cashback_percentage: editValue })
-        .eq('id', variantId);
+      const response = await fetch(`/api/admin/variants/${variantId}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cashbackPercentage: editValue }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to update');
 
       toast.success('Cashback-Prozentsatz aktualisiert');
       setEditingId(null);
@@ -123,28 +116,6 @@ export function ProductCashbackSettings({ onUpdate }: ProductCashbackSettingsPro
     } catch (error) {
       console.error('Error updating cashback:', error);
       toast.error('Fehler beim Speichern');
-    }
-  };
-
-  const bulkUpdateCashback = async (percentage: number) => {
-    if (!confirm(`Möchtest du den Cashback-Prozentsatz für ALLE Produkte auf ${percentage}% setzen?`)) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('product_variants')
-        .update({ cashback_percentage: percentage })
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Update all
-
-      if (error) throw error;
-
-      toast.success(`Cashback für alle Produkte auf ${percentage}% gesetzt`);
-      loadVariants();
-      onUpdate?.();
-    } catch (error) {
-      console.error('Error bulk updating:', error);
-      toast.error('Fehler beim Massen-Update');
     }
   };
 
@@ -162,30 +133,8 @@ export function ProductCashbackSettings({ onUpdate }: ProductCashbackSettingsPro
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
+            data-testid="input-search-variants"
           />
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => bulkUpdateCashback(3)}
-          >
-            Alle auf 3%
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => bulkUpdateCashback(5)}
-          >
-            Alle auf 5%
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => bulkUpdateCashback(10)}
-          >
-            Alle auf 10%
-          </Button>
         </div>
       </div>
 
@@ -198,7 +147,6 @@ export function ProductCashbackSettings({ onUpdate }: ProductCashbackSettingsPro
               <TableHead>Kategorie</TableHead>
               <TableHead className="text-right">Preis</TableHead>
               <TableHead className="text-right">Cashback %</TableHead>
-              <TableHead className="text-right">Cashback €</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Aktionen</TableHead>
             </TableRow>
@@ -206,25 +154,25 @@ export function ProductCashbackSettings({ onUpdate }: ProductCashbackSettingsPro
           <TableBody>
             {filteredVariants.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   Keine Produkte gefunden
                 </TableCell>
               </TableRow>
             ) : (
               filteredVariants.map((variant) => {
                 const isEditing = editingId === variant.id;
-                const cashbackAmount = (Number(variant.price) * (Number(variant.cashback_percentage) || 0)) / 100;
+                const price = parseFloat(variant.price) || 0;
 
                 return (
                   <TableRow key={variant.id}>
                     <TableCell className="font-medium">
-                      {variant.products?.brand} - {variant.products?.name}
+                      {variant.product?.brand} - {variant.product?.name}
                     </TableCell>
                     <TableCell>{variant.name}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">{variant.products?.category}</Badge>
+                      <Badge variant="outline">{variant.product?.category}</Badge>
                     </TableCell>
-                    <TableCell className="text-right">{variant.price.toFixed(2)}€</TableCell>
+                    <TableCell className="text-right">{price.toFixed(2)}EUR</TableCell>
                     <TableCell className="text-right">
                       {isEditing ? (
                         <Input
@@ -239,15 +187,12 @@ export function ProductCashbackSettings({ onUpdate }: ProductCashbackSettingsPro
                         />
                       ) : (
                         <span className="font-semibold text-primary">
-                          {Number(variant.cashback_percentage || 0).toFixed(1)}%
+                          {Number(variant.cashbackPercentage || 0).toFixed(1)}%
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-right text-green-600 font-medium">
-                      {cashbackAmount.toFixed(2)}€
-                    </TableCell>
                     <TableCell>
-                      {variant.in_stock ? (
+                      {variant.inStock ? (
                         <Badge variant="default" className="bg-green-500">Verfügbar</Badge>
                       ) : (
                         <Badge variant="secondary">Nicht verfügbar</Badge>

@@ -4,33 +4,33 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Package2, CheckCircle, XCircle, Eye, Image } from 'lucide-react';
+import { Loader2, Package2, CheckCircle, XCircle, Image } from 'lucide-react';
 import { getPerfumeNameById } from '@/lib/perfume-utils';
 
 interface Return {
   id: string;
-  user_id: string;
-  order_id: string;
+  userId: string;
+  orderId: string;
   reason: string;
   status: string;
-  admin_notes: string | null;
+  adminNotes: string | null;
   images?: string[];
-  created_at: string;
-  updated_at: string;
-  orders: {
-    order_number: string;
-    total_amount: number;
-    created_at: string;
-    order_items: {
-      perfume_id: string;
-      variant_id: string;
+  createdAt: string;
+  updatedAt: string;
+  order: {
+    orderNumber: string;
+    totalAmount: number;
+    createdAt: string;
+    orderItems: {
+      perfumeId: string;
+      variantId: string;
       quantity: number;
     }[];
   };
-  profiles: {
-    full_name: string;
+  profile: {
+    fullName: string;
   } | null;
 }
 
@@ -53,42 +53,16 @@ export default function ReturnManagement() {
 
   const loadReturns = async () => {
     try {
-      const { data, error } = await supabase
-        .from('returns')
-        .select(`
-          *,
-          orders (
-            order_number,
-            total_amount,
-            created_at,
-            order_items (
-              perfume_id,
-              variant_id,
-              quantity
-            )
-          )
-        `)
-        .order('created_at', { ascending: false });
+      const response = await fetch('/api/admin/returns', {
+        credentials: 'include',
+      });
 
-      if (error) throw error;
-      
-      // Get profile data separately for each return
-      const returnsWithProfiles = await Promise.all(
-        (data || []).map(async (returnItem) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('id', returnItem.user_id)
-            .single();
-          
-          return {
-            ...returnItem,
-            profiles: profile
-          };
-        })
-      );
-      
-      setReturns(returnsWithProfiles as Return[]);
+      if (response.ok) {
+        const data = await response.json();
+        setReturns(data || []);
+      } else {
+        setReturns([]);
+      }
     } catch (error) {
       console.error('Error loading returns:', error);
       toast({
@@ -105,35 +79,17 @@ export default function ReturnManagement() {
     setActionLoading(true);
     
     try {
-      // Update return status
-      const { error: updateError } = await supabase
-        .from('returns')
-        .update({
+      const response = await fetch(`/api/admin/returns/${returnId}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           status: action === 'approve' ? 'approved' : 'rejected',
-          admin_notes: notes || null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', returnId);
+          adminNotes: notes || null,
+        }),
+      });
 
-      if (updateError) throw updateError;
-
-      // Send email notification
-      const returnItem = returns.find(r => r.id === returnId);
-      if (returnItem) {
-          body: {
-            returnId,
-            action,
-            customerEmail: returnItem.user_id, // This would need to be the actual email
-            orderNumber: returnItem.orders.order_number,
-            reason: action === 'reject' ? notes : undefined
-          }
-        });
-
-        if (emailError) {
-          console.error('Error sending email:', emailError);
-          // Don't fail the whole operation if email fails
-        }
-      }
+      if (!response.ok) throw new Error('Failed to update');
 
       await loadReturns();
       toast({
@@ -160,7 +116,7 @@ export default function ReturnManagement() {
   const openActionDialog = (returnItem: Return, action: 'approve' | 'reject') => {
     setSelectedReturn(returnItem);
     setActionType(action);
-    setAdminNotes(returnItem.admin_notes || '');
+    setAdminNotes(returnItem.adminNotes || '');
     setIsDialogOpen(true);
   };
 
@@ -214,17 +170,17 @@ export default function ReturnManagement() {
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-semibold">#{returnItem.orders.order_number}</h4>
+                      <h4 className="font-semibold">#{returnItem.order?.orderNumber}</h4>
                       {getStatusBadge(returnItem.status)}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Kunde: {returnItem.profiles?.full_name || 'Unbekannt'}
+                      Kunde: {returnItem.profile?.fullName || 'Unbekannt'}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Eingereicht: {new Date(returnItem.created_at).toLocaleDateString('de-DE')} um {new Date(returnItem.created_at).toLocaleTimeString('de-DE')}
+                      Eingereicht: {new Date(returnItem.createdAt).toLocaleDateString('de-DE')} um {new Date(returnItem.createdAt).toLocaleTimeString('de-DE')}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Bestellwert: €{(returnItem.orders.total_amount / 100).toFixed(2)}
+                      Bestellwert: EUR{(parseFloat(String(returnItem.order?.totalAmount || 0)) / 100).toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -240,9 +196,9 @@ export default function ReturnManagement() {
                   <div>
                     <h5 className="text-sm font-medium">Artikel:</h5>
                     <div className="text-sm text-muted-foreground">
-                      {returnItem.orders.order_items.map((item, index) => (
+                      {returnItem.order?.orderItems?.map((item, index) => (
                         <div key={index}>
-                          {item.quantity}x {getPerfumeNameById(item.perfume_id, item.variant_id)}
+                          {item.quantity}x {getPerfumeNameById(item.perfumeId, item.variantId)}
                         </div>
                       ))}
                     </div>
@@ -269,11 +225,11 @@ export default function ReturnManagement() {
                     </div>
                   )}
 
-                  {returnItem.admin_notes && (
+                  {returnItem.adminNotes && (
                     <div>
                       <h5 className="text-sm font-medium">Admin Notizen:</h5>
                       <p className="text-sm text-muted-foreground bg-muted p-2 rounded">
-                        {returnItem.admin_notes}
+                        {returnItem.adminNotes}
                       </p>
                     </div>
                   )}
@@ -312,7 +268,6 @@ export default function ReturnManagement() {
         </CardContent>
       </Card>
 
-      {/* Action Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -322,9 +277,9 @@ export default function ReturnManagement() {
             <DialogDescription>
               {selectedReturn && (
                 <>
-                  Bestellung: #{selectedReturn.orders.order_number}
+                  Bestellung: #{selectedReturn.order?.orderNumber}
                   <br />
-                  Kunde: {selectedReturn.profiles?.full_name || 'Unbekannt'}
+                  Kunde: {selectedReturn.profile?.fullName || 'Unbekannt'}
                 </>
               )}
             </DialogDescription>

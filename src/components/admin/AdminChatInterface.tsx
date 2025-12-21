@@ -14,30 +14,31 @@ import {
   CheckCircle2,
   Users,
   MessageSquare,
-  Eye
+  Eye,
+  RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ChatSession {
   id: string;
-  user_id: string | null;
-  user_info: any;
+  userId: string | null;
+  userInfo: any;
   status: string;
-  last_message_at: string;
-  created_at: string;
+  lastMessageAt: string;
+  createdAt: string;
   messages?: ChatMessage[];
-  unread_count?: number;
+  unreadCount?: number;
 }
 
 interface ChatMessage {
   id: string;
-  session_id: string;
-  user_id: string | null;
-  sender_type: string;
+  sessionId: string;
+  userId: string | null;
+  senderType: string;
   content: string;
   status: string;
-  user_info?: any;
-  created_at: string;
+  userInfo?: any;
+  createdAt: string;
 }
 
 export default function AdminChatInterface() {
@@ -51,42 +52,9 @@ export default function AdminChatInterface() {
 
   useEffect(() => {
     loadSessions();
-    
-    // Subscribe to real-time updates
-    const messagesSubscription = supabase
-      .channel('admin-chat-messages')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'chat_messages' },
-        (payload) => {
-          console.log('Message update received:', payload);
-          if (payload.eventType === 'INSERT') {
-            const newMessage = payload.new as ChatMessage;
-            if (newMessage.session_id === selectedSession) {
-              setMessages(prev => [...prev, newMessage]);
-            }
-            // Update session list
-            loadSessions();
-          }
-        }
-      )
-      .subscribe();
-
-    const sessionsSubscription = supabase
-      .channel('admin-chat-sessions')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'chat_sessions' },
-        (payload) => {
-          console.log('Session update received:', payload);
-          loadSessions();
-        }
-      )
-      .subscribe();
-
-    return () => {
-    };
-  }, [selectedSession]);
+    const interval = setInterval(loadSessions, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (selectedSession) {
@@ -104,31 +72,16 @@ export default function AdminChatInterface() {
 
   const loadSessions = async () => {
     try {
-      const { data, error } = await supabase
-        .from('chat_sessions')
-        .select('*')
-        .order('last_message_at', { ascending: false });
+      const response = await fetch('/api/admin/chat-sessions', {
+        credentials: 'include',
+      });
 
-      if (error) throw error;
-
-      // Get unread message counts
-      const sessionsWithUnread = await Promise.all(
-        (data || []).map(async (session) => {
-          const { count } = await supabase
-            .from('chat_messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('session_id', session.id)
-            .eq('sender_type', 'user')
-            .eq('status', 'sent');
-
-          return {
-            ...session,
-            unread_count: count || 0
-          };
-        })
-      );
-
-      setSessions(sessionsWithUnread as ChatSession[]);
+      if (response.ok) {
+        const data = await response.json();
+        setSessions(data || []);
+      } else {
+        setSessions([]);
+      }
     } catch (error) {
       console.error('Error loading sessions:', error);
       toast({
@@ -143,23 +96,14 @@ export default function AdminChatInterface() {
 
   const loadMessages = async (sessionId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
+      const response = await fetch(`/api/admin/chat-sessions/${sessionId}/messages`, {
+        credentials: 'include',
+      });
 
-      if (error) throw error;
-      setMessages((data || []) as ChatMessage[]);
-
-      // Mark messages as read
-      await supabase
-        .from('chat_messages')
-        .update({ status: 'read' })
-        .eq('session_id', sessionId)
-        .eq('sender_type', 'user')
-        .eq('status', 'sent');
-
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(data || []);
+      }
     } catch (error) {
       console.error('Error loading messages:', error);
       toast({
@@ -174,30 +118,21 @@ export default function AdminChatInterface() {
     if (!inputValue.trim() || !selectedSession) return;
 
     try {
-      const { error } = await supabase
-        .from('chat_messages')
-        .insert([{
-          session_id: selectedSession,
-          sender_type: 'admin',
+      const response = await fetch(`/api/admin/chat-sessions/${selectedSession}/messages`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           content: inputValue.trim(),
-          status: 'sent'
-        }]);
+          senderType: 'admin',
+        }),
+      });
 
-      if (error) throw error;
-
-      // Update session last message time
-      await supabase
-        .from('chat_sessions')
-        .update({ 
-          last_message_at: new Date().toISOString(),
-          status: 'active'
-        })
-        .eq('id', selectedSession);
+      if (!response.ok) throw new Error('Failed to send');
 
       setInputValue('');
       loadMessages(selectedSession);
       loadSessions();
-
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -210,12 +145,14 @@ export default function AdminChatInterface() {
 
   const closeSession = async (sessionId: string) => {
     try {
-      const { error } = await supabase
-        .from('chat_sessions')
-        .update({ status: 'closed' })
-        .eq('id', sessionId);
+      const response = await fetch(`/api/admin/chat-sessions/${sessionId}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'closed' }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to close');
 
       loadSessions();
       if (selectedSession === sessionId) {
@@ -280,14 +217,18 @@ export default function AdminChatInterface() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Sessions List */}
       <div className="lg:col-span-1">
         <Card className="h-[600px] flex flex-col">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Chat-Sitzungen
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Chat-Sitzungen
+              </CardTitle>
+              <Button size="icon" variant="ghost" onClick={loadSessions}>
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="flex-1 p-0">
             <Tabs defaultValue="active" className="h-full flex flex-col">
@@ -320,17 +261,17 @@ export default function AdminChatInterface() {
                             <div className="flex items-center gap-2">
                               <User className="w-4 h-4" />
                               <span className="font-medium text-sm">
-                                {session.user_info?.name || session.user_info?.email || 'Anonym'}
+                                {session.userInfo?.name || session.userInfo?.email || 'Anonym'}
                               </span>
                             </div>
-                            {session.unread_count > 0 && (
+                            {(session.unreadCount ?? 0) > 0 && (
                               <Badge variant="destructive" className="h-5 min-w-5 text-xs">
-                                {session.unread_count}
+                                {session.unreadCount}
                               </Badge>
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Zuletzt: {formatDate(session.last_message_at)}
+                            Zuletzt: {formatDate(session.lastMessageAt)}
                           </p>
                         </div>
                       ))}
@@ -360,13 +301,13 @@ export default function AdminChatInterface() {
                             <div className="flex items-center gap-2">
                               <User className="w-4 h-4" />
                               <span className="font-medium text-sm">
-                                {session.user_info?.name || session.user_info?.email || 'Anonym'}
+                                {session.userInfo?.name || session.userInfo?.email || 'Anonym'}
                               </span>
                             </div>
                             {getStatusBadge(session.status)}
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Erstellt: {formatDate(session.created_at)}
+                            Erstellt: {formatDate(session.createdAt)}
                           </p>
                         </div>
                       ))}
@@ -396,13 +337,13 @@ export default function AdminChatInterface() {
                             <div className="flex items-center gap-2">
                               <User className="w-4 h-4" />
                               <span className="font-medium text-sm">
-                                {session.user_info?.name || session.user_info?.email || 'Anonym'}
+                                {session.userInfo?.name || session.userInfo?.email || 'Anonym'}
                               </span>
                             </div>
                             <Eye className="w-4 h-4 text-muted-foreground" />
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Geschlossen: {formatDate(session.last_message_at)}
+                            Geschlossen: {formatDate(session.lastMessageAt)}
                           </p>
                         </div>
                       ))}
@@ -421,7 +362,6 @@ export default function AdminChatInterface() {
         </Card>
       </div>
 
-      {/* Chat Interface */}
       <div className="lg:col-span-2">
         <Card className="h-[600px] flex flex-col">
           <CardHeader className="border-b">
@@ -433,8 +373,8 @@ export default function AdminChatInterface() {
                   </div>
                   <div>
                     <CardTitle className="text-sm">
-                      {sessions.find(s => s.id === selectedSession)?.user_info?.name || 
-                       sessions.find(s => s.id === selectedSession)?.user_info?.email || 
+                      {sessions.find(s => s.id === selectedSession)?.userInfo?.name || 
+                       sessions.find(s => s.id === selectedSession)?.userInfo?.email || 
                        'Anonymer Nutzer'}
                     </CardTitle>
                     <p className="text-xs text-muted-foreground">
@@ -468,10 +408,10 @@ export default function AdminChatInterface() {
                         key={message.id}
                         className={cn(
                           "flex gap-2",
-                          message.sender_type === 'admin' ? "justify-end" : "justify-start"
+                          message.senderType === 'admin' ? "justify-end" : "justify-start"
                         )}
                       >
-                        {message.sender_type !== 'admin' && (
+                        {message.senderType !== 'admin' && (
                           <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                             <User className="w-3 h-3" />
                           </div>
@@ -479,16 +419,16 @@ export default function AdminChatInterface() {
                         
                         <div className={cn(
                           "max-w-[70%] rounded-lg px-3 py-2 text-sm",
-                          message.sender_type === 'admin' 
+                          message.senderType === 'admin' 
                             ? "bg-primary text-primary-foreground" 
                             : "bg-muted"
                         )}>
                           <p>{message.content}</p>
                           <div className="flex items-center justify-between mt-1 gap-2">
                             <span className="text-xs opacity-70">
-                              {formatTime(message.created_at)}
+                              {formatTime(message.createdAt)}
                             </span>
-                            {message.sender_type === 'admin' && (
+                            {message.senderType === 'admin' && (
                               <div className="flex items-center gap-1">
                                 {message.status === 'sent' && <Clock className="w-3 h-3" />}
                                 {message.status === 'read' && <CheckCircle2 className="w-3 h-3" />}
@@ -511,6 +451,7 @@ export default function AdminChatInterface() {
                       onChange={(e) => setInputValue(e.target.value)}
                       placeholder="Ihre Antwort..."
                       className="flex-1"
+                      data-testid="input-chat-message"
                       onKeyPress={(e) => {
                         if (e.key === 'Enter') {
                           sendMessage();
@@ -521,6 +462,7 @@ export default function AdminChatInterface() {
                       size="icon" 
                       onClick={sendMessage}
                       disabled={!inputValue.trim()}
+                      data-testid="button-send-message"
                     >
                       <Send className="w-4 h-4" />
                     </Button>

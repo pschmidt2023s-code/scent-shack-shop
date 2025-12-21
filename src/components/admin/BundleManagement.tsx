@@ -28,10 +28,10 @@ interface Bundle {
   id: string;
   name: string;
   description: string;
-  total_price: number;
-  discount_percentage: number;
-  is_active: boolean;
-  quantity_required: number;
+  totalPrice: number;
+  discountPercentage: number;
+  isActive: boolean;
+  quantityRequired: number;
 }
 
 export function BundleManagement() {
@@ -42,9 +42,9 @@ export function BundleManagement() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    total_price: 0,
-    discount_percentage: 0,
-    quantity_required: 3
+    totalPrice: 0,
+    discountPercentage: 0,
+    quantityRequired: 3
   });
 
   useEffect(() => {
@@ -54,13 +54,16 @@ export function BundleManagement() {
   const fetchBundles = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('bundle_products')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const response = await fetch('/api/admin/bundles', {
+        credentials: 'include',
+      });
 
-      if (error) throw error;
-      setBundles(data || []);
+      if (response.ok) {
+        const data = await response.json();
+        setBundles(data || []);
+      } else {
+        setBundles([]);
+      }
     } catch (error) {
       console.error('Error fetching bundles:', error);
       toast.error('Fehler beim Laden der Bundles');
@@ -71,12 +74,14 @@ export function BundleManagement() {
 
   const toggleBundleStatus = async (id: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from('bundle_products')
-        .update({ is_active: !currentStatus })
-        .eq('id', id);
+      const response = await fetch(`/api/admin/bundles/${id}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !currentStatus }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to update');
       toast.success('Bundle-Status aktualisiert');
       fetchBundles();
     } catch (error) {
@@ -89,8 +94,12 @@ export function BundleManagement() {
     if (!confirm('Bundle wirklich löschen?')) return;
 
     try {
+      const response = await fetch(`/api/admin/bundles/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to delete');
       toast.success('Bundle gelöscht');
       fetchBundles();
     } catch (error) {
@@ -101,48 +110,34 @@ export function BundleManagement() {
 
   const handleSaveBundle = async () => {
     try {
-      // Validate required fields
-      if (!formData.name || !formData.total_price || formData.discount_percentage === undefined) {
+      if (!formData.name || !formData.totalPrice || formData.discountPercentage === undefined) {
         toast.error('Bitte fülle alle Pflichtfelder aus');
         return;
       }
 
-      if (editBundle) {
-        const { error } = await supabase
-          .from('bundle_products')
-          .update({
-            name: formData.name,
-            description: formData.description,
-            total_price: formData.total_price,
-            discount_percentage: formData.discount_percentage,
-            quantity_required: formData.quantity_required
-          })
-          .eq('id', editBundle.id);
-        if (error) {
-          console.error('Update error:', error);
-          throw error;
-        }
-        toast.success('Bundle aktualisiert');
-      } else {
-        const { error } = await supabase
-          .from('bundle_products')
-          .insert([{
-            name: formData.name,
-            description: formData.description,
-            total_price: formData.total_price,
-            discount_percentage: formData.discount_percentage,
-            quantity_required: formData.quantity_required,
-            is_active: true
-          }]);
-        if (error) {
-          console.error('Insert error:', error);
-          throw error;
-        }
-        toast.success('Bundle erstellt');
-      }
+      const url = editBundle ? `/api/admin/bundles/${editBundle.id}` : '/api/admin/bundles';
+      const method = editBundle ? 'PATCH' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description,
+          totalPrice: formData.totalPrice,
+          discountPercentage: formData.discountPercentage,
+          quantityRequired: formData.quantityRequired,
+          isActive: true,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to save');
+      
+      toast.success(editBundle ? 'Bundle aktualisiert' : 'Bundle erstellt');
       setCreateOpen(false);
       setEditBundle(null);
-      setFormData({ name: '', description: '', total_price: 0, discount_percentage: 0, quantity_required: 3 });
+      setFormData({ name: '', description: '', totalPrice: 0, discountPercentage: 0, quantityRequired: 3 });
       fetchBundles();
     } catch (error: any) {
       console.error('Error saving bundle:', error);
@@ -155,9 +150,9 @@ export function BundleManagement() {
     setFormData({
       name: bundle.name,
       description: bundle.description || '',
-      total_price: bundle.total_price,
-      discount_percentage: bundle.discount_percentage,
-      quantity_required: bundle.quantity_required || 3
+      totalPrice: bundle.totalPrice,
+      discountPercentage: bundle.discountPercentage,
+      quantityRequired: bundle.quantityRequired || 3
     });
     setCreateOpen(true);
   };
@@ -171,7 +166,7 @@ export function BundleManagement() {
         </div>
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button className="gap-2" data-testid="button-new-bundle">
               <Plus className="w-4 h-4" />
               Neues Bundle
             </Button>
@@ -202,13 +197,13 @@ export function BundleManagement() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Gesamtpreis (€)</Label>
+                  <Label>Gesamtpreis (EUR)</Label>
                   <Input 
                     type="number" 
                     step="0.01" 
                     placeholder="49.99" 
-                    value={formData.total_price || ''}
-                    onChange={(e) => setFormData({ ...formData, total_price: parseFloat(e.target.value) || 0 })}
+                    value={formData.totalPrice || ''}
+                    onChange={(e) => setFormData({ ...formData, totalPrice: parseFloat(e.target.value) || 0 })}
                   />
                 </div>
                 <div className="space-y-2">
@@ -216,8 +211,8 @@ export function BundleManagement() {
                   <Input 
                     type="number" 
                     placeholder="15" 
-                    value={formData.discount_percentage || ''}
-                    onChange={(e) => setFormData({ ...formData, discount_percentage: parseFloat(e.target.value) || 0 })}
+                    value={formData.discountPercentage || ''}
+                    onChange={(e) => setFormData({ ...formData, discountPercentage: parseFloat(e.target.value) || 0 })}
                   />
                 </div>
               </div>
@@ -226,11 +221,11 @@ export function BundleManagement() {
                 <Input 
                   type="number" 
                   placeholder="3" 
-                  value={formData.quantity_required}
-                  onChange={(e) => setFormData({ ...formData, quantity_required: parseInt(e.target.value) || 3 })}
+                  value={formData.quantityRequired}
+                  onChange={(e) => setFormData({ ...formData, quantityRequired: parseInt(e.target.value) || 3 })}
                 />
               </div>
-              <Button className="w-full" onClick={handleSaveBundle}>
+              <Button className="w-full" onClick={handleSaveBundle} data-testid="button-save-bundle">
                 {editBundle ? 'Bundle speichern' : 'Bundle erstellen'}
               </Button>
             </div>
@@ -247,7 +242,7 @@ export function BundleManagement() {
             <div>
               <p className="text-sm text-muted-foreground">Aktive Bundles</p>
               <p className="text-2xl font-bold">
-                {bundles.filter((b) => b.is_active).length}
+                {bundles.filter((b) => b.isActive).length}
               </p>
             </div>
           </div>
@@ -258,11 +253,11 @@ export function BundleManagement() {
               <TrendingUp className="w-6 h-6 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Ø Rabatt</p>
+              <p className="text-sm text-muted-foreground">durchschnittlicher Rabatt</p>
               <p className="text-2xl font-bold">
                 {bundles.length > 0
                   ? (
-                      bundles.reduce((sum, b) => sum + b.discount_percentage, 0) /
+                      bundles.reduce((sum, b) => sum + b.discountPercentage, 0) /
                       bundles.length
                     ).toFixed(1)
                   : 0}
@@ -298,47 +293,55 @@ export function BundleManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {bundles.map((bundle) => (
-              <TableRow key={bundle.id}>
-                <TableCell className="font-medium">{bundle.name}</TableCell>
-                <TableCell className="max-w-xs truncate">{bundle.description}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">{bundle.quantity_required}x</Badge>
-                </TableCell>
-                <TableCell>€{bundle.total_price.toFixed(2)}</TableCell>
-                <TableCell>
-                  <Badge variant="secondary">-{bundle.discount_percentage}%</Badge>
-                </TableCell>
-                <TableCell>
-                  {bundle.is_active ? (
-                    <Badge className="bg-green-100 text-green-700">Aktiv</Badge>
-                  ) : (
-                    <Badge variant="secondary">Inaktiv</Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => toggleBundleStatus(bundle.id, bundle.is_active)}
-                    >
-                      {bundle.is_active ? 'Deaktivieren' : 'Aktivieren'}
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => handleEditBundle(bundle)}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => deleteBundle(bundle.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
+            {bundles.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  Keine Bundles vorhanden
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              bundles.map((bundle) => (
+                <TableRow key={bundle.id}>
+                  <TableCell className="font-medium">{bundle.name}</TableCell>
+                  <TableCell className="max-w-xs truncate">{bundle.description}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{bundle.quantityRequired}x</Badge>
+                  </TableCell>
+                  <TableCell>EUR{bundle.totalPrice.toFixed(2)}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">-{bundle.discountPercentage}%</Badge>
+                  </TableCell>
+                  <TableCell>
+                    {bundle.isActive ? (
+                      <Badge className="bg-green-100 text-green-700">Aktiv</Badge>
+                    ) : (
+                      <Badge variant="secondary">Inaktiv</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => toggleBundleStatus(bundle.id, bundle.isActive)}
+                      >
+                        {bundle.isActive ? 'Deaktivieren' : 'Aktivieren'}
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleEditBundle(bundle)}>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => deleteBundle(bundle.id)}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </Card>

@@ -33,36 +33,24 @@ export function ReferralManagement() {
     try {
       setLoading(true);
 
-      // Fetch commission rate setting
-      const { data: setting } = await supabase
-        .from('system_settings')
-        .select('setting_value')
-        .eq('setting_key', 'referral_commission_rate')
-        .maybeSingle();
-
-      if (setting && typeof setting.setting_value === 'object') {
-        const value = setting.setting_value as any;
-        setCommissionRate(value.percentage || 10);
-      }
-
-      // Fetch partners
-      const { data: partners } = await supabase
-        .from('partners')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      setReferrals(partners || []);
-
-      // Calculate stats
-      const totalCommission = partners?.reduce((sum, p) => sum + (p.total_commission || 0), 0) || 0;
-      const activePartners = partners?.filter(p => p.status === 'approved').length || 0;
-
-      setStats({
-        totalReferrals: partners?.length || 0,
-        totalCommission,
-        activePartners,
+      const response = await fetch('/api/admin/partners', {
+        credentials: 'include',
       });
+
+      if (response.ok) {
+        const partners = await response.json();
+        setReferrals(partners || []);
+
+        const totalCommission = partners?.reduce((sum: number, p: any) => 
+          sum + parseFloat(p.totalEarnings || 0), 0) || 0;
+        const activePartners = partners?.filter((p: any) => p.status === 'approved').length || 0;
+
+        setStats({
+          totalReferrals: partners?.length || 0,
+          totalCommission,
+          activePartners,
+        });
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Fehler beim Laden');
@@ -73,14 +61,14 @@ export function ReferralManagement() {
 
   const updateCommissionRate = async () => {
     try {
-      const { error } = await supabase
-        .from('system_settings')
-        .update({
-          setting_value: { percentage: commissionRate, enabled: true },
-        })
-        .eq('setting_key', 'referral_commission_rate');
+      const response = await fetch('/api/admin/settings/commission-rate', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ percentage: commissionRate }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to update');
       toast.success('Provisionssatz aktualisiert');
     } catch (error) {
       console.error('Error updating rate:', error);
@@ -95,7 +83,6 @@ export function ReferralManagement() {
         <p className="text-muted-foreground">Verwalte Partner und Provisionen</p>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
@@ -126,7 +113,7 @@ export function ReferralManagement() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Gesamt Provision</p>
-              <p className="text-2xl font-bold">€{stats.totalCommission.toFixed(2)}</p>
+              <p className="text-2xl font-bold">EUR{stats.totalCommission.toFixed(2)}</p>
             </div>
           </div>
         </Card>
@@ -143,7 +130,6 @@ export function ReferralManagement() {
         </Card>
       </div>
 
-      {/* Settings */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Provisions-Einstellungen</h3>
         <div className="flex items-end gap-4 max-w-md">
@@ -157,16 +143,18 @@ export function ReferralManagement() {
               max="100"
               step="0.5"
               className="mt-2"
+              data-testid="input-commission-rate"
             />
             <p className="text-xs text-muted-foreground mt-1">
               Prozentsatz der Provision für alle Partner
             </p>
           </div>
-          <Button onClick={updateCommissionRate}>Speichern</Button>
+          <Button onClick={updateCommissionRate} data-testid="button-save-commission">
+            Speichern
+          </Button>
         </div>
       </Card>
 
-      {/* Partners Table */}
       <Card>
         <div className="p-4 border-b">
           <h3 className="font-semibold">Partner-Übersicht</h3>
@@ -182,25 +170,33 @@ export function ReferralManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {referrals.slice(0, 10).map((partner) => (
-              <TableRow key={partner.id}>
-                <TableCell className="font-mono font-semibold">{partner.partner_code}</TableCell>
-                <TableCell>€{partner.total_sales?.toFixed(2) || '0.00'}</TableCell>
-                <TableCell>€{partner.total_commission?.toFixed(2) || '0.00'}</TableCell>
-                <TableCell>
-                  {partner.status === 'approved' ? (
-                    <Badge className="bg-green-100 text-green-700">Aktiv</Badge>
-                  ) : partner.status === 'pending' ? (
-                    <Badge variant="secondary">Ausstehend</Badge>
-                  ) : (
-                    <Badge variant="destructive">{partner.status}</Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {new Date(partner.created_at).toLocaleDateString('de-DE')}
+            {referrals.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  Keine Partner gefunden
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              referrals.slice(0, 10).map((partner) => (
+                <TableRow key={partner.id}>
+                  <TableCell className="font-mono font-semibold">{partner.partnerCode}</TableCell>
+                  <TableCell>EUR{parseFloat(partner.totalEarnings || 0).toFixed(2)}</TableCell>
+                  <TableCell>EUR{parseFloat(partner.pendingEarnings || 0).toFixed(2)}</TableCell>
+                  <TableCell>
+                    {partner.status === 'approved' ? (
+                      <Badge className="bg-green-100 text-green-700">Aktiv</Badge>
+                    ) : partner.status === 'pending' ? (
+                      <Badge variant="secondary">Ausstehend</Badge>
+                    ) : (
+                      <Badge variant="destructive">{partner.status}</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {new Date(partner.createdAt).toLocaleDateString('de-DE')}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </Card>

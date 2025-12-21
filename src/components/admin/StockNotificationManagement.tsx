@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Mail, Check, X, Trash2 } from 'lucide-react';
+import { Bell, Mail, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Table,
@@ -16,10 +16,10 @@ import {
 interface StockNotification {
   id: string;
   email: string;
-  product_id: string;
-  variant_id: string;
+  productId: string;
+  variantId: string;
   notified: boolean;
-  created_at: string;
+  createdAt: string;
 }
 
 export function StockNotificationManagement() {
@@ -33,14 +33,16 @@ export function StockNotificationManagement() {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('stock_notifications')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (error) throw error;
-      setNotifications(data || []);
+      const response = await fetch('/api/admin/stock-notifications', {
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data || []);
+      } else {
+        setNotifications([]);
+      }
     } catch (error) {
       console.error('Error fetching notifications:', error);
       toast.error('Fehler beim Laden');
@@ -51,10 +53,14 @@ export function StockNotificationManagement() {
 
   const sendNotification = async (variantId: string) => {
     try {
-        body: { variantId, productName: 'Produkt' },
+      const response = await fetch('/api/admin/stock-notifications/send', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variantId }),
       });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to send');
       toast.success('Benachrichtigungen versendet');
       fetchNotifications();
     } catch (error) {
@@ -65,8 +71,12 @@ export function StockNotificationManagement() {
 
   const deleteNotification = async (id: string) => {
     try {
+      const response = await fetch(`/api/admin/stock-notifications/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to delete');
       toast.success('Benachrichtigung gelöscht');
       fetchNotifications();
     } catch (error) {
@@ -139,41 +149,49 @@ export function StockNotificationManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {pending.slice(0, 20).map((notification) => (
-              <TableRow key={notification.id}>
-                <TableCell className="font-medium">{notification.email}</TableCell>
-                <TableCell className="font-mono text-xs">
-                  {notification.product_id.substring(0, 8)}...
-                </TableCell>
-                <TableCell className="font-mono text-xs">
-                  {notification.variant_id.substring(0, 8)}...
-                </TableCell>
-                <TableCell>
-                  {new Date(notification.created_at).toLocaleDateString('de-DE')}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary">Ausstehend</Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => sendNotification(notification.variant_id)}
-                    >
-                      <Mail className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => deleteNotification(notification.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
+            {pending.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  Keine ausstehenden Benachrichtigungen
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              pending.slice(0, 20).map((notification) => (
+                <TableRow key={notification.id}>
+                  <TableCell className="font-medium">{notification.email}</TableCell>
+                  <TableCell className="font-mono text-xs">
+                    {notification.productId?.substring(0, 8)}...
+                  </TableCell>
+                  <TableCell className="font-mono text-xs">
+                    {notification.variantId?.substring(0, 8)}...
+                  </TableCell>
+                  <TableCell>
+                    {new Date(notification.createdAt).toLocaleDateString('de-DE')}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">Ausstehend</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => sendNotification(notification.variantId)}
+                      >
+                        <Mail className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => deleteNotification(notification.id)}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </Card>

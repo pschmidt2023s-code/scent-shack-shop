@@ -96,7 +96,7 @@ export function useOptimizedPerfumeDetails(perfumeId: string | undefined) {
 }
 
 /**
- * Optimized reviews hook - uses Supabase for actual review data
+ * Optimized reviews hook - uses server API for review data
  */
 export function useOptimizedReviews(perfumeId: string, variantId: string) {
   const [reviews, setReviews] = useState<any[]>([]);
@@ -108,20 +108,15 @@ export function useOptimizedReviews(perfumeId: string, variantId: string) {
       setLoading(true);
       setError(null);
       
-      // Since reviews are in Supabase, we can use the actual query
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { data, error: supabaseError } = await supabase
-        .from('reviews')
-        .select('id, rating, created_at, is_verified, title, content')
-        .eq('perfume_id', perfumeId)
-        .eq('variant_id', variantId)
-        .order('created_at', { ascending: false })
-        .limit(20);
+      const response = await fetch(`/api/products/${perfumeId}/reviews?variantId=${variantId}`, {
+        credentials: 'include',
+      });
       
-      if (supabaseError) {
-        throw new Error(supabaseError.message);
+      if (!response.ok) {
+        throw new Error('Failed to fetch reviews');
       }
       
+      const data = await response.json();
       setReviews(data || []);
     } catch (err) {
       console.error('Error fetching reviews:', err);
