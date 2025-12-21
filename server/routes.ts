@@ -564,7 +564,7 @@ export async function registerRoutes(app: Express) {
   app.get("/api/admin/orders", requireAdmin, async (req, res) => {
     try {
       const orders = await storage.getOrders();
-      // Fetch order items with product names for each order
+      // Fetch order items with product names and customer data for each order
       const ordersWithItems = await Promise.all(orders.map(async (order) => {
         const items = await storage.getOrderItems(order.id);
         // Enrich items with product and variant names
@@ -577,7 +577,24 @@ export async function registerRoutes(app: Express) {
             productName: product?.name || 'Unbekanntes Produkt',
           };
         }));
-        return { ...order, orderItems: enrichedItems };
+        
+        // Get user data if userId exists
+        let userData = null;
+        if (order.userId) {
+          const user = await storage.getUser(order.userId);
+          if (user) {
+            userData = {
+              id: user.id,
+              email: user.email,
+              fullName: user.fullName,
+              phone: user.phone,
+              paybackBalance: user.paybackBalance,
+              createdAt: user.createdAt,
+            };
+          }
+        }
+        
+        return { ...order, orderItems: enrichedItems, userData };
       }));
       res.json(ordersWithItems);
     } catch (error: any) {
@@ -649,6 +666,7 @@ export async function registerRoutes(app: Express) {
         quantity: number;
         unitPrice: string;
         totalPrice: string;
+        customizationData?: any;
       }> = [];
       
       for (const item of items) {
@@ -675,6 +693,7 @@ export async function registerRoutes(app: Express) {
           quantity: item.quantity as number,
           unitPrice: unitPrice.toFixed(2),
           totalPrice: totalPrice.toFixed(2),
+          customizationData: item.customizationData || undefined,
         });
       }
       

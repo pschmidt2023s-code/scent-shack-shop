@@ -497,6 +497,7 @@ export const insertOrderItemSchema = z.object({
   quantity: z.number(),
   unitPrice: z.string(),
   totalPrice: z.string(),
+  customizationData: z.any().optional(),
 });
 
 export const insertReviewSchema = z.object({
