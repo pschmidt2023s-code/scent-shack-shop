@@ -102,6 +102,7 @@ export const orderItems = pgTable("order_items", {
   quantity: integer("quantity").notNull(),
   unitPrice: numeric("unit_price").notNull(),
   totalPrice: numeric("total_price").notNull(),
+  customizationData: jsonb("customization_data"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
