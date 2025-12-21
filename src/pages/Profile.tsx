@@ -55,6 +55,7 @@ export default function Profile() {
     : 'menu';
 
   const setActiveSection = (section: ProfileSection) => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     if (section === 'menu') {
       setSearchParams({});
     } else {

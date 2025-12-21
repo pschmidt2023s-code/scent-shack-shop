@@ -5,12 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Mail, Lock } from 'lucide-react';
 import { sanitizeInput, validatePhoneNumber } from '@/lib/validation';
 
 interface ProfileFormData {
   full_name: string;
   phone: string;
+  email: string;
 }
 
 export function ProfileForm() {
@@ -37,6 +38,7 @@ export function ProfileForm() {
         const data = await response.json();
         setValue('full_name', data.fullName || '');
         setValue('phone', data.phone || '');
+        setValue('email', data.email || user?.email || '');
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -113,6 +115,27 @@ export function ProfileForm() {
         {errors.full_name && (
           <p className="text-sm text-destructive mt-1">{errors.full_name.message}</p>
         )}
+      </div>
+
+      <div>
+        <Label htmlFor="email" className="flex items-center gap-2">
+          E-Mail-Adresse
+          <Lock className="w-3 h-3 text-muted-foreground" />
+        </Label>
+        <div className="relative">
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            id="email"
+            type="email"
+            {...register('email')}
+            className="pl-10 bg-muted/50 cursor-not-allowed"
+            disabled
+            data-testid="input-profile-email"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          Aus Sicherheitsgründen kann die E-Mail-Adresse nicht geändert werden.
+        </p>
       </div>
 
       <div>
