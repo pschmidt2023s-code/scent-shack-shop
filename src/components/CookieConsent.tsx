@@ -91,7 +91,7 @@ export function CookieConsent() {
   if (!showBanner) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 pointer-events-none">
+    <div className="fixed inset-0 z-50 flex items-center sm:items-end justify-center p-4 pb-20 sm:pb-4 pointer-events-none">
       <div className="pointer-events-auto w-full max-w-2xl">
         <Card className="shadow-2xl border-2" data-testid="card-cookie-consent">
           <CardContent className="p-6">
