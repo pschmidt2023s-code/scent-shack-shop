@@ -1063,7 +1063,7 @@ function CreateOrderDialog({
                   {products.map(product => (
                     product.variants.map(variant => (
                       <SelectItem key={variant.id} value={variant.id}>
-                        {variant.name} - €{parseFloat(variant.price).toFixed(2)}
+                        {product.name} - {variant.name} - €{parseFloat(variant.price).toFixed(2)}
                       </SelectItem>
                     ))
                   ))}
