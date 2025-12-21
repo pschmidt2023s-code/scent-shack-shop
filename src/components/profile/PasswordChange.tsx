@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/api';
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, 'Aktuelles Passwort ist erforderlich'),
@@ -44,13 +43,20 @@ export function PasswordChange() {
   const onSubmit = async (data: PasswordFormData) => {
     try {
       setIsLoading(true);
-      await apiRequest('/api/user/change-password', {
+      const response = await fetch('/api/user/change-password', {
         method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           currentPassword: data.currentPassword,
           newPassword: data.newPassword,
         }),
       });
+      
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || 'Passwort konnte nicht geändert werden');
+      }
       
       toast({
         title: 'Passwort geändert',
