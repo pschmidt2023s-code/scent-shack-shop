@@ -16,8 +16,25 @@ export const users = pgTable("users", {
   bic: text("bic"),
   accountHolder: text("account_holder"),
   bankName: text("bank_name"),
+  // Loyalty system fields
+  loyaltyPoints: integer("loyalty_points").default(0),
+  birthday: text("birthday"), // Format: YYYY-MM-DD
+  lastBirthdayBonus: text("last_birthday_bonus"), // Year of last birthday bonus
+  lastAnniversaryBonus: text("last_anniversary_bonus"), // Year of last anniversary bonus
+  autoRedeemPoints: boolean("auto_redeem_points").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Loyalty points transaction history
+export const loyaltyTransactions = pgTable("loyalty_transactions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  type: text("type").notNull(), // 'purchase', 'redemption', 'birthday', 'anniversary', 'bonus', 'adjustment'
+  points: integer("points").notNull(), // Positive for earned, negative for spent
+  orderId: uuid("order_id").references(() => orders.id),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const products = pgTable("products", {
@@ -578,6 +595,14 @@ export const insertAbandonedCartSchema = z.object({
   reminderSent: z.boolean().optional(),
 });
 
+export const insertLoyaltyTransactionSchema = z.object({
+  userId: z.string().uuid(),
+  type: z.enum(['purchase', 'redemption', 'birthday', 'anniversary', 'bonus', 'adjustment']),
+  points: z.number().int(),
+  orderId: z.string().uuid().optional().nullable(),
+  description: z.string().optional(),
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Product = typeof products.$inferSelect;
@@ -606,6 +631,8 @@ export type ShippingOption = typeof shippingOptions.$inferSelect;
 export type InsertShippingOption = z.infer<typeof insertShippingOptionSchema>;
 export type AbandonedCart = typeof abandonedCarts.$inferSelect;
 export type InsertAbandonedCart = z.infer<typeof insertAbandonedCartSchema>;
+export type LoyaltyTransaction = typeof loyaltyTransactions.$inferSelect;
+export type InsertLoyaltyTransaction = z.infer<typeof insertLoyaltyTransactionSchema>;
 export type ShopSetting = typeof shopSettings.$inferSelect;
 export type PaybackEarning = typeof paybackEarnings.$inferSelect;
 
