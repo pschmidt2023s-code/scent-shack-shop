@@ -487,8 +487,10 @@ export default function Checkout() {
           )}
           
           <div className="flex justify-between text-sm">
-            <span>Versand (Standardversand)</span>
-            {qualifiesForFreeStandard ? (
+            <span>Versand</span>
+            {currentStep === 'contact' || currentStep === 'address' ? (
+              <span className="text-muted-foreground">wird bei Versandauswahl berechnet</span>
+            ) : qualifiesForFreeStandard ? (
               <span className="text-green-600 dark:text-green-400">Kostenlos</span>
             ) : (
               <span>4,99 €</span>
@@ -508,7 +510,11 @@ export default function Checkout() {
 
           <div className="flex justify-between text-lg font-bold">
             <span>Gesamt</span>
-            <span>{finalTotal.toFixed(2)} €</span>
+            {currentStep === 'contact' || currentStep === 'address' ? (
+              <span>{subtotalAfterDiscount.toFixed(2)} € <span className="text-sm font-normal text-muted-foreground">+ Versand</span></span>
+            ) : (
+              <span>{finalTotal.toFixed(2)} €</span>
+            )}
           </div>
         </div>
 
