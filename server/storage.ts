@@ -112,6 +112,43 @@ export interface IStorage {
   createLoyaltyTransaction(transaction: schema.InsertLoyaltyTransaction): Promise<schema.LoyaltyTransaction>;
   addLoyaltyPoints(userId: string, points: number, type: string, description: string, orderId?: string): Promise<number>;
   redeemLoyaltyPoints(userId: string, points: number, description: string): Promise<{ success: boolean; newBalance: number }>;
+
+  // Stock Notifications
+  createStockNotification(data: { userId?: string; productId?: string; variantId?: string; email?: string }): Promise<schema.StockNotification>;
+  getStockNotifications(variantId: string): Promise<schema.StockNotification[]>;
+  getUserStockNotifications(userId: string): Promise<schema.StockNotification[]>;
+  deleteStockNotification(id: string): Promise<boolean>;
+
+  // Wishlist Shares
+  createWishlistShare(userId: string, data: schema.InsertWishlistShare): Promise<schema.WishlistShare>;
+  getWishlistShare(shareCode: string): Promise<schema.WishlistShare | undefined>;
+  getUserWishlistShares(userId: string): Promise<schema.WishlistShare[]>;
+  incrementWishlistShareViews(shareCode: string): Promise<void>;
+  deleteWishlistShare(id: string): Promise<boolean>;
+
+  // Review Photos
+  createReviewPhoto(data: schema.InsertReviewPhoto): Promise<schema.ReviewPhoto>;
+  getReviewPhotos(reviewId: string): Promise<schema.ReviewPhoto[]>;
+  deleteReviewPhoto(id: string): Promise<boolean>;
+
+  // Gift Options
+  createGiftOptions(data: schema.InsertGiftOption): Promise<schema.GiftOption>;
+  getGiftOptions(orderId: string): Promise<schema.GiftOption | undefined>;
+  updateGiftOptions(orderId: string, data: Partial<schema.InsertGiftOption>): Promise<schema.GiftOption | undefined>;
+
+  // Refill Program
+  createRefillBottle(userId: string, data: schema.InsertRefillBottle): Promise<schema.RefillBottle>;
+  getUserRefillBottles(userId: string): Promise<schema.RefillBottle[]>;
+  getRefillBottle(bottleCode: string): Promise<schema.RefillBottle | undefined>;
+  createRefillOrder(userId: string, data: schema.InsertRefillOrder): Promise<schema.RefillOrder>;
+  getUserRefillOrders(userId: string): Promise<schema.RefillOrder[]>;
+
+  // Subscriptions
+  createSubscription(userId: string, data: schema.InsertSubscription): Promise<schema.Subscription>;
+  getUserSubscriptions(userId: string): Promise<schema.Subscription[]>;
+  getSubscription(id: string): Promise<schema.Subscription | undefined>;
+  updateSubscription(id: string, data: Partial<schema.InsertSubscription & { status: string }>): Promise<schema.Subscription | undefined>;
+  cancelSubscription(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -899,6 +936,266 @@ export class DatabaseStorage implements IStorage {
     });
 
     return { success: true, newBalance };
+  }
+
+  // Stock Notifications
+  async createStockNotification(data: { userId?: string; productId?: string; variantId?: string; email?: string }): Promise<schema.StockNotification> {
+    const [notification] = await db.insert(schema.stockNotifications)
+      .values(data)
+      .returning();
+    return notification;
+  }
+
+  async getStockNotifications(variantId: string): Promise<schema.StockNotification[]> {
+    return db.select().from(schema.stockNotifications)
+      .where(and(
+        eq(schema.stockNotifications.variantId, variantId),
+        eq(schema.stockNotifications.notified, false)
+      ));
+  }
+
+  async getUserStockNotifications(userId: string): Promise<schema.StockNotification[]> {
+    return db.select().from(schema.stockNotifications)
+      .where(eq(schema.stockNotifications.userId, userId))
+      .orderBy(desc(schema.stockNotifications.createdAt));
+  }
+
+  async deleteStockNotification(id: string): Promise<boolean> {
+    const result = await db.delete(schema.stockNotifications)
+      .where(eq(schema.stockNotifications.id, id));
+    return true;
+  }
+
+  // Wishlist Shares
+  async createWishlistShare(userId: string, data: schema.InsertWishlistShare): Promise<schema.WishlistShare> {
+    const shareCode = this.generateShareCode();
+    const [share] = await db.insert(schema.wishlistShares)
+      .values({
+        userId,
+        shareCode,
+        title: data.title,
+        message: data.message,
+        expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+      })
+      .returning();
+    return share;
+  }
+
+  private generateShareCode(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < 12; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+
+  async getWishlistShare(shareCode: string): Promise<schema.WishlistShare | undefined> {
+    const [share] = await db.select().from(schema.wishlistShares)
+      .where(and(
+        eq(schema.wishlistShares.shareCode, shareCode),
+        eq(schema.wishlistShares.isActive, true)
+      ));
+    return share;
+  }
+
+  async getUserWishlistShares(userId: string): Promise<schema.WishlistShare[]> {
+    return db.select().from(schema.wishlistShares)
+      .where(eq(schema.wishlistShares.userId, userId))
+      .orderBy(desc(schema.wishlistShares.createdAt));
+  }
+
+  async incrementWishlistShareViews(shareCode: string): Promise<void> {
+    const share = await this.getWishlistShare(shareCode);
+    if (share) {
+      await db.update(schema.wishlistShares)
+        .set({ viewCount: (share.viewCount || 0) + 1 })
+        .where(eq(schema.wishlistShares.shareCode, shareCode));
+    }
+  }
+
+  async deleteWishlistShare(id: string): Promise<boolean> {
+    await db.delete(schema.wishlistShares)
+      .where(eq(schema.wishlistShares.id, id));
+    return true;
+  }
+
+  // Review Photos
+  async createReviewPhoto(data: schema.InsertReviewPhoto): Promise<schema.ReviewPhoto> {
+    const [photo] = await db.insert(schema.reviewPhotos)
+      .values(data)
+      .returning();
+    return photo;
+  }
+
+  async getReviewPhotos(reviewId: string): Promise<schema.ReviewPhoto[]> {
+    return db.select().from(schema.reviewPhotos)
+      .where(eq(schema.reviewPhotos.reviewId, reviewId))
+      .orderBy(schema.reviewPhotos.sortOrder);
+  }
+
+  async deleteReviewPhoto(id: string): Promise<boolean> {
+    await db.delete(schema.reviewPhotos)
+      .where(eq(schema.reviewPhotos.id, id));
+    return true;
+  }
+
+  // Gift Options
+  async createGiftOptions(data: schema.InsertGiftOption): Promise<schema.GiftOption> {
+    const insertData: any = {
+      orderId: data.orderId,
+      isGift: data.isGift,
+      giftWrapping: data.giftWrapping,
+      recipientName: data.recipientName,
+      recipientEmail: data.recipientEmail,
+      giftMessage: data.giftMessage,
+      sendGiftNotification: data.sendGiftNotification,
+    };
+    if (data.notificationDate) {
+      insertData.notificationDate = new Date(data.notificationDate);
+    }
+    const [options] = await db.insert(schema.giftOptions)
+      .values(insertData)
+      .returning();
+    return options;
+  }
+
+  async getGiftOptions(orderId: string): Promise<schema.GiftOption | undefined> {
+    const [options] = await db.select().from(schema.giftOptions)
+      .where(eq(schema.giftOptions.orderId, orderId));
+    return options;
+  }
+
+  async updateGiftOptions(orderId: string, data: Partial<schema.InsertGiftOption>): Promise<schema.GiftOption | undefined> {
+    const updateData: any = { ...data };
+    if (data.notificationDate) {
+      updateData.notificationDate = new Date(data.notificationDate);
+    }
+    delete updateData.orderId;
+    const [updated] = await db.update(schema.giftOptions)
+      .set(updateData)
+      .where(eq(schema.giftOptions.orderId, orderId))
+      .returning();
+    return updated;
+  }
+
+  // Refill Program
+  async createRefillBottle(userId: string, data: schema.InsertRefillBottle): Promise<schema.RefillBottle> {
+    const bottleCode = 'RF-' + this.generateShareCode().substring(0, 8).toUpperCase();
+    const [bottle] = await db.insert(schema.refillBottles)
+      .values({
+        userId,
+        bottleCode,
+        variantId: data.variantId,
+        size: data.size,
+      })
+      .returning();
+    return bottle;
+  }
+
+  async getUserRefillBottles(userId: string): Promise<schema.RefillBottle[]> {
+    return db.select().from(schema.refillBottles)
+      .where(and(
+        eq(schema.refillBottles.userId, userId),
+        eq(schema.refillBottles.isActive, true)
+      ))
+      .orderBy(desc(schema.refillBottles.createdAt));
+  }
+
+  async getRefillBottle(bottleCode: string): Promise<schema.RefillBottle | undefined> {
+    const [bottle] = await db.select().from(schema.refillBottles)
+      .where(eq(schema.refillBottles.bottleCode, bottleCode));
+    return bottle;
+  }
+
+  async createRefillOrder(userId: string, data: schema.InsertRefillOrder): Promise<schema.RefillOrder> {
+    const [order] = await db.insert(schema.refillOrders)
+      .values({
+        userId,
+        bottleId: data.bottleId,
+        variantId: data.variantId,
+        refillPrice: data.refillPrice,
+        discountPercent: data.discountPercent || '20',
+      })
+      .returning();
+    
+    // Update bottle refill count
+    const bottle = await db.select().from(schema.refillBottles)
+      .where(eq(schema.refillBottles.id, data.bottleId));
+    if (bottle[0]) {
+      await db.update(schema.refillBottles)
+        .set({
+          lastRefillAt: new Date(),
+          refillCount: (bottle[0].refillCount || 0) + 1,
+        })
+        .where(eq(schema.refillBottles.id, data.bottleId));
+    }
+
+    return order;
+  }
+
+  async getUserRefillOrders(userId: string): Promise<schema.RefillOrder[]> {
+    return db.select().from(schema.refillOrders)
+      .where(eq(schema.refillOrders.userId, userId))
+      .orderBy(desc(schema.refillOrders.createdAt));
+  }
+
+  // Subscriptions
+  async createSubscription(userId: string, data: schema.InsertSubscription): Promise<schema.Subscription> {
+    const nextDeliveryDate = this.calculateNextDeliveryDate(data.frequency);
+    const [subscription] = await db.insert(schema.subscriptions)
+      .values({
+        userId,
+        variantId: data.variantId,
+        frequency: data.frequency,
+        quantity: data.quantity || 1,
+        shippingAddressId: data.shippingAddressId,
+        paymentMethod: data.paymentMethod,
+        nextDeliveryDate,
+      })
+      .returning();
+    return subscription;
+  }
+
+  private calculateNextDeliveryDate(frequency: string): Date {
+    const now = new Date();
+    switch (frequency) {
+      case 'monthly':
+        return new Date(now.setMonth(now.getMonth() + 1));
+      case 'bimonthly':
+        return new Date(now.setMonth(now.getMonth() + 2));
+      case 'quarterly':
+        return new Date(now.setMonth(now.getMonth() + 3));
+      default:
+        return new Date(now.setMonth(now.getMonth() + 1));
+    }
+  }
+
+  async getUserSubscriptions(userId: string): Promise<schema.Subscription[]> {
+    return db.select().from(schema.subscriptions)
+      .where(eq(schema.subscriptions.userId, userId))
+      .orderBy(desc(schema.subscriptions.createdAt));
+  }
+
+  async getSubscription(id: string): Promise<schema.Subscription | undefined> {
+    const [subscription] = await db.select().from(schema.subscriptions)
+      .where(eq(schema.subscriptions.id, id));
+    return subscription;
+  }
+
+  async updateSubscription(id: string, data: Partial<schema.InsertSubscription & { status: string }>): Promise<schema.Subscription | undefined> {
+    const [updated] = await db.update(schema.subscriptions)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(schema.subscriptions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async cancelSubscription(id: string): Promise<boolean> {
+    await db.update(schema.subscriptions)
+      .set({ status: 'cancelled', updatedAt: new Date() })
+      .where(eq(schema.subscriptions.id, id));
+    return true;
   }
 }
 

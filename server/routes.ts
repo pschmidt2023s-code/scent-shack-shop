@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { storage } from "./storage";
-import { insertUserSchema, insertProductSchema, insertOrderSchema, insertReviewSchema, insertPartnerSchema, insertNewsletterSchema, insertAddressSchema, insertContestEntrySchema, updateProductSchema, updateOrderSchema, updateUserRoleSchema } from "../shared/schema";
+import { insertUserSchema, insertProductSchema, insertOrderSchema, insertReviewSchema, insertPartnerSchema, insertNewsletterSchema, insertAddressSchema, insertContestEntrySchema, updateProductSchema, updateOrderSchema, updateUserRoleSchema, insertStockNotificationSchema, insertWishlistShareSchema, insertReviewPhotoSchema, insertGiftOptionsSchema, insertRefillBottleSchema, insertSubscriptionSchema } from "../shared/schema";
 import bcrypt from "bcryptjs";
 // Use the OpenAI client from Replit AI Integrations (may be null if not configured)
 import { openai as aiIntegrationsClient } from "./replit_integrations/image/client";
@@ -3479,6 +3479,342 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
       res.json({ success: true, message: "Payment completed and confirmation sent" });
     } catch (error: any) {
       console.error("[PayPal] Complete order error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==================== STOCK NOTIFICATIONS ====================
+  
+  // Create stock notification for out-of-stock product
+  app.post("/api/stock-notifications", async (req, res) => {
+    try {
+      const validation = insertStockNotificationSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.errors[0].message });
+      }
+
+      const userId = req.session.userId;
+      const { variantId, email } = validation.data;
+
+      if (!variantId) {
+        return res.status(400).json({ error: "Variante ist erforderlich" });
+      }
+
+      const notification = await storage.createStockNotification({
+        userId: userId || undefined,
+        variantId,
+        email: email || undefined,
+      });
+
+      res.json(notification);
+    } catch (error: any) {
+      console.error("Stock notification error:", error);
+      res.status(500).json({ error: "Benachrichtigung konnte nicht erstellt werden" });
+    }
+  });
+
+  // Get user's stock notifications
+  app.get("/api/stock-notifications", requireAuth, async (req, res) => {
+    try {
+      const notifications = await storage.getUserStockNotifications(req.session.userId!);
+      res.json(notifications);
+    } catch (error: any) {
+      console.error("Get stock notifications error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete stock notification
+  app.delete("/api/stock-notifications/:id", requireAuth, async (req, res) => {
+    try {
+      await storage.deleteStockNotification(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==================== WISHLIST SHARES ====================
+
+  // Create shareable wishlist link
+  app.post("/api/wishlist/share", requireAuth, async (req, res) => {
+    try {
+      const validation = insertWishlistShareSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.errors[0].message });
+      }
+
+      const share = await storage.createWishlistShare(req.session.userId!, validation.data);
+      res.json(share);
+    } catch (error: any) {
+      console.error("Create wishlist share error:", error);
+      res.status(500).json({ error: "Link konnte nicht erstellt werden" });
+    }
+  });
+
+  // Get user's wishlist shares
+  app.get("/api/wishlist/shares", requireAuth, async (req, res) => {
+    try {
+      const shares = await storage.getUserWishlistShares(req.session.userId!);
+      res.json(shares);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get shared wishlist by code (public)
+  app.get("/api/wishlist/shared/:code", async (req, res) => {
+    try {
+      const share = await storage.getWishlistShare(req.params.code);
+      if (!share) {
+        return res.status(404).json({ error: "Wunschliste nicht gefunden" });
+      }
+
+      // Increment view count
+      await storage.incrementWishlistShareViews(req.params.code);
+
+      // Get user's favorites
+      const favorites = await storage.getFavorites(share.userId);
+      
+      // Get product details for favorites
+      const products = await Promise.all(
+        favorites.map(async (fav) => {
+          if (fav.perfumeId) {
+            return storage.getProductWithVariants(fav.perfumeId);
+          }
+          return null;
+        })
+      );
+
+      res.json({
+        share,
+        products: products.filter(Boolean),
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete wishlist share
+  app.delete("/api/wishlist/shares/:id", requireAuth, async (req, res) => {
+    try {
+      await storage.deleteWishlistShare(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==================== GIFT OPTIONS ====================
+
+  // Create/update gift options for order
+  app.post("/api/orders/:orderId/gift-options", requireAuth, async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      const existing = await storage.getGiftOptions(orderId);
+
+      if (existing) {
+        const updated = await storage.updateGiftOptions(orderId, req.body);
+        return res.json(updated);
+      }
+
+      const giftOptions = await storage.createGiftOptions({
+        orderId,
+        ...req.body,
+      });
+      res.json(giftOptions);
+    } catch (error: any) {
+      console.error("Gift options error:", error);
+      res.status(500).json({ error: "Geschenkoptionen konnten nicht gespeichert werden" });
+    }
+  });
+
+  // Get gift options for order
+  app.get("/api/orders/:orderId/gift-options", async (req, res) => {
+    try {
+      const giftOptions = await storage.getGiftOptions(req.params.orderId);
+      res.json(giftOptions || null);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==================== REVIEW PHOTOS ====================
+
+  // Add photo to review
+  app.post("/api/reviews/:reviewId/photos", requireAuth, async (req, res) => {
+    try {
+      const { imageUrl, caption } = req.body;
+      
+      if (!imageUrl) {
+        return res.status(400).json({ error: "Bild-URL ist erforderlich" });
+      }
+
+      const photo = await storage.createReviewPhoto({
+        reviewId: req.params.reviewId,
+        imageUrl,
+        caption,
+      });
+      res.json(photo);
+    } catch (error: any) {
+      console.error("Review photo error:", error);
+      res.status(500).json({ error: "Foto konnte nicht hinzugefügt werden" });
+    }
+  });
+
+  // Get photos for review
+  app.get("/api/reviews/:reviewId/photos", async (req, res) => {
+    try {
+      const photos = await storage.getReviewPhotos(req.params.reviewId);
+      res.json(photos);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete review photo
+  app.delete("/api/reviews/photos/:id", requireAuth, async (req, res) => {
+    try {
+      await storage.deleteReviewPhoto(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==================== REFILL PROGRAM ====================
+
+  // Register a refillable bottle
+  app.post("/api/refill/bottles", requireAuth, async (req, res) => {
+    try {
+      const validation = insertRefillBottleSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.errors[0].message });
+      }
+
+      const bottle = await storage.createRefillBottle(req.session.userId!, validation.data);
+      res.json(bottle);
+    } catch (error: any) {
+      console.error("Create refill bottle error:", error);
+      res.status(500).json({ error: "Flasche konnte nicht registriert werden" });
+    }
+  });
+
+  // Get user's refillable bottles
+  app.get("/api/refill/bottles", requireAuth, async (req, res) => {
+    try {
+      const bottles = await storage.getUserRefillBottles(req.session.userId!);
+      res.json(bottles);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Look up bottle by code
+  app.get("/api/refill/bottles/:code", requireAuth, async (req, res) => {
+    try {
+      const bottle = await storage.getRefillBottle(req.params.code);
+      if (!bottle) {
+        return res.status(404).json({ error: "Flasche nicht gefunden" });
+      }
+      res.json(bottle);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get user's refill orders
+  app.get("/api/refill/orders", requireAuth, async (req, res) => {
+    try {
+      const orders = await storage.getUserRefillOrders(req.session.userId!);
+      res.json(orders);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==================== SUBSCRIPTIONS ====================
+
+  // Create subscription
+  app.post("/api/subscriptions", requireAuth, async (req, res) => {
+    try {
+      const validation = insertSubscriptionSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.errors[0].message });
+      }
+
+      const subscription = await storage.createSubscription(req.session.userId!, validation.data);
+      res.json(subscription);
+    } catch (error: any) {
+      console.error("Create subscription error:", error);
+      res.status(500).json({ error: "Abo konnte nicht erstellt werden" });
+    }
+  });
+
+  // Get user's subscriptions
+  app.get("/api/subscriptions", requireAuth, async (req, res) => {
+    try {
+      const subscriptions = await storage.getUserSubscriptions(req.session.userId!);
+      res.json(subscriptions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get single subscription
+  app.get("/api/subscriptions/:id", requireAuth, async (req, res) => {
+    try {
+      const subscription = await storage.getSubscription(req.params.id);
+      if (!subscription) {
+        return res.status(404).json({ error: "Abo nicht gefunden" });
+      }
+      
+      // Verify ownership
+      if (subscription.userId !== req.session.userId) {
+        return res.status(403).json({ error: "Nicht autorisiert" });
+      }
+
+      res.json(subscription);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update subscription (pause, change frequency, etc.)
+  app.patch("/api/subscriptions/:id", requireAuth, async (req, res) => {
+    try {
+      const subscription = await storage.getSubscription(req.params.id);
+      if (!subscription) {
+        return res.status(404).json({ error: "Abo nicht gefunden" });
+      }
+      
+      if (subscription.userId !== req.session.userId) {
+        return res.status(403).json({ error: "Nicht autorisiert" });
+      }
+
+      const updated = await storage.updateSubscription(req.params.id, req.body);
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Update subscription error:", error);
+      res.status(500).json({ error: "Abo konnte nicht aktualisiert werden" });
+    }
+  });
+
+  // Cancel subscription
+  app.delete("/api/subscriptions/:id", requireAuth, async (req, res) => {
+    try {
+      const subscription = await storage.getSubscription(req.params.id);
+      if (!subscription) {
+        return res.status(404).json({ error: "Abo nicht gefunden" });
+      }
+      
+      if (subscription.userId !== req.session.userId) {
+        return res.status(403).json({ error: "Nicht autorisiert" });
+      }
+
+      await storage.cancelSubscription(req.params.id);
+      res.json({ success: true, message: "Abo gekündigt" });
+    } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
