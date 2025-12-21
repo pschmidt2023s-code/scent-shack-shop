@@ -8,6 +8,7 @@ import AddressManager from '@/components/profile/AddressManager';
 import { OrderHistory } from '@/components/profile/OrderHistory';
 import { PaybackSystem } from '@/components/PaybackSystem';
 import { BiometricAuth } from '@/components/BiometricAuth';
+import { PasswordChange } from '@/components/profile/PasswordChange';
 import { ArrowLeft, User, MapPin, ShoppingBag, Euro, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -161,7 +162,10 @@ export default function Profile() {
               </TabsContent>
 
               <TabsContent value="security">
-                <BiometricAuth />
+                <div className="space-y-6">
+                  <PasswordChange />
+                  <BiometricAuth />
+                </div>
               </TabsContent>
             </Tabs>
           </div>

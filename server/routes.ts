@@ -273,6 +273,42 @@ export async function registerRoutes(app: Express) {
     });
   });
 
+  // Change password (authenticated user)
+  app.post("/api/user/change-password", requireAuth, async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: "Aktuelles und neues Passwort sind erforderlich" });
+      }
+      
+      if (newPassword.length < 8) {
+        return res.status(400).json({ error: "Das neue Passwort muss mindestens 8 Zeichen haben" });
+      }
+      
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) {
+        return res.status(404).json({ error: "Benutzer nicht gefunden" });
+      }
+      
+      // Verify current password
+      const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+      if (!isValidPassword) {
+        return res.status(400).json({ error: "Das aktuelle Passwort ist falsch" });
+      }
+      
+      // Hash and update new password
+      const hashedPassword = await bcrypt.hash(newPassword, 12);
+      await storage.updateUserPassword(user.id, hashedPassword);
+      
+      console.log(`[Auth] Password changed for user: ${user.email}`);
+      res.json({ success: true, message: "Passwort erfolgreich geändert" });
+    } catch (error: any) {
+      console.error("Change password error:", error);
+      res.status(500).json({ error: "Fehler beim Ändern des Passworts" });
+    }
+  });
+
   app.get("/api/products", async (req, res) => {
     try {
       const { category, search } = req.query;
