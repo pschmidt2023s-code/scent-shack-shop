@@ -110,6 +110,24 @@ export default function Checkout() {
     enabled: !!user,
   });
 
+  const { data: loyaltyData } = useQuery<{
+    points: number;
+    redeemableDiscount: number;
+    autoRedeemPoints: boolean;
+  }>({
+    queryKey: ['/api/loyalty'],
+    enabled: !!user,
+  });
+
+  const [usePointsDiscount, setUsePointsDiscount] = useState<boolean | null>(null);
+  
+  // Sync usePointsDiscount with user's autoRedeemPoints setting
+  useEffect(() => {
+    if (loyaltyData && usePointsDiscount === null) {
+      setUsePointsDiscount(loyaltyData.autoRedeemPoints ?? false);
+    }
+  }, [loyaltyData, usePointsDiscount]);
+
   const [checkoutData] = useState<CheckoutData>(() => location.state?.checkoutData || {
     items: items,
     totalAmount: total,
@@ -129,7 +147,17 @@ export default function Checkout() {
   const subtotalAfterDiscount = checkoutData.totalAmount - totalDiscountAmount;
   const baseShippingCost = qualifiesForFreeStandard ? 0 : shippingCost;
   const actualShippingCost = baseShippingCost + (priorityShipping ? priorityCost : 0);
-  const finalTotal = subtotalAfterDiscount + actualShippingCost;
+  
+  // Loyalty points calculations - default to false until data loads
+  const effectiveUsePoints = usePointsDiscount ?? false;
+  const maxPointsDiscount = loyaltyData?.redeemableDiscount || 0;
+  const appliedPointsDiscount = effectiveUsePoints && maxPointsDiscount > 0 
+    ? Math.min(maxPointsDiscount, subtotalAfterDiscount) 
+    : 0;
+  const pointsToRedeem = appliedPointsDiscount * 100; // 100 points = 1€
+  const pointsToEarn = Math.floor((subtotalAfterDiscount - appliedPointsDiscount) * 10); // 1€ = 10 points
+  
+  const finalTotal = subtotalAfterDiscount - appliedPointsDiscount + actualShippingCost;
 
   useEffect(() => {
     if (shippingOptions.length > 0 && !selectedShipping) {
@@ -283,6 +311,9 @@ export default function Checkout() {
             shippingCost: actualShippingCost,
             shippingOptionName: selectedShippingOption?.name || 'Versand',
             discountAmount: totalDiscountAmount,
+            loyaltyPointsUsed: pointsToRedeem,
+            loyaltyDiscount: appliedPointsDiscount,
+            loyaltyPointsEarned: pointsToEarn,
           }),
         });
         
@@ -324,6 +355,9 @@ export default function Checkout() {
           discountAmount: totalDiscountAmount,
           shippingOptionId: selectedShipping || undefined,
           shippingCost: actualShippingCost,
+          loyaltyPointsUsed: pointsToRedeem,
+          loyaltyDiscount: appliedPointsDiscount,
+          loyaltyPointsEarned: pointsToEarn,
         }),
       });
 
@@ -505,6 +539,16 @@ export default function Checkout() {
               <span>+2,99 €</span>
             </div>
           )}
+          
+          {user && appliedPointsDiscount > 0 && (
+            <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+              <span className="flex items-center gap-1">
+                <CheckCircle className="w-3 h-3" />
+                Treuepunkte ({pointsToRedeem} Punkte)
+              </span>
+              <span>-{appliedPointsDiscount.toFixed(2)} €</span>
+            </div>
+          )}
 
           <Separator />
 
@@ -516,6 +560,43 @@ export default function Checkout() {
               <span>{finalTotal.toFixed(2)} €</span>
             )}
           </div>
+          
+          {user && pointsToEarn > 0 && (
+            <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+              <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
+                Sie sammeln mit dieser Bestellung {pointsToEarn} Treuepunkte
+              </p>
+            </div>
+          )}
+          
+          {user && maxPointsDiscount > 0 && appliedPointsDiscount === 0 && (
+            <div className="mt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-sm"
+                onClick={() => setUsePointsDiscount(true)}
+                data-testid="button-apply-points"
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                {loyaltyData?.points || 0} Punkte einlösen (-{maxPointsDiscount.toFixed(2)} €)
+              </Button>
+            </div>
+          )}
+          
+          {user && appliedPointsDiscount > 0 && (
+            <div className="mt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-xs text-muted-foreground"
+                onClick={() => setUsePointsDiscount(false)}
+                data-testid="button-remove-points"
+              >
+                Treuepunkte nicht verwenden
+              </Button>
+            </div>
+          )}
         </div>
 
         {currentStep === 'review' && (

@@ -54,6 +54,7 @@ export interface IStorage {
 
   getOrderItems(orderId: string): Promise<OrderItem[]>;
   createOrderItem(item: InsertOrderItem): Promise<OrderItem>;
+  deleteOrderItems(orderId: string): Promise<boolean>;
 
   getReviews(productId: string): Promise<Review[]>;
   createReview(review: InsertReview): Promise<Review>;
@@ -105,6 +106,12 @@ export interface IStorage {
   getChatMessages(sessionId: string): Promise<Array<{ id: string; sessionId: string; content: string; sender: string; createdAt: string }>>;
   createChatMessage(data: { sessionId: string; content: string; sender: string }): Promise<{ id: string; sessionId: string; content: string; sender: string; createdAt: string }>;
   updateChatSessionStatus(sessionId: string, status: string): Promise<void>;
+  
+  // Loyalty points system
+  getLoyaltyTransactions(userId: string): Promise<schema.LoyaltyTransaction[]>;
+  createLoyaltyTransaction(transaction: schema.InsertLoyaltyTransaction): Promise<schema.LoyaltyTransaction>;
+  addLoyaltyPoints(userId: string, points: number, type: string, description: string, orderId?: string): Promise<number>;
+  redeemLoyaltyPoints(userId: string, points: number, description: string): Promise<{ success: boolean; newBalance: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -360,6 +367,11 @@ export class DatabaseStorage implements IStorage {
   async createOrderItem(item: InsertOrderItem): Promise<OrderItem> {
     const [created] = await db.insert(schema.orderItems).values(item).returning();
     return created;
+  }
+
+  async deleteOrderItems(orderId: string): Promise<boolean> {
+    await db.delete(schema.orderItems).where(eq(schema.orderItems.orderId, orderId));
+    return true;
   }
 
   async getReviews(productId: string, variantId?: string): Promise<Review[]> {
@@ -819,6 +831,74 @@ export class DatabaseStorage implements IStorage {
     await db.update(schema.chatSessions)
       .set({ status })
       .where(eq(schema.chatSessions.id, sessionId));
+  }
+
+  // Loyalty points system
+  async getLoyaltyTransactions(userId: string): Promise<schema.LoyaltyTransaction[]> {
+    const transactions = await db.select()
+      .from(schema.loyaltyTransactions)
+      .where(eq(schema.loyaltyTransactions.userId, userId))
+      .orderBy(desc(schema.loyaltyTransactions.createdAt));
+    return transactions;
+  }
+
+  async createLoyaltyTransaction(transaction: schema.InsertLoyaltyTransaction): Promise<schema.LoyaltyTransaction> {
+    const [created] = await db.insert(schema.loyaltyTransactions)
+      .values(transaction)
+      .returning();
+    return created;
+  }
+
+  async addLoyaltyPoints(userId: string, points: number, type: string, description: string, orderId?: string): Promise<number> {
+    // Get current user
+    const user = await this.getUser(userId);
+    if (!user) throw new Error("User not found");
+
+    const currentPoints = user.loyaltyPoints || 0;
+    const newBalance = currentPoints + points;
+
+    // Update user points
+    await db.update(schema.users)
+      .set({ loyaltyPoints: newBalance, updatedAt: new Date() })
+      .where(eq(schema.users.id, userId));
+
+    // Create transaction record
+    await this.createLoyaltyTransaction({
+      userId,
+      type: type as any,
+      points,
+      orderId: orderId || null,
+      description,
+    });
+
+    return newBalance;
+  }
+
+  async redeemLoyaltyPoints(userId: string, points: number, description: string): Promise<{ success: boolean; newBalance: number }> {
+    const user = await this.getUser(userId);
+    if (!user) throw new Error("User not found");
+
+    const currentPoints = user.loyaltyPoints || 0;
+    if (currentPoints < points) {
+      return { success: false, newBalance: currentPoints };
+    }
+
+    const newBalance = currentPoints - points;
+
+    // Update user points
+    await db.update(schema.users)
+      .set({ loyaltyPoints: newBalance, updatedAt: new Date() })
+      .where(eq(schema.users.id, userId));
+
+    // Create transaction record (negative for redemption)
+    await this.createLoyaltyTransaction({
+      userId,
+      type: 'redemption',
+      points: -points,
+      description,
+    });
+
+    return { success: true, newBalance };
   }
 }
 

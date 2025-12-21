@@ -6,10 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProfileForm } from '@/components/profile/ProfileForm';
 import AddressManager from '@/components/profile/AddressManager';
 import { OrderHistory } from '@/components/profile/OrderHistory';
-import { PaybackSystem } from '@/components/PaybackSystem';
+import { LoyaltyRewards } from '@/components/profile/LoyaltyRewards';
 import { BiometricAuth } from '@/components/BiometricAuth';
 import { PasswordChange } from '@/components/profile/PasswordChange';
-import { ArrowLeft, User, MapPin, ShoppingBag, Euro, Shield } from 'lucide-react';
+import { ArrowLeft, User, MapPin, ShoppingBag, Gift, Shield, Euro } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
@@ -134,9 +134,9 @@ export default function Profile() {
                     <ShoppingBag className="w-4 h-4 shrink-0" />
                     <span className="hidden sm:inline">Bestellungen</span>
                   </TabsTrigger>
-                  <TabsTrigger value="payback" className="flex items-center gap-2 whitespace-nowrap px-4">
-                    <Euro className="w-4 h-4 shrink-0" />
-                    <span className="hidden sm:inline">Payback</span>
+                  <TabsTrigger value="loyalty" className="flex items-center gap-2 whitespace-nowrap px-4">
+                    <Gift className="w-4 h-4 shrink-0" />
+                    <span className="hidden sm:inline">Treuepunkte</span>
                   </TabsTrigger>
                   <TabsTrigger value="security" className="flex items-center gap-2 whitespace-nowrap px-4">
                     <Shield className="w-4 h-4 shrink-0" />
@@ -157,8 +157,8 @@ export default function Profile() {
                 <OrderHistory />
               </TabsContent>
 
-              <TabsContent value="payback">
-                <PaybackSystem />
+              <TabsContent value="loyalty">
+                <LoyaltyRewards />
               </TabsContent>
 
               <TabsContent value="security">

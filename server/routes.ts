@@ -530,6 +530,30 @@ export async function registerRoutes(app: Express) {
         });
       }
       
+      // Handle loyalty points - only redeem points now, award points on order completion
+      if (req.session.userId) {
+        const loyaltyPointsUsed = parseInt(req.body.loyaltyPointsUsed) || 0;
+        
+        // Deduct points if used (immediate redemption for the discount)
+        if (loyaltyPointsUsed > 0) {
+          const redemptionResult = await storage.redeemLoyaltyPoints(
+            req.session.userId,
+            loyaltyPointsUsed,
+            `Punkte eingelöst für Bestellung ${orderNumber}`
+          );
+          
+          if (!redemptionResult.success) {
+            // Rollback the order and its items if points redemption failed
+            await storage.deleteOrderItems(order.id);
+            await storage.deleteOrder(order.id);
+            return res.status(400).json({ error: "Nicht genügend Treuepunkte verfügbar" });
+          }
+        }
+        
+        // Note: Points earned will be awarded when order status changes to 'completed' or 'delivered'
+        // This is handled in the order status update endpoint and payment webhooks
+      }
+      
       // Only send confirmation email immediately for bank transfer
       // For Stripe/PayPal, email is sent after successful payment verification
       if (isBankTransfer) {
@@ -578,10 +602,62 @@ export async function registerRoutes(app: Express) {
       if (!parsed.success) {
         return res.status(400).json({ error: "Ungültige Bestellungsdaten", details: parsed.error.issues });
       }
-      const order = await storage.updateOrder(req.params.id, parsed.data);
+      
+      // Get current order to check status change
+      const currentOrder = await storage.getOrder(req.params.id);
+      if (!currentOrder) {
+        return res.status(404).json({ error: "Bestellung nicht gefunden" });
+      }
+      
+      const newStatus = parsed.data.status;
+      const completedStatuses = ['completed', 'delivered'];
+      const wasNotCompleted = !completedStatuses.includes(currentOrder.status || '');
+      const isNowCompleted = newStatus && completedStatuses.includes(newStatus);
+      
+      // Check if we should award loyalty points
+      const loyaltyAlreadyAwarded = currentOrder.notes?.includes('LOYALTY_AWARDED');
+      const shouldAwardPoints = wasNotCompleted && isNowCompleted && currentOrder.userId && !loyaltyAlreadyAwarded;
+      
+      // Prepare update data with potential notes update for loyalty
+      let updateData = { ...parsed.data };
+      let pointsToAward = 0;
+      
+      if (shouldAwardPoints) {
+        // Calculate points from subtotal (totalAmount - shippingCost) to avoid earning points on shipping
+        const orderTotal = parseFloat(currentOrder.totalAmount) || 0;
+        const shippingCost = parseFloat(currentOrder.shippingCost || '0') || 0;
+        const subtotalForPoints = Math.max(0, orderTotal - shippingCost);
+        pointsToAward = Math.floor(subtotalForPoints * 10); // 1€ = 10 points
+        
+        if (pointsToAward > 0) {
+          // Include LOYALTY_AWARDED flag in update
+          const currentNotes = parsed.data.notes ?? currentOrder.notes ?? '';
+          updateData.notes = currentNotes + ' LOYALTY_AWARDED';
+        }
+      }
+      
+      // Update order first with flag (prevents double-awarding on retry)
+      const order = await storage.updateOrder(req.params.id, updateData);
       if (!order) {
         return res.status(404).json({ error: "Bestellung nicht gefunden" });
       }
+      
+      // Then award points (if update succeeded, flag prevents retry issues)
+      if (shouldAwardPoints && pointsToAward > 0) {
+        try {
+          await storage.addLoyaltyPoints(
+            currentOrder.userId!,
+            pointsToAward,
+            'purchase',
+            `Punkte für Bestellung ${currentOrder.orderNumber}`,
+            currentOrder.id
+          );
+          console.log(`[Loyalty] Awarded ${pointsToAward} points for order ${currentOrder.orderNumber}`);
+        } catch (loyaltyError) {
+          console.error(`[Loyalty] Failed to award points for order ${currentOrder.orderNumber}:`, loyaltyError);
+        }
+      }
+      
       res.json(order);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -1765,6 +1841,7 @@ Dein Verhalten:
     }
   });
 
+  // Loyalty Points System - 1€ = 10 points, 500 points = 5€ discount
   app.get("/api/loyalty", requireAuth, async (req, res) => {
     try {
       const user = await storage.getUser(req.session.userId!);
@@ -1772,34 +1849,177 @@ Dein Verhalten:
         return res.status(404).json({ error: "User not found" });
       }
       
-      const earnings = await storage.getUserPaybackEarnings(req.session.userId!);
-      const totalEarnings = earnings
-        .filter(e => e.status === 'completed')
-        .reduce((sum, e) => sum + parseFloat(e.amount), 0);
-      
       const orders = await storage.getUserOrders(req.session.userId!);
       const completedOrders = orders.filter(o => o.status === 'completed' || o.status === 'delivered');
       const totalSpent = completedOrders.reduce((sum, o) => sum + parseFloat(o.totalAmount), 0);
       
+      // Calculate tier based on total spending
       let tier = 'bronze';
-      if (totalSpent >= 500) tier = 'platinum';
-      else if (totalSpent >= 200) tier = 'gold';
-      else if (totalSpent >= 50) tier = 'silver';
+      let tierDiscount = 0;
+      if (totalSpent >= 500) { tier = 'platinum'; tierDiscount = 15; }
+      else if (totalSpent >= 200) { tier = 'gold'; tierDiscount = 10; }
+      else if (totalSpent >= 50) { tier = 'silver'; tierDiscount = 5; }
       
       const newsletterSub = await storage.getNewsletterSubscription(user.email);
       const isNewsletterSubscriber = !!newsletterSub || user.role === 'admin';
       
+      // Get loyalty transactions
+      const transactions = await storage.getLoyaltyTransactions(req.session.userId!);
+      
+      // Check for birthday bonus (500 points)
+      const currentYear = new Date().getFullYear().toString();
+      let birthdayBonusAvailable = false;
+      if (user.birthday) {
+        const birthMonth = parseInt(user.birthday.split('-')[1]);
+        const birthDay = parseInt(user.birthday.split('-')[2]);
+        const today = new Date();
+        if (today.getMonth() + 1 === birthMonth && today.getDate() === birthDay) {
+          if (user.lastBirthdayBonus !== currentYear) {
+            birthdayBonusAvailable = true;
+          }
+        }
+      }
+      
+      // Check for anniversary bonus (200 points per year)
+      const memberSince = new Date(user.createdAt);
+      const yearsAsMember = Math.floor((new Date().getTime() - memberSince.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+      let anniversaryBonusAvailable = false;
+      if (yearsAsMember >= 1 && user.lastAnniversaryBonus !== currentYear) {
+        const anniversaryMonth = memberSince.getMonth();
+        const anniversaryDay = memberSince.getDate();
+        const today = new Date();
+        if (today.getMonth() === anniversaryMonth && today.getDate() === anniversaryDay) {
+          anniversaryBonusAvailable = true;
+        }
+      }
+      
+      // Calculate redeemable discount (100 points = 1€)
+      const currentPoints = user.loyaltyPoints || 0;
+      const redeemableDiscount = Math.floor(currentPoints / 100);
+      
       res.json({
-        points: Math.floor(totalEarnings * 100),
-        lifetimePoints: Math.floor(totalEarnings * 100),
+        points: currentPoints,
+        redeemableDiscount, // How many € can be redeemed
         tier,
-        cashbackBalance: parseFloat(user.paybackBalance || '0'),
-        totalEarnings: parseFloat(user.totalEarnings || '0'),
+        tierDiscount, // Percentage discount based on tier
+        totalSpent,
+        autoRedeemPoints: user.autoRedeemPoints ?? true,
+        birthday: user.birthday,
+        memberSince: user.createdAt,
+        yearsAsMember,
+        birthdayBonusAvailable,
+        anniversaryBonusAvailable,
         isNewsletterSubscriber,
-        transactions: earnings.slice(0, 10),
+        transactions: transactions.slice(0, 20),
       });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Update loyalty settings (birthday, auto-redeem)
+  app.patch("/api/loyalty/settings", requireAuth, async (req, res) => {
+    try {
+      const { birthday, autoRedeemPoints } = req.body;
+      const updates: any = {};
+      
+      if (birthday !== undefined) updates.birthday = birthday;
+      if (autoRedeemPoints !== undefined) updates.autoRedeemPoints = autoRedeemPoints;
+      
+      const user = await storage.updateUser(req.session.userId!, updates);
+      res.json({ success: true, birthday: user?.birthday, autoRedeemPoints: user?.autoRedeemPoints });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+  
+  // Claim birthday bonus
+  app.post("/api/loyalty/claim-birthday", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      
+      const currentYear = new Date().getFullYear().toString();
+      if (user.lastBirthdayBonus === currentYear) {
+        return res.status(400).json({ error: "Birthday bonus already claimed this year" });
+      }
+      
+      if (!user.birthday) {
+        return res.status(400).json({ error: "Please set your birthday first" });
+      }
+      
+      // Add 500 points for birthday
+      const newBalance = await storage.addLoyaltyPoints(
+        req.session.userId!, 
+        500, 
+        'birthday', 
+        'Geburtstags-Bonus'
+      );
+      
+      // Mark birthday bonus as claimed
+      await storage.updateUser(req.session.userId!, { lastBirthdayBonus: currentYear });
+      
+      res.json({ success: true, pointsAdded: 500, newBalance });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+  
+  // Claim anniversary bonus
+  app.post("/api/loyalty/claim-anniversary", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      
+      const currentYear = new Date().getFullYear().toString();
+      if (user.lastAnniversaryBonus === currentYear) {
+        return res.status(400).json({ error: "Anniversary bonus already claimed this year" });
+      }
+      
+      // Add 200 points for anniversary
+      const newBalance = await storage.addLoyaltyPoints(
+        req.session.userId!, 
+        200, 
+        'anniversary', 
+        'Jubiläums-Bonus'
+      );
+      
+      // Mark anniversary bonus as claimed
+      await storage.updateUser(req.session.userId!, { lastAnniversaryBonus: currentYear });
+      
+      res.json({ success: true, pointsAdded: 200, newBalance });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+  
+  // Calculate points preview for checkout
+  app.post("/api/loyalty/preview", async (req, res) => {
+    try {
+      const { amount, userId } = req.body;
+      const pointsToEarn = Math.floor(parseFloat(amount) * 10); // 1€ = 10 points
+      
+      let redeemableDiscount = 0;
+      let currentPoints = 0;
+      let autoRedeemPoints = true;
+      
+      if (userId) {
+        const user = await storage.getUser(userId);
+        if (user) {
+          currentPoints = user.loyaltyPoints || 0;
+          autoRedeemPoints = user.autoRedeemPoints ?? true;
+          redeemableDiscount = Math.floor(currentPoints / 100); // 100 points = 1€
+        }
+      }
+      
+      res.json({
+        pointsToEarn,
+        currentPoints,
+        redeemableDiscount,
+        autoRedeemPoints,
+      });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
     }
   });
 
@@ -2486,11 +2706,48 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
         // Always try to send email for paid orders (use flag in order to track if sent)
         if (order) {
           // Update order status if not already completed
-          if (order.paymentStatus !== 'completed') {
+          const wasNotPaid = order.paymentStatus !== 'completed';
+          const loyaltyAlreadyAwarded = order.notes?.includes('LOYALTY_AWARDED');
+          
+          if (wasNotPaid) {
+            // Check if we should award loyalty points
+            const shouldAwardPoints = order.userId && !loyaltyAlreadyAwarded;
+            let updatedNotes = order.notes || '';
+            let pointsToAward = 0;
+            
+            if (shouldAwardPoints) {
+              const orderTotal = parseFloat(order.totalAmount) || 0;
+              const shippingCost = parseFloat(order.shippingCost || '0') || 0;
+              const subtotalForPoints = Math.max(0, orderTotal - shippingCost);
+              pointsToAward = Math.floor(subtotalForPoints * 10); // 1€ = 10 points
+              if (pointsToAward > 0) {
+                updatedNotes += ' LOYALTY_AWARDED';
+              }
+            }
+            
+            // Update order first with flag (prevents double-awarding on retry)
             await storage.updateOrder(order.id, {
               paymentStatus: 'completed',
               status: 'processing',
+              notes: updatedNotes,
             });
+            
+            // Then award points (if update succeeded, flag prevents retry issues)
+            if (shouldAwardPoints && pointsToAward > 0) {
+              try {
+                await storage.addLoyaltyPoints(
+                  order.userId!,
+                  pointsToAward,
+                  'purchase',
+                  `Punkte für Bestellung ${order.orderNumber}`,
+                  order.id
+                );
+                console.log(`[Loyalty] Awarded ${pointsToAward} points for Stripe order ${order.orderNumber}`);
+              } catch (loyaltyError) {
+                console.error(`[Loyalty] Failed to award points for Stripe order ${order.orderNumber}:`, loyaltyError);
+                // Order already marked with flag, so manual intervention needed
+              }
+            }
           }
           
           // Check if email was already sent (use notes field as flag)
@@ -3139,12 +3396,45 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
         return res.json({ success: true, message: "Order already completed" });
       }
       
-      // Update order with PayPal order ID and mark as completed/processing
+      // Check if we should award loyalty points (only if not already awarded)
+      const loyaltyAlreadyAwarded = order.notes?.includes('LOYALTY_AWARDED');
+      const shouldAwardPoints = order.userId && !loyaltyAlreadyAwarded;
+      let updatedNotes = order.notes || '';
+      let pointsToAward = 0;
+      
+      if (shouldAwardPoints) {
+        const orderTotal = parseFloat(order.totalAmount) || 0;
+        const shippingCost = parseFloat(order.shippingCost || '0') || 0;
+        const subtotalForPoints = Math.max(0, orderTotal - shippingCost);
+        pointsToAward = Math.floor(subtotalForPoints * 10); // 1€ = 10 points
+        if (pointsToAward > 0) {
+          updatedNotes += ' LOYALTY_AWARDED';
+        }
+      }
+      
+      // Update order first with flag (prevents double-awarding on retry)
       await storage.updateOrder(orderId, {
         paypalOrderId: paypalOrderId,
         paymentStatus: 'completed',
         status: 'processing',
+        notes: updatedNotes,
       });
+      
+      // Then award points (if update succeeded, flag prevents retry issues)
+      if (shouldAwardPoints && pointsToAward > 0) {
+        try {
+          await storage.addLoyaltyPoints(
+            order.userId!,
+            pointsToAward,
+            'purchase',
+            `Punkte für Bestellung ${order.orderNumber}`,
+            order.id
+          );
+          console.log(`[Loyalty] Awarded ${pointsToAward} points for PayPal order ${order.orderNumber}`);
+        } catch (loyaltyError) {
+          console.error(`[Loyalty] Failed to award points for PayPal order ${order.orderNumber}:`, loyaltyError);
+        }
+      }
       
       // Send confirmation email
       try {
