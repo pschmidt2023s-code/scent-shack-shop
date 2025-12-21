@@ -123,6 +123,14 @@ interface Order {
   shippingOptionName?: string;
   shippingCost?: number;
   isExpressShipping?: boolean;
+  userData?: {
+    id: string;
+    email: string;
+    fullName: string | null;
+    phone: string | null;
+    paybackBalance: string;
+    createdAt: string;
+  };
 }
 
 interface OrderItem {
@@ -132,6 +140,15 @@ interface OrderItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  variantName?: string;
+  productName?: string;
+  customizationData?: {
+    selectedFragrances?: Array<{
+      variantId: string;
+      variantName: string;
+      productName: string;
+    }>;
+  };
 }
 
 interface DashboardStats {
@@ -1330,9 +1347,26 @@ function OrdersView({
                                         <User className="w-4 h-4" /> Kunde
                                       </h4>
                                       <div className="bg-muted p-3 rounded-lg text-sm space-y-1">
-                                        <p>{order.customerName || 'N/A'}</p>
+                                        <p className="font-medium">{order.customerName || 'N/A'}</p>
                                         <p className="text-muted-foreground">{order.customerEmail}</p>
-                                        <p className="text-muted-foreground">{order.customerPhone}</p>
+                                        {order.customerPhone && (
+                                          <p className="text-muted-foreground">{order.customerPhone}</p>
+                                        )}
+                                        {order.userData ? (
+                                          <div className="mt-2 pt-2 border-t border-border space-y-1">
+                                            <Badge variant="outline" className="text-xs">
+                                              Registrierter Kunde
+                                            </Badge>
+                                            <p className="text-xs text-muted-foreground">
+                                              Payback: <span className="font-medium text-foreground">{Number(order.userData.paybackBalance || 0).toFixed(2)}</span>
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                              Kunde seit: {new Date(order.userData.createdAt).toLocaleDateString('de-DE')}
+                                            </p>
+                                          </div>
+                                        ) : (
+                                          <Badge variant="secondary" className="mt-2 text-xs">Gastkunde</Badge>
+                                        )}
                                       </div>
                                     </div>
                                     {order.shippingAddressData && (
@@ -1344,6 +1378,37 @@ function OrdersView({
                                           <p>{order.shippingAddressData.firstName} {order.shippingAddressData.lastName}</p>
                                           <p>{order.shippingAddressData.street}</p>
                                           <p>{order.shippingAddressData.postalCode} {order.shippingAddressData.city}</p>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {order.orderItems && order.orderItems.length > 0 && (
+                                      <div>
+                                        <h4 className="font-medium mb-2 flex items-center gap-2">
+                                          <Package className="w-4 h-4" /> Artikel ({order.orderItems.length})
+                                        </h4>
+                                        <div className="bg-muted p-3 rounded-lg text-sm space-y-2">
+                                          {order.orderItems.map((item, idx) => (
+                                            <div key={item.id || idx} className="pb-2 border-b border-border last:border-0 last:pb-0">
+                                              <div className="flex justify-between items-start gap-2">
+                                                <div>
+                                                  <p className="font-medium">{item.variantName || 'Produkt'}</p>
+                                                  <p className="text-xs text-muted-foreground">{item.productName}</p>
+                                                  <p className="text-xs text-muted-foreground">Menge: {item.quantity}</p>
+                                                </div>
+                                                <p className="font-medium whitespace-nowrap">{Number(item.totalPrice || 0).toFixed(2)}</p>
+                                              </div>
+                                              {item.customizationData?.selectedFragrances && item.customizationData.selectedFragrances.length > 0 && (
+                                                <div className="mt-2 pl-2 border-l-2 border-primary/30">
+                                                  <p className="text-xs font-medium text-muted-foreground mb-1">Ausgewählte Düfte:</p>
+                                                  {item.customizationData.selectedFragrances.map((frag, fIdx) => (
+                                                    <p key={fIdx} className="text-xs text-muted-foreground">
+                                                      {fIdx + 1}. {frag.variantName}
+                                                    </p>
+                                                  ))}
+                                                </div>
+                                              )}
+                                            </div>
+                                          ))}
                                         </div>
                                       </div>
                                     )}
