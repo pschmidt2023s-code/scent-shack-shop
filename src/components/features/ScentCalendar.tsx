@@ -101,7 +101,17 @@ export function ScentCalendar() {
   };
 
   useEffect(() => {
-    if (singlePerfumes.length === 0) return;
+    if (!allProducts || allProducts.length === 0) return;
+
+    const perfumes = allProducts.filter(p => {
+      const name = p.name.toLowerCase();
+      const category = (p.category || '').toLowerCase();
+      const isCollection = name.includes('collection') || name.includes('set') || name.includes('sparset') || name.includes('probenset');
+      const isBundleCategory = category.includes('bundle') || category.includes('set') || category.includes('collection');
+      return !isCollection && !isBundleCategory;
+    });
+
+    if (perfumes.length === 0) return;
 
     const days = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
     const today = currentDate.getDay();
@@ -115,13 +125,13 @@ export function ScentCalendar() {
       week.push({
         day: days[dayIndex],
         date: date.getDate(),
-        product: getProductForDay(singlePerfumes, date.getDate()),
+        product: getProductForDay(perfumes, date.getDate()),
         isToday: i === currentDate.getDay(),
       });
     }
     
     setWeekDays(week);
-  }, [currentDate, singlePerfumes]);
+  }, [currentDate, allProducts]);
 
   const SeasonIcon = seasonConfig[season].icon;
 

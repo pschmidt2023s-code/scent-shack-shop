@@ -136,13 +136,6 @@ export interface IStorage {
   getGiftOptions(orderId: string): Promise<schema.GiftOption | undefined>;
   updateGiftOptions(orderId: string, data: Partial<schema.InsertGiftOption>): Promise<schema.GiftOption | undefined>;
 
-  // Refill Program
-  createRefillBottle(userId: string, data: schema.InsertRefillBottle): Promise<schema.RefillBottle>;
-  getUserRefillBottles(userId: string): Promise<schema.RefillBottle[]>;
-  getRefillBottle(bottleCode: string): Promise<schema.RefillBottle | undefined>;
-  createRefillOrder(userId: string, data: schema.InsertRefillOrder): Promise<schema.RefillOrder>;
-  getUserRefillOrders(userId: string): Promise<schema.RefillOrder[]>;
-
   // Subscriptions
   createSubscription(userId: string, data: schema.InsertSubscription): Promise<schema.Subscription>;
   getUserSubscriptions(userId: string): Promise<schema.Subscription[]>;
@@ -1077,67 +1070,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(schema.giftOptions.orderId, orderId))
       .returning();
     return updated;
-  }
-
-  // Refill Program
-  async createRefillBottle(userId: string, data: schema.InsertRefillBottle): Promise<schema.RefillBottle> {
-    const bottleCode = 'RF-' + this.generateShareCode().substring(0, 8).toUpperCase();
-    const [bottle] = await db.insert(schema.refillBottles)
-      .values({
-        userId,
-        bottleCode,
-        variantId: data.variantId,
-        size: data.size,
-      })
-      .returning();
-    return bottle;
-  }
-
-  async getUserRefillBottles(userId: string): Promise<schema.RefillBottle[]> {
-    return db.select().from(schema.refillBottles)
-      .where(and(
-        eq(schema.refillBottles.userId, userId),
-        eq(schema.refillBottles.isActive, true)
-      ))
-      .orderBy(desc(schema.refillBottles.createdAt));
-  }
-
-  async getRefillBottle(bottleCode: string): Promise<schema.RefillBottle | undefined> {
-    const [bottle] = await db.select().from(schema.refillBottles)
-      .where(eq(schema.refillBottles.bottleCode, bottleCode));
-    return bottle;
-  }
-
-  async createRefillOrder(userId: string, data: schema.InsertRefillOrder): Promise<schema.RefillOrder> {
-    const [order] = await db.insert(schema.refillOrders)
-      .values({
-        userId,
-        bottleId: data.bottleId,
-        variantId: data.variantId,
-        refillPrice: data.refillPrice,
-        discountPercent: data.discountPercent || '20',
-      })
-      .returning();
-    
-    // Update bottle refill count
-    const bottle = await db.select().from(schema.refillBottles)
-      .where(eq(schema.refillBottles.id, data.bottleId));
-    if (bottle[0]) {
-      await db.update(schema.refillBottles)
-        .set({
-          lastRefillAt: new Date(),
-          refillCount: (bottle[0].refillCount || 0) + 1,
-        })
-        .where(eq(schema.refillBottles.id, data.bottleId));
-    }
-
-    return order;
-  }
-
-  async getUserRefillOrders(userId: string): Promise<schema.RefillOrder[]> {
-    return db.select().from(schema.refillOrders)
-      .where(eq(schema.refillOrders.userId, userId))
-      .orderBy(desc(schema.refillOrders.createdAt));
   }
 
   // Subscriptions

@@ -26,7 +26,8 @@ import {
   Package,
   Check,
   Edit2,
-  ShoppingBag
+  ShoppingBag,
+  Wallet
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
@@ -68,7 +69,7 @@ export default function Checkout() {
   
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('contact');
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'bank' | 'card'>('bank');
+  const [paymentMethod, setPaymentMethod] = useState<'bank' | 'card' | 'paypal'>('bank');
   const [selectedShipping, setSelectedShipping] = useState<string>('');
   const [priorityShipping, setPriorityShipping] = useState(false);
   const [guestEmail, setGuestEmail] = useState('');
@@ -337,6 +338,45 @@ export default function Checkout() {
           return;
         }
         throw new Error('Keine Checkout-URL erhalten');
+      }
+
+      if (paymentMethod === 'paypal') {
+        const paypalResponse = await fetch('/api/paypal/order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            items: orderItems,
+            customerName: `${customerData.firstName} ${customerData.lastName}`,
+            customerEmail: user?.email || guestEmail,
+            shippingAddress: customerData,
+            shippingCost: actualShippingCost,
+            discountAmount: totalDiscountAmount,
+            loyaltyPointsUsed: pointsToRedeem,
+            loyaltyDiscount: appliedPointsDiscount,
+          }),
+        });
+
+        if (!paypalResponse.ok) {
+          const error = await paypalResponse.json();
+          throw new Error(error.error || 'PayPal Checkout fehlgeschlagen');
+        }
+
+        const responseData = await paypalResponse.json();
+        const approvalUrl = responseData.approvalUrl || responseData.links?.find((l: any) => l.rel === 'approve')?.href;
+        if (approvalUrl) {
+          try {
+            if (window.top && window.top !== window) {
+              window.top.location.href = approvalUrl;
+            } else {
+              window.location.href = approvalUrl;
+            }
+          } catch (redirectError) {
+            window.open(approvalUrl, '_blank');
+          }
+          return;
+        }
+        throw new Error('Keine PayPal-URL erhalten');
       }
       
       const response = await fetch('/api/orders', {
@@ -852,6 +892,24 @@ export default function Checkout() {
                       <p className="text-xs text-muted-foreground">Sichere Zahlung via Stripe</p>
                     </div>
                     <Badge variant="secondary">Stripe</Badge>
+                  </Label>
+                </div>
+                <div 
+                  className={cn(
+                    "flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all",
+                    paymentMethod === 'paypal' ? "border-primary bg-primary/5" : "hover-elevate"
+                  )}
+                  onClick={() => setPaymentMethod('paypal')}
+                  data-testid="payment-paypal"
+                >
+                  <RadioGroupItem value="paypal" id="paypal" />
+                  <Label htmlFor="paypal" className="flex items-center cursor-pointer w-full">
+                    <Wallet className="mr-3 h-5 w-5" />
+                    <div className="flex-1">
+                      <span className="font-medium">PayPal</span>
+                      <p className="text-xs text-muted-foreground">Schnell und sicher mit PayPal bezahlen</p>
+                    </div>
+                    <Badge variant="secondary">PayPal</Badge>
                   </Label>
                 </div>
               </RadioGroup>

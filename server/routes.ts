@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { storage } from "./storage";
-import { insertUserSchema, insertProductSchema, insertOrderSchema, insertReviewSchema, insertPartnerSchema, insertNewsletterSchema, insertAddressSchema, insertContestEntrySchema, updateProductSchema, updateOrderSchema, updateUserRoleSchema, insertStockNotificationSchema, insertWishlistShareSchema, insertReviewPhotoSchema, insertGiftOptionsSchema, insertRefillBottleSchema, insertSubscriptionSchema } from "../shared/schema";
+import { insertUserSchema, insertProductSchema, insertOrderSchema, insertReviewSchema, insertPartnerSchema, insertNewsletterSchema, insertAddressSchema, insertContestEntrySchema, updateProductSchema, updateOrderSchema, updateUserRoleSchema, insertStockNotificationSchema, insertWishlistShareSchema, insertReviewPhotoSchema, insertGiftOptionsSchema, insertSubscriptionSchema } from "../shared/schema";
 import bcrypt from "bcryptjs";
 // Use the OpenAI client from Replit AI Integrations (may be null if not configured)
 import { openai as aiIntegrationsClient } from "./replit_integrations/image/client";
@@ -3677,57 +3677,6 @@ Antworte nur mit validem JSON, kein weiterer Text.`;
     try {
       await storage.deleteReviewPhoto(req.params.id);
       res.json({ success: true });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // ==================== REFILL PROGRAM ====================
-
-  // Register a refillable bottle
-  app.post("/api/refill/bottles", requireAuth, async (req, res) => {
-    try {
-      const validation = insertRefillBottleSchema.safeParse(req.body);
-      if (!validation.success) {
-        return res.status(400).json({ error: validation.error.errors[0].message });
-      }
-
-      const bottle = await storage.createRefillBottle(req.session.userId!, validation.data);
-      res.json(bottle);
-    } catch (error: any) {
-      console.error("Create refill bottle error:", error);
-      res.status(500).json({ error: "Flasche konnte nicht registriert werden" });
-    }
-  });
-
-  // Get user's refillable bottles
-  app.get("/api/refill/bottles", requireAuth, async (req, res) => {
-    try {
-      const bottles = await storage.getUserRefillBottles(req.session.userId!);
-      res.json(bottles);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Look up bottle by code
-  app.get("/api/refill/bottles/:code", requireAuth, async (req, res) => {
-    try {
-      const bottle = await storage.getRefillBottle(req.params.code);
-      if (!bottle) {
-        return res.status(404).json({ error: "Flasche nicht gefunden" });
-      }
-      res.json(bottle);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Get user's refill orders
-  app.get("/api/refill/orders", requireAuth, async (req, res) => {
-    try {
-      const orders = await storage.getUserRefillOrders(req.session.userId!);
-      res.json(orders);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
