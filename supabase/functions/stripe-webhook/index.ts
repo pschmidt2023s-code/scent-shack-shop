@@ -25,14 +25,6 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    console.log("Environment check v2:", {
-      stripeSecretKey: stripeSecretKey ? "✓ Set" : "✗ Missing",
-      webhookSecret: webhookSecret ? "✓ Set" : "✗ Missing",
-      supabaseUrl: supabaseUrl ? "✓ Set" : "✗ Missing",
-      supabaseServiceKey: supabaseServiceKey ? "✓ Set" : "✗ Missing",
-      stripeKeyPrefix: stripeSecretKey ? stripeSecretKey.substring(0, 8) + "..." : "NONE"
-    });
-
     if (!stripeSecretKey || !supabaseUrl || !supabaseServiceKey) {
       console.error("Missing required environment variables");
       return new Response(JSON.stringify({ 
