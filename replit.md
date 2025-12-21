@@ -44,6 +44,12 @@ The platform is built with a clear separation of concerns, featuring a React + V
 - **Partner Program:** Affiliate system with partner codes.
 - **AI Duft Stylist:** Personalized perfume recommendations based on user preferences.
 - **Order Tracking:** Amazon-style progress bar for customer order tracking.
+- **Stock Notifications:** Users can subscribe to be notified when out-of-stock products are back in stock.
+- **Wishlist Sharing:** Users can create shareable links to their favorites list for friends and family.
+- **Gift Options:** Checkout supports gift wrapping (€4.99), personalized messages, and scheduled gift notifications.
+- **Review Photos:** Customers can upload photos with their product reviews.
+- **Refill Program:** Register bottles for 20% discount on refills - eco-friendly and cost-saving.
+- **Subscription Service:** Recurring deliveries with 15% discount (monthly, bimonthly, or quarterly).
 
 ## External Dependencies
 - **Neon Postgres:** Primary database.

@@ -32,8 +32,22 @@ export function WishlistShare() {
 
     setLoading(true);
     try {
-      const code = `WL${Date.now().toString(36).toUpperCase()}`;
-      setShareCode(code);
+      const response = await fetch('/api/wishlist/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          title,
+          message: isPublic ? 'Öffentlich geteilt' : undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Fehler beim Erstellen des Links');
+      }
+
+      const data = await response.json();
+      setShareCode(data.shareCode);
       toast.success('Teilbarer Link erstellt!');
     } catch (error) {
       console.error('Error creating share link:', error);
