@@ -607,6 +607,7 @@ function CreateOrderDialog({
   // Bundle fragrance selection
   const [showBundleDialog, setShowBundleDialog] = useState(false);
   const [pendingBundleVariant, setPendingBundleVariant] = useState<ProductVariant | null>(null);
+  const [pendingBundleProductName, setPendingBundleProductName] = useState<string>('');
   const [pendingBundleQuantity, setPendingBundleQuantity] = useState<number | null>(null); // Fragrances required per bundle
   const [bundlesToAdd, setBundlesToAdd] = useState<number>(1); // Number of bundles being added
   const [currentBundleIndex, setCurrentBundleIndex] = useState<number>(1); // Which bundle we're configuring
@@ -710,9 +711,13 @@ function CreateOrderDialog({
     if (!selectedVariant) return;
     
     let variant: ProductVariant | undefined;
+    let productName: string = '';
     for (const product of products) {
       variant = product.variants.find(v => v.id === selectedVariant);
-      if (variant) break;
+      if (variant) {
+        productName = product.name;
+        break;
+      }
     }
     
     if (!variant) return;
@@ -722,6 +727,7 @@ function CreateOrderDialog({
     if (requiredCount && requiredCount > 0) {
       // Open bundle selection dialog - each bundle needs its own fragrance selection
       setPendingBundleVariant(variant);
+      setPendingBundleProductName(productName);
       setPendingBundleQuantity(requiredCount);
       setBundlesToAdd(quantity); // How many bundles to add
       setCurrentBundleIndex(1); // Start with first bundle
@@ -741,7 +747,7 @@ function CreateOrderDialog({
       setOrderItems([...orderItems, {
         key: generateItemKey(),
         variantId: variant.id,
-        variantName: variant.name,
+        variantName: `${productName} - ${variant.name}`,
         quantity,
         unitPrice: parseFloat(variant.price),
       }]);
@@ -765,7 +771,7 @@ function CreateOrderDialog({
     const newBundle: OrderItemInput = {
       key: generateItemKey(),
       variantId: pendingBundleVariant.id,
-      variantName: pendingBundleVariant.name,
+      variantName: `${pendingBundleProductName} - ${pendingBundleVariant.name}`,
       quantity: 1, // Always 1 per bundle entry - each with unique fragrances
       unitPrice: parseFloat(pendingBundleVariant.price),
       customizationData: {
@@ -787,6 +793,7 @@ function CreateOrderDialog({
       // Reset
       setShowBundleDialog(false);
       setPendingBundleVariant(null);
+      setPendingBundleProductName('');
       setPendingBundleQuantity(null);
       setBundlesToAdd(1);
       setCurrentBundleIndex(1);
